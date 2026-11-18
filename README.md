@@ -1,172 +1,227 @@
-# Mind Forensics
+<div align="center">
 
-> **Calm, Intelligent Mental Health Companion & Cognitive Self-Awareness Platform**
+# Mindora
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.47+-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-3.13+-0175C2?logo=dart&logoColor=white)](https://dart.dev)
-[![License: MIT](https://img.shields.io/badge/License-MIT-34D399.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-124%20Passing-34D399.svg)]()
-[![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20Android%20%7C%20Web%20%7C%20Desktop-black)]()
+**Intelligent Mental Health Companion & Cognitive Self-Awareness Platform**
 
----
+*A privacy-first, low-cognitive-load psychological companion combining fluid somatic tracking, cognitive deconstruction, evidence-based baselines, and crisis safety interception.*
 
-## 🌿 Overview
+[![Flutter](https://img.shields.io/badge/Flutter-3.47+-02569B?style=flat-square&logo=flutter&logoColor=white)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-3.13+-0175C2?style=flat-square&logo=dart&logoColor=white)](https://dart.dev)
+[![Tests](https://img.shields.io/badge/Tests-415%20Passing-34D399?style=flat-square)](test/)
+[![Analysis](https://img.shields.io/badge/Analysis-0%20Issues-000000?style=flat-square)](lib/)
+[![Design](https://img.shields.io/badge/Theme-Dawn%20Light%20%7C%20Vercel%20Dark-EDEDED?style=flat-square)]()
+[![Languages](https://img.shields.io/badge/Languages-EN%20%7C%20FR%20%7C%20AR%20(RTL)-3B82F6?style=flat-square)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-34D399.svg?style=flat-square)](LICENSE)
 
-**Mind Forensics** is a privacy-first psychological self-awareness and management platform engineered for two audiences:
-1. Individuals living with diagnosed mental health conditions seeking a structured, objective, non-stigmatizing tracking and reflection companion.
-2. Anyone seeking to deconstruct their emotions, recurring thought patterns, stress triggers, and somatic well-being.
+<br/>
 
-The application combines structured self-observation, epistemic cognitive deconstruction, data-driven personal baselines, and a compassionate, context-aware AI companion.
+<img src="screenshots/vqa_phase2/contact_sheet.png" alt="Mindora Interface Showcase" width="100%" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);" />
 
----
-
-## 🎨 Design System: Calm Earth & Botanical Sage
-
-Mind Forensics abandons harsh clinical pitch-black interfaces and cold analytics in favor of an organic, calming, and human visual identity:
-
-* **Daylight Linen Theme:**
-  * Background: `#F7F8F5` (Natural parchment linen)
-  * Surface: `#FFFFFF` (Crisp elevated card)
-  * Secondary Surface: `#E5ECE6` (Muted soft sage)
-  * Primary Text: `#34443B` (Deep slate forest green)
-  * Accent: `#668274` (Botanical sage)
-* **Night Slate Theme:**
-  * Background: `#151B19` (Deep slate botanical)
-  * Surface: `#202925` (Elevated dark slate)
-  * Surface Secondary: `#303E37` (Muted slate container)
-  * Primary Text: `#F0F2EC` (Calm ivory)
-  * Accent Glow: `#91AD9A` (Interactive sage green glow)
-* **Geometry & Form:** Soft `20.0px` card radii, `24.0px–30.0px` time capsule pills, and `16.0px` input contours.
-* **Typography:** Locally bundled **Inter** font family (Regular 400, Medium 500, SemiBold 600, Bold 700) with zero runtime network fetching dependencies.
-* **Clinical Discipline:** Strict zero-emoji policy across all clinical widgets, badges, buttons, and bottom sheets to maintain emotional dignity and seriousness.
+</div>
 
 ---
 
-## ✨ Core Features
+## 🌟 Overview
 
-### 1. Home Dashboard & Data-Driven Telemetry
-* **Authentic Baseline Engine:** Never fabricates artificial psychological data or fake percentages. Renders an honest calibrating dashed baseline until sufficient real user records exist.
-* **Real-time Mood Stability:** Calculates authentic standard deviation across historical check-ins to derive evidence-based stability indicators.
-* **Weekly Somatic Rhythm:** Monday-to-Sunday interactive bar charts dynamically derived from recorded telemetry.
-* **Step 6 Daily Check-in:** Unified mood picker (1–10 intensity slider, emotion library selection, and optional daily reflection note) synchronized with the central repository.
-* **Vagal Breathing Modal:** Integrated 4-4-4-4 box breathing visualizer with real-time breathing phase pacing.
+**Mindora** is an open-source, offline-first cognitive self-awareness and emotional tracking platform. It is engineered with a strict **Options-First, Low-Cognitive-Load** philosophy: users navigating stress, burnout, or emotional fatigue are never confronted with blank compulsory essays or overwhelming choices.
+
+The application combines:
+- **Somatic Fluid Visuals:** Mathematical multi-harmonic mood orb with real-time continuous wave dynamics.
+- **Cognitive Deconstruction:** Epistemic separation of statements into objective *Facts*, internal *Assumptions*, and emotional *Interpretations*.
+- **Authentic Evidence Baselines:** Pure mathematical standard-deviation stability telemetry — never fabricated percentages or synthetic trends.
+- **Offline Crisis Interception:** Local regex engine that instantly intercepts acute distress keywords and provides one-tap access to emergency helplines without transmitting data over the network.
+- **Unified Design System:** Exact parity across **Dawn Light** (`#F5F6FA`) and **Vercel Dark** (`#000000`).
+
+---
+
+## 📸 Interface Showcase
+
+| **Dawn Light Theme** | **Vercel Dark Theme** |
+|:---:|:---:|
+| <img src="screenshots/vqa_phase2/01_home_screen_light.png" width="400" /> | <img src="screenshots/vqa_phase2/02_home_screen_dark.png" width="400" /> |
+| *Airy, soft porcelain background with hairline borders* | *Pitch-black `#000000`, 1px hairline depth, 0% ambient bleed* |
+
+| **Mood Tracking & Somatic Dial** | **Daily Check-in & Notes** |
+|:---:|:---:|
+| <img src="screenshots/vqa_phase2/04_mood_tracking.png" width="400" /> | <img src="screenshots/vqa_phase2/03_daily_checkin.png" width="400" /> |
+| *Continuous harmonic wave orb & tactile intensity (1–10)* | *Options-first emotion library with quick reflection note* |
+
+| **AI Companion & Dialogue** | **Insights & Weekly Rhythm** |
+|:---:|:---:|
+| <img src="screenshots/vqa_phase2/05_ai_companion.png" width="400" /> | <img src="screenshots/vqa_phase2/06_insights_progress.png" width="400" /> |
+| *Compassionate reflection with suggested replies* | *Mathematical stability index & Monday-Sunday rhythm* |
+
+---
+
+## 🎨 Design System: Dawn Light & Vercel Dark
+
+Mindora uses a custom **`MindTokens`** theme extension. The system enforces strict token hygiene across all screens with zero hardcoded colors.
+
+### Token Architecture
+
+| Token | Light ("Dawn") | Dark ("Vercel") | Role |
+|:---|:---|:---|:---|
+| `bg` | `#F5F6FA` | `#000000` | Ground canvas |
+| `surface` | `#FFFFFF` | `#0A0A0A` | Elevated cards & sheets |
+| `surface2` | `#ECEFF5` | `#111111` | Wells, input fields & tracks |
+| `surface3` | `#FFFFFF` | `#1F1F1F` | Active pill & pressed states |
+| `line` | `rgba(23, 32, 51, 0.09)` | `rgba(255, 255, 255, 0.10)` | 1px hairline structural border |
+| `lineStrong`| `rgba(23, 32, 51, 0.18)` | `rgba(255, 255, 255, 0.20)` | Focused inputs & prominent dividers |
+| `ink` | `#172033` | `#EDEDED` | Primary high-contrast typography |
+| `ink2` | `#4A5873` | `#A1A1A1` | Secondary descriptive text |
+| `ink3` | `#5C6982` | `#8F8F8F` | Helper annotations & timestamps |
+| `safety` | `#C0324E` | `#FF6166` | Crisis shield & emergency hotline buttons |
+
+### Dynamic Mood Palettes
+Mood accents (`m1` primary, `m2` highlight) drive subtle component highlights (selected borders, slider tracks, spline chart dots, dynamic pills) while maintaining WCAG AA contrast against text:
+
+- **Calm** (`#4FB896` / `#9BE0C6`) — Leaf accent (Default)
+- **Anxious** (`#5B9BEA` / `#A0C8FF`) — Flowing wave accent
+- **Frustrated** (`#F0805F` / `#FFB894`) — Energetic flame accent
+- **Heavy** (`#8A7BE0` / `#BEB0FF`) — Grounded cloud accent
+- **Restless** (`#EDB23E` / `#FFD98A`) — Dynamic wind accent
+
+---
+
+## ✨ Core Pillars & Features
+
+### 1. Organic Somatic Mood Orb
+- Continuously animated vector fluid canvas powered by pure trigonometric multi-harmonic equations.
+- Coupled directly to mood morphology and intensity (1–10).
+- Automatically reduces animation velocity and respects `MediaQuery.disableAnimationsOf(context)` for accessibility.
 
 ### 2. Forensic Investigation & Epistemic Triage
-* **Cognitive Deconstruction:** Differentiates statements into:
-  * **Facts:** Objective, verifiable occurrences (`#38BDF8`).
-  * **Assumptions:** Presumed motives or unconfirmed predictions (`#FBBF24`).
-  * **Interpretations:** Internal meanings or emotional conclusions (`#A78BFA`).
-* **Forensic Chains:** Links Trigger $\rightarrow$ Automatic Thought $\rightarrow$ Emotion & Intensity $\rightarrow$ Resulting Behavior.
+- Guided cognitive deconstruction workflow inspired by cognitive-behavioral techniques:
+  - **Facts:** Objective, observable, verifiable occurrences.
+  - **Assumptions:** Presumed intent or unverified anticipations.
+  - **Interpretations:** Internal evaluations, meanings, or personal filters.
+- Reconstructs cognitive chains: `Trigger` $\rightarrow$ `Automatic Thought` $\rightarrow$ `Emotion` $\rightarrow$ `Behavior`.
 
-### 3. Clinical Crisis Safety Interception
-* **Offline Regex Safety Interceptor:** Scans input locally in real time without network transmission to immediately intercept acute distress keywords.
-* **Emergency Helpline Overlay:** Provides direct, single-tap connection to verified support services:
-  * **Tunisia Ligne Verte:** `80 10 50 50`
-  * **SAMU:** `190`
-  * **Protection Civile:** `198`
+### 3. Crisis Safety & Local Protection Interceptor
+- Offline regex keyword detection engine analyzes input in real-time on-device.
+- Zero network exposure for critical mental safety queries.
+- Instant access to emergency helplines:
+  - **Tunisia Ligne Verte:** `80 10 50 50`
+  - **SAMU (Medical Emergency):** `190`
+  - **Protection Civile:** `198`
 
-### 4. Zero-Friction Privacy & Security
-* **Anonymous Local-First Vault:** Fully functional out of the box with zero required account creation or personal data collection.
-* **Biometric Lock (`local_auth`):** Device-level fingerprint and Face ID authentication.
-* **Clinical Sharing & Data Wipe:** Selective one-tap JSON export of sessions and a full GDPR-compliant data purge.
+### 4. Zero-Friction Privacy & Local Vault
+- **Local-First Architecture:** Operates seamlessly without requiring account creation or cloud data sharing.
+- **Biometric Security (`local_auth`):** Fingerprint and Face ID support for app lock.
+- **GDPR-Compliant Clinical Export:** One-tap sanitized JSON export of case sessions or instant local vault purge.
 
 ### 5. Trilingual Accessibility (AR / FR / EN)
-* **Tunisian Arabic (`ar`):** Authentic colloquial and dialectal phrasing with comprehensive Right-to-Left (RTL) text directionality.
-* **French (`fr`) & English (`en`):** Precise psychological and cognitive terminology.
+- **Authentic Tunisian Arabic (`ar`):** Natural colloquial expressions with comprehensive Right-to-Left (RTL) layout geometry and bundled **Noto Sans Arabic** typography.
+- **English (`en`) & French (`fr`):** Precise psychological terminology.
+- **Typography:** Fully offline bundled **Inter** & **Noto Sans Arabic** (Regular, SemiBold, Bold) fonts with zero Google Fonts runtime network fetching.
 
 ---
 
-## 🏗 Architecture & Tech Stack
+## 🏗 Tech Stack & Architecture
 
 ```
 lib/
 ├── app/
-│   ├── localization/      # Trilingual strings (EN, FR, AR) & locale controller
+│   ├── localization/      # Trilingual dictionary (EN, FR, AR) & RTL controller
 │   ├── router/            # GoRouter configuration & bottom tab navigation
-│   └── theme/             # Earth/Sage tokens, LabColors, and LabTheme
+│   └── theme/             # MindTokens, ThemeController & custom ThemeData builders
 ├── core/
-│   ├── safety/            # Offline crisis keywords & safety interceptor
-│   ├── security/          # Biometric auth & local daily usage limiter
-│   └── widgets/           # BouncingWidget, MindCard, MindButton primitives
+│   ├── safety/            # Offline crisis keywords & emergency interceptor
+│   ├── security/          # Biometric lock overlay & encrypted vault
+│   └── widgets/           # MindCard, MindButton, OrganicMoodOrb, MindSegmented, etc.
 └── features/
-    ├── auth/              # Anonymous vault & Firebase Spark credentials
-    ├── case_file/         # Case models & clinical PDF/JSON export services
-    ├── home/              # Home Dashboard, breathing exercise & metrics
-    ├── investigation/     # Epistemic triage, AI companion & state controllers
-    ├── journal/           # Searchable forensic vault & daily mind traces
-    ├── mind_trace/        # Daily check-in controller & local repositories
-    ├── profile/           # Psychological profile & conditions tracker
-    └── settings/          # Biometrics, sync, language & appearance settings
+    ├── auth/              # Local authentication & anonymous vault
+    ├── case_file/         # Case models & clinical JSON export
+    ├── home/              # Telemetry dashboard, daily check-in & vagal breathing
+    ├── investigation/     # Epistemic triage & forensic chains
+    ├── journal/           # Chronological mind traces & searchable logs
+    ├── observatory/       # Symptom assessment & perspective explorer
+    ├── profile/           # Psychological baseline & condition tracking
+    ├── settings/          # Theme toggle (Light/Dark/System), biometrics & language
+    └── track/             # Somatic dial, calendar matrix & spline chart
 ```
 
-* **Framework:** Flutter 3.47.9 / Dart 3.13.7
-* **State Management:** Riverpod 3.4+ (`NotifierProvider`, `ConsumerStatefulWidget`)
-* **Navigation:** `go_router` 18.1+
-* **Persistence:** `shared_preferences` with in-memory fallback repositories
-* **Cloud Infrastructure:** Firebase Spark Plan ($0.00 zero-cost configuration)
+- **Framework:** Flutter 3.47+ / Dart 3.13+
+- **Architecture:** Feature-first layered architecture with clean domain separation
+- **State Management:** Riverpod 3.4+ (`NotifierProvider`, `ConsumerStatefulWidget`)
+- **Navigation:** `go_router` 18.1+
+- **Local Storage:** `shared_preferences` with in-memory fallback repositories
+- **Backend Infrastructure:** Fully decoupled; optional Firebase Spark plan compatible ($0.00 cost)
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-* [Flutter SDK](https://docs.flutter.dev/get-started/install) (version 3.22.0 or higher recommended)
-* Android Studio / Xcode / VS Code with Flutter extension
-* Git
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) (`>= 3.22.0`)
+- Android Studio / VS Code / Xcode
+- Git
 
-### Installation
+### Installation & Run
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/hajerbenrbeh/mind-forensics.git
-   cd mind-forensics
+   git clone https://github.com/wacim-abdellli/Mindora.git
+   cd Mindora
    ```
 
-2. **Install dependencies:**
+2. **Fetch dependencies:**
    ```bash
    flutter pub get
    ```
 
 3. **Verify static analysis:**
    ```bash
-   flutter analyze
+   flutter analyze --no-pub
    ```
 
-4. **Execute the test suite:**
+4. **Run the full test suite (415 passing tests):**
    ```bash
    flutter test
    ```
 
-5. **Run the application:**
+5. **Launch the application:**
    ```bash
    flutter run
    ```
 
 ---
 
-## 🧪 Testing & Quality Assurance
+## 🧪 Testing & Verification Matrix
 
-The application includes an extensive test suite verifying clinical safety, state persistence, epistemic classification, and UI rendering:
+Mindora maintains a comprehensive automated testing pipeline:
+
+| Test Suite | Scope | Status |
+|:---|:---|:---:|
+| `test/step6_visual_qa_matrix_test.dart` | 35-matrix responsive layout (320px, 360px, 1.35x font, RTL) | Pass |
+| `test/theme_tokens_contrast_test.dart` | WCAG AA contrast verification across all token pairs | Pass |
+| `test/step2_primitives_test.dart` | Design tokens, button feedback, cards & sheets | Pass |
+| `test/accessibility_guidelines_test.dart` | Screen-reader semantics, minimum 48dp touch targets | Pass |
+| `test/batch2_wiring_security_test.dart` | Crisis interceptor, biometric lock, local encryption | Pass |
 
 ```bash
-# Run all 124 unit and widget tests
+# Run all tests
 flutter test
 
-# Run the UI screenshot generator
-flutter test test/screenshot_generator_test.dart
+# Verify zero raw colors across all feature code
+Get-ChildItem -Path "lib" -Recurse -Filter *.dart | Select-String -Pattern "Color\(0x|Colors\.(?!transparent)" | Where-Object { $_.Path -notmatch "mind_tokens\.dart" }
+# Output: 0 hits
 ```
 
 ---
 
-## ⚖️ Clinical & Ethical Disclaimer
+## ⚖️ Clinical & Ethical Guardrails
 
-**Mind Forensics** is an educational and self-awareness platform inspired by cognitive behavioral principles. It is **not** a licensed medical provider, diagnostic instrument, or a replacement for professional clinical care.
-
-* The application **never** predicts relapse or provides dietary/weight advice.
-* In cases of acute psychological crisis or self-harm ideation, the offline safety interceptor immediately directs users to professional human emergency helplines.
+- **Educational & Self-Awareness Scope:** Mindora is inspired by cognitive-behavioral principles. It is **not** a licensed medical provider, diagnostic instrument, or a substitute for professional mental healthcare.
+- **Strict Anti-Stigma Standard:** The app never predicts relapse, assigns diagnostic labels, or provides weight/diet advice.
+- **Emotionally Dignified UI:** Strict zero-emoji policy across all clinical widgets, buttons, and system sheets to preserve dignity and clinical seriousness.
+- **Immediate Human Safety Net:** Acute crisis detection triggers an immediate, unblockable prompt to dial local emergency services.
 
 ---
 
 ## 📄 License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+Developed with care by [Wassim Abdelli](https://github.com/wacim-abdellli).
