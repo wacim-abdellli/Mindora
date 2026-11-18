@@ -29,10 +29,16 @@ void main() {
       expect(ProgressTimeWindow.sevenDays.label(stringsFr), equals('7 JOURS'));
       expect(ProgressTimeWindow.sevenDays.label(stringsAr), equals('7 أيام'));
 
-      final dateRangeEn = ProgressTimeWindow.sevenDays.formattedDateRange(DateTime(2026, 11, 6), stringsEn);
+      final dateRangeEn = ProgressTimeWindow.sevenDays.formattedDateRange(
+        DateTime(2026, 11, 6),
+        stringsEn,
+      );
       expect(dateRangeEn, contains('2026'));
 
-      final allTimeAr = ProgressTimeWindow.allTime.formattedDateRange(DateTime(2026, 11, 6), stringsAr);
+      final allTimeAr = ProgressTimeWindow.allTime.formattedDateRange(
+        DateTime(2026, 11, 6),
+        stringsAr,
+      );
       expect(allTimeAr, equals('كامل السجل التاريخي المسجل'));
     });
   });
@@ -46,7 +52,12 @@ void main() {
 
     setUp(() {
       now = DateTime.now();
-      final day2Noon = DateTime(now.year, now.month, now.day, 12).subtract(const Duration(days: 2));
+      final day2Noon = DateTime(
+        now.year,
+        now.month,
+        now.day,
+        12,
+      ).subtract(const Duration(days: 2));
 
       sampleTraces = [
         MindTraceModel(
@@ -79,7 +90,9 @@ void main() {
         ),
         MindTraceModel(
           id: 't3',
-          date: day2Noon.add(const Duration(hours: 2)), // Same calendar day as t2 (14:00)
+          date: day2Noon.add(
+            const Duration(hours: 2),
+          ), // Same calendar day as t2 (14:00)
           overallMood: 'reflective',
           selectedEmotions: const ['Calm'],
           moodIntensity: 5,
@@ -133,7 +146,8 @@ void main() {
             reflectionQuestions: const ['What did you discover?'],
             isCompleted: true,
             completedAt: now.subtract(const Duration(days: 4)),
-            personalNotes: 'Discovered my mind jumps to worst-case scenarios quickly.',
+            personalNotes:
+                'Discovered my mind jumps to worst-case scenarios quickly.',
           ),
           const JourneyActivity(
             id: 'act_2',
@@ -200,24 +214,27 @@ void main() {
       expect(analyticsAll.uniqueDaysCount, equals(3));
     });
 
-    test('calculates emotional frequencies, selections and variety accurately', () {
-      final analytics = ProgressAnalyticsCalculator.computeAnalytics(
-        allTraces: sampleTraces,
-        allCases: sampleCases,
-        journeyState: sampleJourney,
-        timeWindow: ProgressTimeWindow.thirtyDays,
-        dismissedInsightIds: const {},
-        strings: strings,
-      );
+    test(
+      'calculates emotional frequencies, selections and variety accurately',
+      () {
+        final analytics = ProgressAnalyticsCalculator.computeAnalytics(
+          allTraces: sampleTraces,
+          allCases: sampleCases,
+          journeyState: sampleJourney,
+          timeWindow: ProgressTimeWindow.thirtyDays,
+          dismissedInsightIds: const {},
+          strings: strings,
+        );
 
-      // t1 has 2, t2 has 3, t3 has 1 -> totalSelections = 6
-      expect(analytics.totalEmotionSelections, equals(6));
+        // t1 has 2, t2 has 3, t3 has 1 -> totalSelections = 6
+        expect(analytics.totalEmotionSelections, equals(6));
 
-      // Distinct emotions: Calm (2), Grateful (1), Anxious (1), Restless (1), Overwhelmed (1) -> 5 distinct
-      expect(analytics.emotionalVarietyCount, equals(5));
-      expect(analytics.emotionFrequencies['Calm'], equals(2));
-      expect(analytics.emotionFrequencies['Anxious'], equals(1));
-    });
+        // Distinct emotions: Calm (2), Grateful (1), Anxious (1), Restless (1), Overwhelmed (1) -> 5 distinct
+        expect(analytics.emotionalVarietyCount, equals(5));
+        expect(analytics.emotionFrequencies['Calm'], equals(2));
+        expect(analytics.emotionFrequencies['Anxious'], equals(1));
+      },
+    );
 
     test('computes mood intensity stats and chronological timeline', () {
       final analytics = ProgressAnalyticsCalculator.computeAnalytics(
@@ -236,27 +253,30 @@ void main() {
       expect(analytics.intensityTimeline.length, equals(3));
     });
 
-    test('computes somatic indicators and non-causal sleep vs tension observation', () {
-      final analytics = ProgressAnalyticsCalculator.computeAnalytics(
-        allTraces: sampleTraces,
-        allCases: sampleCases,
-        journeyState: sampleJourney,
-        timeWindow: ProgressTimeWindow.thirtyDays,
-        dismissedInsightIds: const {},
-        strings: strings,
-      );
+    test(
+      'computes somatic indicators and non-causal sleep vs tension observation',
+      () {
+        final analytics = ProgressAnalyticsCalculator.computeAnalytics(
+          allTraces: sampleTraces,
+          allCases: sampleCases,
+          journeyState: sampleJourney,
+          timeWindow: ProgressTimeWindow.thirtyDays,
+          dismissedInsightIds: const {},
+          strings: strings,
+        );
 
-      // Energy: 7, 4, 6 -> avg = 5.67
-      expect(analytics.averageEnergy, closeTo(5.66, 0.05));
+        // Energy: 7, 4, 6 -> avg = 5.67
+        expect(analytics.averageEnergy, closeTo(5.66, 0.05));
 
-      // Sleep: 8.0, 5.5, 7.0 -> avg = 6.83
-      expect(analytics.averageSleepDuration, closeTo(6.83, 0.05));
+        // Sleep: 8.0, 5.5, 7.0 -> avg = 6.83
+        expect(analytics.averageSleepDuration, closeTo(6.83, 0.05));
 
-      // Sleep vs tension: t2 (<6.5h) tension=8; t1 and t3 (>=6.5h) tensions=2, 3 -> avg=2.5
-      expect(analytics.sleepTensionObservation, isNotNull);
-      expect(analytics.sleepTensionObservation, contains('8.0/10'));
-      expect(analytics.sleepTensionObservation, contains('2.5/10'));
-    });
+        // Sleep vs tension: t2 (<6.5h) tension=8; t1 and t3 (>=6.5h) tensions=2, 3 -> avg=2.5
+        expect(analytics.sleepTensionObservation, isNotNull);
+        expect(analytics.sleepTensionObservation, contains('8.0/10'));
+        expect(analytics.sleepTensionObservation, contains('2.5/10'));
+      },
+    );
 
     test('gathers and sorts reflections across Traces, Cases, and Journey', () {
       final analytics = ProgressAnalyticsCalculator.computeAnalytics(
@@ -280,39 +300,46 @@ void main() {
       // Verify newest date first
       for (var i = 0; i < analytics.allReflections.length - 1; i++) {
         expect(
-          analytics.allReflections[i].date.isAfter(analytics.allReflections[i + 1].date) ||
-              analytics.allReflections[i].date.isAtSameMomentAs(analytics.allReflections[i + 1].date),
+          analytics.allReflections[i].date.isAfter(
+                analytics.allReflections[i + 1].date,
+              ) ||
+              analytics.allReflections[i].date.isAtSameMomentAs(
+                analytics.allReflections[i + 1].date,
+              ),
           isTrue,
         );
       }
     });
 
-    test('evaluates milestone unlocks accurately based on cumulative exploration', () {
-      final analytics = ProgressAnalyticsCalculator.computeAnalytics(
-        allTraces: sampleTraces,
-        allCases: sampleCases,
-        journeyState: sampleJourney,
-        timeWindow: ProgressTimeWindow.thirtyDays,
-        dismissedInsightIds: const {},
-        strings: strings,
-      );
+    test(
+      'evaluates milestone unlocks accurately based on cumulative exploration',
+      () {
+        final analytics = ProgressAnalyticsCalculator.computeAnalytics(
+          allTraces: sampleTraces,
+          allCases: sampleCases,
+          journeyState: sampleJourney,
+          timeWindow: ProgressTimeWindow.thirtyDays,
+          dismissedInsightIds: const {},
+          strings: strings,
+        );
 
-      final milestoneMap = {for (final m in analytics.milestones) m.id: m};
+        final milestoneMap = {for (final m in analytics.milestones) m.id: m};
 
-      // 4 total traces:
-      expect(milestoneMap['ms_first_star']!.isUnlocked, isTrue);
-      expect(milestoneMap['ms_triad_weaver']!.isUnlocked, isTrue);
-      expect(milestoneMap['ms_seven_cluster']!.isUnlocked, isFalse);
+        // 4 total traces:
+        expect(milestoneMap['ms_first_star']!.isUnlocked, isTrue);
+        expect(milestoneMap['ms_triad_weaver']!.isUnlocked, isTrue);
+        expect(milestoneMap['ms_seven_cluster']!.isUnlocked, isFalse);
 
-      // Unique emotions across all 4 traces: Calm, Grateful, Anxious, Restless, Overwhelmed, Exhausted, Numb -> 7 unique
-      expect(milestoneMap['ms_emotional_granularity']!.isUnlocked, isTrue);
+        // Unique emotions across all 4 traces: Calm, Grateful, Anxious, Restless, Overwhelmed, Exhausted, Numb -> 7 unique
+        expect(milestoneMap['ms_emotional_granularity']!.isUnlocked, isTrue);
 
-      // 1 completed case:
-      expect(milestoneMap['ms_forensic_inquirer']!.isUnlocked, isTrue);
+        // 1 completed case:
+        expect(milestoneMap['ms_forensic_inquirer']!.isUnlocked, isTrue);
 
-      // 1 completed journey activity:
-      expect(milestoneMap['ms_journey_pioneer']!.isUnlocked, isTrue);
-    });
+        // 1 completed journey activity:
+        expect(milestoneMap['ms_journey_pioneer']!.isUnlocked, isTrue);
+      },
+    );
 
     test('dismissing an insight excludes it from the returned insights', () {
       final initialAnalytics = ProgressAnalyticsCalculator.computeAnalytics(
@@ -336,23 +363,24 @@ void main() {
         strings: strings,
       );
 
-      expect(updatedAnalytics.insights.any((ins) => ins.id == firstInsightId), isFalse);
+      expect(
+        updatedAnalytics.insights.any((ins) => ins.id == firstInsightId),
+        isFalse,
+      );
     });
   });
 
   group('ProgressScreen Widget Integration Tests', () {
-    testWidgets('renders ProgressScreen with 2 tabs and friendly layout', (tester) async {
+    testWidgets('renders ProgressScreen with 2 tabs and friendly layout', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(800, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: ProgressScreen(),
-          ),
-        ),
+        const ProviderScope(child: MaterialApp(home: ProgressScreen())),
       );
 
       await tester.pumpAndSettle();
