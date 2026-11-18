@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/localization/app_strings.dart';
+import '../../../app/router/app_router.dart';
 import '../../../app/theme/mind_tokens.dart';
 import '../../../core/safety/support_button.dart';
 import '../../../core/widgets/mind_badge.dart';
@@ -111,7 +112,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                 leadingIcon: Icons.calendar_month_outlined,
                 onPressed: () {
                   Navigator.of(ctx).pop();
-                  context.push('/progress');
+                  context.go('${AppRouter.track}?tab=1');
                 },
               ),
             ],
@@ -261,7 +262,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
             // 8. Detailed Analytics Deep-Dive Button (Preserved Core)
             MindCard(
               padding: const EdgeInsets.all(16),
-              onTap: () => context.push('/progress'),
+              onTap: () => context.go('${AppRouter.track}?tab=1'),
               child: Row(
                 children: [
                   Container(
@@ -676,7 +677,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
               button: true,
               label: strings.viewAllArrowLabel,
               child: MindPressable(
-                onPressed: () => context.push('/progress'),
+                onPressed: () => context.go('${AppRouter.track}?tab=1'),
                 borderRadius: BorderRadius.circular(tokens.chipRadius),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(minHeight: 48),
@@ -798,7 +799,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
               padding: const EdgeInsets.only(bottom: 10),
               child: MindCard(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                onTap: () => context.push('/progress'),
+                onTap: () => context.go('${AppRouter.track}?tab=1'),
                 child: Row(
                   children: [
                     Container(

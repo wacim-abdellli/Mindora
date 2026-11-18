@@ -446,7 +446,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         MindPressable(
                           onPressed: () {
                             HapticFeedback.lightImpact();
-                            context.push(AppRouter.progress);
+                            context.go('${AppRouter.track}?tab=1');
                           },
                           semanticLabel: strings.quickCalendarTitle,
                           borderRadius: BorderRadius.circular(24),
@@ -1071,7 +1071,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 tokens: tokens,
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  context.push(AppRouter.progress);
+                  context.go('${AppRouter.track}?tab=1');
                 },
               ),
             ),

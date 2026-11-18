@@ -10,7 +10,6 @@ import '../../features/investigation/presentation/flash_case_screen.dart';
 import '../../features/observatory/presentation/inner_observatory_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/profile/presentation/psychological_profile_screen.dart';
-import '../../features/progress/presentation/progress_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/track/presentation/track_screen.dart';
 import 'scaffold_with_nav_bar.dart';
@@ -120,10 +119,9 @@ class AppRouter {
         },
       ),
       GoRoute(
-        parentNavigatorKey: _rootNavigatorKey,
         path: progress,
         name: 'progress',
-        builder: (context, state) => const ProgressScreen(),
+        redirect: (context, state) => '$track?tab=1',
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,

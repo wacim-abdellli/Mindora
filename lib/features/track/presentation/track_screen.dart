@@ -512,11 +512,10 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                 onPressed: () {
                   HapticFeedback.lightImpact();
-                  final router = GoRouter.maybeOf(context);
-                  if (router != null) {
-                    router.push(AppRouter.progress);
-                  } else {
+                  if (_tabController.index == 0) {
                     _tabController.animateTo(1);
+                  } else {
+                    _tabController.animateTo(0);
                   }
                 },
               ),
