@@ -341,7 +341,12 @@ void main() {
   });
 
   group('ProgressScreen Widget Integration Tests', () {
-    testWidgets('renders ProgressScreen with 4 tabs and header quote', (tester) async {
+    testWidgets('renders ProgressScreen with 2 tabs and friendly layout', (tester) async {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -356,27 +361,22 @@ void main() {
       expect(find.text('MY PROGRESS'), findsOneWidget);
       expect(find.textContaining('Every entry tells a story'), findsOneWidget);
 
-      // Check all 4 tab labels
-      expect(find.text('THOUGHT TRACE & OVERVIEW'), findsOneWidget);
-      expect(find.text('CALENDAR & ENTRIES'), findsOneWidget);
-      expect(find.text('REFLECTIONS ARCHIVE'), findsOneWidget);
-      expect(find.text('MILESTONES & JOURNEY'), findsOneWidget);
+      // Check 2 segmented tab labels
+      expect(find.text('Overview'), findsOneWidget);
+      expect(find.text('Journal'), findsOneWidget);
 
-      // Switch to Calendar tab
-      await tester.tap(find.text('CALENDAR & ENTRIES'));
-      await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.calendar_month_outlined), findsOneWidget);
-      expect(find.textContaining('Each highlighted point marks an observed day'), findsOneWidget);
+      // Verify Overview tab contents
+      expect(find.text('TOTAL ENTRIES'), findsOneWidget);
+      expect(find.text('The Thought Trace'), findsOneWidget);
+      expect(find.text('MOOD INTENSITY TIMELINE'), findsOneWidget);
 
-      // Switch to Reflections Archive tab
-      await tester.tap(find.text('REFLECTIONS ARCHIVE'));
+      // Switch to Journal tab
+      await tester.tap(find.text('Journal'));
       await tester.pumpAndSettle();
+
+      // Verify Journal tab contents (Calendar, Reflections, Milestones)
       expect(find.byType(TextField), findsOneWidget);
       expect(find.text('All Sources'), findsOneWidget);
-
-      // Switch to Milestones & Journey tab
-      await tester.tap(find.text('MILESTONES & JOURNEY'));
-      await tester.pumpAndSettle();
       expect(find.text('JOURNEY CURRICULUM EXPLORATION'), findsOneWidget);
       expect(find.text('CELESTIAL MILESTONES'), findsOneWidget);
     });
