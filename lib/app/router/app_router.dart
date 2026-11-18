@@ -42,7 +42,17 @@ class AppRouter {
   static const String investigation = '/investigation';
 
   static final GlobalKey<NavigatorState> _rootNavigatorKey =
-      GlobalKey<NavigatorState>();
+      GlobalKey<NavigatorState>(debugLabel: 'root');
+  static final GlobalKey<NavigatorState> _shellNavigatorHomeKey =
+      GlobalKey<NavigatorState>(debugLabel: 'shellHome');
+  static final GlobalKey<NavigatorState> _shellNavigatorTrackKey =
+      GlobalKey<NavigatorState>(debugLabel: 'shellTrack');
+  static final GlobalKey<NavigatorState> _shellNavigatorCompanionKey =
+      GlobalKey<NavigatorState>(debugLabel: 'shellCompanion');
+  static final GlobalKey<NavigatorState> _shellNavigatorInsightsKey =
+      GlobalKey<NavigatorState>(debugLabel: 'shellInsights');
+  static final GlobalKey<NavigatorState> _shellNavigatorProfileKey =
+      GlobalKey<NavigatorState>(debugLabel: 'shellProfile');
 
   static final GoRouter router = GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -71,11 +81,13 @@ class AppRouter {
     },
     routes: [
       GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
         path: onboarding,
         name: 'onboarding',
         builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
         path: auth,
         name: 'auth',
         builder: (context, state) => const AuthScreen(),
@@ -155,6 +167,7 @@ class AppRouter {
         branches: [
           // Branch 0: Home Dashboard
           StatefulShellBranch(
+            navigatorKey: _shellNavigatorHomeKey,
             routes: [
               GoRoute(
                 path: home,
@@ -166,6 +179,7 @@ class AppRouter {
 
           // Branch 1: Track & Self-Observation
           StatefulShellBranch(
+            navigatorKey: _shellNavigatorTrackKey,
             routes: [
               GoRoute(
                 path: track,
@@ -181,6 +195,7 @@ class AppRouter {
 
           // Branch 2: AI Guide (Center prominent)
           StatefulShellBranch(
+            navigatorKey: _shellNavigatorCompanionKey,
             routes: [
               GoRoute(
                 path: companion,
@@ -194,6 +209,7 @@ class AppRouter {
 
           // Branch 3: Insights & Pattern Understanding
           StatefulShellBranch(
+            navigatorKey: _shellNavigatorInsightsKey,
             routes: [
               GoRoute(
                 path: insights,
@@ -205,6 +221,7 @@ class AppRouter {
 
           // Branch 4: Profile & Preferences
           StatefulShellBranch(
+            navigatorKey: _shellNavigatorProfileKey,
             routes: [
               GoRoute(
                 path: profile,

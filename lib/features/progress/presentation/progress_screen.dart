@@ -937,7 +937,7 @@ class _ThoughtTraceCard extends StatelessWidget {
                   MindButton(
                     text: strings.recordTodayTraceBtn,
                     onPressed: () =>
-                        context.push(AppRouter.mindTrace),
+                        context.go(AppRouter.track),
                   ),
                 ],
               ),
@@ -955,7 +955,7 @@ class _ThoughtTraceCard extends StatelessWidget {
                       context,
                       trace: trace,
                       onEdit: () =>
-                          context.push(AppRouter.mindTrace),
+                          context.go(AppRouter.track),
                     );
                   },
                   child: Column(
@@ -1020,7 +1020,7 @@ class _ThoughtTraceCard extends StatelessWidget {
             Center(
               child: MindPressable(
                 onPressed: () =>
-                    context.push(AppRouter.mindTrace),
+                    context.go(AppRouter.track),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Row(
