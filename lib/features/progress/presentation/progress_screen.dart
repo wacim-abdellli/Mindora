@@ -39,8 +39,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
   final TextEditingController _reflectionSearchController =
       TextEditingController();
 
-  DateTime _calendarMonth =
-      DateTime(DateTime.now().year, DateTime.now().month);
+  DateTime _calendarMonth = DateTime(DateTime.now().year, DateTime.now().month);
   MindTraceModel? _selectedCalendarTrace;
 
   @override
@@ -193,10 +192,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
       SliverToBoxAdapter(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: _ThoughtTraceCard(
-            analytics: analytics,
-            strings: strings,
-          ),
+          child: _ThoughtTraceCard(analytics: analytics, strings: strings),
         ),
       ),
 
@@ -235,8 +231,11 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                       width: 1.0,
                     ),
                   ),
-                  child: Icon(Icons.palette_outlined,
-                      size: 20, color: tokens.m1),
+                  child: Icon(
+                    Icons.palette_outlined,
+                    size: 20,
+                    color: tokens.m1,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -256,7 +255,8 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                       const SizedBox(height: 2),
                       Text(
                         strings.distinctEmotionsCount(
-                            analytics.emotionalVarietyCount),
+                          analytics.emotionalVarietyCount,
+                        ),
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -278,10 +278,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
       SliverToBoxAdapter(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: _IntensityTimelineCard(
-            analytics: analytics,
-            strings: strings,
-          ),
+          child: _IntensityTimelineCard(analytics: analytics, strings: strings),
         ),
       ),
 
@@ -291,10 +288,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
       SliverToBoxAdapter(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: _SomaticSleepCard(
-            analytics: analytics,
-            strings: strings,
-          ),
+          child: _SomaticSleepCard(analytics: analytics, strings: strings),
         ),
       ),
 
@@ -337,7 +331,9 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
     };
 
     final daysInMonth = DateUtils.getDaysInMonth(
-        _calendarMonth.year, _calendarMonth.month);
+      _calendarMonth.year,
+      _calendarMonth.month,
+    );
     final firstDayOffset =
         DateTime(_calendarMonth.year, _calendarMonth.month, 1).weekday - 1;
 
@@ -373,12 +369,15 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                           icon: const Icon(Icons.chevron_left, size: 22),
                           color: tokens.ink2,
                           constraints: const BoxConstraints(
-                              minWidth: 48, minHeight: 48),
+                            minWidth: 48,
+                            minHeight: 48,
+                          ),
                           onPressed: () {
                             setState(() {
                               _calendarMonth = DateTime(
-                                  _calendarMonth.year,
-                                  _calendarMonth.month - 1);
+                                _calendarMonth.year,
+                                _calendarMonth.month - 1,
+                              );
                               _selectedCalendarTrace = null;
                             });
                           },
@@ -388,13 +387,18 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                           icon: const Icon(Icons.chevron_right, size: 22),
                           color: tokens.ink2,
                           constraints: const BoxConstraints(
-                              minWidth: 48, minHeight: 48),
+                            minWidth: 48,
+                            minHeight: 48,
+                          ),
                           onPressed: () {
-                            final next = DateTime(_calendarMonth.year,
-                                _calendarMonth.month + 1);
+                            final next = DateTime(
+                              _calendarMonth.year,
+                              _calendarMonth.month + 1,
+                            );
                             final now = DateTime.now();
                             if (next.isBefore(
-                                DateTime(now.year, now.month + 1))) {
+                              DateTime(now.year, now.month + 1),
+                            )) {
                               setState(() {
                                 _calendarMonth = next;
                                 _selectedCalendarTrace = null;
@@ -410,7 +414,10 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                 Text(
                   strings.calendarNoBreaksNote,
                   style: TextStyle(
-                      fontSize: 12, color: tokens.ink3, height: 1.3),
+                    fontSize: 12,
+                    color: tokens.ink3,
+                    height: 1.3,
+                  ),
                 ),
                 const SizedBox(height: 16),
 
@@ -418,19 +425,21 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-                      .map((d) => SizedBox(
-                            width: 32,
-                            child: Center(
-                              child: Text(
-                                d,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: tokens.ink3,
-                                ),
+                      .map(
+                        (d) => SizedBox(
+                          width: 32,
+                          child: Center(
+                            child: Text(
+                              d,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: tokens.ink3,
                               ),
                             ),
-                          ))
+                          ),
+                        ),
+                      )
                       .toList(),
                 ),
                 const SizedBox(height: 8),
@@ -440,8 +449,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: daysInMonth + firstDayOffset,
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 7,
                     crossAxisSpacing: 6,
                     mainAxisSpacing: 6,
@@ -457,7 +465,8 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                     final matched = loggedMap[dayKey];
                     final isLogged = matched != null;
                     final now = DateTime.now();
-                    final isToday = day == now.day &&
+                    final isToday =
+                        day == now.day &&
                         _calendarMonth.month == now.month &&
                         _calendarMonth.year == now.year;
                     final isSelected =
@@ -467,24 +476,21 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                       onPressed: isLogged
                           ? () {
                               HapticFeedback.selectionClick();
-                              setState(
-                                  () => _selectedCalendarTrace = matched);
+                              setState(() => _selectedCalendarTrace = matched);
                             }
                           : null,
                       child: Container(
                         decoration: BoxDecoration(
                           color: isSelected
                               ? tokens.ink
-                              : (isLogged
-                                  ? tokens.cardTint
-                                  : tokens.surface2),
+                              : (isLogged ? tokens.cardTint : tokens.surface2),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: isToday || isSelected
                                 ? tokens.ink
                                 : (isLogged
-                                    ? tokens.m1.withValues(alpha: 0.35)
-                                    : tokens.line),
+                                      ? tokens.m1.withValues(alpha: 0.35)
+                                      : tokens.line),
                             width: isToday || isSelected ? 1.5 : 0.8,
                           ),
                         ),
@@ -499,10 +505,8 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                               color: isSelected
                                   ? tokens.bg
                                   : (isLogged
-                                      ? tokens.ink
-                                      : (isToday
-                                          ? tokens.ink
-                                          : tokens.ink3)),
+                                        ? tokens.ink
+                                        : (isToday ? tokens.ink : tokens.ink3)),
                             ),
                           ),
                         ),
@@ -518,13 +522,18 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                     trace: _selectedCalendarTrace!,
                     strings: strings,
                     onDelete: () => _confirmDeleteTrace(
-                        context, _selectedCalendarTrace!, strings),
+                      context,
+                      _selectedCalendarTrace!,
+                      strings,
+                    ),
                     onOpen: () {
                       TraceEntryDetailSheet.show(
                         context,
                         trace: _selectedCalendarTrace!,
                         onEdit: () => EditPastTraceSheet.show(
-                            context, _selectedCalendarTrace!),
+                          context,
+                          _selectedCalendarTrace!,
+                        ),
                       );
                     },
                   ),
@@ -544,9 +553,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
           child: Text(
             strings.isArabic
                 ? 'سجل هذا الشهر'
-                : (strings.isFrench
-                    ? 'Ce mois-ci'
-                    : 'This month'),
+                : (strings.isFrench ? 'Ce mois-ci' : 'This month'),
             style: TextStyle(
               fontFamily: LabTheme.fontFamily,
               fontFamilyFallback: LabTheme.fontFallback,
@@ -571,10 +578,9 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                     strings.isArabic
                         ? 'لم يتم تسجيل أي آثار في هذا الشهر.'
                         : (strings.isFrench
-                            ? 'Aucune trace enregistrée ce mois-ci.'
-                            : 'No traces recorded this month.'),
-                    style: TextStyle(
-                        fontSize: 13, color: tokens.ink3),
+                              ? 'Aucune trace enregistrée ce mois-ci.'
+                              : 'No traces recorded this month.'),
+                    style: TextStyle(fontSize: 13, color: tokens.ink3),
                   ),
                 ),
               ),
@@ -594,8 +600,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                   TraceEntryDetailSheet.show(
                     context,
                     trace: trace,
-                    onEdit: () =>
-                        EditPastTraceSheet.show(context, trace),
+                    onEdit: () => EditPastTraceSheet.show(context, trace),
                   );
                 },
                 child: Row(
@@ -641,7 +646,9 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                  fontSize: 12, color: tokens.ink3),
+                                fontSize: 12,
+                                color: tokens.ink3,
+                              ),
                             ),
                         ],
                       ),
@@ -655,8 +662,11 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                       ),
                     ),
                     const SizedBox(width: 4),
-                    Icon(Icons.chevron_right_rounded,
-                        size: 18, color: tokens.ink3),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 18,
+                      color: tokens.ink3,
+                    ),
                   ],
                 ),
               ),
@@ -685,33 +695,37 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
       SliverToBoxAdapter(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: _MilestonesSection(
-            analytics: analytics,
-            strings: strings,
-          ),
+          child: _MilestonesSection(analytics: analytics, strings: strings),
         ),
       ),
     ];
   }
 
   void _confirmDeleteTrace(
-      BuildContext context, MindTraceModel trace, AppStrings strings) {
+    BuildContext context,
+    MindTraceModel trace,
+    AppStrings strings,
+  ) {
     final tokens = context.tokens;
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
         backgroundColor: tokens.surface,
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(tokens.cardRadius)),
-        title: Text(strings.deleteTraceConfirmTitle,
-            style: TextStyle(color: tokens.ink)),
-        content: Text(strings.deleteTraceConfirmBody,
-            style: TextStyle(color: tokens.ink2)),
+          borderRadius: BorderRadius.circular(tokens.cardRadius),
+        ),
+        title: Text(
+          strings.deleteTraceConfirmTitle,
+          style: TextStyle(color: tokens.ink),
+        ),
+        content: Text(
+          strings.deleteTraceConfirmBody,
+          style: TextStyle(color: tokens.ink2),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogCtx).pop(),
-            child:
-                Text(MaterialLocalizations.of(context).cancelButtonLabel),
+            child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
           ),
           TextButton(
             onPressed: () async {
@@ -732,20 +746,50 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
   String _getMonthName(int month, AppStrings strings) {
     if (strings.isArabic) {
       const names = [
-        'جانفي', 'فيفري', 'مارس', 'أفريل', 'ماي', 'جوان',
-        'جويلية', 'أوت', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+        'جانفي',
+        'فيفري',
+        'مارس',
+        'أفريل',
+        'ماي',
+        'جوان',
+        'جويلية',
+        'أوت',
+        'سبتمبر',
+        'أكتوبر',
+        'نوفمبر',
+        'ديسمبر',
       ];
       return names[(month - 1).clamp(0, 11)];
     } else if (strings.isFrench) {
       const names = [
-        'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
+        'Janvier',
+        'Février',
+        'Mars',
+        'Avril',
+        'Mai',
+        'Juin',
+        'Juillet',
+        'Août',
+        'Septembre',
+        'Octobre',
+        'Novembre',
+        'Décembre',
       ];
       return names[(month - 1).clamp(0, 11)];
     } else {
       const names = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December',
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
       ];
       return names[(month - 1).clamp(0, 11)];
     }
@@ -785,8 +829,10 @@ class _TimeWindowRow extends StatelessWidget {
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: active ? tokens.cardTint : Colors.transparent,
                   borderRadius: BorderRadius.circular(99),
@@ -860,10 +906,7 @@ class _MetricTile extends StatelessWidget {
 
 /// Thought trace summary card with the latest 3 traces.
 class _ThoughtTraceCard extends StatelessWidget {
-  const _ThoughtTraceCard({
-    required this.analytics,
-    required this.strings,
-  });
+  const _ThoughtTraceCard({required this.analytics, required this.strings});
 
   final ProgressAnalyticsModel analytics;
   final AppStrings strings;
@@ -896,9 +939,10 @@ class _ThoughtTraceCard extends StatelessWidget {
               Text(
                 '${traces.length}',
                 style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: tokens.ink2),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: tokens.ink2,
+                ),
               ),
             ],
           ),
@@ -931,13 +975,15 @@ class _ThoughtTraceCard extends StatelessWidget {
                     strings.thoughtTraceWaitingSub,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                        fontSize: 12, color: tokens.ink3, height: 1.4),
+                      fontSize: 12,
+                      color: tokens.ink3,
+                      height: 1.4,
+                    ),
                   ),
                   const SizedBox(height: 14),
                   MindButton(
                     text: strings.recordTodayTraceBtn,
-                    onPressed: () =>
-                        context.go(AppRouter.track),
+                    onPressed: () => context.go(AppRouter.track),
                   ),
                 ],
               ),
@@ -954,16 +1000,14 @@ class _ThoughtTraceCard extends StatelessWidget {
                     ThoughtTraceDetailSheet.show(
                       context,
                       trace: trace,
-                      onEdit: () =>
-                          context.go(AppRouter.track),
+                      onEdit: () => context.go(AppRouter.track),
                     );
                   },
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment:
-                            MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
                             trace.dateKey,
@@ -975,14 +1019,14 @@ class _ThoughtTraceCard extends StatelessWidget {
                           ),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
                               color: tokens.cardTint,
-                              borderRadius:
-                                  BorderRadius.circular(99),
+                              borderRadius: BorderRadius.circular(99),
                               border: Border.all(
-                                color: tokens.m1
-                                    .withValues(alpha: 0.3),
+                                color: tokens.m1.withValues(alpha: 0.3),
                                 width: 0.8,
                               ),
                             ),
@@ -1019,22 +1063,24 @@ class _ThoughtTraceCard extends StatelessWidget {
             const SizedBox(height: 4),
             Center(
               child: MindPressable(
-                onPressed: () =>
-                    context.go(AppRouter.track),
+                onPressed: () => context.go(AppRouter.track),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.timeline_rounded,
-                          size: 14, color: tokens.ink2),
+                      Icon(
+                        Icons.timeline_rounded,
+                        size: 14,
+                        color: tokens.ink2,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         strings.isArabic
                             ? 'فتح الخط الزمني الكامل'
                             : (strings.isFrench
-                                ? 'Ouvrir la chronologie complète'
-                                : 'Open full timeline'),
+                                  ? 'Ouvrir la chronologie complète'
+                                  : 'Open full timeline'),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -1091,9 +1137,10 @@ class _EmotionalSpectrumCard extends StatelessWidget {
               Text(
                 '${analytics.emotionalVarietyCount} ${strings.isArabic ? 'مشاعر' : (strings.isFrench ? 'Identifiées' : 'Identified')}',
                 style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: tokens.ink2),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: tokens.ink2,
+                ),
               ),
             ],
           ),
@@ -1133,8 +1180,7 @@ class _EmotionalSpectrumCard extends StatelessWidget {
                       value: ratio,
                       minHeight: 6,
                       backgroundColor: tokens.surface2,
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(tokens.m1),
+                      valueColor: AlwaysStoppedAnimation<Color>(tokens.m1),
                     ),
                   ),
                 ],
@@ -1182,16 +1228,19 @@ class _IntensityTimelineCard extends StatelessWidget {
               Text(
                 '${analytics.averageIntensity.toStringAsFixed(1)} / 10',
                 style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: tokens.ink),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: tokens.ink,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 4),
           Text(
             strings.intensityMinMax(
-                analytics.minIntensity, analytics.maxIntensity),
+              analytics.minIntensity,
+              analytics.maxIntensity,
+            ),
             style: TextStyle(fontSize: 12, color: tokens.ink3),
           ),
           const SizedBox(height: 16),
@@ -1200,8 +1249,8 @@ class _IntensityTimelineCard extends StatelessWidget {
               strings.isArabic
                   ? 'لا توجد بيانات كافية.'
                   : (strings.isFrench
-                      ? 'Données insuffisantes.'
-                      : 'Not enough data yet.'),
+                        ? 'Données insuffisantes.'
+                        : 'Not enough data yet.'),
               style: TextStyle(fontSize: 13, color: tokens.ink3),
             )
           else ...[
@@ -1209,14 +1258,11 @@ class _IntensityTimelineCard extends StatelessWidget {
               height: 64,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
-                children:
-                    analytics.intensityTimeline.map((item) {
-                  final h =
-                      (item.intensity / 10.0).clamp(0.1, 1.0);
+                children: analytics.intensityTimeline.map((item) {
+                  final h = (item.intensity / 10.0).clamp(0.1, 1.0);
                   return Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 1.5),
+                      padding: const EdgeInsets.symmetric(horizontal: 1.5),
                       child: Tooltip(
                         message:
                             '${item.date.month}/${item.date.day}: ${item.mood} (${item.intensity}/10)',
@@ -1224,12 +1270,9 @@ class _IntensityTimelineCard extends StatelessWidget {
                           height: 64 * h,
                           decoration: BoxDecoration(
                             color: item.intensity >= 7
-                                ? tokens.safety
-                                    .withValues(alpha: 0.7)
-                                : tokens.m1
-                                    .withValues(alpha: 0.7),
-                            borderRadius:
-                                BorderRadius.circular(4),
+                                ? tokens.safety.withValues(alpha: 0.7)
+                                : tokens.m1.withValues(alpha: 0.7),
+                            borderRadius: BorderRadius.circular(4),
                           ),
                         ),
                       ),
@@ -1244,13 +1287,11 @@ class _IntensityTimelineCard extends StatelessWidget {
               children: [
                 Text(
                   '${analytics.intensityTimeline.first.date.month}/${analytics.intensityTimeline.first.date.day}',
-                  style: TextStyle(
-                      fontSize: 10, color: tokens.ink3),
+                  style: TextStyle(fontSize: 10, color: tokens.ink3),
                 ),
                 Text(
                   '${analytics.intensityTimeline.last.date.month}/${analytics.intensityTimeline.last.date.day}',
-                  style: TextStyle(
-                      fontSize: 10, color: tokens.ink3),
+                  style: TextStyle(fontSize: 10, color: tokens.ink3),
                 ),
               ],
             ),
@@ -1263,10 +1304,7 @@ class _IntensityTimelineCard extends StatelessWidget {
 
 /// Somatic & Sleep empirical card.
 class _SomaticSleepCard extends StatelessWidget {
-  const _SomaticSleepCard({
-    required this.analytics,
-    required this.strings,
-  });
+  const _SomaticSleepCard({required this.analytics, required this.strings});
 
   final ProgressAnalyticsModel analytics;
   final AppStrings strings;
@@ -1280,8 +1318,11 @@ class _SomaticSleepCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.bedtime_outlined,
-                  size: 18, color: MindTokens.moodRestless),
+              Icon(
+                Icons.bedtime_outlined,
+                size: 18,
+                color: MindTokens.moodRestless,
+              ),
               const SizedBox(width: 8),
               Text(
                 strings.energyAndSleepTitle,
@@ -1334,17 +1375,19 @@ class _SomaticSleepCard extends StatelessWidget {
                   Text(
                     analytics.sleepTensionObservation!,
                     style: TextStyle(
-                        fontSize: 12.5,
-                        color: tokens.ink,
-                        height: 1.35),
+                      fontSize: 12.5,
+                      color: tokens.ink,
+                      height: 1.35,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     strings.empiricalDisclaimer,
                     style: TextStyle(
-                        fontSize: 10.5,
-                        color: tokens.ink3,
-                        height: 1.3),
+                      fontSize: 10.5,
+                      color: tokens.ink3,
+                      height: 1.3,
+                    ),
                   ),
                 ],
               ),
@@ -1367,8 +1410,7 @@ class _SomaticPill extends StatelessWidget {
     final tokens = context.tokens;
     return Expanded(
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
           color: tokens.surface2,
           borderRadius: BorderRadius.circular(14),
@@ -1381,9 +1423,10 @@ class _SomaticPill extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: tokens.ink3),
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: tokens.ink3,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
@@ -1481,17 +1524,19 @@ class _PatternsSection extends StatelessWidget {
                   Text(
                     ins.description,
                     style: TextStyle(
-                        fontSize: 13,
-                        color: tokens.ink,
-                        height: 1.4),
+                      fontSize: 13,
+                      color: tokens.ink,
+                      height: 1.4,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     ins.caveat,
                     style: TextStyle(
-                        fontSize: 11,
-                        color: tokens.ink3,
-                        height: 1.3),
+                      fontSize: 11,
+                      color: tokens.ink3,
+                      height: 1.3,
+                    ),
                   ),
                 ],
               ),
@@ -1532,13 +1577,13 @@ class _SelectedDayCard extends StatelessWidget {
               Text(
                 trace.dateKey,
                 style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: tokens.ink),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: tokens.ink,
+                ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: tokens.surface,
                   borderRadius: BorderRadius.circular(99),
@@ -1546,9 +1591,10 @@ class _SelectedDayCard extends StatelessWidget {
                 child: Text(
                   '${trace.overallMood} · ${trace.moodIntensity}/10',
                   style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: tokens.ink),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.ink,
+                  ),
                 ),
               ),
             ],
@@ -1575,13 +1621,19 @@ class _SelectedDayCard extends StatelessWidget {
                 style: TextButton.styleFrom(
                   foregroundColor: tokens.safety,
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                child: Text(strings.deleteEntryBtn,
-                    style: const TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.w600)),
+                child: Text(
+                  strings.deleteEntryBtn,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               MindButton(
@@ -1614,10 +1666,8 @@ class _ReflectionsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final query =
-        ref.watch(reflectionSearchQueryProvider).toLowerCase().trim();
-    final sourceFilter =
-        ref.watch(selectedReflectionSourceFilterProvider);
+    final query = ref.watch(reflectionSearchQueryProvider).toLowerCase().trim();
+    final sourceFilter = ref.watch(selectedReflectionSourceFilterProvider);
 
     final filtered = analytics.allReflections.where((item) {
       if (sourceFilter != null && item.sourceType != sourceFilter) {
@@ -1636,9 +1686,7 @@ class _ReflectionsSection extends StatelessWidget {
         Text(
           strings.isArabic
               ? 'أرشيف التأملات'
-              : (strings.isFrench
-                  ? 'Archive des réflexions'
-                  : 'Reflections'),
+              : (strings.isFrench ? 'Archive des réflexions' : 'Reflections'),
           style: TextStyle(
             fontFamily: LabTheme.fontFamily,
             fontFamilyFallback: LabTheme.fontFallback,
@@ -1658,8 +1706,7 @@ class _ReflectionsSection extends StatelessWidget {
           decoration: InputDecoration(
             hintText: strings.searchReflectionsHint,
             hintStyle: TextStyle(fontSize: 13, color: tokens.ink3),
-            prefixIcon:
-                Icon(Icons.search, size: 18, color: tokens.ink2),
+            prefixIcon: Icon(Icons.search, size: 18, color: tokens.ink2),
             suffixIcon: query.isNotEmpty
                 ? IconButton(
                     tooltip: strings.clearSearchTooltip,
@@ -1675,7 +1722,9 @@ class _ReflectionsSection extends StatelessWidget {
             filled: true,
             fillColor: tokens.surface2,
             contentPadding: const EdgeInsets.symmetric(
-                horizontal: 14, vertical: 12),
+              horizontal: 14,
+              vertical: 12,
+            ),
             isDense: true,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(tokens.inputRadius),
@@ -1687,8 +1736,7 @@ class _ReflectionsSection extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(tokens.inputRadius),
-              borderSide:
-                  BorderSide(color: tokens.lineStrong, width: 1.5),
+              borderSide: BorderSide(color: tokens.lineStrong, width: 1.5),
             ),
           ),
         ),
@@ -1715,8 +1763,7 @@ class _ReflectionsSection extends StatelessWidget {
                     icon: type.icon,
                     isSelected: sourceFilter == type,
                     onTap: () => ref
-                        .read(
-                            selectedReflectionSourceFilterProvider.notifier)
+                        .read(selectedReflectionSourceFilterProvider.notifier)
                         .setFilter(type),
                   ),
                 );
@@ -1739,7 +1786,10 @@ class _ReflectionsSection extends StatelessWidget {
                       : strings.noReflectionsFound,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                      fontSize: 13, color: tokens.ink3, height: 1.4),
+                    fontSize: 13,
+                    color: tokens.ink3,
+                    height: 1.4,
+                  ),
                 ),
               ),
             ),
@@ -1756,7 +1806,9 @@ class _ReflectionsSection extends StatelessWidget {
                           context,
                           trace: item.originalTrace!,
                           onEdit: () => EditPastTraceSheet.show(
-                              context, item.originalTrace!),
+                            context,
+                            item.originalTrace!,
+                          ),
                         );
                       }
                     : null,
@@ -1765,8 +1817,7 @@ class _ReflectionsSection extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(item.sourceType.icon,
-                            size: 14, color: tokens.m1),
+                        Icon(item.sourceType.icon, size: 14, color: tokens.m1),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
@@ -1780,8 +1831,7 @@ class _ReflectionsSection extends StatelessWidget {
                         ),
                         Text(
                           item.formattedDate,
-                          style: TextStyle(
-                              fontSize: 11, color: tokens.ink3),
+                          style: TextStyle(fontSize: 11, color: tokens.ink3),
                         ),
                       ],
                     ),
@@ -1831,8 +1881,7 @@ class _FilterChip extends StatelessWidget {
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? tokens.cardTint : Colors.transparent,
           borderRadius: BorderRadius.circular(99),
@@ -1845,17 +1894,18 @@ class _FilterChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon,
-                  size: 13,
-                  color: isSelected ? tokens.ink : tokens.ink3),
+              Icon(
+                icon,
+                size: 13,
+                color: isSelected ? tokens.ink : tokens.ink3,
+              ),
               const SizedBox(width: 4),
             ],
             Text(
               label,
               style: TextStyle(
                 fontSize: 12,
-                fontWeight:
-                    isSelected ? FontWeight.w700 : FontWeight.w500,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 color: isSelected ? tokens.ink : tokens.ink2,
               ),
             ),
@@ -1868,10 +1918,7 @@ class _FilterChip extends StatelessWidget {
 
 /// Milestones & journey section.
 class _MilestonesSection extends StatelessWidget {
-  const _MilestonesSection({
-    required this.analytics,
-    required this.strings,
-  });
+  const _MilestonesSection({required this.analytics, required this.strings});
 
   final ProgressAnalyticsModel analytics;
   final AppStrings strings;
@@ -1881,8 +1928,8 @@ class _MilestonesSection extends StatelessWidget {
     final tokens = context.tokens;
     final journeyRatio = analytics.totalJourneyActivities > 0
         ? (analytics.journeyActivitiesExplored /
-                analytics.totalJourneyActivities)
-            .clamp(0.0, 1.0)
+                  analytics.totalJourneyActivities)
+              .clamp(0.0, 1.0)
         : 0.0;
 
     return Column(
@@ -1914,9 +1961,10 @@ class _MilestonesSection extends StatelessWidget {
                       analytics.totalJourneyActivities,
                     ),
                     style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: tokens.ink2),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: tokens.ink2,
+                    ),
                   ),
                 ],
               ),
@@ -1927,8 +1975,7 @@ class _MilestonesSection extends StatelessWidget {
                   value: journeyRatio,
                   minHeight: 6,
                   backgroundColor: tokens.surface2,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(tokens.m1),
+                  valueColor: AlwaysStoppedAnimation<Color>(tokens.m1),
                 ),
               ),
             ],
@@ -1971,13 +2018,9 @@ class _MilestonesSection extends StatelessWidget {
                     height: 38,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: m.isUnlocked
-                          ? tokens.cardTint
-                          : tokens.surface,
+                      color: m.isUnlocked ? tokens.cardTint : tokens.surface,
                       border: Border.all(
-                        color: m.isUnlocked
-                            ? tokens.m1
-                            : tokens.line,
+                        color: m.isUnlocked ? tokens.m1 : tokens.line,
                         width: 1.0,
                       ),
                     ),
@@ -1986,9 +2029,7 @@ class _MilestonesSection extends StatelessWidget {
                           ? Icons.star_rounded
                           : Icons.star_border_rounded,
                       size: 18,
-                      color: m.isUnlocked
-                          ? tokens.m1
-                          : tokens.ink3,
+                      color: m.isUnlocked ? tokens.m1 : tokens.ink3,
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -2001,9 +2042,7 @@ class _MilestonesSection extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: m.isUnlocked
-                                ? tokens.ink
-                                : tokens.ink2,
+                            color: m.isUnlocked ? tokens.ink : tokens.ink2,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -2012,9 +2051,10 @@ class _MilestonesSection extends StatelessWidget {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                              fontSize: 12,
-                              color: tokens.ink3,
-                              height: 1.3),
+                            fontSize: 12,
+                            color: tokens.ink3,
+                            height: 1.3,
+                          ),
                         ),
                       ],
                     ),
@@ -2023,17 +2063,13 @@ class _MilestonesSection extends StatelessWidget {
                   Text(
                     m.isUnlocked
                         ? (strings.isArabic
-                            ? 'مفتوح'
-                            : (strings.isFrench
-                                ? 'Débloqué'
-                                : 'Unlocked'))
+                              ? 'مفتوح'
+                              : (strings.isFrench ? 'Débloqué' : 'Unlocked'))
                         : '${m.currentValue}/${m.targetValue}',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: m.isUnlocked
-                          ? tokens.m1
-                          : tokens.ink3,
+                      color: m.isUnlocked ? tokens.m1 : tokens.ink3,
                     ),
                   ),
                 ],

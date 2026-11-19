@@ -45,7 +45,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-
   int _selectedMoodIndex = 0;
   double _moodIntensity = 5.0;
   List<CaseModel> _recentCases = [];
@@ -91,8 +90,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (_hydratedTraceSignature == sig) return;
     setState(() {
       _hydratedTraceSignature = sig;
-      final canonicalMood =
-          EmotionDescriptor.canonicalKey(trace.overallMood).toLowerCase();
+      final canonicalMood = EmotionDescriptor.canonicalKey(
+        trace.overallMood,
+      ).toLowerCase();
       final moodIdx = _moodOptions.indexWhere((m) => m.key == canonicalMood);
       if (moodIdx != -1) _selectedMoodIndex = moodIdx;
       _moodIntensity = trace.moodIntensity.toDouble().clamp(1, 10);
@@ -133,8 +133,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         : null;
 
     // Layer 1 crisis pre-scan: Intercept Level 2 phrases immediately
-    final safetyLevel =
-        noteText != null ? CrisisKeywords.evaluateText(noteText) : 0;
+    final safetyLevel = noteText != null
+        ? CrisisKeywords.evaluateText(noteText)
+        : 0;
     if (safetyLevel == 2) {
       SafetyInterceptor.showCrisisPauseDialog(context);
       return;
@@ -262,7 +263,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   ConversationMode _recommendedModeForTrace(MindTraceModel trace) {
-    final moodKey = EmotionDescriptor.canonicalKey(trace.overallMood).toLowerCase();
+    final moodKey = EmotionDescriptor.canonicalKey(
+      trace.overallMood,
+    ).toLowerCase();
     if (trace.moodIntensity >= 8) {
       return ConversationMode.grounding;
     }
@@ -325,7 +328,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final activeCase = ref.watch(activeCaseControllerProvider).value;
     final traces = ref.watch(mindTraceControllerProvider).value ?? [];
     final todayTrace = traces.todayTrace;
-    final headerMoodKey = todayTrace?.overallMood ??
+    final headerMoodKey =
+        todayTrace?.overallMood ??
         _moodOptions[_selectedMoodIndex.clamp(0, _moodOptions.length - 1)].key;
     final headerAvatarColor = _getMoodColor(headerMoodKey);
     final headerAvatarFg = tokens.onMood;
@@ -362,8 +366,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       height: 28,
                       decoration: BoxDecoration(
                         color: tokens.selectedTintFor(tokens.m1),
-                        borderRadius:
-                            BorderRadius.circular(tokens.chipRadius),
+                        borderRadius: BorderRadius.circular(tokens.chipRadius),
                         border: Border.all(color: tokens.line),
                       ),
                       alignment: Alignment.center,
@@ -493,12 +496,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   color: headerAvatarColor,
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: headerAvatarColor.withValues(alpha: 0.45),
+                                    color: headerAvatarColor.withValues(
+                                      alpha: 0.45,
+                                    ),
                                     width: 1.0,
                                   ),
                                 ),
                                 alignment: Alignment.center,
-                                child: (profile?.preferredName.isNotEmpty == true && profile!.preferredName != 'Friend')
+                                child:
+                                    (profile?.preferredName.isNotEmpty ==
+                                            true &&
+                                        profile!.preferredName != 'Friend')
                                     ? Text(
                                         profile.preferredName[0].toUpperCase(),
                                         style: TextStyle(
@@ -524,7 +532,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 18),
 
                 // 2. DAILY CHECK-IN SANCTUARY + WEEKLY CONTINUITY STRIP
-                _buildDailyCheckInCard(tokens, strings, isDark, todayTrace, traces),
+                _buildDailyCheckInCard(
+                  tokens,
+                  strings,
+                  isDark,
+                  todayTrace,
+                  traces,
+                ),
                 const SizedBox(height: 14),
                 HomeWeeklyRhythmCard(
                   traces: traces,
@@ -542,14 +556,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   },
                 ),
 
-                const SizedBox(height: 18),
+                const SizedBox(height: 20),
 
-                // 3. FLO-STYLE ALL FEATURES QUICK GRID (1-Tap Reachability)
-                _buildQuickAccessGrid(tokens, strings),
-
-                const SizedBox(height: 18),
-
-                // 4. ACTIVE CASE OR START INVESTIGATION CARD
+                // 3. ACTIVE CASE OR START INVESTIGATION CARD
                 if (activeCase != null && !activeCase.isCompleted)
                   _buildActiveCaseCard(activeCase, tokens, strings, isDark)
                 else
@@ -587,7 +596,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       },
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
-                        constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+                        constraints: const BoxConstraints(
+                          minHeight: 48,
+                          minWidth: 48,
+                        ),
                         alignment: Alignment.center,
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: Text(
@@ -614,7 +626,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 else if (_recentCases.isEmpty)
                   _buildNoCasesCard(tokens, strings)
                 else
-                  ..._recentCases.map((c) => _buildRecentCaseTile(c, tokens, strings, isDark)),
+                  ..._recentCases.map(
+                    (c) => _buildRecentCaseTile(c, tokens, strings, isDark),
+                  ),
 
                 const SizedBox(height: 32),
               ],
@@ -659,9 +673,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: Row(
             children: [
               // Calming Organic Vector Art (ZERO emojis)
-              const HomeOrganicExerciseArt(
-                size: 64,
-              ),
+              const HomeOrganicExerciseArt(size: 64),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -678,10 +690,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(height: 3),
                     Text(
                       strings.breathingPractice,
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        color: tokens.ink2,
-                      ),
+                      style: TextStyle(fontSize: 12.5, color: tokens.ink2),
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -776,10 +785,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           Row(
             children: [
-              IconBlob(
-                icon: Icons.bolt_rounded,
-                color: tokens.m1,
-              ),
+              IconBlob(icon: Icons.bolt_rounded, color: tokens.m1),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -798,7 +804,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       strings.startInvestigationSub,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 12, color: tokens.ink2, height: 1.3),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: tokens.ink2,
+                        height: 1.3,
+                      ),
                     ),
                   ],
                 ),
@@ -850,8 +860,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return MindPressable(
       onPressed: () async {
         HapticFeedback.mediumImpact();
-        await ref.read(activeCaseControllerProvider.notifier).startNewCase(label);
-        await ref.read(activeCaseControllerProvider.notifier).advanceStage(CaseStage.evidence);
+        await ref
+            .read(activeCaseControllerProvider.notifier)
+            .startNewCase(label);
+        await ref
+            .read(activeCaseControllerProvider.notifier)
+            .advanceStage(CaseStage.evidence);
         if (mounted) {
           context.go(AppRouter.companion);
         }
@@ -930,7 +944,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Row(
           children: [
             IconBlob(
-              icon: c.isCompleted ? Icons.check_circle_outline_rounded : Icons.pending_outlined,
+              icon: c.isCompleted
+                  ? Icons.check_circle_outline_rounded
+                  : Icons.pending_outlined,
               color: c.isCompleted ? tokens.m1 : tokens.ink3,
               size: 36,
               iconSize: 18,
@@ -945,15 +961,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     c.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5, color: tokens.ink),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13.5,
+                      color: tokens.ink,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     '${strings.formatSessionNumber(c.caseNumber)}  •  ${strings.stageNumberLabel(c.currentStage.stepNumber)}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: tokens.ink2,
-                    ),
+                    style: TextStyle(fontSize: 11, color: tokens.ink2),
                   ),
                 ],
               ),
@@ -961,187 +978,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Icon(Icons.arrow_forward_ios_rounded, size: 12, color: tokens.ink2),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildQuickAccessGrid(MindTokens tokens, AppStrings strings) {
-    final toolsAccent = MindTokens.moodHeavy;
-    final calendarAccent = MindTokens.moodRestless;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          strings.quickAccessHeader,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.8,
-            color: tokens.ink2,
-          ),
-        ),
-        const SizedBox(height: 10),
-        // Featured asymmetric Hero AI Companion launcher
-        MindCard(
-          variant: MindCardVariant.tint,
-          onTap: () {
-            HapticFeedback.lightImpact();
-            context.go(AppRouter.companion);
-          },
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              IconBlob(
-                icon: Icons.psychology_alt_outlined,
-                color: tokens.m1,
-                size: 42,
-                iconSize: 21,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      strings.navAiGuide,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w700,
-                        color: tokens.ink,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      strings.quickAiSubtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: tokens.ink2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: tokens.surface,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: tokens.line),
-                ),
-                child: Icon(
-                  Icons.arrow_forward_rounded,
-                  size: 16,
-                  color: tokens.m1,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: _buildQuickAccessTile(
-                title: strings.quickToolsTitle,
-                subtitle: strings.quickToolsSubtitle,
-                icon: Icons.spa_outlined,
-                iconAccent: toolsAccent,
-                tokens: tokens,
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  context.push(AppRouter.observatory);
-                },
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildQuickAccessTile(
-                title: strings.quickCalendarTitle,
-                subtitle: strings.quickCalendarSubtitle,
-                icon: Icons.calendar_month_outlined,
-                iconAccent: calendarAccent,
-                tokens: tokens,
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  context.go('${AppRouter.track}?tab=1');
-                },
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        _buildQuickAccessTile(
-          title: strings.quickInsightsTitle,
-          subtitle: strings.quickInsightsSubtitle,
-          icon: Icons.insights_outlined,
-          iconAccent: tokens.m1,
-          tokens: tokens,
-          onTap: () {
-            HapticFeedback.lightImpact();
-            context.go(AppRouter.insights);
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuickAccessTile({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color iconAccent,
-    required MindTokens tokens,
-    required VoidCallback onTap,
-  }) {
-    return MindCard(
-      onTap: onTap,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Row(
-        children: [
-          IconBlob(
-            icon: icon,
-            color: iconAccent,
-            size: 36,
-            iconSize: 18,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: tokens.ink,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: tokens.ink2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
