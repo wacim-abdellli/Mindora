@@ -548,62 +548,108 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
     final selectedTrace = recentTraces[activeIdx];
     final activeLabel =
         '${strings.shortMonthName(selectedTrace.date.month)} ${selectedTrace.date.day} · ${selectedTrace.moodIntensity}/10';
+    final activeNote = (selectedTrace.journalText?.trim().isNotEmpty ?? false)
+        ? selectedTrace.journalText!.trim()
+        : ((selectedTrace.situation?.trim().isNotEmpty ?? false)
+            ? selectedTrace.situation!.trim()
+            : '');
+    final moodTitle = trackMoodLabel(selectedTrace.overallMood, strings);
 
     return MindCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            height: 132,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 24, bottom: 8),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    strings.chartHighLabel,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: tokens.ink3,
-                    ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                height: 132,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 24, bottom: 8),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        strings.chartHighLabel,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: tokens.ink3,
+                        ),
+                      ),
+                      Text(
+                        strings.chartMidLabel,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: tokens.ink3,
+                        ),
+                      ),
+                      Text(
+                        strings.chartLowLabel,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: tokens.ink3,
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    strings.chartMidLabel,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: tokens.ink3,
-                    ),
-                  ),
-                  Text(
-                    strings.chartLowLabel,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: tokens.ink3,
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: SmoothSplineChart(
+                  values: chartValues,
+                  height: 132,
+                  activePointIndex: activeIdx,
+                  activePointLabel: activeLabel,
+                  lineColor: tokens.m1,
+                  pointColors: chartPointColors,
+                  showDots: true,
+                  onPointSelected: (idx) {
+                    HapticFeedback.selectionClick();
+                    setState(() => _selectedPointIndex = idx);
+                  },
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: SmoothSplineChart(
-              values: chartValues,
-              height: 132,
-              activePointIndex: activeIdx,
-              activePointLabel: activeLabel,
-              lineColor: tokens.m1,
-              pointColors: chartPointColors,
-              showDots: true,
-              onPointSelected: (idx) {
-                HapticFeedback.selectionClick();
-                setState(() => _selectedPointIndex = idx);
-              },
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: tokens.surface2,
+              borderRadius: BorderRadius.circular(tokens.chipRadius),
+              border: Border.all(color: tokens.line),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: MindTokens.moodColor(AppMood.fromKey(selectedTrace.overallMood)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${strings.shortMonthName(selectedTrace.date.month)} ${selectedTrace.date.day} · $moodTitle (${selectedTrace.moodIntensity}/10)'
+                    '${activeNote.isNotEmpty ? ' — "$activeNote"' : ''}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: tokens.ink,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
