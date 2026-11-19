@@ -38,10 +38,7 @@ import 'widgets/track_mood_utils.dart';
 /// Consolidated daily tracking workspace combining fast check-ins with an
 /// interactive calendar & chronological history.
 class TrackScreen extends ConsumerStatefulWidget {
-  const TrackScreen({
-    super.key,
-    this.initialTab = 0,
-  });
+  const TrackScreen({super.key, this.initialTab = 0});
 
   final int initialTab;
 
@@ -87,8 +84,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
   String _lastSavedNote = '';
 
   // Tab 1: History & Calendar state
-  DateTime _calendarMonth =
-      DateTime(DateTime.now().year, DateTime.now().month);
+  DateTime _calendarMonth = DateTime(DateTime.now().year, DateTime.now().month);
   String? _selectedDateKey;
 
   @override
@@ -171,8 +167,9 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
     final hydratedNote = trace.journalText ?? '';
     _lastSavedNote = hydratedNote.trim();
     setState(() {
-      _selectedMood =
-          EmotionDescriptor.canonicalKey(trace.overallMood).toLowerCase();
+      _selectedMood = EmotionDescriptor.canonicalKey(
+        trace.overallMood,
+      ).toLowerCase();
       _moodIntensity = trace.moodIntensity.toDouble().clamp(1, 10);
       _energyLevel = (trace.energyLevel ?? 5).toDouble().clamp(1, 10);
       _anxietyLevel = (trace.anxietyLevel ?? 3).toDouble().clamp(0, 10);
@@ -231,17 +228,20 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
       final authUser = ref.read(authControllerProvider).user;
       final userId = authUser?.id ?? 'local_user';
 
-      final situationStr =
-          _selectedTriggers.isNotEmpty ? _selectedTriggers.join(', ') : null;
-      final helpedStr =
-          _selectedHelped.isNotEmpty ? _selectedHelped.join(', ') : null;
+      final situationStr = _selectedTriggers.isNotEmpty
+          ? _selectedTriggers.join(', ')
+          : null;
+      final helpedStr = _selectedHelped.isNotEmpty
+          ? _selectedHelped.join(', ')
+          : null;
       final noteText = _noteController.text.trim().isNotEmpty
           ? _noteController.text.trim()
           : null;
 
       // Preserve Level 2 crisis pre-scan safeguard before saving any note.
-      final safetyLevel =
-          noteText != null ? CrisisKeywords.evaluateText(noteText) : 0;
+      final safetyLevel = noteText != null
+          ? CrisisKeywords.evaluateText(noteText)
+          : 0;
       if (safetyLevel == 2) {
         setState(() => _isSaving = false);
         if (mounted) {
@@ -302,7 +302,11 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
           .recordCheckIn(trace, generateAi: false);
 
       if (mounted) {
-        setState(() => _savedConfirmed = true);
+        setState(() {
+          _savedConfirmed = true;
+          _selectedDateKey = trace.dateKey;
+        });
+        HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: tokens.surface2,
@@ -319,8 +323,18 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                       if (mounted) SupportModalSheet.show(context);
                     },
                   )
-                : null,
-            duration: Duration(seconds: safetyLevel == 1 ? 4 : 2),
+                : SnackBarAction(
+                    label: strings.isArabic
+                        ? 'عرض السجل'
+                        : (strings.isFrench
+                              ? 'Voir calendrier'
+                              : 'View Calendar'),
+                    textColor: tokens.m1,
+                    onPressed: () {
+                      if (mounted) _tabController.animateTo(1);
+                    },
+                  ),
+            duration: Duration(seconds: safetyLevel == 1 ? 4 : 3),
           ),
         );
       }
@@ -383,7 +397,8 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
   void _handleInspectTrace(MindTraceModel trace, AppStrings strings) {
     final today = ref.read(todayTraceProvider);
     final isTodayTrace =
-        today != null && (trace.id == today.id || trace.dateKey == today.dateKey);
+        today != null &&
+        (trace.id == today.id || trace.dateKey == today.dateKey);
 
     TrackEntryDetailSheet.show(
       context,
@@ -482,8 +497,10 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                     color: tokens.ink,
                     size: 20,
                   ),
-                  constraints:
-                      const BoxConstraints(minWidth: 48, minHeight: 48),
+                  constraints: const BoxConstraints(
+                    minWidth: 48,
+                    minHeight: 48,
+                  ),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
                 const SizedBox(width: 4),
@@ -525,10 +542,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
           const SizedBox(height: 10),
           MindSegmented(
             index: _activeTab,
-            labels: [
-              strings.checkInTodayTab,
-              strings.historyAndCalendarTab,
-            ],
+            labels: [strings.checkInTodayTab, strings.historyAndCalendarTab],
             onChanged: (idx) {
               HapticFeedback.selectionClick();
               _tabController.animateTo(idx);
@@ -545,8 +559,9 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
     MindTraceModel? todayTrace,
   ) {
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
-    final activeMoodColor =
-        MindTokens.moodColor(AppMood.fromKey(_selectedMood));
+    final activeMoodColor = MindTokens.moodColor(
+      AppMood.fromKey(_selectedMood),
+    );
 
     return Column(
       children: [
@@ -668,11 +683,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                       ),
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.tune_outlined,
-                            size: 18,
-                            color: tokens.m1,
-                          ),
+                          Icon(Icons.tune_outlined, size: 18, color: tokens.m1),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Column(
@@ -794,22 +805,65 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                   ? Padding(
                       key: const ValueKey('saved-pill'),
                       padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.check_circle_rounded,
-                            size: 16,
-                            color: tokens.m1,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.check_circle_rounded,
+                                size: 16,
+                                color: tokens.m1,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                strings.savedBadgeLabel,
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: tokens.m1,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            strings.savedBadgeLabel,
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                              color: tokens.m1,
+                          const SizedBox(height: 4),
+                          MindPressable(
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              _tabController.animateTo(1);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 4,
+                                horizontal: 8,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    strings.isArabic
+                                        ? 'عرض في السجل والتقويم'
+                                        : (strings.isFrench
+                                              ? 'Voir dans le calendrier'
+                                              : 'View in Calendar & History'),
+                                    style: TextStyle(
+                                      fontFamily: 'Inter',
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: tokens.ink,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 13,
+                                    color: tokens.ink,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
@@ -996,8 +1050,9 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
     required MindTokens tokens,
     required ValueChanged<double> onChanged,
   }) {
-    final formatted =
-        value.toStringAsFixed(value.truncateToDouble() == value ? 0 : 1);
+    final formatted = value.toStringAsFixed(
+      value.truncateToDouble() == value ? 0 : 1,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1058,14 +1113,14 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
     final traces = ref.watch(mindTraceControllerProvider).value ?? const [];
     final cases = ref.watch(savedCasesProvider).value ?? const [];
     final now = DateTime.now();
-    final nextMonth =
-        DateTime(_calendarMonth.year, _calendarMonth.month + 1);
+    final nextMonth = DateTime(_calendarMonth.year, _calendarMonth.month + 1);
     final canGoNext = nextMonth.isBefore(DateTime(now.year, now.month + 1));
 
-    final visibleTraces = (_selectedDateKey != null
-            ? traces.where((t) => t.dateKey == _selectedDateKey).toList()
-            : List<MindTraceModel>.from(traces))
-      ..sort((a, b) => b.date.compareTo(a.date));
+    final visibleTraces =
+        (_selectedDateKey != null
+              ? traces.where((t) => t.dateKey == _selectedDateKey).toList()
+              : List<MindTraceModel>.from(traces))
+          ..sort((a, b) => b.date.compareTo(a.date));
 
     return SingleChildScrollView(
       padding: const EdgeInsetsDirectional.fromSTEB(16, 6, 16, 28),
@@ -1080,8 +1135,10 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
             canGoNextMonth: canGoNext,
             onPreviousMonth: () {
               setState(() {
-                _calendarMonth =
-                    DateTime(_calendarMonth.year, _calendarMonth.month - 1);
+                _calendarMonth = DateTime(
+                  _calendarMonth.year,
+                  _calendarMonth.month - 1,
+                );
                 _selectedDateKey = null;
               });
             },
@@ -1258,7 +1315,9 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                               color: tokens.ink,
-                              fontFeatures: const [FontFeature.tabularFigures()],
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
                             ),
                           ),
                           Text(
@@ -1322,9 +1381,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                                       decoration: BoxDecoration(
                                         color: tokens.surface2,
                                         borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: tokens.line,
-                                        ),
+                                        border: Border.all(color: tokens.line),
                                       ),
                                       child: Text(
                                         strings.trackTriggerDisplay(trig),
@@ -1422,13 +1479,15 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                   Text(
                     c.isCompleted
                         ? (strings.isArabic
-                            ? 'مكتمل'
-                            : (strings.isFrench
-                                ? 'Recadrage résolu'
-                                : 'Resolved Reframe'))
+                              ? 'مكتمل'
+                              : (strings.isFrench
+                                    ? 'Recadrage résolu'
+                                    : 'Resolved Reframe'))
                         : (strings.isArabic
-                            ? 'قيد البحث'
-                            : (strings.isFrench ? 'En cours' : 'In Progress')),
+                              ? 'قيد البحث'
+                              : (strings.isFrench
+                                    ? 'En cours'
+                                    : 'In Progress')),
                     style: TextStyle(
                       fontFamily: 'Inter',
                       color: tokens.ink2,
