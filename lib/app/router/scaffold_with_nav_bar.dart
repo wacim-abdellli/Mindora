@@ -48,74 +48,76 @@ class ScaffoldWithNavBar extends ConsumerWidget {
             child: MediaQuery.withClampedTextScaling(
               minScaleFactor: 0.85,
               maxScaleFactor: 1.15,
-              child: Container(
-                height: 66,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: tokens.navPillShadows,
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(28),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: tokens.navGlass,
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(
-                          color: tokens.line,
-                          width: 1.0,
+              child: RepaintBoundary(
+                child: Container(
+                  height: 66,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: tokens.navPillShadows,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(28),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: tokens.navGlass,
+                          borderRadius: BorderRadius.circular(28),
+                          border: Border.all(
+                            color: tokens.line,
+                            width: 1.0,
+                          ),
                         ),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Row(
-                        children: [
-                          _buildNavItem(
-                            index: 0,
-                            currentIndex: currentIndex,
-                            icon: Icons.home_outlined,
-                            activeIcon: Icons.home_rounded,
-                            label: strings.navHome,
-                            tokens: tokens,
-                            reduceMotion: reduceMotion,
-                          ),
-                          _buildNavItem(
-                            index: 1,
-                            currentIndex: currentIndex,
-                            icon: Icons.adjust_outlined,
-                            activeIcon: Icons.adjust_rounded,
-                            label: strings.navTrack,
-                            tokens: tokens,
-                            reduceMotion: reduceMotion,
-                          ),
-                          _buildCenterAiItem(
-                            index: 2,
-                            currentIndex: currentIndex,
-                            icon: Icons.psychology_alt_outlined,
-                            activeIcon: Icons.psychology_alt_rounded,
-                            label: strings.navAiGuide,
-                            tokens: tokens,
-                            reduceMotion: reduceMotion,
-                          ),
-                          _buildNavItem(
-                            index: 3,
-                            currentIndex: currentIndex,
-                            icon: Icons.auto_stories_outlined,
-                            activeIcon: Icons.auto_stories_rounded,
-                            label: strings.navInsights,
-                            tokens: tokens,
-                            reduceMotion: reduceMotion,
-                          ),
-                          _buildNavItem(
-                            index: 4,
-                            currentIndex: currentIndex,
-                            icon: Icons.person_outline_rounded,
-                            activeIcon: Icons.person_rounded,
-                            label: strings.navProfile,
-                            tokens: tokens,
-                            reduceMotion: reduceMotion,
-                          ),
-                        ],
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Row(
+                          children: [
+                            _buildNavItem(
+                              index: 0,
+                              currentIndex: currentIndex,
+                              icon: Icons.home_outlined,
+                              activeIcon: Icons.home_rounded,
+                              label: strings.navHome,
+                              tokens: tokens,
+                              reduceMotion: reduceMotion,
+                            ),
+                            _buildNavItem(
+                              index: 1,
+                              currentIndex: currentIndex,
+                              icon: Icons.adjust_outlined,
+                              activeIcon: Icons.adjust_rounded,
+                              label: strings.navTrack,
+                              tokens: tokens,
+                              reduceMotion: reduceMotion,
+                            ),
+                            _buildCenterAiItem(
+                              index: 2,
+                              currentIndex: currentIndex,
+                              icon: Icons.psychology_alt_outlined,
+                              activeIcon: Icons.psychology_alt_rounded,
+                              label: strings.navAiGuide,
+                              tokens: tokens,
+                              reduceMotion: reduceMotion,
+                            ),
+                            _buildNavItem(
+                              index: 3,
+                              currentIndex: currentIndex,
+                              icon: Icons.auto_stories_outlined,
+                              activeIcon: Icons.auto_stories_rounded,
+                              label: strings.navInsights,
+                              tokens: tokens,
+                              reduceMotion: reduceMotion,
+                            ),
+                            _buildNavItem(
+                              index: 4,
+                              currentIndex: currentIndex,
+                              icon: Icons.person_outline_rounded,
+                              activeIcon: Icons.person_rounded,
+                              label: strings.navProfile,
+                              tokens: tokens,
+                              reduceMotion: reduceMotion,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

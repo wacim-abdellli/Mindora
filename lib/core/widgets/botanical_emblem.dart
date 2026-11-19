@@ -21,9 +21,11 @@ class BotanicalEmblem extends StatelessWidget {
     final leafColor = color ?? tokens.m1;
 
     final emblem = ExcludeSemantics(
-      child: CustomPaint(
-        size: Size(size, size),
-        painter: _BotanicalLeafPainter(color: leafColor),
+      child: RepaintBoundary(
+        child: CustomPaint(
+          size: Size(size, size),
+          painter: _BotanicalLeafPainter(color: leafColor),
+        ),
       ),
     );
 

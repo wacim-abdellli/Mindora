@@ -129,7 +129,8 @@ class TrackMonthCalendar extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          GridView.builder(
+          RepaintBoundary(
+            child: GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: totalCells,
@@ -254,6 +255,7 @@ class TrackMonthCalendar extends StatelessWidget {
               );
             },
           ),
+        ),
           if (selectedDateKey != null) ...[
             const SizedBox(height: 12),
             _SelectedDayBanner(

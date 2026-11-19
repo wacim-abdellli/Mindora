@@ -41,26 +41,28 @@ class AmbientScaffold extends StatelessWidget {
               right: 0,
               height: 440,
               child: IgnorePointer(
-                child: TweenAnimationBuilder<Color?>(
-                  tween: ColorTween(end: glowColor),
-                  duration: reduceMotion
-                      ? Duration.zero
-                      : const Duration(milliseconds: 700),
-                  builder: (context, animatedGlow, _) {
-                    return DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          center: const Alignment(0.0, -1.04),
-                          radius: 1.15,
-                          colors: [
-                            animatedGlow ?? glowColor,
-                            Colors.transparent,
-                          ],
-                          stops: const [0.0, 0.72],
+                child: RepaintBoundary(
+                  child: TweenAnimationBuilder<Color?>(
+                    tween: ColorTween(end: glowColor),
+                    duration: reduceMotion
+                        ? Duration.zero
+                        : const Duration(milliseconds: 700),
+                    builder: (context, animatedGlow, _) {
+                      return DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: RadialGradient(
+                            center: const Alignment(0.0, -1.04),
+                            radius: 1.15,
+                            colors: [
+                              animatedGlow ?? glowColor,
+                              Colors.transparent,
+                            ],
+                            stops: const [0.0, 0.72],
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
               ),
             ),

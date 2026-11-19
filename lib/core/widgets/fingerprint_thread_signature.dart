@@ -82,14 +82,16 @@ class _FingerprintThreadSignatureState extends State<FingerprintThreadSignature>
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
-          return CustomPaint(
-            size: Size(widget.size, widget.size),
-            painter: _FingerprintPainter(
-              progress: (widget.animated && !reduceMotion)
-                  ? _controller.value
-                  : 0.0,
-              primaryColor: effectivePrimary,
-              accentColor: effectiveAccent,
+          return RepaintBoundary(
+            child: CustomPaint(
+              size: Size(widget.size, widget.size),
+              painter: _FingerprintPainter(
+                progress: (widget.animated && !reduceMotion)
+                    ? _controller.value
+                    : 0.0,
+                primaryColor: effectivePrimary,
+                accentColor: effectiveAccent,
+              ),
             ),
           );
         },

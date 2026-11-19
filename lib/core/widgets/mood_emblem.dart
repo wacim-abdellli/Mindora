@@ -33,11 +33,13 @@ class MoodEmblem extends StatelessWidget {
       child: SizedBox(
         width: size,
         height: size,
-        child: CustomPaint(
-          painter: _MoodEmblemPainter(
-            normalizedKey: normalized,
-            color: color,
-            strokeWidth: effectiveStroke,
+        child: RepaintBoundary(
+          child: CustomPaint(
+            painter: _MoodEmblemPainter(
+              normalizedKey: normalized,
+              color: color,
+              strokeWidth: effectiveStroke,
+            ),
           ),
         ),
       ),

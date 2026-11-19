@@ -43,9 +43,11 @@ class RadialMoodDial extends StatelessWidget {
             alignment: Alignment.center,
             children: [
               ExcludeSemantics(
-                child: CustomPaint(
-                  size: const Size(260, 180),
-                  painter: _RadialRipplesPainter(ringColor: tokens.lineStrong),
+                child: RepaintBoundary(
+                  child: CustomPaint(
+                    size: const Size(260, 180),
+                    painter: _RadialRipplesPainter(ringColor: tokens.lineStrong),
+                  ),
                 ),
               ),
               FittedBox(

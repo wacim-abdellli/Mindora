@@ -928,6 +928,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                   fontSize: 13.5,
                   fontWeight: FontWeight.w700,
                   color: tokens.ink,
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
             ],

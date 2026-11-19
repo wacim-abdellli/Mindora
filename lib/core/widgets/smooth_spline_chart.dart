@@ -73,21 +73,23 @@ class SmoothSplineChart extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth;
-          final chart = CustomPaint(
-            size: Size(width, height),
-            painter: _SplinePainter(
-              values: values,
-              lineColor: effectiveLine,
-              fillColors: effectiveFill,
-              pointColors: pointColors,
-              gridColor: tokens.line,
-              dotRingColor: tokens.surface,
-              tooltipBgColor: tokens.ink,
-              tooltipTextColor: tokens.bg,
-              activePointIndex: activePointIndex,
-              activePointLabel: activePointLabel,
-              showDots: showDots,
-              textDirection: Directionality.of(context),
+          final chart = RepaintBoundary(
+            child: CustomPaint(
+              size: Size(width, height),
+              painter: _SplinePainter(
+                values: values,
+                lineColor: effectiveLine,
+                fillColors: effectiveFill,
+                pointColors: pointColors,
+                gridColor: tokens.line,
+                dotRingColor: tokens.surface,
+                tooltipBgColor: tokens.ink,
+                tooltipTextColor: tokens.bg,
+                activePointIndex: activePointIndex,
+                activePointLabel: activePointLabel,
+                showDots: showDots,
+                textDirection: Directionality.of(context),
+              ),
             ),
           );
 
