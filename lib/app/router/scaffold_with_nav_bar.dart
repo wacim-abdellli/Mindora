@@ -9,18 +9,20 @@ import '../localization/app_strings.dart';
 import '../theme/lab_theme.dart';
 import '../theme/mind_tokens.dart';
 
-/// Floating frosted-glass bottom navigation shell matching prototype-v2 + Vercel Dark:
-/// - Detached pill (`12px` inset, height `70`, radius `30`, `navGlass` + blur `20`, `1px line`)
-/// - 5 balanced items (`Home`, `Track`, `AI Guide` center hero, `Insights`, `Profile`)
-/// - Active capsule uses `tokens.navCapsuleFill` (`22%` Light / `14%` Dark `m1` tint)
-/// - Center AI Guide button: `50px` `m2 -> m1` gradient circle with `4px bg` ring
+/// Floating frosted-glass bottom navigation dock matching Vercel Dark luxury aesthetics:
+/// - Floating balanced dock (height `66`, radius `28`, `navGlass` + blur `24`, `1px line`)
+/// - 5 harmonized items (`Home`, `Track`, `AI Guide`, `Insights`, `Profile`)
+/// - Zero double-highlight confusion: only the active tab illuminates
+/// - Active standard tab: sleek 44x28 micro-capsule in `tokens.navCapsuleFill` with `tokens.ink` icon
+/// - Active AI Guide tab: luminous gradient capsule in `[tokens.m2, tokens.m1]` with soft glow
+/// - Inactive AI Guide tab: elegant clinical jewel capsule with `tokens.cardTint` and hairline border
 class ScaffoldWithNavBar extends ConsumerWidget {
   const ScaffoldWithNavBar({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
   void _onTap(int index) {
-    HapticFeedback.lightImpact();
+    HapticFeedback.selectionClick();
     navigationShell.goBranch(
       index,
       initialLocation: index == navigationShell.currentIndex,
@@ -42,100 +44,81 @@ class ScaffoldWithNavBar extends ConsumerWidget {
         child: SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+            padding: const EdgeInsets.fromLTRB(14, 4, 14, 10),
             child: MediaQuery.withClampedTextScaling(
               minScaleFactor: 0.85,
               maxScaleFactor: 1.15,
-              child: SizedBox(
-                height: 82,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  alignment: Alignment.bottomCenter,
-                  children: [
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      height: 70,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(30),
-                          boxShadow: tokens.navPillShadows,
+              child: Container(
+                height: 66,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: tokens.navPillShadows,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(28),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: tokens.navGlass,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                          color: tokens.line,
+                          width: 1.0,
                         ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(30),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: tokens.navGlass,
-                                borderRadius: BorderRadius.circular(30),
-                                border: Border.all(
-                                  color: tokens.line,
-                                  width: 1.0,
-                                ),
-                              ),
-                            ),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Row(
+                        children: [
+                          _buildNavItem(
+                            index: 0,
+                            currentIndex: currentIndex,
+                            icon: Icons.home_outlined,
+                            activeIcon: Icons.home_rounded,
+                            label: strings.navHome,
+                            tokens: tokens,
+                            reduceMotion: reduceMotion,
                           ),
-                        ),
+                          _buildNavItem(
+                            index: 1,
+                            currentIndex: currentIndex,
+                            icon: Icons.adjust_outlined,
+                            activeIcon: Icons.adjust_rounded,
+                            label: strings.navTrack,
+                            tokens: tokens,
+                            reduceMotion: reduceMotion,
+                          ),
+                          _buildCenterAiItem(
+                            index: 2,
+                            currentIndex: currentIndex,
+                            icon: Icons.psychology_alt_outlined,
+                            activeIcon: Icons.psychology_alt_rounded,
+                            label: strings.navAiGuide,
+                            tokens: tokens,
+                            reduceMotion: reduceMotion,
+                          ),
+                          _buildNavItem(
+                            index: 3,
+                            currentIndex: currentIndex,
+                            icon: Icons.auto_stories_outlined,
+                            activeIcon: Icons.auto_stories_rounded,
+                            label: strings.navInsights,
+                            tokens: tokens,
+                            reduceMotion: reduceMotion,
+                          ),
+                          _buildNavItem(
+                            index: 4,
+                            currentIndex: currentIndex,
+                            icon: Icons.person_outline_rounded,
+                            activeIcon: Icons.person_rounded,
+                            label: strings.navProfile,
+                            tokens: tokens,
+                            reduceMotion: reduceMotion,
+                          ),
+                        ],
                       ),
                     ),
-                    Positioned.fill(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            _buildStandardItem(
-                              index: 0,
-                              currentIndex: currentIndex,
-                              icon: Icons.home_outlined,
-                              activeIcon: Icons.home_rounded,
-                              label: strings.navHome,
-                              tokens: tokens,
-                              reduceMotion: reduceMotion,
-                            ),
-                            _buildStandardItem(
-                              index: 1,
-                              currentIndex: currentIndex,
-                              icon: Icons.adjust_outlined,
-                              activeIcon: Icons.adjust_rounded,
-                              label: strings.navTrack,
-                              tokens: tokens,
-                              reduceMotion: reduceMotion,
-                            ),
-                            _buildCenterHeroItem(
-                              index: 2,
-                              currentIndex: currentIndex,
-                              icon: Icons.psychology_alt_outlined,
-                              activeIcon: Icons.psychology_alt_rounded,
-                              label: strings.navAiGuide,
-                              tokens: tokens,
-                              reduceMotion: reduceMotion,
-                            ),
-                            _buildStandardItem(
-                              index: 3,
-                              currentIndex: currentIndex,
-                              icon: Icons.auto_stories_outlined,
-                              activeIcon: Icons.auto_stories_rounded,
-                              label: strings.navInsights,
-                              tokens: tokens,
-                              reduceMotion: reduceMotion,
-                            ),
-                            _buildStandardItem(
-                              index: 4,
-                              currentIndex: currentIndex,
-                              icon: Icons.person_outline_rounded,
-                              activeIcon: Icons.person_rounded,
-                              label: strings.navProfile,
-                              tokens: tokens,
-                              reduceMotion: reduceMotion,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -145,7 +128,7 @@ class ScaffoldWithNavBar extends ConsumerWidget {
     );
   }
 
-  Widget _buildStandardItem({
+  Widget _buildNavItem({
     required int index,
     required int currentIndex,
     required IconData icon,
@@ -160,131 +143,160 @@ class ScaffoldWithNavBar extends ConsumerWidget {
       child: Semantics(
         button: true,
         selected: isSelected,
+        label: label,
         child: MergeSemantics(
           child: InkWell(
             onTap: () => _onTap(index),
             splashColor: Colors.transparent,
             highlightColor: Colors.transparent,
             child: SizedBox(
-              height: 70,
-              child: Center(
-                child: AnimatedContainer(
-                  duration: reduceMotion
-                      ? Duration.zero
-                      : const Duration(milliseconds: 200),
-                  curve: Curves.easeOutCubic,
-                  height: 58,
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? tokens.navCapsuleFill
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(22),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        isSelected ? activeIcon : icon,
-                        size: 20,
-                        color: isSelected ? tokens.ink : tokens.ink3,
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: LabTheme.fontFamily,
-                          fontFamilyFallback: LabTheme.fontFallback,
-                          fontSize: 11.5,
-                          fontWeight: isSelected
-                              ? FontWeight.w700
-                              : FontWeight.w600,
-                          color: isSelected ? tokens.ink : tokens.ink3,
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCenterHeroItem({
-    required int index,
-    required int currentIndex,
-    required IconData icon,
-    required IconData activeIcon,
-    required String label,
-    required MindTokens tokens,
-    required bool reduceMotion,
-  }) {
-    final isSelected = index == currentIndex;
-
-    return Expanded(
-      child: Semantics(
-        button: true,
-        selected: isSelected,
-        child: MergeSemantics(
-          child: InkWell(
-            onTap: () => _onTap(index),
-            splashColor: Colors.transparent,
-            highlightColor: Colors.transparent,
-            child: SizedBox(
-              height: 82,
+              height: 66,
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  AnimatedScale(
-                    scale: isSelected && !reduceMotion ? 1.06 : 1.0,
+                  AnimatedContainer(
                     duration: reduceMotion
                         ? Duration.zero
                         : const Duration(milliseconds: 200),
                     curve: Curves.easeOutCubic,
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [tokens.m2, tokens.m1],
-                        ),
-                        border: Border.all(color: tokens.bg, width: 4.0),
-                        boxShadow: tokens.navCenterShadows,
-                      ),
+                    width: isSelected ? 44 : 36,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? tokens.navCapsuleFill
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    alignment: Alignment.center,
+                    child: AnimatedScale(
+                      scale: isSelected && !reduceMotion ? 1.06 : 1.0,
+                      duration: reduceMotion
+                          ? Duration.zero
+                          : const Duration(milliseconds: 200),
+                      curve: Curves.easeOutCubic,
                       child: Icon(
                         isSelected ? activeIcon : icon,
-                        size: 21,
-                        color: tokens.onMood,
+                        size: 20,
+                        color: isSelected ? tokens.ink : tokens.ink3,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 7),
+                  const SizedBox(height: 3),
+                  AnimatedDefaultTextStyle(
+                    duration: reduceMotion
+                        ? Duration.zero
+                        : const Duration(milliseconds: 200),
+                    curve: Curves.easeOutCubic,
+                    style: TextStyle(
+                      fontFamily: LabTheme.fontFamily,
+                      fontFamilyFallback: LabTheme.fontFallback,
+                      fontSize: 10.5,
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color: isSelected ? tokens.ink : tokens.ink3,
+                      letterSpacing: -0.2,
+                    ),
                     child: Text(
                       label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: LabTheme.fontFamily,
-                        fontFamilyFallback: LabTheme.fontFallback,
-                        fontSize: 11.5,
-                        fontWeight: isSelected
-                            ? FontWeight.w700
-                            : FontWeight.w600,
-                        color: isSelected ? tokens.ink : tokens.ink3,
-                        letterSpacing: -0.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCenterAiItem({
+    required int index,
+    required int currentIndex,
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+    required MindTokens tokens,
+    required bool reduceMotion,
+  }) {
+    final isSelected = index == currentIndex;
+
+    return Expanded(
+      child: Semantics(
+        button: true,
+        selected: isSelected,
+        label: label,
+        child: MergeSemantics(
+          child: InkWell(
+            onTap: () => _onTap(index),
+            splashColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            child: SizedBox(
+              height: 66,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AnimatedContainer(
+                    duration: reduceMotion
+                        ? Duration.zero
+                        : const Duration(milliseconds: 200),
+                    curve: Curves.easeOutCubic,
+                    width: isSelected ? 48 : 36,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      gradient: isSelected
+                          ? LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [tokens.m2, tokens.m1],
+                            )
+                          : null,
+                      color: isSelected ? null : tokens.cardTint,
+                      borderRadius: BorderRadius.circular(14),
+                      border: isSelected
+                          ? null
+                          : Border.all(
+                              color: tokens.line,
+                              width: 1.0,
+                            ),
+                      boxShadow: isSelected ? tokens.navCenterShadows : null,
+                    ),
+                    alignment: Alignment.center,
+                    child: AnimatedScale(
+                      scale: isSelected && !reduceMotion ? 1.06 : 1.0,
+                      duration: reduceMotion
+                          ? Duration.zero
+                          : const Duration(milliseconds: 200),
+                      curve: Curves.easeOutCubic,
+                      child: Icon(
+                        isSelected ? activeIcon : icon,
+                        size: 20,
+                        color: isSelected ? tokens.onMood : tokens.ink2,
                       ),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  AnimatedDefaultTextStyle(
+                    duration: reduceMotion
+                        ? Duration.zero
+                        : const Duration(milliseconds: 200),
+                    curve: Curves.easeOutCubic,
+                    style: TextStyle(
+                      fontFamily: LabTheme.fontFamily,
+                      fontFamilyFallback: LabTheme.fontFallback,
+                      fontSize: 10.5,
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color: isSelected ? tokens.ink : tokens.ink3,
+                      letterSpacing: -0.2,
+                    ),
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
