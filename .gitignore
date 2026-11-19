@@ -57,3 +57,5 @@ app.*.map.json
 
 # Local prototype reference (untracked workspace)
 /mind_forensics_prototype/
+/prototype-v2/
+*.zip

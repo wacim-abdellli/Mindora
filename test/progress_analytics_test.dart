@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:mind_forensics/app/localization/app_strings.dart';
 import 'package:mind_forensics/features/investigation/domain/case_model.dart';
@@ -11,7 +12,7 @@ import 'package:mind_forensics/features/journey/domain/journey_state_model.dart'
 import 'package:mind_forensics/features/mind_trace/domain/mind_trace_model.dart';
 import 'package:mind_forensics/features/progress/data/progress_analytics_service.dart';
 import 'package:mind_forensics/features/progress/domain/progress_analytics_model.dart';
-import 'package:mind_forensics/features/progress/presentation/progress_screen.dart';
+import 'package:mind_forensics/app/router/app_router.dart';
 
 void main() {
   group('ProgressTimeWindow Tests', () {
@@ -370,43 +371,31 @@ void main() {
     });
   });
 
-  group('ProgressScreen Widget Integration Tests', () {
-    testWidgets('renders ProgressScreen with 2 tabs and friendly layout', (
+  group('Progress Route Redirection Tests', () {
+    testWidgets('/progress route cleanly redirects to TrackScreen Tab 1', (
       tester,
     ) async {
+      SharedPreferences.setMockInitialValues({'mf_onboarding_completed': true});
       tester.view.physicalSize = const Size(800, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        const ProviderScope(child: MaterialApp(home: ProgressScreen())),
+        ProviderScope(
+          child: MaterialApp.router(
+            routerConfig: AppRouter.router,
+          ),
+        ),
       );
-
       await tester.pumpAndSettle();
 
-      // Check title and framing quote
-      expect(find.text('MY PROGRESS'), findsOneWidget);
-      expect(find.textContaining('Every entry tells a story'), findsOneWidget);
-
-      // Check 2 segmented tab labels
-      expect(find.text('Overview'), findsOneWidget);
-      expect(find.text('Journal'), findsOneWidget);
-
-      // Verify Overview tab contents
-      expect(find.text('TOTAL ENTRIES'), findsOneWidget);
-      expect(find.text('The Thought Trace'), findsOneWidget);
-      expect(find.text('MOOD INTENSITY TIMELINE'), findsOneWidget);
-
-      // Switch to Journal tab
-      await tester.tap(find.text('Journal'));
+      AppRouter.router.go(AppRouter.progress);
       await tester.pumpAndSettle();
 
-      // Verify Journal tab contents (Calendar, Reflections, Milestones)
-      expect(find.byType(TextField), findsOneWidget);
-      expect(find.text('All Sources'), findsOneWidget);
-      expect(find.text('JOURNEY CURRICULUM EXPLORATION'), findsOneWidget);
-      expect(find.text('CELESTIAL MILESTONES'), findsOneWidget);
+      // Verify Track screen Tab 1 (History & Calendar) is active
+      expect(find.text('History & Calendar'), findsOneWidget);
+      expect(find.text('Track'), findsNWidgets(2));
     });
   });
 }
