@@ -6,6 +6,7 @@ import '../../../app/localization/app_strings.dart';
 import '../../../app/theme/mind_tokens.dart';
 import '../../../core/safety/support_button.dart';
 import '../../../core/widgets/mind_pressable.dart';
+import '../../../core/widgets/mind_segmented.dart';
 import '../controllers/investigation_providers.dart';
 import '../domain/case_model.dart';
 import 'ai_companion_hub_view.dart';
@@ -41,8 +42,9 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
   }
 
   Future<void> _ensureActiveCase() async {
-    final active =
-        await ref.read(activeCaseControllerProvider.notifier).ensureHydrated();
+    final active = await ref
+        .read(activeCaseControllerProvider.notifier)
+        .ensureHydrated();
     if (active == null || active.isCompleted) {
       if (mounted) {
         await ref
@@ -66,7 +68,10 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
     final strings = ref.watch(appStringsProvider);
     final tokens = context.tokens;
 
-    ref.listen<AsyncValue<CaseModel?>>(activeCaseControllerProvider, (prev, next) {
+    ref.listen<AsyncValue<CaseModel?>>(activeCaseControllerProvider, (
+      prev,
+      next,
+    ) {
       if (next.value != null && prev?.value?.id != next.value?.id) {
         if (_showHubView) {
           setState(() => _showHubView = false);
@@ -92,18 +97,20 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
         titleSpacing: 0,
         leading: _showHubView
             ? (caseModel != null
-                ? IconButton(
-                    icon: Icon(
-                      Icons.arrow_back_rounded,
-                      size: 20,
-                      color: tokens.ink,
-                    ),
-                    tooltip: strings.resumeConversationBtn,
-                    constraints:
-                        const BoxConstraints(minWidth: 48, minHeight: 48),
-                    onPressed: () => setState(() => _showHubView = false),
-                  )
-                : null)
+                  ? IconButton(
+                      icon: Icon(
+                        Icons.arrow_back_rounded,
+                        size: 20,
+                        color: tokens.ink,
+                      ),
+                      tooltip: strings.resumeConversationBtn,
+                      constraints: const BoxConstraints(
+                        minWidth: 48,
+                        minHeight: 48,
+                      ),
+                      onPressed: () => setState(() => _showHubView = false),
+                    )
+                  : null)
             : IconButton(
                 icon: Icon(
                   Icons.grid_view_rounded,
@@ -133,14 +140,11 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
             if (_showHubView) ...[
               const SizedBox(width: 8),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: tokens.cardTint,
                   borderRadius: BorderRadius.circular(tokens.chipRadius),
-                  border: Border.all(
-                    color: tokens.ink.withValues(alpha: 0.35),
-                  ),
+                  border: Border.all(color: tokens.ink.withValues(alpha: 0.35)),
                 ),
                 child: Text(
                   'AI HUB',
@@ -166,8 +170,7 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
               alignment: Alignment.center,
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                 decoration: BoxDecoration(
                   color: isLive ? tokens.cardTint : tokens.surface2,
                   borderRadius: BorderRadius.circular(12),
@@ -205,11 +208,7 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
           ),
           if (!_showHubView)
             IconButton(
-              icon: Icon(
-                Icons.add_rounded,
-                size: 22,
-                color: tokens.ink,
-              ),
+              icon: Icon(Icons.add_rounded, size: 22, color: tokens.ink),
               tooltip: strings.newConversationBtn,
               constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               onPressed: () async {
@@ -224,31 +223,56 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
           const SizedBox(width: 4),
         ],
       ),
-      body: _showHubView
-          ? SafeArea(
-              child: AiCompanionHubView(
-                onSessionSelected: () {
-                  if (mounted && _showHubView) {
-                    setState(() => _showHubView = false);
-                  }
-                },
-              ),
-            )
-          : (caseModel != null
-              ? SafeArea(child: LiveDialogueView(caseModel: caseModel))
-              : SafeArea(
-                  child: Center(
-                    child: SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(tokens.ink),
-                      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: MindSegmented(
+              index: _showHubView ? 1 : 0,
+              labels: [
+                strings.isArabic
+                    ? 'الحوار المباشر'
+                    : (strings.isFrench ? 'Dialogue' : 'Active Dialogue'),
+                strings.isArabic
+                    ? 'مركز الأنماط والجلسات'
+                    : (strings.isFrench ? 'Modes & Sessions' : 'Modes & Hub'),
+              ],
+              onChanged: (idx) {
+                HapticFeedback.selectionClick();
+                setState(() => _showHubView = (idx == 1));
+              },
+            ),
+          ),
+          Expanded(
+            child: _showHubView
+                ? SafeArea(
+                    child: AiCompanionHubView(
+                      onSessionSelected: () {
+                        if (mounted && _showHubView) {
+                          setState(() => _showHubView = false);
+                        }
+                      },
                     ),
-                  ),
-                )),
+                  )
+                : (caseModel != null
+                      ? SafeArea(child: LiveDialogueView(caseModel: caseModel))
+                      : SafeArea(
+                          child: Center(
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  tokens.ink,
+                                ),
+                              ),
+                            ),
+                          ),
+                        )),
+          ),
+        ],
+      ),
     );
   }
 }
