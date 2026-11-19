@@ -17,11 +17,13 @@ class HomeOrganicExerciseArt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    return SizedBox(
-      width: size,
-      height: size,
-      child: CustomPaint(
-        painter: _BotanicalRipplePainter(tokens: tokens),
+    return RepaintBoundary(
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: CustomPaint(
+          painter: _BotanicalRipplePainter(tokens: tokens),
+        ),
       ),
     );
   }

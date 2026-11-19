@@ -516,12 +516,14 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                 borderRadius: BorderRadius.circular(tokens.chipRadius),
                 border: Border.all(color: tokens.line),
               ),
-              child: CustomPaint(
-                painter: _CalibrationPreviewPainter(
-                  hasPoint: latest != null,
-                  normalizedY: normalizedY,
-                  pointColor: pointColor,
-                  gridColor: tokens.line,
+              child: RepaintBoundary(
+                child: CustomPaint(
+                  painter: _CalibrationPreviewPainter(
+                    hasPoint: latest != null,
+                    normalizedY: normalizedY,
+                    pointColor: pointColor,
+                    gridColor: tokens.line,
+                  ),
                 ),
               ),
             ),

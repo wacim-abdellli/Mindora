@@ -146,19 +146,21 @@ class _NeuralWaveformVisualizerState extends State<NeuralWaveformVisualizer>
           const SizedBox(height: 4),
           Expanded(
             child: ExcludeSemantics(
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, _) {
-                  return CustomPaint(
-                    painter: _WaveformPainter(
-                      phase: _controller.value * 2 * math.pi,
-                      intensity: widget.intensity,
-                      color: widget.moodColor,
-                      glowAlpha: tokens.glow > 0 ? 0.20 : 0.35,
-                    ),
-                    size: Size.infinite,
-                  );
-                },
+              child: RepaintBoundary(
+                child: AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, _) {
+                    return CustomPaint(
+                      painter: _WaveformPainter(
+                        phase: _controller.value * 2 * math.pi,
+                        intensity: widget.intensity,
+                        color: widget.moodColor,
+                        glowAlpha: tokens.glow > 0 ? 0.20 : 0.35,
+                      ),
+                      size: Size.infinite,
+                    );
+                  },
+                ),
               ),
             ),
           ),

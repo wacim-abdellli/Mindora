@@ -1160,7 +1160,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
               child: Column(
                 children: [
-                  HomeOrganicExerciseArt(size: 72),
+                  const HomeOrganicExerciseArt(size: 72),
                   const SizedBox(height: 14),
                   Text(
                     strings.timelineBuildsTitle,

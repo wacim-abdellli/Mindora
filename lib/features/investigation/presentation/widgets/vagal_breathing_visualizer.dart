@@ -112,19 +112,21 @@ class _VagalBreathingVisualizerState extends State<VagalBreathingVisualizer>
           children: [
             // Outward Breathing Aura Rings
             ExcludeSemantics(
-              child: AnimatedBuilder(
-                animation: _waveController,
-                builder: (context, child) {
-                  return CustomPaint(
-                    size: const Size(190, 190),
-                    painter: _BreathingRipplesPainter(
-                      progress: reduceMotion ? 0.0 : _waveController.value,
-                      color: accent,
-                      phase: widget.phase,
-                      isDark: isDark,
-                    ),
-                  );
-                },
+              child: RepaintBoundary(
+                child: AnimatedBuilder(
+                  animation: _waveController,
+                  builder: (context, child) {
+                    return CustomPaint(
+                      size: const Size(190, 190),
+                      painter: _BreathingRipplesPainter(
+                        progress: reduceMotion ? 0.0 : _waveController.value,
+                        color: accent,
+                        phase: widget.phase,
+                        isDark: isDark,
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
 
@@ -172,6 +174,7 @@ class _VagalBreathingVisualizerState extends State<VagalBreathingVisualizer>
                             fontWeight: FontWeight.w800,
                             color: accent,
                             letterSpacing: -0.5,
+                            fontFeatures: const [FontFeature.tabularFigures()],
                           ),
                         ),
                         const SizedBox(height: 2),

@@ -320,9 +320,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final strings = ref.watch(appStringsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final profile = ref.watch(profileControllerProvider).value;
-    final userName = profile?.preferredName.isNotEmpty == true
-        ? profile!.preferredName
+    final preferredName = ref.watch(
+      profileControllerProvider.select((p) => p.value?.preferredName),
+    );
+    final userName = (preferredName != null && preferredName.isNotEmpty)
+        ? preferredName
         : (strings.isArabic ? 'صديقي' : (strings.isFrench ? 'Ami' : 'Friend'));
 
     final activeCase = ref.watch(activeCaseControllerProvider).value;
@@ -503,12 +505,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   ),
                                 ),
                                 alignment: Alignment.center,
-                                child:
-                                    (profile?.preferredName.isNotEmpty ==
-                                            true &&
-                                        profile!.preferredName != 'Friend')
+                                child: (preferredName != null &&
+                                        preferredName.isNotEmpty &&
+                                        preferredName != 'Friend')
                                     ? Text(
-                                        profile.preferredName[0].toUpperCase(),
+                                        preferredName[0].toUpperCase(),
                                         style: TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w700,

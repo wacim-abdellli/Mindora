@@ -576,6 +576,7 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                 )
               : ListView.builder(
                   controller: _scrollController,
+                  cacheExtent: 500,
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
                   itemCount:
                       statements.length + (showTypingIndicator ? 1 : 0),

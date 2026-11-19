@@ -72,16 +72,18 @@ class _NeuralBrainWireframeState extends State<NeuralBrainWireframe>
   Widget build(BuildContext context) {
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return ExcludeSemantics(
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          return CustomPaint(
-            size: Size(widget.size, widget.size),
-            painter: _BrainWireframePainter(
-              rotation: reduceMotion ? 0.0 : _controller.value,
-            ),
-          );
-        },
+      child: RepaintBoundary(
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            return CustomPaint(
+              size: Size(widget.size, widget.size),
+              painter: _BrainWireframePainter(
+                rotation: reduceMotion ? 0.0 : _controller.value,
+              ),
+            );
+          },
+        ),
       ),
     );
   }

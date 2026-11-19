@@ -125,9 +125,11 @@ class _SomaticBodyRadarState extends State<SomaticBodyRadar> with SingleTickerPr
           children: [
             // Architectural Grid Background
             ExcludeSemantics(
-              child: CustomPaint(
-                size: Size.infinite,
-                painter: _SilhouettePainter(tokens: tokens, activeAccent: accent),
+              child: RepaintBoundary(
+                child: CustomPaint(
+                  size: Size.infinite,
+                  painter: _SilhouettePainter(tokens: tokens, activeAccent: accent),
+                ),
               ),
             ),
 
