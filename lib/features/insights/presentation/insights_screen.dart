@@ -17,6 +17,7 @@ import '../../case_file/presentation/clinical_export_preview_sheet.dart';
 import '../../investigation/controllers/investigation_providers.dart';
 import '../../investigation/domain/case_model.dart';
 import '../../mind_trace/controllers/mind_trace_controller.dart';
+import '../../mind_trace/domain/affect_taxonomy.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
 import '../../progress/data/progress_analytics_service.dart';
 import '../../progress/domain/progress_analytics_model.dart';
@@ -215,6 +216,18 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
             const SizedBox(height: 10),
             _buildMoodTrendsCard(context, tokens, traces, strings),
             const SizedBox(height: 18),
+
+            // 2b. Affect Spectrum & Diurnal Rhythm
+            if (baseline.emotionFrequencyMap.isNotEmpty ||
+                baseline.diurnalIntensityAverages.length >= 2 ||
+                baseline.multiEntryDaysCount > 0) ...[
+              _buildAffectSpectrumAndDiurnalCard(
+                tokens,
+                baseline,
+                strings,
+              ),
+              const SizedBox(height: 18),
+            ],
 
             // 3. Your Patterns Section
             _buildYourPatternsSection(
@@ -654,6 +667,172 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAffectSpectrumAndDiurnalCard(
+    MindTokens tokens,
+    PersonalBaseline baseline,
+    AppStrings strings,
+  ) {
+    final feelingEntries = baseline.emotionFrequencyMap.entries.take(6).toList();
+    final diurnal = baseline.diurnalIntensityAverages;
+    String bucketLabel(DayTimeBucket b) => switch (b) {
+      DayTimeBucket.morning => strings.morningBucketLabel,
+      DayTimeBucket.afternoon => strings.afternoonBucketLabel,
+      DayTimeBucket.evening => strings.eveningBucketLabel,
+      DayTimeBucket.night => strings.nightBucketLabel,
+    };
+
+    return MindCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  strings.affectSpectrumSectionTitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.ink,
+                  ),
+                ),
+              ),
+              if (baseline.averageIntraDaySwing != null &&
+                  baseline.multiEntryDaysCount > 0) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: tokens.surface2,
+                    borderRadius: BorderRadius.circular(tokens.chipRadius),
+                    border: Border.all(color: tokens.line),
+                  ),
+                  child: Text(
+                    '±${baseline.averageIntraDaySwing!.toStringAsFixed(1)}',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: tokens.ink,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          if (feelingEntries.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              strings.recurringFeelingsLabel,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: tokens.ink2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final entry in feelingEntries)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: tokens.surface2,
+                      borderRadius: BorderRadius.circular(tokens.chipRadius),
+                      border: Border.all(color: tokens.line),
+                    ),
+                    child: Text(
+                      '${AffectTaxonomy.localizedLabel(entry.key, strings)} · ${entry.value}',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: tokens.ink,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+          if (diurnal.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Text(
+              strings.diurnalRhythmLabel,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: tokens.ink2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final bucket in DayTimeBucket.values)
+                  if (diurnal.containsKey(bucket))
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: tokens.surface2,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: tokens.line),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            bucketLabel(bucket),
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: tokens.ink2,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '${diurnal[bucket]!.toStringAsFixed(1)}/10',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: tokens.ink,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+              ],
+            ),
+          ],
         ],
       ),
     );

@@ -43,13 +43,18 @@ class TrackMonthCalendar extends StatelessWidget {
     final totalCells = ((daysInMonth + firstDayOffset + 6) ~/ 7) * 7;
     final now = DateTime.now();
 
-    final loggedByDayKey = <String, MindTraceModel>{};
+    final groupedByDayKey = <String, List<MindTraceModel>>{};
     for (final t in traces) {
-      loggedByDayKey.putIfAbsent(t.dateKey, () => t);
+      groupedByDayKey.putIfAbsent(t.dateKey, () => []).add(t);
+    }
+    for (final list in groupedByDayKey.values) {
+      list.sort((a, b) => a.effectiveTimestamp.compareTo(b.effectiveTimestamp));
     }
 
-    final selectedTrace =
-        selectedDateKey != null ? loggedByDayKey[selectedDateKey] : null;
+    final selectedList = selectedDateKey != null
+        ? (groupedByDayKey[selectedDateKey] ?? const <MindTraceModel>[])
+        : const <MindTraceModel>[];
+    final selectedTrace = selectedList.isNotEmpty ? selectedList.last : null;
     final weekdays = strings.weekdayShortLabels;
 
     return MindCard(
@@ -158,7 +163,9 @@ class TrackMonthCalendar extends StatelessWidget {
               final day = index - firstDayOffset + 1;
               final dayKey =
                   '${month.year}-${month.month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
-              final matchedTrace = loggedByDayKey[dayKey];
+              final dayList =
+                  groupedByDayKey[dayKey] ?? const <MindTraceModel>[];
+              final matchedTrace = dayList.isNotEmpty ? dayList.last : null;
               final isLogged = matchedTrace != null;
               final isSelected = selectedDateKey == dayKey;
               final isToday = day == now.day &&
@@ -238,14 +245,38 @@ class TrackMonthCalendar extends StatelessWidget {
                             ),
                             if (isLogged && !isSelected) ...[
                               const SizedBox(height: 2),
-                              Container(
-                                width: 5,
-                                height: 5,
-                                decoration: BoxDecoration(
-                                  color: moodColor,
-                                  shape: BoxShape.circle,
+                              if (dayList.length == 1)
+                                Container(
+                                  width: 5,
+                                  height: 5,
+                                  decoration: BoxDecoration(
+                                    color: moodColor,
+                                    shape: BoxShape.circle,
+                                  ),
+                                )
+                              else
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    for (int mIdx = 0;
+                                        mIdx < dayList.take(3).length;
+                                        mIdx++) ...[
+                                      if (mIdx > 0) const SizedBox(width: 2),
+                                      Container(
+                                        width: 4,
+                                        height: 4,
+                                        decoration: BoxDecoration(
+                                          color: MindTokens.moodColor(
+                                            AppMood.fromKey(
+                                              dayList[mIdx].overallMood,
+                                            ),
+                                          ),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
-                              ),
                             ],
                           ],
                         ),
@@ -263,6 +294,7 @@ class TrackMonthCalendar extends StatelessWidget {
               strings: strings,
               dateKey: selectedDateKey!,
               trace: selectedTrace,
+              dayCount: selectedList.length,
               onInspectTrace: onInspectTrace,
               onClear: () => onSelectDateKey(null),
             ),
@@ -279,6 +311,7 @@ class _SelectedDayBanner extends StatelessWidget {
     required this.strings,
     required this.dateKey,
     required this.trace,
+    required this.dayCount,
     required this.onClear,
     this.onInspectTrace,
   });
@@ -287,6 +320,7 @@ class _SelectedDayBanner extends StatelessWidget {
   final AppStrings strings;
   final String dateKey;
   final MindTraceModel? trace;
+  final int dayCount;
   final VoidCallback onClear;
   final ValueChanged<MindTraceModel>? onInspectTrace;
 
@@ -329,7 +363,7 @@ class _SelectedDayBanner extends StatelessWidget {
                   : null,
               child: Text(
                 hasTrace
-                    ? '${strings.filteredByDateLabel(dateKey)} · ${trackMoodLabel(trace!.overallMood, strings)} (${trace!.moodIntensity}/10)'
+                    ? '${strings.filteredByDateLabel(dateKey)} · ${trackMoodLabel(trace!.overallMood, strings)} (${trace!.moodIntensity}/10)${dayCount > 1 ? ' · ${strings.momentsCountLabel(dayCount)}' : ''}'
                     : strings.filteredByDateLabel(dateKey),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

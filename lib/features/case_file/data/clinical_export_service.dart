@@ -1,6 +1,7 @@
 import '../../insights/data/pattern_awareness_service.dart';
 import '../../insights/domain/personal_baseline_model.dart';
 import '../../investigation/domain/case_model.dart';
+import '../../mind_trace/domain/affect_taxonomy.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
 import '../../../app/localization/app_strings.dart';
 
@@ -123,8 +124,45 @@ class ClinicalExportService {
                   : '• Self-reported average sleep: ${baseline.averageSleepHours!.toStringAsFixed(1)} hrs'));
         }
         if (baseline.commonEmotions.isNotEmpty) {
+          final formattedEmotions = baseline.commonEmotions
+              .take(5)
+              .map((e) => AffectTaxonomy.localizedLabel(e, strings))
+              .join(', ');
           buffer.writeln(
-              '• ${isAr ? "المشاعر المتكررة" : (isFr ? "Émotions fréquentes" : "Recurring emotions")}: ${baseline.commonEmotions.take(4).join(', ')}');
+              '• ${isAr ? "المشاعر المتكررة" : (isFr ? "Émotions fréquentes" : "Recurring emotions")}: $formattedEmotions');
+        }
+        if (baseline.emotionFrequencyMap.isNotEmpty) {
+          final nuancedSummary = baseline.emotionFrequencyMap.entries
+              .where((e) => !AffectTaxonomy.isCoreMood(e.key))
+              .take(5)
+              .map((e) => '${AffectTaxonomy.localizedLabel(e.key, strings)} (${e.value})')
+              .join(', ');
+          if (nuancedSummary.isNotEmpty) {
+            buffer.writeln('• ${strings.recurringFeelingsLabel}: $nuancedSummary');
+          }
+        }
+        if (baseline.diurnalIntensityAverages.isNotEmpty) {
+          String bucketName(DayTimeBucket b) => switch (b) {
+            DayTimeBucket.morning => strings.morningBucketLabel,
+            DayTimeBucket.afternoon => strings.afternoonBucketLabel,
+            DayTimeBucket.evening => strings.eveningBucketLabel,
+            DayTimeBucket.night => strings.nightBucketLabel,
+          };
+          final diurnalParts = DayTimeBucket.values
+              .where(baseline.diurnalIntensityAverages.containsKey)
+              .map(
+                (b) =>
+                    '${bucketName(b)} ${baseline.diurnalIntensityAverages[b]!.toStringAsFixed(1)}/10',
+              )
+              .join(' | ');
+          if (diurnalParts.isNotEmpty) {
+            buffer.writeln('• ${strings.diurnalRhythmLabel}: $diurnalParts');
+          }
+        }
+        if (baseline.averageIntraDaySwing != null &&
+            baseline.multiEntryDaysCount > 0) {
+          buffer.writeln(
+              '• ${strings.intraDayShiftAvgLabel}: ±${baseline.averageIntraDaySwing!.toStringAsFixed(1)}/10 (${baseline.multiEntryDaysCount}d)');
         }
         if (baseline.recurringTriggers.isNotEmpty) {
           buffer.writeln(

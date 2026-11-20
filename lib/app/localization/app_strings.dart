@@ -2063,6 +2063,92 @@ class AppStrings {
     }
   }
 
+  // ===========================================================================
+  // PHASE 2: MULTI-AFFECT SPECTRUM & INTRA-DAY MOMENTS
+  // ===========================================================================
+  String get alsoFeelingOptionalLabel => isArabic
+      ? 'شعور آخر مصاحب (اختياري)'
+      : (isFrench
+          ? 'RESSENTI NUANCÉ (OPTIONNEL)'
+          : 'ALSO FEELING (OPTIONAL)');
+
+  String get showMoreFeelingsBtn => isArabic
+      ? '+ مشاعر أكثر'
+      : (isFrench ? '+ Plus de nuances' : '+ More feelings');
+
+  String get showFewerFeelingsBtn =>
+      isArabic ? 'أقل' : (isFrench ? 'Réduire' : 'Less');
+
+  String get addCustomFeelingBtn =>
+      isArabic ? '+ مخصص' : (isFrench ? '+ Personnalisé' : '+ Custom');
+
+  String get customFeelingSheetTitle => isArabic
+      ? 'أضف شعوراً خاصاً بك'
+      : (isFrench ? 'Ajouter un ressenti' : 'Add Custom Feeling');
+
+  String get customFeelingHint => isArabic
+      ? 'مثلاً: مضغوط، متأثر، مرتاح البال...'
+      : (isFrench
+          ? 'ex. Tiraillement, Pression, Apaisé...'
+          : 'e.g., Torn, Pressured, Peaceful...');
+
+  String get todaysMomentsHeader => isArabic
+      ? 'لحظات اليوم'
+      : (isFrench ? 'MOMENTS DU JOUR' : 'TODAY’S MOMENTS');
+
+  String get newMomentChipLabel => isArabic
+      ? '+ لحظة جديدة'
+      : (isFrench ? '+ Nouveau moment' : '+ New moment');
+
+  String get logNewMomentBtn => isArabic
+      ? 'سجّل لحظة جديدة'
+      : (isFrench ? 'Enregistrer ce moment' : 'Log New Moment');
+
+  String get logMomentShortBtn =>
+      isArabic ? '+ لحظة' : (isFrench ? '+ Moment' : '+ Log moment');
+
+  String momentsCountLabel(int count) {
+    if (isArabic) return '$count لحظات';
+    if (isFrench) return '$count moments';
+    return '$count moments';
+  }
+
+  String momentsTodayTrail(int count, String shiftText) {
+    if (isArabic) return '$count لحظات اليوم · $shiftText';
+    if (isFrench) return '$count moments aujourd’hui · $shiftText';
+    return '$count moments today · $shiftText';
+  }
+
+  String get affectSpectrumSectionTitle => isArabic
+      ? 'طيف المشاعر والإيقاع اليومي'
+      : (isFrench
+          ? 'Spectre émotionnel & Rythme diurne'
+          : 'Affect Spectrum & Diurnal Rhythm');
+
+  String get recurringFeelingsLabel => isArabic
+      ? 'المشاعر المصاحبة المتكررة'
+      : (isFrench ? 'Nuances récurrentes' : 'Co-occurring feelings');
+
+  String get diurnalRhythmLabel => isArabic
+      ? 'تغيّر الحالة حسب الوقت'
+      : (isFrench ? 'Rythme selon l’heure' : 'Time-of-day rhythm');
+
+  String get intraDayShiftAvgLabel => isArabic
+      ? 'متوسط التقلّب اليومي'
+      : (isFrench ? 'Variation intra-journalière' : 'Avg intra-day swing');
+
+  String get morningBucketLabel =>
+      isArabic ? 'الصباح' : (isFrench ? 'Matin' : 'Morning');
+
+  String get afternoonBucketLabel =>
+      isArabic ? 'العشية' : (isFrench ? 'Après-midi' : 'Afternoon');
+
+  String get eveningBucketLabel =>
+      isArabic ? 'المساء' : (isFrench ? 'Soirée' : 'Evening');
+
+  String get nightBucketLabel =>
+      isArabic ? 'الليل' : (isFrench ? 'Nuit' : 'Night');
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);

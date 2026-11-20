@@ -10,6 +10,7 @@ import '../../../../core/safety/support_button.dart';
 import '../../../../core/widgets/mind_button.dart';
 import '../../../../core/widgets/mind_pressable.dart';
 import '../../../mind_trace/controllers/mind_trace_controller.dart';
+import '../../../mind_trace/domain/affect_taxonomy.dart';
 import '../../../mind_trace/domain/mind_trace_model.dart';
 import 'track_mood_picker.dart';
 import 'track_mood_utils.dart';
@@ -117,8 +118,10 @@ class TrackEntryDetailSheet extends ConsumerWidget {
     final strings = ref.watch(appStringsProvider);
     final moodStyle = trackMoodOptionFor(trace.overallMood);
     final moodText = trackMoodLabel(trace.overallMood, strings);
-    final hour = trace.createdAt.hour.toString().padLeft(2, '0');
-    final minute = trace.createdAt.minute.toString().padLeft(2, '0');
+    final ts = trace.effectiveTimestamp;
+    final hour = ts.hour.toString().padLeft(2, '0');
+    final minute = ts.minute.toString().padLeft(2, '0');
+    final nuanced = trace.nuancedEmotions;
 
     return Container(
       decoration: BoxDecoration(
@@ -230,6 +233,38 @@ class TrackEntryDetailSheet extends ConsumerWidget {
                   ),
                 ],
               ),
+              if (nuanced.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final key in nuanced)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: tokens.selectedTintFor(moodStyle.color),
+                          borderRadius: BorderRadius.circular(tokens.chipRadius),
+                          border: Border.all(
+                            color: moodStyle.color.withValues(alpha: 0.35),
+                          ),
+                        ),
+                        child: Text(
+                          AffectTaxonomy.localizedLabel(key, strings),
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: tokens.ink,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
               if (trace.journalText != null &&
                   trace.journalText!.trim().isNotEmpty) ...[
                 const SizedBox(height: 16),
@@ -456,9 +491,14 @@ class _EditPastTraceSheetState extends ConsumerState<EditPastTraceSheet> {
     setState(() => _saving = true);
     try {
       final existingEmotions = widget.trace.selectedEmotions;
-      final mergedEmotions = existingEmotions.isEmpty
-          ? [_mood]
-          : <String>[_mood, ...existingEmotions.where((e) => e != _mood)];
+      final mergedEmotions = <String>[
+        _mood,
+        ...existingEmotions.where(
+          (e) =>
+              e.toLowerCase() != _mood.toLowerCase() &&
+              !AffectTaxonomy.isCoreMood(e),
+        ),
+      ];
       final updated = widget.trace.copyWith(
         overallMood: _mood,
         selectedEmotions: mergedEmotions,

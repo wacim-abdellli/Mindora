@@ -1,3 +1,8 @@
+import 'affect_taxonomy.dart';
+
+/// Intra-day circadian windows for psychiatric diurnal mood analysis.
+enum DayTimeBucket { morning, afternoon, evening, night }
+
 /// A comprehensive daily emotional and psychological check-in record.
 ///
 /// Satisfies the Daily Mind Trace architecture:
@@ -83,6 +88,38 @@ class MindTraceModel {
 
   String get dateKey =>
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+  DateTime get effectiveTimestamp {
+    if (date.hour == 0 &&
+        date.minute == 0 &&
+        date.second == 0 &&
+        (createdAt.hour != 0 || createdAt.minute != 0)) {
+      return DateTime(
+        date.year,
+        date.month,
+        date.day,
+        createdAt.hour,
+        createdAt.minute,
+        createdAt.second,
+      );
+    }
+    return date;
+  }
+
+  DayTimeBucket get timeBucket {
+    final h = effectiveTimestamp.hour;
+    if (h >= 5 && h < 12) return DayTimeBucket.morning;
+    if (h >= 12 && h < 17) return DayTimeBucket.afternoon;
+    if (h >= 17 && h < 22) return DayTimeBucket.evening;
+    return DayTimeBucket.night;
+  }
+
+  String get formattedTime {
+    final ts = effectiveTimestamp;
+    return '${ts.hour.toString().padLeft(2, '0')}:${ts.minute.toString().padLeft(2, '0')}';
+  }
+
+  List<String> get nuancedEmotions => AffectTaxonomy.extractNuancedKeys(this);
 
   MindTraceModel copyWith({
     String? id,

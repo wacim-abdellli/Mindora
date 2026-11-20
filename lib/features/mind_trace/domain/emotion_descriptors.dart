@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_strings.dart';
+import 'affect_taxonomy.dart';
 
 /// Descriptor for daily check-in emotion cards.
 ///
@@ -142,6 +143,16 @@ class EmotionDescriptor {
           desc.arabicLabel.trim().toLowerCase() == normalized) {
         return desc;
       }
+    }
+    final taxonomyMatch = AffectTaxonomy.byKey(normalized);
+    if (taxonomyMatch != null) {
+      return EmotionDescriptor(
+        key: taxonomyMatch.key,
+        englishLabel: taxonomyMatch.english,
+        frenchLabel: taxonomyMatch.french,
+        arabicLabel: taxonomyMatch.arabic,
+        icon: taxonomyMatch.icon,
+      );
     }
     return null;
   }

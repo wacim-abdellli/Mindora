@@ -8,6 +8,7 @@ import '../domain/mind_trace_model.dart';
 abstract class MindTraceRepository {
   Future<List<MindTraceModel>> getAllTraces();
   Future<MindTraceModel?> getTodayTrace();
+  Future<List<MindTraceModel>> getTracesForDate(String dateKey);
   Future<void> saveTrace(MindTraceModel trace);
   Future<void> deleteTrace(String id);
   Future<void> clearAllTraces();
@@ -60,8 +61,14 @@ class LocalMindTraceRepository implements MindTraceRepository {
           .map((item) =>
               MindTraceModel.fromJson(item as Map<String, dynamic>))
           .toList();
-      // Sort newest first
-      list.sort((a, b) => b.date.compareTo(a.date));
+      // Sort newest first (tie-breaking intra-day moments by createdAt, then updatedAt)
+      list.sort((a, b) {
+        final byDate = b.date.compareTo(a.date);
+        if (byDate != 0) return byDate;
+        final byCreated = b.createdAt.compareTo(a.createdAt);
+        if (byCreated != 0) return byCreated;
+        return b.updatedAt.compareTo(a.updatedAt);
+      });
       return list;
     } catch (_) {
       return [];
@@ -86,6 +93,14 @@ class LocalMindTraceRepository implements MindTraceRepository {
   }
 
   @override
+  Future<List<MindTraceModel>> getTracesForDate(String dateKey) async {
+    final all = await getAllTraces();
+    final dayTraces = all.where((t) => t.dateKey == dateKey).toList()
+      ..sort((a, b) => a.effectiveTimestamp.compareTo(b.effectiveTimestamp));
+    return dayTraces;
+  }
+
+  @override
   Future<void> saveTrace(MindTraceModel trace) async {
     final prefs = await SharedPreferences.getInstance();
     final cipher = await _keyManager.getCipherForUser(userId);
@@ -93,9 +108,8 @@ class LocalMindTraceRepository implements MindTraceRepository {
     final updatedTrace = trace.copyWith(userId: effectiveUser);
     final all = await getAllTraces();
 
-    // Prevent duplicate entries for the same date or matching ID
-    final index = all.indexWhere(
-        (t) => t.id == updatedTrace.id || t.dateKey == updatedTrace.dateKey);
+    // Update existing moment by ID, otherwise preserve distinct intra-day moments
+    final index = all.indexWhere((t) => t.id == updatedTrace.id);
     if (index != -1) {
       all[index] = updatedTrace;
     } else {

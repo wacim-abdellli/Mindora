@@ -40,6 +40,10 @@ class PersonalBaseline {
     this.recurringTriggers = const [],
     this.windowStartDate,
     this.windowEndDate,
+    this.averageIntraDaySwing,
+    this.multiEntryDaysCount = 0,
+    this.diurnalIntensityAverages = const {},
+    this.emotionFrequencyMap = const {},
   });
 
   /// Total distinct calendar days logged in the observation window.
@@ -132,6 +136,12 @@ class PersonalBaseline {
 
   final DateTime? windowStartDate;
   final DateTime? windowEndDate;
+
+  // Intra-day & diurnal clinical granularity
+  final double? averageIntraDaySwing;
+  final int multiEntryDaysCount;
+  final Map<DayTimeBucket, double> diurnalIntensityAverages;
+  final Map<String, int> emotionFrequencyMap;
 
   static const PersonalBaseline empty = PersonalBaseline(
     totalRecordedDays: 0,
@@ -236,18 +246,53 @@ class PersonalBaseline {
     final avgTension = _calculateMean(tensionValues);
     final medTension = _calculateMedian(tensionValues);
 
-    // Emotion frequencies
+    // Intra-day swing & diurnal calculations over all moments in window
+    final tracesByDay = <String, List<MindTraceModel>>{};
+    final bucketIntensities = <DayTimeBucket, List<int>>{};
+    for (final t in windowTraces) {
+      tracesByDay.putIfAbsent(t.dateKey, () => []).add(t);
+      bucketIntensities.putIfAbsent(t.timeBucket, () => []).add(t.moodIntensity);
+    }
+
+    final dailySwings = <int>[];
+    for (final dayList in tracesByDay.values) {
+      if (dayList.length >= 2) {
+        var minI = dayList.first.moodIntensity;
+        var maxI = dayList.first.moodIntensity;
+        for (final entry in dayList) {
+          if (entry.moodIntensity < minI) minI = entry.moodIntensity;
+          if (entry.moodIntensity > maxI) maxI = entry.moodIntensity;
+        }
+        dailySwings.add(maxI - minI);
+      }
+    }
+    final avgIntraDaySwing = _calculateMean(dailySwings);
+    final diurnalAverages = <DayTimeBucket, double>{
+      for (final entry in bucketIntensities.entries)
+        if (entry.value.isNotEmpty)
+          entry.key:
+              entry.value.reduce((a, b) => a + b) / entry.value.length,
+    };
+
+    // Emotion frequencies across all intra-day moments
     final emotionCounts = <String, int>{};
-    for (final t in dailyTraces) {
-      for (final e in t.selectedEmotions) {
-        if (e.trim().isNotEmpty) {
-          emotionCounts[e.trim()] = (emotionCounts[e.trim()] ?? 0) + 1;
+    for (final t in windowTraces) {
+      final emotions = t.selectedEmotions.isNotEmpty
+          ? t.selectedEmotions
+          : <String>[t.overallMood];
+      for (final e in emotions) {
+        final trimmed = e.trim();
+        if (trimmed.isNotEmpty) {
+          emotionCounts[trimmed] = (emotionCounts[trimmed] ?? 0) + 1;
         }
       }
     }
     final sortedEmotions = emotionCounts.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     final commonEmotions = sortedEmotions.take(5).map((e) => e.key).toList();
+    final emotionFreqMap = {
+      for (final entry in sortedEmotions) entry.key: entry.value,
+    };
 
     // Symptoms frequencies
     final symptomCounts = <String, int>{};
@@ -306,6 +351,10 @@ class PersonalBaseline {
       windowEndDate: dailyTraces.isEmpty
           ? todayStart
           : dailyTraces.map((t) => t.date).reduce((a, b) => a.isAfter(b) ? a : b),
+      averageIntraDaySwing: avgIntraDaySwing,
+      multiEntryDaysCount: dailySwings.length,
+      diurnalIntensityAverages: diurnalAverages,
+      emotionFrequencyMap: emotionFreqMap,
     );
   }
 

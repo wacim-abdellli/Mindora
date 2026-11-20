@@ -185,7 +185,12 @@ class AppRouter {
                 builder: (context, state) {
                   final tabIndex =
                       int.tryParse(state.uri.queryParameters['tab'] ?? '') ?? 0;
-                  return TrackScreen(initialTab: tabIndex.clamp(0, 1));
+                  final startNewMoment =
+                      state.uri.queryParameters['newMoment'] == '1';
+                  return TrackScreen(
+                    initialTab: tabIndex.clamp(0, 1),
+                    startNewMoment: startNewMoment,
+                  );
                 },
               ),
             ],

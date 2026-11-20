@@ -116,8 +116,7 @@ class _DailyMindTraceStepperState extends ConsumerState<DailyMindTraceStepper> {
     HapticFeedback.mediumImpact();
 
     final now = DateTime.now();
-    final todayKey =
-        'trace_${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
+    final uniqueTraceId = 'trace_${now.millisecondsSinceEpoch}';
 
     final mergedDynamicAnswers = <String, String>{
       if (widget.initialTrace != null) ...widget.initialTrace!.dynamicAnswers,
@@ -180,7 +179,7 @@ class _DailyMindTraceStepperState extends ConsumerState<DailyMindTraceStepper> {
             updatedAt: now,
           )
         : MindTraceModel(
-            id: todayKey,
+            id: uniqueTraceId,
             date: now,
             overallMood: effectiveMood,
             selectedEmotions: canonicalEmotions,

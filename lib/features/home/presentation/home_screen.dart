@@ -345,7 +345,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final activeCase = ref.watch(activeCaseControllerProvider).value;
     final traceAsync = ref.watch(mindTraceControllerProvider);
     final traces = traceAsync.value ?? [];
-    final todayTrace = traces.todayTrace;
+    final todayTraces = traces.todayTraces;
+    final todayTrace = todayTraces.isNotEmpty ? todayTraces.last : null;
 
     if (!_hasHydratedInitial && traceAsync.hasValue) {
       _applyTraceFieldsSync(todayTrace);
@@ -558,6 +559,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   isDark,
                   todayTrace,
                   traces,
+                  todayTraces,
                 ),
                 const SizedBox(height: 14),
                 HomeWeeklyRhythmCard(
@@ -752,6 +754,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     bool isDark,
     MindTraceModel? todayTrace,
     List<MindTraceModel> traces,
+    List<MindTraceModel> todayTraces,
   ) {
     return HomeDailyCheckInCard(
       tokens: tokens,
@@ -759,6 +762,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       isDark: isDark,
       todayTrace: todayTrace,
       traces: traces,
+      todayTraces: todayTraces,
       selectedMoodIndex: _selectedMoodIndex,
       moodIntensity: _moodIntensity,
       todayNoteController: _todayNoteController,
@@ -773,6 +777,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         initialChoice: SupportChoice.settle,
       ),
       onTalkAboutIt: (trace) => _openCompanionForTrace(trace, strings),
+      onLogAnotherMoment: () {
+        ref.read(trackNewMomentSignalProvider.notifier).trigger();
+        GoRouter.maybeOf(context)?.go('${AppRouter.track}?newMoment=1');
+      },
     );
   }
 

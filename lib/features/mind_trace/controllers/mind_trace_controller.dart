@@ -109,34 +109,63 @@ final mindTraceControllerProvider =
 );
 
 extension MindTraceListX on List<MindTraceModel> {
-  MindTraceModel? get todayTrace {
-    if (isEmpty) return null;
+  List<MindTraceModel> tracesForDate(String dateKey) {
+    final matching = where((t) => t.dateKey == dateKey).toList()
+      ..sort((a, b) {
+        final byTs = a.effectiveTimestamp.compareTo(b.effectiveTimestamp);
+        if (byTs != 0) return byTs;
+        return a.updatedAt.compareTo(b.updatedAt);
+      });
+    return matching;
+  }
+
+  List<MindTraceModel> get todayTraces {
+    if (isEmpty) return const [];
     final now = DateTime.now();
     final todayKey =
         '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    for (final t in this) {
-      if (t.dateKey == todayKey) return t;
-    }
-    return null;
+    return tracesForDate(todayKey);
+  }
+
+  MindTraceModel? get todayTrace {
+    final today = todayTraces;
+    return today.isNotEmpty ? today.last : null;
   }
 }
 
-/// Computed provider for today's active trace (if recorded).
-/// Uses .select to prevent redundant invalidation cycles during build.
-final todayTraceProvider = Provider<MindTraceModel?>((ref) {
+/// Chronological intra-day moments recorded today (oldest -> newest).
+final todayTracesProvider = Provider<List<MindTraceModel>>((ref) {
   final now = DateTime.now();
   final todayKey =
       '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
   return ref.watch(mindTraceControllerProvider.select((asyncVal) {
     final traces = asyncVal.value;
-    if (traces == null || traces.isEmpty) return null;
-    for (final t in traces) {
-      if (t.dateKey == todayKey) return t;
-    }
-    return null;
+    if (traces == null || traces.isEmpty) return const [];
+    return traces.tracesForDate(todayKey);
   }));
 });
+
+/// Computed provider for today's active/latest trace (if recorded).
+/// Uses .select to prevent redundant invalidation cycles during build.
+final todayTraceProvider = Provider<MindTraceModel?>((ref) {
+  final today = ref.watch(todayTracesProvider);
+  return today.isNotEmpty ? today.last : null;
+});
+
+/// Signal counter prompting [TrackScreen] to enter New Moment compose mode
+/// even when the indexed shell branch is already mounted.
+class TrackNewMomentSignalNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void trigger() => state = state + 1;
+}
+
+final trackNewMomentSignalProvider =
+    NotifierProvider<TrackNewMomentSignalNotifier, int>(
+  TrackNewMomentSignalNotifier.new,
+);
 
 /// Computed provider for unlocked milestones.
 /// Uses .select to prevent redundant invalidation cycles during build.

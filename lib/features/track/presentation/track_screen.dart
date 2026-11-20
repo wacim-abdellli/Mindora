@@ -27,6 +27,7 @@ import '../../investigation/controllers/investigation_providers.dart';
 import '../../investigation/domain/case_model.dart';
 import '../../investigation/domain/conversation_mode.dart';
 import '../../mind_trace/controllers/mind_trace_controller.dart';
+import '../../mind_trace/domain/affect_taxonomy.dart';
 import '../../mind_trace/domain/emotion_descriptors.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
 import '../../mind_trace/presentation/widgets/daily_mind_trace_stepper.dart';
@@ -39,9 +40,14 @@ import 'widgets/track_mood_utils.dart';
 /// Consolidated daily tracking workspace combining fast check-ins with an
 /// interactive calendar & chronological history.
 class TrackScreen extends ConsumerStatefulWidget {
-  const TrackScreen({super.key, this.initialTab = 0});
+  const TrackScreen({
+    super.key,
+    this.initialTab = 0,
+    this.startNewMoment = false,
+  });
 
   final int initialTab;
+  final bool startNewMoment;
 
   @override
   ConsumerState<TrackScreen> createState() => _TrackScreenState();
@@ -76,8 +82,12 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
   double _energyLevel = 5.0;
   double _anxietyLevel = 3.0;
   double _sleepHours = 7.5;
+  final Set<String> _selectedNuancedEmotions = {};
+  bool _showAllNuancedEmotions = false;
   final Set<String> _selectedTriggers = {};
   final Set<String> _selectedHelped = {};
+  bool _isComposingNewMoment = false;
+  String? _editingTraceId;
   bool _isSaving = false;
   bool _savedConfirmed = false;
   String? _hydratedTraceSignature;
@@ -94,6 +104,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
   void initState() {
     super.initState();
     _activeTab = widget.initialTab.clamp(0, 1);
+    _isComposingNewMoment = widget.startNewMoment;
     _noteController = TextEditingController();
     _noteController.addListener(_onNoteChanged);
     _tabController = TabController(
@@ -102,10 +113,14 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
       initialIndex: _activeTab,
     );
     _tabController.addListener(_handleTabControllerTick);
-    final traceAsync = ref.read(mindTraceControllerProvider);
-    if (traceAsync.hasValue) {
-      _applyTraceFieldsSync(traceAsync.value?.todayTrace);
+    if (_isComposingNewMoment) {
       _hasHydratedInitial = true;
+    } else {
+      final traceAsync = ref.read(mindTraceControllerProvider);
+      if (traceAsync.hasValue) {
+        _applyTraceFieldsSync(traceAsync.value?.todayTrace);
+        _hasHydratedInitial = true;
+      }
     }
   }
 
@@ -116,6 +131,9 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
     if (oldWidget.initialTab != widget.initialTab &&
         nextInitial != _tabController.index) {
       _tabController.animateTo(nextInitial);
+    }
+    if (widget.startNewMoment && !oldWidget.startNewMoment) {
+      _enterNewMomentMode();
     }
   }
 
@@ -149,6 +167,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
   void _applyTraceFieldsSync(MindTraceModel? trace) {
     if (trace == null) {
       _hydratedTraceSignature = null;
+      _editingTraceId = null;
       _lastSavedNote = '';
       _selectedMood = 'calm';
       _moodIntensity = 5.0;
@@ -156,6 +175,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
       _anxietyLevel = 3.0;
       _sleepHours = 7.5;
       _noteController.clear();
+      _selectedNuancedEmotions.clear();
       _selectedTriggers.clear();
       _selectedHelped.clear();
       _savedConfirmed = false;
@@ -163,6 +183,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
     }
 
     _hydratedTraceSignature = _traceSignature(trace);
+    _editingTraceId = trace.id;
     final hydratedNote = trace.journalText ?? '';
     _lastSavedNote = hydratedNote.trim();
     _selectedMood = EmotionDescriptor.canonicalKey(
@@ -175,6 +196,10 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
     if (_noteController.text != hydratedNote) {
       _noteController.text = hydratedNote;
     }
+
+    _selectedNuancedEmotions
+      ..clear()
+      ..addAll(trace.nuancedEmotions);
 
     _selectedTriggers.clear();
     if (trace.situation != null && trace.situation!.trim().isNotEmpty) {
@@ -207,6 +232,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
       if (_hydratedTraceSignature == null && !force) return;
       setState(() {
         if (snapOrb) _allowOrbMorph = false;
+        _isComposingNewMoment = false;
         _applyTraceFieldsSync(null);
       });
       return;
@@ -216,7 +242,131 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
     if (!force && _hydratedTraceSignature == sig) return;
     setState(() {
       if (snapOrb) _allowOrbMorph = false;
+      _isComposingNewMoment = false;
       _applyTraceFieldsSync(trace);
+    });
+  }
+
+  void _enterNewMomentMode() {
+    HapticFeedback.selectionClick();
+    ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
+    setState(() {
+      _isComposingNewMoment = true;
+      _editingTraceId = null;
+      _allowOrbMorph = true;
+      _selectedMood = 'calm';
+      _moodIntensity = 5.0;
+      _energyLevel = 5.0;
+      _anxietyLevel = 3.0;
+      _sleepHours = 7.5;
+      _noteController.clear();
+      _lastSavedNote = '';
+      _selectedNuancedEmotions.clear();
+      _selectedTriggers.clear();
+      _selectedHelped.clear();
+      _savedConfirmed = false;
+      if (_tabController.index != 0) {
+        _tabController.animateTo(0);
+      }
+    });
+  }
+
+  void _selectExistingMomentForEdit(MindTraceModel moment) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _isComposingNewMoment = false;
+      _allowOrbMorph = true;
+      _savedConfirmed = false;
+      _applyTraceFieldsSync(moment);
+    });
+  }
+
+  Future<void> _promptCustomFeelingSheet(
+    MindTokens tokens,
+    AppStrings strings,
+  ) async {
+    final controller = TextEditingController();
+    final customLabel = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) {
+        final sTokens = sheetCtx.tokens;
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheetCtx).viewInsets.bottom,
+          ),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            decoration: BoxDecoration(
+              color: sTokens.surface,
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(sTokens.sheetRadius),
+              ),
+              border: Border(top: BorderSide(color: sTokens.line)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: sTokens.line,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    strings.customFeelingSheetTitle,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: sTokens.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (val) => Navigator.of(sheetCtx).pop(val.trim()),
+                    decoration: InputDecoration(
+                      hintText: strings.customFeelingHint,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  MindButton(
+                    text: strings.confirmAction,
+                    isFullWidth: true,
+                    onPressed: () =>
+                        Navigator.of(sheetCtx).pop(controller.text.trim()),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+    controller.dispose();
+    if (!mounted || customLabel == null || customLabel.isEmpty) return;
+
+    final safetyLevel = CrisisKeywords.evaluateText(customLabel);
+    if (safetyLevel == 2) {
+      SafetyInterceptor.showCrisisPauseDialog(context);
+      return;
+    }
+
+    setState(() {
+      _selectedNuancedEmotions.add(customLabel);
+      _savedConfirmed = false;
     });
   }
 
@@ -243,7 +393,17 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
 
     try {
       final now = DateTime.now();
-      final today = ref.read(todayTraceProvider);
+      final todayList = ref.read(todayTracesProvider);
+      final MindTraceModel? editingTarget;
+      if (_isComposingNewMoment) {
+        editingTarget = null;
+      } else if (_editingTraceId != null) {
+        editingTarget =
+            todayList.where((t) => t.id == _editingTraceId).firstOrNull ??
+            ref.read(todayTraceProvider);
+      } else {
+        editingTarget = ref.read(todayTraceProvider);
+      }
       final authUser = ref.read(authControllerProvider).user;
       final userId = authUser?.id ?? 'local_user';
 
@@ -257,10 +417,14 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
           ? _noteController.text.trim()
           : null;
 
-      // Preserve Level 2 crisis pre-scan safeguard before saving any note.
-      final safetyLevel = noteText != null
+      // Preserve Level 2 crisis pre-scan safeguard before saving any text.
+      var safetyLevel = noteText != null
           ? CrisisKeywords.evaluateText(noteText)
           : 0;
+      for (final emotionText in _selectedNuancedEmotions) {
+        final eLevel = CrisisKeywords.evaluateText(emotionText);
+        if (eLevel > safetyLevel) safetyLevel = eLevel;
+      }
       if (safetyLevel == 2) {
         setState(() => _isSaving = false);
         if (mounted) {
@@ -269,22 +433,19 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
         return;
       }
 
-      final existingEmotions = today?.selectedEmotions ?? const <String>[];
-      final mergedEmotions = existingEmotions.isEmpty
-          ? [_selectedMood]
-          : <String>[
-              _selectedMood,
-              ...existingEmotions.where(
-                (e) =>
-                    EmotionDescriptor.canonicalKey(e).toLowerCase() !=
-                    _selectedMood,
-              ),
-            ];
+      final combinedEmotions = <String>[_selectedMood];
+      final seenEmotions = <String>{_selectedMood.toLowerCase()};
+      for (final e in _selectedNuancedEmotions) {
+        final clean = e.trim();
+        if (clean.isNotEmpty && seenEmotions.add(clean.toLowerCase())) {
+          combinedEmotions.add(clean);
+        }
+      }
 
-      final trace = today != null
-          ? today.copyWith(
+      final trace = editingTarget != null
+          ? editingTarget.copyWith(
               overallMood: _selectedMood,
-              selectedEmotions: mergedEmotions,
+              selectedEmotions: combinedEmotions,
               moodIntensity: _moodIntensity.round(),
               energyLevel: _energyLevel.round(),
               anxietyLevel: _anxietyLevel.round(),
@@ -298,11 +459,11 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
               updatedAt: now,
             )
           : MindTraceModel(
-              id: const Uuid().v4(),
+              id: 'trace_${now.millisecondsSinceEpoch}_${const Uuid().v4().substring(0, 6)}',
               userId: userId,
-              date: DateTime(now.year, now.month, now.day),
+              date: now,
               overallMood: _selectedMood,
-              selectedEmotions: [_selectedMood],
+              selectedEmotions: combinedEmotions,
               moodIntensity: _moodIntensity.round(),
               energyLevel: _energyLevel.round(),
               anxietyLevel: _anxietyLevel.round(),
@@ -314,6 +475,8 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
               updatedAt: now,
             );
 
+      _isComposingNewMoment = false;
+      _editingTraceId = trace.id;
       _hydratedTraceSignature = _traceSignature(trace);
       _lastSavedNote = noteText ?? '';
       await ref
@@ -425,7 +588,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
       trace: trace,
       onEdit: () {
         if (isTodayTrace) {
-          _hydrateFromTrace(trace, force: true);
+          _selectExistingMomentForEdit(trace);
           _tabController.animateTo(0);
         } else {
           EditPastTraceSheet.show(context, trace);
@@ -465,14 +628,29 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
     final tokens = context.tokens;
     final strings = ref.watch(appStringsProvider);
     final traceAsync = ref.watch(mindTraceControllerProvider);
-    final todayTrace = ref.watch(todayTraceProvider);
+    final todayTraces = ref.watch(todayTracesProvider);
+    final todayTrace = todayTraces.isNotEmpty ? todayTraces.last : null;
 
     if (!_hasHydratedInitial && traceAsync.hasValue) {
-      _applyTraceFieldsSync(todayTrace);
+      if (!_isComposingNewMoment) {
+        _applyTraceFieldsSync(todayTrace);
+      }
       _hasHydratedInitial = true;
     }
 
+    ref.listen<int>(trackNewMomentSignalProvider, (prev, next) {
+      if (prev != next && mounted) {
+        _enterNewMomentMode();
+      }
+    });
+
     ref.listen<MindTraceModel?>(todayTraceProvider, (_, next) {
+      if (_isComposingNewMoment) {
+        if (next == null && ref.read(todayTracesProvider).isEmpty && mounted) {
+          _hydrateFromTrace(null, snapOrb: true);
+        }
+        return;
+      }
       final nextSig = next != null ? _traceSignature(next) : null;
       if (nextSig != _hydratedTraceSignature) {
         final shouldSnap = !_hasHydratedInitial;
@@ -495,7 +673,12 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                       ? const Center(
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : _buildCheckInTodayTab(tokens, strings, todayTrace),
+                      : _buildCheckInTodayTab(
+                          tokens,
+                          strings,
+                          todayTrace,
+                          todayTraces,
+                        ),
                   _buildHistoryAndCalendarTab(tokens, strings),
                 ],
               ),
@@ -587,6 +770,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
     MindTokens tokens,
     AppStrings strings,
     MindTraceModel? todayTrace,
+    List<MindTraceModel> todayTraces,
   ) {
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     final activeMoodColor = MindTokens.moodColor(
@@ -612,6 +796,10 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                     letterSpacing: strings.isArabic ? 0 : -0.3,
                   ),
                 ),
+                if (todayTraces.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  _buildTodaysMomentsStrip(tokens, strings, todayTraces),
+                ],
                 const SizedBox(height: 10),
                 Center(
                   child: OrganicMoodOrb(
@@ -647,6 +835,8 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                     });
                   },
                 ),
+                const SizedBox(height: 14),
+                _buildNuancedFeelingsSection(tokens, strings, reduceMotion),
                 const SizedBox(height: 16),
                 TrackIntensitySlider(
                   value: _moodIntensity,
@@ -905,9 +1095,11 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                   : const SizedBox.shrink(key: ValueKey('not-saved-pill')),
             ),
             MindButton(
-              text: todayTrace != null
-                  ? strings.updateTodaysEntryAction
-                  : strings.saveCheckInAction,
+              text: _isComposingNewMoment
+                  ? strings.logNewMomentBtn
+                  : ((_editingTraceId != null || todayTrace != null)
+                        ? strings.updateTodaysEntryAction
+                        : strings.saveCheckInAction),
               isFullWidth: true,
               isLoading: _isSaving,
               leadingIcon: _savedConfirmed
@@ -918,6 +1110,276 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTodaysMomentsStrip(
+    MindTokens tokens,
+    AppStrings strings,
+    List<MindTraceModel> todayTraces,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          strings.todaysMomentsHeader,
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
+            letterSpacing: strings.isArabic ? 0 : 0.6,
+            color: tokens.ink2,
+          ),
+        ),
+        const SizedBox(height: 6),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (int i = 0; i < todayTraces.length; i++) ...[
+                Builder(
+                  builder: (context) {
+                    final m = todayTraces[i];
+                    final mColor = trackMoodOptionFor(m.overallMood).color;
+                    final mLabel = trackMoodLabel(m.overallMood, strings);
+                    final isSelected =
+                        !_isComposingNewMoment &&
+                        (_editingTraceId == m.id ||
+                            (_editingTraceId == null &&
+                                i == todayTraces.length - 1));
+                    return Semantics(
+                      button: true,
+                      selected: isSelected,
+                      label: '${m.formattedTime} $mLabel ${m.moodIntensity}/10',
+                      child: MindPressable(
+                        onPressed: () => _selectExistingMomentForEdit(m),
+                        borderRadius: BorderRadius.circular(tokens.chipRadius),
+                        child: Container(
+                          constraints: const BoxConstraints(minHeight: 48),
+                          alignment: Alignment.center,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 7,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? tokens.selectedTintFor(mColor)
+                                  : tokens.surface2,
+                              borderRadius: BorderRadius.circular(
+                                tokens.chipRadius,
+                              ),
+                              border: Border.all(
+                                color: isSelected ? mColor : tokens.line,
+                                width: isSelected ? 1.4 : 1.0,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 7,
+                                  height: 7,
+                                  decoration: BoxDecoration(
+                                    color: mColor,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '${m.formattedTime} · $mLabel ${m.moodIntensity}/10',
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 12,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                    color: tokens.ink,
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures(),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+              ],
+              Semantics(
+                button: true,
+                selected: _isComposingNewMoment,
+                label: strings.newMomentChipLabel,
+                child: MindPressable(
+                  onPressed: _enterNewMomentMode,
+                  borderRadius: BorderRadius.circular(tokens.chipRadius),
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 48),
+                    alignment: Alignment.center,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _isComposingNewMoment
+                            ? tokens.ink
+                            : tokens.surface2,
+                        borderRadius: BorderRadius.circular(tokens.chipRadius),
+                        border: Border.all(
+                          color: _isComposingNewMoment
+                              ? tokens.ink
+                              : tokens.line,
+                        ),
+                      ),
+                      child: Text(
+                        strings.newMomentChipLabel,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: _isComposingNewMoment ? tokens.bg : tokens.ink,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNuancedFeelingsSection(
+    MindTokens tokens,
+    AppStrings strings,
+    bool reduceMotion,
+  ) {
+    final prioritized = AffectTaxonomy.prioritizedForCore(_selectedMood);
+    final selectedLower = _selectedNuancedEmotions
+        .map((e) => e.toLowerCase())
+        .toSet();
+
+    final List<NuancedFeeling> shownLibrary = _showAllNuancedEmotions
+        ? prioritized
+        : [
+            ...prioritized.take(6),
+            ...prioritized.skip(6).where(
+              (f) => selectedLower.contains(f.key.toLowerCase()),
+            ),
+          ];
+
+    final customKeys = _selectedNuancedEmotions
+        .where((key) => AffectTaxonomy.byKey(key) == null)
+        .toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          strings.alsoFeelingOptionalLabel,
+          style: TextStyle(
+            fontFamily: 'Inter',
+            color: tokens.ink2,
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
+            letterSpacing: strings.isArabic ? 0 : 0.6,
+          ),
+        ),
+        const SizedBox(height: 8),
+        AnimatedSize(
+          duration: reduceMotion
+              ? Duration.zero
+              : const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.topCenter,
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              for (final feeling in shownLibrary)
+                MindPill(
+                  label: feeling.localized(strings),
+                  icon: feeling.icon,
+                  fontSize: 12,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 7,
+                  ),
+                  isSelected: selectedLower.contains(feeling.key.toLowerCase()),
+                  onTap: () {
+                    setState(() {
+                      final existing = _selectedNuancedEmotions
+                          .where(
+                            (e) => e.toLowerCase() == feeling.key.toLowerCase(),
+                          )
+                          .toList();
+                      if (existing.isNotEmpty) {
+                        _selectedNuancedEmotions.removeAll(existing);
+                      } else {
+                        _selectedNuancedEmotions.add(feeling.key);
+                      }
+                      _savedConfirmed = false;
+                    });
+                  },
+                ),
+              for (final custom in customKeys)
+                MindPill(
+                  label: custom,
+                  icon: Icons.bubble_chart_outlined,
+                  fontSize: 12,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 7,
+                  ),
+                  isSelected: true,
+                  onTap: () {
+                    setState(() {
+                      _selectedNuancedEmotions.remove(custom);
+                      _savedConfirmed = false;
+                    });
+                  },
+                ),
+              MindPill(
+                label: _showAllNuancedEmotions
+                    ? strings.showFewerFeelingsBtn
+                    : strings.showMoreFeelingsBtn,
+                icon: _showAllNuancedEmotions
+                    ? Icons.unfold_less_rounded
+                    : Icons.unfold_more_rounded,
+                fontSize: 12,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
+                isSelected: false,
+                onTap: () {
+                  setState(() {
+                    _showAllNuancedEmotions = !_showAllNuancedEmotions;
+                  });
+                },
+              ),
+              MindPill(
+                label: strings.addCustomFeelingBtn,
+                icon: Icons.add_rounded,
+                fontSize: 12,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
+                isSelected: false,
+                onTap: () => _promptCustomFeelingSheet(tokens, strings),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -1381,7 +1843,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                                 color: moodColor,
                               ),
                               const SizedBox(width: 7),
-                              Flexible(
+                              Expanded(
                                 child: Text(
                                   '$moodText · ${t.moodIntensity}/10',
                                   maxLines: 1,
@@ -1397,8 +1859,94 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                                   ),
                                 ),
                               ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 7,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: tokens.surface2,
+                                  borderRadius: BorderRadius.circular(
+                                    tokens.chipRadius,
+                                  ),
+                                  border: Border.all(color: tokens.line),
+                                ),
+                                child: Text(
+                                  t.formattedTime,
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: tokens.ink2,
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures(),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
+                          if (t.nuancedEmotions.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: [
+                                for (final feelingKey
+                                    in t.nuancedEmotions.take(3))
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: moodSoft,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: moodColor.withValues(alpha: 0.3),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      AffectTaxonomy.localizedLabel(
+                                        feelingKey,
+                                        strings,
+                                      ),
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: tokens.ink,
+                                      ),
+                                    ),
+                                  ),
+                                if (t.nuancedEmotions.length > 3)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 7,
+                                      vertical: 3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: tokens.surface2,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: tokens.line),
+                                    ),
+                                    child: Text(
+                                      '+${t.nuancedEmotions.length - 3}',
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: tokens.ink2,
+                                        fontFeatures: const [
+                                          FontFeature.tabularFigures(),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
                           if (triggers.isNotEmpty) ...[
                             const SizedBox(height: 6),
                             Wrap(
