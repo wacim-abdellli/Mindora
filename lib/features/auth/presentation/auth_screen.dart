@@ -11,6 +11,7 @@ import '../../../core/safety/support_button.dart';
 import '../../../core/security/app_lock_provider.dart';
 import '../../../core/widgets/bouncing_widget.dart';
 import '../../../core/widgets/fingerprint_thread_signature.dart';
+import '../../clinician/presentation/clinician_shell_screen.dart';
 import '../controllers/auth_controller.dart';
 import '../domain/auth_state.dart';
 
@@ -619,6 +620,62 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Direct Entry to Psychiatrist / Clinician Portal
+                Semantics(
+                  button: true,
+                  label: strings.clinicianPortalBtnLabel,
+                  child: InkWell(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      final router = GoRouter.maybeOf(context);
+                      if (router != null) {
+                        router.go(AppRouter.clinician);
+                      } else {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const ClinicianShellScreen(),
+                          ),
+                        );
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(context.tokens.chipRadius),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 48),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.medical_services_outlined,
+                              size: 15,
+                              color: textSecondary,
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                strings.clinicianPortalBtnLabel,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: textSecondary,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),

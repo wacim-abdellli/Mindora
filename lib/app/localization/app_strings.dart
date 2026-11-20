@@ -2149,6 +2149,517 @@ class AppStrings {
   String get nightBucketLabel =>
       isArabic ? 'الليل' : (isFrench ? 'Nuit' : 'Night');
 
+  // ---------------------------------------------------------------------------
+  // Phase 3: Psychiatrist Workspace & Encrypted Care Handoff Protocol
+  // ---------------------------------------------------------------------------
+
+  String get psychiatristWorkspaceTitle => isArabic
+      ? 'فضاء الطبيب النفسي'
+      : (isFrench ? 'Espace Psychiatre' : 'Psychiatrist Workspace');
+
+  String get psychiatristWorkspaceSub => isArabic
+      ? 'مراجعة ملفات المرضى والاتجاهات وملاحظات الجلسات'
+      : (isFrench
+            ? 'Suivre les patients importés, tendances et notes cliniques'
+            : 'Review imported patient timelines, shifts & clinical notes');
+
+  String get shareWithPsychiatristTitle => isArabic
+      ? 'مشاركة مع الطبيب النفسي'
+      : (isFrench
+            ? 'Partager avec mon psychiatre'
+            : 'Share with Psychiatrist');
+
+  String get shareWithPsychiatristSub => isArabic
+      ? 'حزمة مشفّرة حسب اختيارك وجدول تحضير للجلسة'
+      : (isFrench
+            ? 'Paquet chiffré sur consentement & ordre du jour de visite'
+            : 'Consent-scoped encrypted handoff & pre-visit agenda');
+
+  String get clinicianPortalBtnLabel => isArabic
+      ? 'بوابة الطبيب النفسي / المعالج'
+      : (isFrench
+            ? 'Portail Psychiatre / Clinicien'
+            : 'Psychiatrist / Clinician Portal');
+
+  String get switchToPatientWorkspaceBtn => isArabic
+      ? 'العودة إلى فضاء المريض'
+      : (isFrench ? 'Passer à l’espace patient' : 'Switch to Patient Workspace');
+
+  String get patientViewChipLabel =>
+      isArabic ? 'فضاء المريض' : (isFrench ? 'Vue Patient' : 'Patient View');
+
+  String get careHandoffSubtitle => isArabic
+      ? 'اختر المدة الزمنية ونوع المعطيات اللي تحب تشاركها بأمان مع طبيبك.'
+      : (isFrench
+            ? 'Choisissez la fenêtre et les données partagées en toute confidentialité.'
+            : 'Choose your timeframe and exactly what enters the clinical handoff.');
+
+  String get timeWindowLabel => isArabic
+      ? 'الفترة الزمنية'
+      : (isFrench ? 'FENÊTRE DE PARTAGE' : 'SHARE WINDOW');
+
+  String daysWindowLabel(int days) {
+    if (isArabic) return '$days يوم';
+    if (isFrench) return '${days}j';
+    return '${days}d';
+  }
+
+  String get whatToShareLabel => isArabic
+      ? 'شنوّة تحب تشارك'
+      : (isFrench ? 'PORTÉE DU CONSENTEMENT' : 'CONSENT SCOPE');
+
+  String get scopeMoodMetricsLabel => isArabic
+      ? 'المزاج العام والشدة والمشاعر الدقيقة'
+      : (isFrench
+            ? 'Humeur principale, intensité & nuances'
+            : 'Core mood, intensity & nuanced feelings');
+
+  String get scopeSleepEnergyAnxietyLabel => isArabic
+      ? 'ساعات النوم والطاقة والتوتر اليومي'
+      : (isFrench
+            ? 'Sommeil, énergie & niveau de tension'
+            : 'Sleep duration, energy & anxiety levels');
+
+  String get scopePersonalNotesLabel => isArabic
+      ? 'الملاحظات الشخصية والمحفزات اليومية'
+      : (isFrench
+            ? 'Notes personnelles & déclencheurs'
+            : 'Personal daily notes, triggers & what helped');
+
+  String get scopeSharedCasesLabel => isArabic
+      ? 'الاستكشافات المعرفية غير الخاصة'
+      : (isFrench
+            ? 'Explorations cognitives non privées'
+            : 'Non-private CBT-inspired explorations');
+
+  String get scopeSymptomReportsLabel => isArabic
+      ? 'سجل الأعراض الجسدية والنفسية'
+      : (isFrench
+            ? 'Rapports de symptômes observés'
+            : 'Self-reported symptom logs');
+
+  String get scopeProfileSnapshotLabel => isArabic
+      ? 'ملخص الأهداف وتفضيلات التواصل'
+      : (isFrench
+            ? 'Objectifs & préférences de communication'
+            : 'Goals & communication preferences');
+
+  String get scopePreVisitAgendaLabel => isArabic
+      ? 'نقاط التحضير لموعد الطبيب'
+      : (isFrench
+            ? 'Ordre du jour de pré-consultation'
+            : 'Pre-visit consultation agenda');
+
+  String privateCasesExcludedBanner(int count) {
+    if (isArabic) {
+      return count > 0
+          ? 'تم استبعاد $count ملف(ات) خاصة نهائياً — الجلسات الخاصة لا تُشارك أبداً.'
+          : 'الجلسات المصنفة "خاصة" تُستبعد تلقائياً ولا تغادر جهازك أبداً.';
+    }
+    if (isFrench) {
+      return count > 0
+          ? '$count dossier(s) privé(s) exclu(s) — les explorations privées ne sont jamais partagées.'
+          : 'Les explorations marquées privées sont toujours exclues automatiquement.';
+    }
+    return count > 0
+        ? '$count private session(s) excluded — private cases never leave this gate.'
+        : 'Sessions marked Private are always excluded automatically.';
+  }
+
+  String get preVisitAgendaSectionTitle => isArabic
+      ? 'تحضير موعد الاستشارة (اختياري)'
+      : (isFrench
+            ? 'PRÉPARER LA CONSULTATION (OPTIONNEL)'
+            : 'PRE-VISIT AGENDA (OPTIONAL)');
+
+  String get preVisitTopicsLabel => isArabic
+      ? 'مواضيع تحب تحكي فيها'
+      : (isFrench ? 'Sujets à aborder' : 'Topics for your visit');
+
+  String get preVisitQuestionHint => isArabic
+      ? 'سؤال تحب تسألو لطبيبك... (اختياري)'
+      : (isFrench
+            ? 'Une question pour votre psychiatre... (optionnel)'
+            : 'One question for your psychiatrist... (optional)');
+
+  String get preVisitHelpedHint => isArabic
+      ? 'شنوّة عاونك ها الفترة؟ (اختياري)'
+      : (isFrench
+            ? 'Ce qui vous a aidé récemment... (optionnel)'
+            : 'What has helped recently... (optional)');
+
+  String get preVisitTopicSleep =>
+      isArabic ? 'تقلّبات النوم' : (isFrench ? 'Variations du sommeil' : 'Sleep shifts');
+
+  String get preVisitTopicEveningDips => isArabic
+      ? 'هبوط المزاج في المساء'
+      : (isFrench ? 'Baisses en soirée' : 'Evening dips');
+
+  String get preVisitTopicWorkStrain => isArabic
+      ? 'ضغط الخدمة أو القراية'
+      : (isFrench ? 'Charge pro / études' : 'Work or study strain');
+
+  String get preVisitTopicTreatmentQuestions => isArabic
+      ? 'أسئلة على الخطة أو الدواء'
+      : (isFrench ? 'Questions de suivi' : 'Follow-up & medication questions');
+
+  String get preVisitTopicThoughtLoops => isArabic
+      ? 'دوائر الأفكار المتكررة'
+      : (isFrench ? 'Ruminations récurrentes' : 'Recurring thought loops');
+
+  String get preVisitTopicCopingReview => isArabic
+      ? 'شنوّة نفعني مؤخراً'
+      : (isFrench ? 'Stratégies utiles' : 'Review what helped');
+
+  String get handoffPassphraseLabel => isArabic
+      ? 'كلمة سر لفك التشفير (6 أحرف على الأقل)'
+      : (isFrench
+            ? 'Phrase secrète de transfert (min. 6 caractères)'
+            : 'Handoff Passphrase (min. 6 chars)');
+
+  String get handoffPassphraseHint => isArabic
+      ? 'أدخل كلمة سر تتشاركها مع طبيبك'
+      : (isFrench
+            ? 'Ex. seance-tunis-24'
+            : 'Enter a passphrase to share separately');
+
+  String get handoffPassphraseMinError => isArabic
+      ? 'كلمة السر يلزمها 6 أحرف على الأقل.'
+      : (isFrench
+            ? 'Veuillez saisir au moins 6 caractères.'
+            : 'Please enter at least 6 characters.');
+
+  String get generateSyncCodeBtn => isArabic
+      ? 'إنشاء رمز مزامنة مشفّر'
+      : (isFrench ? 'Générer un code chiffré' : 'Generate Encrypted Sync Code');
+
+  String get copySyncCodeBtn => isArabic
+      ? 'نسخ رمز المزامنة'
+      : (isFrench ? 'Copier le code chiffré' : 'Copy Sync Code');
+
+  String get syncCodeCopiedSnackbar => isArabic
+      ? 'تم نسخ رمز المزامنة المشفّر.'
+      : (isFrench ? 'Code chiffré copié.' : 'Encrypted sync code copied.');
+
+  String get sendToLocalClinicianBtn => isArabic
+      ? 'إرسال مباشرة لفضاء الطبيب على هذا الجهاز'
+      : (isFrench
+            ? 'Envoyer à l’espace psychiatre local'
+            : 'Send to Psychiatrist Workspace on This Device');
+
+  String get sentToLocalClinicianSnackbar => isArabic
+      ? 'تم تحديث ملف المريض في فضاء الطبيب.'
+      : (isFrench
+            ? 'Paquet transmis à l’espace psychiatre.'
+            : 'Delivered to Psychiatrist Workspace on this device.');
+
+  String get openClinicianWorkspaceBtn => isArabic
+      ? 'فتح الفضاء'
+      : (isFrench ? 'Ouvrir l’espace' : 'Open Workspace');
+
+  String get clinicianTabPatients =>
+      isArabic ? 'المرضى' : (isFrench ? 'Patients' : 'Patients');
+
+  String get clinicianTabOverview =>
+      isArabic ? 'نظرة عامة' : (isFrench ? 'Cohorte' : 'Overview');
+
+  String get clinicianTabPractice =>
+      isArabic ? 'العيادة' : (isFrench ? 'Cabinet' : 'Practice');
+
+  String get importPacketBtn =>
+      isArabic ? '+ استيراد' : (isFrench ? '+ Importer' : '+ Import');
+
+  String get kpiActivePatients =>
+      isArabic ? 'المرضى' : (isFrench ? 'Patients' : 'Active Patients');
+
+  String get kpiBaselineShifts =>
+      isArabic ? 'تغيّرات مرصودة' : (isFrench ? 'Écarts observés' : 'Baseline Shifts');
+
+  String get kpiSharedUpdates =>
+      isArabic ? 'تحديثات جديدة' : (isFrench ? 'Nouveaux partages' : 'Shared Updates');
+
+  String get filterAll =>
+      isArabic ? 'الكل' : (isFrench ? 'Tous' : 'All');
+
+  String get filterShiftsNoted =>
+      isArabic ? 'تغيّرات مرصودة' : (isFrench ? 'Écarts notables' : 'Shifts Noted');
+
+  String get filterNewUpdates =>
+      isArabic ? 'جديد' : (isFrench ? 'Non lus' : 'New Updates');
+
+  String get filterDemoCohort =>
+      isArabic ? 'ملفات تجريبية' : (isFrench ? 'Démo clinique' : 'Demo Cohort');
+
+  String get demoDatasetBadge =>
+      isArabic ? 'تجريبي' : (isFrench ? 'DÉMO' : 'DEMO');
+
+  String shiftsCountBadge(int count) {
+    if (isArabic) return '$count تغيّرات';
+    if (isFrench) return '$count écarts';
+    return '$count shifts';
+  }
+
+  String get baselineSteadyBadge => isArabic
+      ? 'مستقر مقارنة بالمرجع'
+      : (isFrench ? 'Ligne de base stable' : 'Steady vs baseline');
+
+  String get noPatientsEmptyTitle => isArabic
+      ? 'لا توجد ملفات مرضى بعد'
+      : (isFrench ? 'Aucun dossier patient' : 'No patient records yet');
+
+  String get noPatientsEmptySub => isArabic
+      ? 'استورد حزمة مشفّرة من مريض أو فعّل المجموعة التجريبية من الإعدادات.'
+      : (isFrench
+            ? 'Importez un code chiffré ou activez les cas de démonstration dans Cabinet.'
+            : 'Import an encrypted patient sync packet or enable the demo cohort in Practice.');
+
+  String get cohortObservationsTitle => isArabic
+      ? 'مؤشرات التغيّر عبر المرضى'
+      : (isFrench
+            ? 'OBSERVATIONS OBJECTIVÉES DE COHORTE'
+            : 'COHORT BASELINE OBSERVATIONS');
+
+  String get cohortTopFeelingsTitle => isArabic
+      ? 'المشاعر الدقيقة الأكثر تكراراً'
+      : (isFrench
+            ? 'NUANCES ÉMOTIONNELLES DOMINANTES'
+            : 'RECURRING AFFECT SPECTRUM');
+
+  String get cohortAvgMetricsTitle => isArabic
+      ? 'متوسط مؤشرات الـ 7 أيام'
+      : (isFrench ? 'MOYENNES SUR 7 JOURS' : 'COHORT 7-DAY AVERAGES');
+
+  String get practiceProfileTitle => isArabic
+      ? 'معلومات الممارس / العيادة'
+      : (isFrench ? 'PROFIL DU PRATICIEN' : 'PRACTITIONER PROFILE');
+
+  String get editPracticeProfileTitle => isArabic
+      ? 'تعديل بيانات الطبيب'
+      : (isFrench ? 'Modifier le profil clinicien' : 'Edit Clinician Profile');
+
+  String get clinicianNameLabel => isArabic
+      ? 'الاسم المهني'
+      : (isFrench ? 'Nom du psychiatre' : 'Clinician Name');
+
+  String get clinicianSpecialtyLabel => isArabic
+      ? 'الاختصاص'
+      : (isFrench ? 'Spécialité' : 'Specialty');
+
+  String get clinicNameLabel => isArabic
+      ? 'العيادة أو المؤسسة'
+      : (isFrench ? 'Cabinet / Service' : 'Clinic / Practice');
+
+  String get demoCohortToggleTitle => isArabic
+      ? 'عرض الحالات السريرية التجريبية'
+      : (isFrench ? 'Jeu de données cliniques démo' : 'Demo Clinical Dataset');
+
+  String get demoCohortToggleSub => isArabic
+      ? 'ثلاثة ملفات افتراضية لتجربة فضاء الطبيب'
+      : (isFrench
+            ? 'Affiche 3 profils fictifs (Nadia, Karim, Lina) clairement marqués DÉMO'
+            : 'Shows 3 clearly badged fictional patient timelines for clinical evaluation');
+
+  String get clinicBiometricLockTitle => isArabic
+      ? 'قفل العيادة بالبصمة'
+      : (isFrench ? 'Verrouillage biométrique' : 'Biometric Vault Lock');
+
+  String get biometricLockSub => isArabic
+      ? 'تأمين المعطيات السريرية والملاحظات الخاصة'
+      : (isFrench
+            ? 'Protéger l’accès aux dossiers et notes privées'
+            : 'Protect clinical timelines and private clinician notes');
+
+  String get clearImportedPatientsBtn => isArabic
+      ? 'مسح الملفات المستوردة'
+      : (isFrench ? 'Effacer les dossiers importés' : 'Clear Imported Patients');
+
+  String get clearImportedPatientsConfirm => isArabic
+      ? 'سيتم حذف جميع حزم المرضى المستوردة وملاحظاتها على هذا الجهاز فقط.'
+      : (isFrench
+            ? 'Supprime tous les patients importés localement (hors dossiers démo).'
+            : 'Removes all imported patient packets and associated local notes.');
+
+  String get clinicalBoundaryNote => isArabic
+      ? 'أداة مساعدة للملاحظة السريرية وليست تشخيصاً آلياً. التحليل يعتمد على معطيات المريض الموافَق عليها.'
+      : (isFrench
+            ? 'Aide à l’observation clinique sans diagnostic automatisé. Toutes les données reflètent le consentement patient.'
+            : 'Clinical observation aid only — never an automated diagnostic or prediction tool. Private cases stay strictly excluded.');
+
+  String get importPacketTitle => isArabic
+      ? 'استيراد حزمة مريض مشفّرة'
+      : (isFrench
+            ? 'Importer un paquet patient chiffré'
+            : 'Import Encrypted Patient Packet');
+
+  String get importPacketSubtitle => isArabic
+      ? 'ألصق الرمز المشفّر الذي أرسله المريض مع كلمة السر الخاصة بالجلسة.'
+      : (isFrench
+            ? 'Collez le code MF-CLINIC-V1 transmis par le patient ainsi que la phrase secrète.'
+            : 'Paste the patient’s MF-CLINIC-V1 sync code and shared passphrase to decrypt locally.');
+
+  String get syncCodeFieldLabel => isArabic
+      ? 'رمز المزامنة (MF-CLINIC-V1:...)'
+      : (isFrench ? 'Code de synchronisation' : 'Sync Code');
+
+  String get syncCodeFieldHint => isArabic
+      ? 'MF-CLINIC-V1:...'
+      : (isFrench ? 'MF-CLINIC-V1:...' : 'MF-CLINIC-V1:...');
+
+  String get decryptAndImportBtn => isArabic
+      ? 'فك التشفير والاستيراد'
+      : (isFrench ? 'Déchiffrer et importer' : 'Decrypt & Import');
+
+  String get importSuccessSnackbar => isArabic
+      ? 'تم فك تشفير الملف وإضافته بأمان.'
+      : (isFrench
+            ? 'Dossier déchiffré et importé avec succès.'
+            : 'Patient packet decrypted and imported.');
+
+  String get importInvalidCodeError => isArabic
+      ? 'صيغة الرمز غير صالحة أو ناقصة.'
+      : (isFrench
+            ? 'Format de code invalide ou corrompu.'
+            : 'Invalid or malformed sync code format.');
+
+  String get importWrongPassphraseError => isArabic
+      ? 'تعذّر فك التشفير — تأكد من كلمة السر وصحة الرمز.'
+      : (isFrench
+            ? 'Échec du déchiffrement — vérifiez la phrase secrète.'
+            : 'Decryption failed — check passphrase or packet integrity.');
+
+  String get dossierTabOverview =>
+      isArabic ? 'الملخص' : (isFrench ? 'Aperçu' : 'Overview');
+
+  String get dossierTabTimeline =>
+      isArabic ? 'التسلسل' : (isFrench ? 'Chronologie' : 'Timeline');
+
+  String get dossierTabCases =>
+      isArabic ? 'الاستكشاف' : (isFrench ? 'Explorations' : 'Cases');
+
+  String get dossierTabNotes =>
+      isArabic ? 'ملاحظاتي' : (isFrench ? 'Notes' : 'Notes');
+
+  String get copyEhrSummaryBtn => isArabic
+      ? 'نسخ ملخص العيادة'
+      : (isFrench ? 'Copier résumé dossier' : 'Copy EHR Note');
+
+  String get ehrCopiedSnackbar => isArabic
+      ? 'تم نسخ الملخص السريري المنظم.'
+      : (isFrench
+            ? 'Résumé structuré copié dans le presse-papiers.'
+            : 'Structured EHR consultation summary copied.');
+
+  String get consentScopeBannerTitle => isArabic
+      ? 'نطاق موافقة المريض'
+      : (isFrench ? 'PORTÉE DU CONSENTEMENT PATIENT' : 'PATIENT CONSENT SCOPE');
+
+  String get recentVsBaselineTitle => isArabic
+      ? 'آخر 7 أيام مقارنة بمرجع المريض'
+      : (isFrench
+            ? '7 DERNIERS JOURS VS LIGNE DE BASE'
+            : '7-DAY RECENT VS PERSONAL BASELINE');
+
+  String get metricColumnLabel =>
+      isArabic ? 'المؤشر' : (isFrench ? 'Indicateur' : 'Metric');
+
+  String get recent7dColumnLabel =>
+      isArabic ? '7 أيام' : (isFrench ? '7j' : '7d');
+
+  String get baselineColumnLabel =>
+      isArabic ? 'المرجع' : (isFrench ? 'Base' : 'Baseline');
+
+  String get deltaColumnLabel =>
+      isArabic ? 'الفرق' : (isFrench ? 'Écart' : 'Delta');
+
+  String get notesNotSharedNotice => isArabic
+      ? 'اختار المريض عدم مشاركة الملاحظات النصية في هذه الحزمة.'
+      : (isFrench
+            ? 'Le patient a choisi de ne pas partager ses notes personnelles.'
+            : 'Personal free-text notes were excluded by patient consent.');
+
+  String get casesNotSharedNotice => isArabic
+      ? 'اختار المريض عدم مشاركة جلسات الاستكشاف في هذه الحزمة.'
+      : (isFrench
+            ? 'Explorations cognitives exclues par le consentement du patient.'
+            : 'CBT-inspired explorations were excluded by patient consent.');
+
+  String get privateCasesNeverSharedNote => isArabic
+      ? 'الجلسات المصنفة خاصة لا تُدرج أبداً في هذا الفضاء.'
+      : (isFrench
+            ? 'Les sessions marquées privées restent strictement invisibles.'
+            : 'Sessions marked Private on the patient device are never transmitted.');
+
+  String get sharedCasesTitle => isArabic
+      ? 'جلسات الاستكشاف المعرفي المشتركة'
+      : (isFrench
+            ? 'EXPLORATIONS COGNITIVES PARTAGÉES'
+            : 'SHARED COGNITIVE EXPLORATIONS');
+
+  String get sharedSymptomsTitle => isArabic
+      ? 'سجل الأعراض المشارَك'
+      : (isFrench ? 'RAPPORTS DE SYMPTÔMES PARTAGÉS' : 'SHARED SYMPTOM LOGS');
+
+  String get clinicianNotesPrivateNotice => isArabic
+      ? 'ملاحظات الطبيب مشفّرة ومحفوظة في فضاء العيادة فقط — لا ترسل تلقائياً للمريض.'
+      : (isFrench
+            ? 'Ces notes sont isolées et chiffrées localement dans votre espace clinicien.'
+            : 'Encrypted locally inside the isolated clinician workspace — never pushed back automatically.');
+
+  String get addClinicianNoteBtn => isArabic
+      ? '+ إضافة ملاحظة سريرية'
+      : (isFrench ? '+ Ajouter une note clinique' : '+ Add Clinical Note');
+
+  String get clinicianNoteTagLabel => isArabic
+      ? 'تصنيف الملاحظة'
+      : (isFrench ? 'Catégorie' : 'Note Tag');
+
+  String get clinicianNoteBodyHint => isArabic
+      ? 'اكتب ملاحظات المعاينة أو المتابعة...'
+      : (isFrench
+            ? 'Observations cliniques, évolution, plan de suivi...'
+            : 'Clinical observations, contextual synthesis, follow-up focus...');
+
+  String get saveNoteBtn =>
+      isArabic ? 'حفظ الملاحظة' : (isFrench ? 'Enregistrer la note' : 'Save Note');
+
+  String get noClinicianNotesYet => isArabic
+      ? 'ما فماش ملاحظات مسجّلة لهذا الملف حتى الآن.'
+      : (isFrench
+            ? 'Aucune note clinique enregistrée pour ce patient.'
+            : 'No clinician session notes recorded for this patient yet.');
+
+  String get ehrSummaryFullBtn => isArabic
+      ? 'نسخ ملخص الاستشارة السريري'
+      : (isFrench
+            ? 'Copier le résumé de consultation'
+            : 'Copy EHR Consultation Summary');
+
+  String get metricMoodLabel =>
+      isArabic ? 'شدة المزاج' : (isFrench ? 'Humeur' : 'Mood');
+
+  String get metricSleepLabel =>
+      isArabic ? 'النوم (س)' : (isFrench ? 'Sommeil (h)' : 'Sleep (h)');
+
+  String get metricEnergyLabel =>
+      isArabic ? 'الطاقة' : (isFrench ? 'Énergie' : 'Energy');
+
+  String get metricAnxietyLabel =>
+      isArabic ? 'التوتر' : (isFrench ? 'Tension' : 'Anxiety');
+
+  String get patientNotFoundTitle => isArabic
+      ? 'ملف المريض غير متوفر'
+      : (isFrench ? 'Dossier patient introuvable' : 'Patient record unavailable');
+
+  String get backToPatientsBtn => isArabic
+      ? 'العودة لقائمة المرضى'
+      : (isFrench ? 'Retour aux patients' : 'Back to Patients');
+
+  String momentsLoggedLabel(int count) {
+    if (isArabic) return '$count تسجيلات';
+    if (isFrench) return '$count entrées';
+    return '$count logs';
+  }
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);

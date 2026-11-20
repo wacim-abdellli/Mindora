@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../features/case_file/presentation/case_report_screen.dart';
+import '../../features/clinician/presentation/clinician_patient_detail_screen.dart';
+import '../../features/clinician/presentation/clinician_shell_screen.dart';
 import '../../features/auth/presentation/auth_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/insights/presentation/insights_screen.dart';
@@ -31,6 +33,8 @@ class AppRouter {
   static const String track = '/track';
   static const String insights = '/insights';
   static const String companion = '/companion';
+  static const String clinician = '/clinician';
+  static const String clinicianPatient = '/clinician/patient/:id';
 
   /// Whether first-launch gating redirects new users to /onboarding.
   static bool enableFirstLaunchGating = true;
@@ -64,10 +68,11 @@ class AppRouter {
 
       final isGoingToOnboarding = state.matchedLocation == onboarding;
       final isGoingToAuth = state.matchedLocation == auth;
+      final isGoingToClinician = state.matchedLocation.startsWith(clinician);
 
       // First-launch gating: if not completed, redirect to /onboarding
       if (!hasCompleted) {
-        if (!isGoingToOnboarding && !isGoingToAuth) {
+        if (!isGoingToOnboarding && !isGoingToAuth && !isGoingToClinician) {
           return onboarding;
         }
       } else {
@@ -128,6 +133,21 @@ class AppRouter {
         path: observatory,
         name: 'observatory',
         builder: (context, state) => const InnerObservatoryScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: clinician,
+        name: 'clinician',
+        builder: (context, state) => const ClinicianShellScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: clinicianPatient,
+        name: 'clinicianPatient',
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return ClinicianPatientDetailScreen(patientId: id);
+        },
       ),
 
       // Route aliases for backward compatibility

@@ -1,0 +1,1368 @@
+import 'dart:ui' show ImageFilter;
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../app/localization/app_strings.dart';
+import '../../../app/router/app_router.dart';
+import '../../../app/theme/lab_theme.dart';
+import '../../../app/theme/mind_tokens.dart';
+import '../../../core/security/app_lock_provider.dart';
+import '../../../core/widgets/mind_badge.dart';
+import '../../../core/widgets/mind_button.dart';
+import '../../../core/widgets/mind_card.dart';
+import '../../../core/widgets/mind_pill.dart';
+import '../../../core/widgets/mind_pressable.dart';
+import '../../mind_trace/domain/affect_taxonomy.dart';
+import '../../track/presentation/widgets/track_mood_utils.dart';
+import '../controllers/clinician_providers.dart';
+import '../domain/clinician_models.dart';
+import 'clinician_patient_detail_screen.dart';
+import 'widgets/import_patient_packet_sheet.dart';
+
+enum _RosterFilter { all, shifts, unreviewed, demo }
+
+/// Three-tab Psychiatrist & Clinician Workspace shell (`Patients`, `Overview`,
+/// `Practice`) paired with the luxury floating frosted-glass navigation dock.
+class ClinicianShellScreen extends ConsumerStatefulWidget {
+  const ClinicianShellScreen({super.key});
+
+  @override
+  ConsumerState<ClinicianShellScreen> createState() =>
+      _ClinicianShellScreenState();
+}
+
+class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
+  int _tabIndex = 0;
+  _RosterFilter _filter = _RosterFilter.all;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref
+            .read(workspaceRoleProvider.notifier)
+            .setRole(AppWorkspaceRole.clinician);
+      }
+    });
+  }
+
+  void _openPatientDossier(
+    BuildContext context,
+    ClinicianPatientRecord record,
+  ) {
+    HapticFeedback.lightImpact();
+    final router = GoRouter.maybeOf(context);
+    if (router != null) {
+      router.push('/clinician/patient/${record.patientId}');
+    } else {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) =>
+              ClinicianPatientDetailScreen(patientId: record.patientId),
+        ),
+      );
+    }
+  }
+
+  void _switchToPatientWorkspace(BuildContext context) {
+    HapticFeedback.selectionClick();
+    ref.read(workspaceRoleProvider.notifier).setRole(AppWorkspaceRole.patient);
+    final router = GoRouter.maybeOf(context);
+    if (router != null) {
+      router.go(AppRouter.home);
+    } else {
+      Navigator.of(context).maybePop();
+    }
+  }
+
+  String _relativeSyncLabel(DateTime dt, AppStrings strings) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 60) {
+      final mins = diff.inMinutes.clamp(1, 59);
+      return strings.isArabic
+          ? 'منذ $mins د'
+          : (strings.isFrench ? 'Il y a ${mins}min' : '${mins}m ago');
+    }
+    if (diff.inHours < 24) {
+      return strings.isArabic
+          ? 'منذ ${diff.inHours} س'
+          : (strings.isFrench ? 'Il y a ${diff.inHours}h' : '${diff.inHours}h ago');
+    }
+    return strings.isArabic
+        ? 'منذ ${diff.inDays} ي'
+        : (strings.isFrench ? 'Il y a ${diff.inDays}j' : '${diff.inDays}d ago');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final strings = ref.watch(appStringsProvider);
+    final rosterAsync = ref.watch(clinicianRosterProvider);
+    final profileAsync = ref.watch(clinicianProfileProvider);
+    final demoEnabledAsync = ref.watch(clinicianDemoEnabledProvider);
+    final appLock = ref.watch(appLockProvider);
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+
+    final roster = rosterAsync.value ?? const <ClinicianPatientRecord>[];
+    final profile = profileAsync.value ?? const ClinicianProfile();
+    final demoEnabled = demoEnabledAsync.value ?? true;
+
+    return Scaffold(
+      backgroundColor: tokens.bg,
+      body: SafeArea(
+        bottom: false,
+        child: IndexedStack(
+          index: _tabIndex,
+          children: [
+            _buildPatientsTab(
+              context: context,
+              tokens: tokens,
+              strings: strings,
+              roster: roster,
+              profile: profile,
+              isLoading: rosterAsync.isLoading && roster.isEmpty,
+            ),
+            _buildCohortOverviewTab(
+              context: context,
+              tokens: tokens,
+              strings: strings,
+              roster: roster,
+            ),
+            _buildPracticeTab(
+              context: context,
+              tokens: tokens,
+              strings: strings,
+              roster: roster,
+              profile: profile,
+              demoEnabled: demoEnabled,
+              appLock: appLock,
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: _buildFloatingDock(tokens, strings, reduceMotion),
+    );
+  }
+
+  Widget _buildFloatingDock(
+    MindTokens tokens,
+    AppStrings strings,
+    bool reduceMotion,
+  ) {
+    return ColoredBox(
+      color: tokens.bg,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 4, 18, 10),
+          child: MediaQuery.withClampedTextScaling(
+            minScaleFactor: 0.85,
+            maxScaleFactor: 1.15,
+            child: RepaintBoundary(
+              child: Container(
+                height: 66,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: tokens.navPillShadows,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(28),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: tokens.navGlass,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: tokens.line, width: 1.0),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Row(
+                        children: [
+                          _buildDockItem(
+                            index: 0,
+                            icon: Icons.people_outline_rounded,
+                            activeIcon: Icons.people_rounded,
+                            label: strings.clinicianTabPatients,
+                            tokens: tokens,
+                            strings: strings,
+                            reduceMotion: reduceMotion,
+                          ),
+                          _buildDockItem(
+                            index: 1,
+                            icon: Icons.insights_outlined,
+                            activeIcon: Icons.insights_rounded,
+                            label: strings.clinicianTabOverview,
+                            tokens: tokens,
+                            strings: strings,
+                            reduceMotion: reduceMotion,
+                          ),
+                          _buildDockItem(
+                            index: 2,
+                            icon: Icons.tune_outlined,
+                            activeIcon: Icons.tune_rounded,
+                            label: strings.clinicianTabPractice,
+                            tokens: tokens,
+                            strings: strings,
+                            reduceMotion: reduceMotion,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDockItem({
+    required int index,
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+    required MindTokens tokens,
+    required AppStrings strings,
+    required bool reduceMotion,
+  }) {
+    final isSelected = _tabIndex == index;
+    return Expanded(
+      child: Semantics(
+        button: true,
+        selected: isSelected,
+        label: label,
+        child: MergeSemantics(
+          child: InkWell(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              setState(() => _tabIndex = index);
+            },
+            splashColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            child: SizedBox(
+              height: 66,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedContainer(
+                    duration: reduceMotion
+                        ? Duration.zero
+                        : const Duration(milliseconds: 200),
+                    curve: Curves.easeOutCubic,
+                    width: isSelected ? 44 : 36,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? tokens.navCapsuleFill
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      isSelected ? activeIcon : icon,
+                      size: 20,
+                      color: isSelected ? tokens.ink : tokens.ink3,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: LabTheme.fontFamily,
+                      fontFamilyFallback: LabTheme.fontFallback,
+                      fontSize: 11,
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color: isSelected ? tokens.ink : tokens.ink3,
+                      letterSpacing: strings.isArabic ? 0 : -0.1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // TAB 0: PATIENTS TRIAGE ROSTER
+  // ---------------------------------------------------------------------------
+  Widget _buildPatientsTab({
+    required BuildContext context,
+    required MindTokens tokens,
+    required AppStrings strings,
+    required List<ClinicianPatientRecord> roster,
+    required ClinicianProfile profile,
+    required bool isLoading,
+  }) {
+    final shiftsTotal = roster
+        .where((r) => r.divergences(strings).isNotEmpty)
+        .length;
+    final unreviewedTotal =
+        roster.where((r) => r.hasUnreviewedUpdate).length;
+
+    final filtered = roster.where((r) {
+      switch (_filter) {
+        case _RosterFilter.all:
+          return true;
+        case _RosterFilter.shifts:
+          return r.divergences(strings).isNotEmpty;
+        case _RosterFilter.unreviewed:
+          return r.hasUnreviewedUpdate;
+        case _RosterFilter.demo:
+          return r.isDemoCase;
+      }
+    }).toList(growable: false);
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(18, 14, 18, 28),
+      children: [
+        // Header Row (Wraps cleanly on 320px viewports)
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              strings.psychiatristWorkspaceTitle,
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: tokens.ink,
+                letterSpacing: strings.isArabic ? 0 : -0.4,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '${profile.displayName} · ${profile.clinicName}',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12.5,
+                color: tokens.ink2,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Semantics(
+                  button: true,
+                  label: strings.patientViewChipLabel,
+                  child: MindPressable(
+                    onPressed: () => _switchToPatientWorkspace(context),
+                    borderRadius: BorderRadius.circular(tokens.chipRadius),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        minWidth: 48,
+                        minHeight: 48,
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: tokens.surface2,
+                          borderRadius:
+                              BorderRadius.circular(tokens.chipRadius),
+                          border: Border.all(color: tokens.line),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.swap_horiz_rounded,
+                              size: 16,
+                              color: tokens.ink,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              strings.patientViewChipLabel,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                                color: tokens.ink,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Semantics(
+                  button: true,
+                  label: strings.importPacketBtn,
+                  child: MindPressable(
+                    onPressed: () => ImportPatientPacketSheet.show(context),
+                    borderRadius: BorderRadius.circular(tokens.chipRadius),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        minWidth: 48,
+                        minHeight: 48,
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: tokens.ink,
+                          borderRadius:
+                              BorderRadius.circular(tokens.chipRadius),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.download_outlined,
+                              size: 16,
+                              color: tokens.bg,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              strings.importPacketBtn,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                                color: tokens.bg,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 16),
+
+        // KPI Summary Strip
+        Row(
+          children: [
+            Expanded(
+              child: _kpiCard(
+                tokens: tokens,
+                value: '${roster.length}',
+                label: strings.kpiActivePatients,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _kpiCard(
+                tokens: tokens,
+                value: '$shiftsTotal',
+                label: strings.kpiBaselineShifts,
+                highlight: shiftsTotal > 0,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _kpiCard(
+                tokens: tokens,
+                value: '$unreviewedTotal',
+                label: strings.kpiSharedUpdates,
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 14),
+
+        // Filter Pills (horizontal scroll keeps 320px safe)
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              MindPill(
+                label: strings.filterAll,
+                isSelected: _filter == _RosterFilter.all,
+                onTap: () => setState(() => _filter = _RosterFilter.all),
+              ),
+              const SizedBox(width: 8),
+              MindPill(
+                label: strings.filterShiftsNoted,
+                isSelected: _filter == _RosterFilter.shifts,
+                onTap: () => setState(() => _filter = _RosterFilter.shifts),
+              ),
+              const SizedBox(width: 8),
+              MindPill(
+                label: strings.filterNewUpdates,
+                isSelected: _filter == _RosterFilter.unreviewed,
+                onTap: () =>
+                    setState(() => _filter = _RosterFilter.unreviewed),
+              ),
+              const SizedBox(width: 8),
+              MindPill(
+                label: strings.filterDemoCohort,
+                isSelected: _filter == _RosterFilter.demo,
+                onTap: () => setState(() => _filter = _RosterFilter.demo),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        if (isLoading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 48),
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          )
+        else if (filtered.isEmpty)
+          MindCard(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Icon(
+                  Icons.folder_shared_outlined,
+                  size: 28,
+                  color: tokens.ink2,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  strings.noPatientsEmptyTitle,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.ink,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  strings.noPatientsEmptySub,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: tokens.ink2,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                MindButton(
+                  text: strings.importPacketBtn,
+                  variant: MindButtonVariant.soft,
+                  isFullWidth: true,
+                  onPressed: () => ImportPatientPacketSheet.show(context),
+                ),
+              ],
+            ),
+          )
+        else
+          ...filtered.map(
+            (record) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _buildPatientTriageCard(context, record, tokens, strings),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _kpiCard({
+    required MindTokens tokens,
+    required String value,
+    required String label,
+    bool highlight = false,
+  }) {
+    return MindCard(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      variant: highlight ? MindCardVariant.tint : MindCardVariant.plain,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: tokens.ink,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11.5,
+              color: tokens.ink2,
+              height: 1.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPatientTriageCard(
+    BuildContext context,
+    ClinicianPatientRecord record,
+    MindTokens tokens,
+    AppStrings strings,
+  ) {
+    final latest = record.latestTrace;
+    final baseline = record.baseline;
+    final recent = record.recentBaseline;
+    final shifts = record.divergences(strings);
+    final moodKey = latest?.overallMood ?? 'calm';
+    final moodOption = trackMoodOptionFor(moodKey);
+    final agenda = record.latestPacket.preVisitAgenda;
+    final sleepStr = recent.averageSleepHours != null
+        ? '${recent.averageSleepHours!.toStringAsFixed(1)}h'
+        : '--';
+
+    return MindCard(
+      padding: const EdgeInsets.all(16),
+      semanticLabel: '${record.displayName}, ${trackMoodLabel(moodKey, strings)}',
+      onTap: () => _openPatientDossier(context, record),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: moodOption.color,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  record.displayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.ink,
+                  ),
+                ),
+              ),
+              if (record.isDemoCase) ...[
+                MindBadge(label: strings.demoDatasetBadge),
+                const SizedBox(width: 6),
+              ],
+              if (record.hasUnreviewedUpdate)
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: tokens.m1,
+                  ),
+                ),
+              const SizedBox(width: 6),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: tokens.ink3,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${trackMoodLabel(moodKey, strings)} · '
+            '${latest != null ? '${latest.moodIntensity}/10' : '--'} · '
+            '${strings.metricSleepLabel}: $sleepStr · '
+            '${_relativeSyncLabel(record.lastSyncedAt, strings)}',
+            style: TextStyle(
+              fontSize: 12.5,
+              color: tokens.ink2,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              MindBadge(
+                icon: shifts.isNotEmpty
+                    ? Icons.trending_up_rounded
+                    : Icons.check_circle_outline_rounded,
+                label: shifts.isNotEmpty
+                    ? strings.shiftsCountBadge(shifts.length)
+                    : strings.baselineSteadyBadge,
+                borderColor: shifts.isNotEmpty ? tokens.safety : tokens.line,
+                textColor: shifts.isNotEmpty ? tokens.safety : tokens.ink2,
+              ),
+              if (baseline.averageIntraDaySwing != null &&
+                  baseline.averageIntraDaySwing! > 0)
+                MindBadge(
+                  icon: Icons.swap_vert_rounded,
+                  label:
+                      '+/-${baseline.averageIntraDaySwing!.toStringAsFixed(1)}',
+                ),
+              MindBadge(
+                label: strings.momentsLoggedLabel(record.latestPacket.traces.length),
+              ),
+            ],
+          ),
+          if (agenda != null &&
+              !agenda.isEmpty &&
+              record.latestPacket.consentScope.includePreVisitAgenda) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: tokens.surface2,
+                borderRadius: BorderRadius.circular(tokens.chipRadius),
+                border: Border.all(color: tokens.line),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.event_note_outlined, size: 14, color: tokens.ink2),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      agenda.selectedTopics.isNotEmpty
+                          ? agenda.selectedTopics.join(' · ')
+                          : agenda.patientQuestion,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: tokens.ink2,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // TAB 1: COHORT OVERVIEW
+  // ---------------------------------------------------------------------------
+  Widget _buildCohortOverviewTab({
+    required BuildContext context,
+    required MindTokens tokens,
+    required AppStrings strings,
+    required List<ClinicianPatientRecord> roster,
+  }) {
+    final observationPairs = <(ClinicianPatientRecord, String, String)>[];
+    final combinedEmotions = <String, int>{};
+    final sleeps = <double>[];
+    final anxieties = <double>[];
+    final energies = <double>[];
+    final intensities = <double>[];
+
+    for (final record in roster) {
+      final b = record.baseline;
+      final r = record.recentBaseline;
+      if (r.averageSleepHours != null) sleeps.add(r.averageSleepHours!);
+      if (r.averageAnxietyLevel != null) anxieties.add(r.averageAnxietyLevel!);
+      if (r.averageEnergyLevel != null) energies.add(r.averageEnergyLevel!);
+      if (r.averageMoodIntensity != null) {
+        intensities.add(r.averageMoodIntensity!);
+      }
+      for (final entry in b.emotionFrequencyMap.entries) {
+        combinedEmotions[entry.key] =
+            (combinedEmotions[entry.key] ?? 0) + entry.value;
+      }
+      for (final div in record.divergences(strings)) {
+        observationPairs.add((record, div.title, div.baselineComparison));
+      }
+    }
+
+    String avgStr(List<double> nums, [String suffix = '']) {
+      if (nums.isEmpty) return '--';
+      final mean = nums.reduce((a, b) => a + b) / nums.length;
+      return '${mean.toStringAsFixed(1)}$suffix';
+    }
+
+    final sortedEmotions = combinedEmotions.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
+      children: [
+        Text(
+          strings.clinicianTabOverview,
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: tokens.ink,
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        Text(
+          strings.cohortAvgMetricsTitle,
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
+            letterSpacing: strings.isArabic ? 0 : 0.8,
+            color: tokens.ink2,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _kpiCard(
+                tokens: tokens,
+                value: avgStr(intensities),
+                label: strings.metricMoodLabel,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _kpiCard(
+                tokens: tokens,
+                value: avgStr(sleeps, 'h'),
+                label: strings.metricSleepLabel,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _kpiCard(
+                tokens: tokens,
+                value: avgStr(anxieties),
+                label: strings.metricAnxietyLabel,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _kpiCard(
+                tokens: tokens,
+                value: avgStr(energies),
+                label: strings.metricEnergyLabel,
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 18),
+        Text(
+          strings.cohortTopFeelingsTitle,
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
+            letterSpacing: strings.isArabic ? 0 : 0.8,
+            color: tokens.ink2,
+          ),
+        ),
+        const SizedBox(height: 8),
+        MindCard(
+          padding: const EdgeInsets.all(14),
+          child: sortedEmotions.isEmpty
+              ? Text(
+                  strings.noPatientsEmptySub,
+                  style: TextStyle(fontSize: 12.5, color: tokens.ink2),
+                )
+              : Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: sortedEmotions.take(8).map((entry) {
+                    final label =
+                        AffectTaxonomy.localizedLabel(entry.key, strings);
+                    return MindBadge(label: '$label (${entry.value}x)');
+                  }).toList(),
+                ),
+        ),
+
+        const SizedBox(height: 18),
+        Text(
+          strings.cohortObservationsTitle,
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
+            letterSpacing: strings.isArabic ? 0 : 0.8,
+            color: tokens.ink2,
+          ),
+        ),
+        const SizedBox(height: 8),
+        if (observationPairs.isEmpty)
+          MindCard(
+            padding: const EdgeInsets.all(14),
+            child: Text(
+              strings.baselineSteadyBadge,
+              style: TextStyle(fontSize: 13, color: tokens.ink2),
+            ),
+          )
+        else
+          ...observationPairs.map((item) {
+            final record = item.$1;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: MindCard(
+                padding: const EdgeInsets.all(14),
+                onTap: () => _openPatientDossier(context, record),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${record.displayName} · ${item.$2}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: tokens.ink,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: 18,
+                          color: tokens.ink3,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      item.$3,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: tokens.ink2,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+
+        const SizedBox(height: 12),
+        MindButton(
+          text: strings.importPacketTitle,
+          variant: MindButtonVariant.soft,
+          leadingIcon: Icons.download_outlined,
+          isFullWidth: true,
+          onPressed: () => ImportPatientPacketSheet.show(context),
+        ),
+      ],
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // TAB 2: PRACTICE & PRIVACY SETTINGS
+  // ---------------------------------------------------------------------------
+  Widget _buildPracticeTab({
+    required BuildContext context,
+    required MindTokens tokens,
+    required AppStrings strings,
+    required List<ClinicianPatientRecord> roster,
+    required ClinicianProfile profile,
+    required bool demoEnabled,
+    required AppLockState appLock,
+  }) {
+    final importedCount = roster.where((r) => !r.isDemoCase).length;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
+      children: [
+        Text(
+          strings.clinicianTabPractice,
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: tokens.ink,
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        Text(
+          strings.practiceProfileTitle,
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
+            letterSpacing: strings.isArabic ? 0 : 0.8,
+            color: tokens.ink2,
+          ),
+        ),
+        const SizedBox(height: 8),
+        MindCard(
+          padding: const EdgeInsets.all(16),
+          onTap: () => _editProfileSheet(context, profile, tokens, strings),
+          child: Row(
+            children: [
+              Icon(Icons.medical_services_outlined, size: 22, color: tokens.ink),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      profile.displayName,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${profile.specialty} · ${profile.clinicName}',
+                      style: TextStyle(fontSize: 12.5, color: tokens.ink2),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.edit_outlined, size: 18, color: tokens.ink2),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 18),
+        MindCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              SwitchListTile.adaptive(
+                value: demoEnabled,
+                onChanged: (v) {
+                  HapticFeedback.selectionClick();
+                  ref
+                      .read(clinicianDemoEnabledProvider.notifier)
+                      .setEnabled(v);
+                },
+                activeThumbColor: tokens.ink,
+                activeTrackColor: tokens.m1,
+                title: Text(
+                  strings.demoCohortToggleTitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: tokens.ink,
+                  ),
+                ),
+                subtitle: Text(
+                  strings.demoCohortToggleSub,
+                  style: TextStyle(fontSize: 12, color: tokens.ink2),
+                ),
+              ),
+              Divider(height: 1, color: tokens.line),
+              SwitchListTile.adaptive(
+                value: appLock.isEnabled,
+                onChanged: (v) async {
+                  await ref
+                      .read(appLockProvider.notifier)
+                      .toggleBiometrics(v);
+                },
+                activeThumbColor: tokens.ink,
+                activeTrackColor: tokens.m1,
+                title: Text(
+                  strings.clinicBiometricLockTitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: tokens.ink,
+                  ),
+                ),
+                subtitle: Text(
+                  strings.biometricLockSub,
+                  style: TextStyle(fontSize: 12, color: tokens.ink2),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 14),
+        MindCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              _practiceActionRow(
+                tokens: tokens,
+                icon: Icons.download_outlined,
+                title: strings.importPacketTitle,
+                onTap: () => ImportPatientPacketSheet.show(context),
+              ),
+              Divider(height: 1, color: tokens.line),
+              _practiceActionRow(
+                tokens: tokens,
+                icon: Icons.delete_outline_rounded,
+                title: '${strings.clearImportedPatientsBtn} ($importedCount)',
+                onTap: () => _confirmClearImported(context, tokens, strings),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+        MindCard(
+          variant: MindCardVariant.flat,
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.shield_outlined, size: 18, color: tokens.ink2),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  strings.clinicalBoundaryNote,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: tokens.ink2,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 18),
+        MindButton(
+          text: strings.switchToPatientWorkspaceBtn,
+          variant: MindButtonVariant.primary,
+          leadingIcon: Icons.person_outline_rounded,
+          isFullWidth: true,
+          onPressed: () => _switchToPatientWorkspace(context),
+        ),
+      ],
+    );
+  }
+
+  Widget _practiceActionRow({
+    required MindTokens tokens,
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return Semantics(
+      button: true,
+      label: title,
+      child: MindPressable(
+        onPressed: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 54),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: tokens.ink),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: tokens.ink,
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, size: 18, color: tokens.ink3),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _editProfileSheet(
+    BuildContext context,
+    ClinicianProfile profile,
+    MindTokens tokens,
+    AppStrings strings,
+  ) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _EditClinicianProfileSheet(profile: profile),
+    );
+  }
+
+  Future<void> _confirmClearImported(
+    BuildContext context,
+    MindTokens tokens,
+    AppStrings strings,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: tokens.surface,
+        title: Text(
+          strings.clearImportedPatientsBtn,
+          style: TextStyle(color: tokens.ink),
+        ),
+        content: Text(
+          strings.clearImportedPatientsConfirm,
+          style: TextStyle(color: tokens.ink2, fontSize: 13.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(strings.cancelBtn, style: TextStyle(color: tokens.ink2)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              strings.clearImportedPatientsBtn,
+              style: TextStyle(color: tokens.safety),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await ref.read(clinicianRosterProvider.notifier).clearImportedPatients();
+    }
+  }
+}
+
+class _EditClinicianProfileSheet extends ConsumerStatefulWidget {
+  const _EditClinicianProfileSheet({required this.profile});
+
+  final ClinicianProfile profile;
+
+  @override
+  ConsumerState<_EditClinicianProfileSheet> createState() =>
+      _EditClinicianProfileSheetState();
+}
+
+class _EditClinicianProfileSheetState
+    extends ConsumerState<_EditClinicianProfileSheet> {
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _specCtrl;
+  late final TextEditingController _clinicCtrl;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.profile.displayName);
+    _specCtrl = TextEditingController(text: widget.profile.specialty);
+    _clinicCtrl = TextEditingController(text: widget.profile.clinicName);
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _specCtrl.dispose();
+    _clinicCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final strings = ref.watch(appStringsProvider);
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+      ),
+      decoration: BoxDecoration(
+        color: tokens.surface,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(tokens.sheetRadius),
+        ),
+        border: Border(top: BorderSide(color: tokens.line)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  strings.editPracticeProfileTitle,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.ink,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _nameCtrl,
+                  style: TextStyle(fontSize: 14, color: tokens.ink),
+                  decoration: InputDecoration(
+                    labelText: strings.clinicianNameLabel,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _specCtrl,
+                  style: TextStyle(fontSize: 14, color: tokens.ink),
+                  decoration: InputDecoration(
+                    labelText: strings.clinicianSpecialtyLabel,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _clinicCtrl,
+                  style: TextStyle(fontSize: 14, color: tokens.ink),
+                  decoration: InputDecoration(
+                    labelText: strings.clinicNameLabel,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                MindButton(
+                  text: strings.saveChangesBtn,
+                  isFullWidth: true,
+                  isLoading: _isSaving,
+                  onPressed: () async {
+                    setState(() => _isSaving = true);
+                    final navigator = Navigator.of(context);
+                    try {
+                      await ref
+                          .read(clinicianProfileProvider.notifier)
+                          .updateProfile(
+                            widget.profile.copyWith(
+                              displayName: _nameCtrl.text.trim().isEmpty
+                                  ? widget.profile.displayName
+                                  : _nameCtrl.text.trim(),
+                              specialty: _specCtrl.text.trim().isEmpty
+                                  ? widget.profile.specialty
+                                  : _specCtrl.text.trim(),
+                              clinicName: _clinicCtrl.text.trim().isEmpty
+                                  ? widget.profile.clinicName
+                                  : _clinicCtrl.text.trim(),
+                            ),
+                          );
+                      if (mounted) navigator.pop();
+                    } finally {
+                      if (mounted) setState(() => _isSaving = false);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

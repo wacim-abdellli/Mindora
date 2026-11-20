@@ -14,6 +14,7 @@ import '../../../core/widgets/mind_pressable.dart';
 import '../../../core/widgets/mind_segmented.dart';
 import '../../../core/widgets/smooth_spline_chart.dart';
 import '../../case_file/presentation/clinical_export_preview_sheet.dart';
+import '../../clinician/presentation/widgets/share_with_psychiatrist_sheet.dart';
 import '../../investigation/controllers/investigation_providers.dart';
 import '../../investigation/domain/case_model.dart';
 import '../../mind_trace/controllers/mind_trace_controller.dart';
@@ -270,6 +271,55 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
 
             // 7. Weekly Therapist Summary Card (Preserved Core)
             _buildWeeklyTherapistSummaryCard(context, weeklySummary, cases, tokens, strings),
+            const SizedBox(height: 12),
+
+            // 7b. Consent-Scoped Care Handoff to Psychiatrist
+            MindCard(
+              padding: const EdgeInsets.all(16),
+              onTap: () => ShareWithPsychiatristSheet.show(context),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: tokens.cardTint,
+                      borderRadius: BorderRadius.circular(tokens.chipRadius),
+                    ),
+                    child: Icon(
+                      Icons.health_and_safety_outlined,
+                      size: 20,
+                      color: tokens.ink,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          strings.shareWithPsychiatristTitle,
+                          style: TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w700,
+                            color: tokens.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          strings.shareWithPsychiatristSub,
+                          style: TextStyle(fontSize: 12, color: tokens.ink2),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 18,
+                    color: tokens.ink3,
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 18),
 
             // 8. Detailed Analytics Deep-Dive Button (Preserved Core)

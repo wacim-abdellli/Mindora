@@ -23,6 +23,8 @@ import '../../../core/widgets/mind_segmented.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../backup/data/unified_backup_service.dart';
 import '../../case_file/presentation/clinical_export_preview_sheet.dart';
+import '../../clinician/presentation/clinician_shell_screen.dart';
+import '../../clinician/presentation/widgets/share_with_psychiatrist_sheet.dart';
 import '../../investigation/controllers/investigation_providers.dart';
 import '../../investigation/presentation/widgets/ai_engine_config_sheet.dart';
 import '../../journal/controllers/journal_memory_controller.dart';
@@ -1198,6 +1200,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     }
                   },
                 ),
+                Divider(height: 1, thickness: 1, color: tokens.line),
+                _buildNavRow(
+                  tokens: tokens,
+                  icon: Icons.medical_services_outlined,
+                  title: strings.psychiatristWorkspaceTitle,
+                  subtitle: strings.psychiatristWorkspaceSub,
+                  onTap: () {
+                    final router = GoRouter.maybeOf(context);
+                    if (router != null) {
+                      router.go(AppRouter.clinician);
+                    } else {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ClinicianShellScreen(),
+                        ),
+                      );
+                    }
+                  },
+                ),
               ],
             ),
           ),
@@ -1456,6 +1477,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             padding: EdgeInsets.zero,
             child: Column(
               children: [
+                _buildNavRow(
+                  tokens: tokens,
+                  icon: Icons.health_and_safety_outlined,
+                  title: strings.shareWithPsychiatristTitle,
+                  subtitle: strings.shareWithPsychiatristSub,
+                  onTap: () => ShareWithPsychiatristSheet.show(context),
+                ),
+                Divider(height: 1, thickness: 1, color: tokens.line),
                 _buildNavRow(
                   tokens: tokens,
                   icon: Icons.description_outlined,
