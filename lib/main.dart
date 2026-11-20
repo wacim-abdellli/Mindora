@@ -8,6 +8,8 @@ import 'app/theme/lab_theme.dart';
 import 'app/theme/mind_tokens.dart';
 import 'app/theme/theme_controller.dart';
 import 'core/security/lock_overlay.dart';
+import 'features/mind_trace/controllers/mind_trace_controller.dart';
+import 'features/mind_trace/domain/mind_trace_model.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +31,12 @@ class MindForensicsApp extends ConsumerWidget {
     final locale = ref.watch(localeControllerProvider);
     final activeMood = ref.watch(activeMoodProvider);
     final isArabic = locale.languageCode == 'ar';
+
+    ref.listen<MindTraceModel?>(todayTraceProvider, (_, next) {
+      if (next != null) {
+        ref.read(activeMoodProvider.notifier).setMoodByKey(next.overallMood);
+      }
+    });
 
     final lightTokens = MindTokens.light.withMood(activeMood);
     final darkTokens = MindTokens.dark.withMood(activeMood);

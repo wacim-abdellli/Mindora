@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 import '../../../app/localization/app_strings.dart';
 import '../../../app/router/app_router.dart';
 import '../../../app/theme/mind_tokens.dart';
+import '../../../app/theme/theme_controller.dart';
 import '../../../core/safety/crisis_keywords.dart';
 import '../../../core/safety/safety_interceptor.dart';
 import '../../../core/safety/support_button.dart';
@@ -80,6 +81,8 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
   bool _isSaving = false;
   bool _savedConfirmed = false;
   String? _hydratedTraceSignature;
+  bool _hasHydratedInitial = false;
+  bool _allowOrbMorph = false;
   bool _showOptionalContext = false;
   String _lastSavedNote = '';
 
@@ -99,10 +102,11 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
       initialIndex: _activeTab,
     );
     _tabController.addListener(_handleTabControllerTick);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _hydrateFromTrace(ref.read(todayTraceProvider));
-    });
+    final traceAsync = ref.read(mindTraceControllerProvider);
+    if (traceAsync.hasValue) {
+      _applyTraceFieldsSync(traceAsync.value?.todayTrace);
+      _hasHydratedInitial = true;
+    }
   }
 
   @override
@@ -142,62 +146,77 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
   String _traceSignature(MindTraceModel trace) =>
       '${trace.id}_${trace.updatedAt.millisecondsSinceEpoch}';
 
-  void _hydrateFromTrace(MindTraceModel? trace, {bool force = false}) {
+  void _applyTraceFieldsSync(MindTraceModel? trace) {
     if (trace == null) {
-      if (_hydratedTraceSignature == null && !force) return;
       _hydratedTraceSignature = null;
       _lastSavedNote = '';
+      _selectedMood = 'calm';
+      _moodIntensity = 5.0;
+      _energyLevel = 5.0;
+      _anxietyLevel = 3.0;
+      _sleepHours = 7.5;
+      _noteController.clear();
+      _selectedTriggers.clear();
+      _selectedHelped.clear();
+      _savedConfirmed = false;
+      return;
+    }
+
+    _hydratedTraceSignature = _traceSignature(trace);
+    final hydratedNote = trace.journalText ?? '';
+    _lastSavedNote = hydratedNote.trim();
+    _selectedMood = EmotionDescriptor.canonicalKey(
+      trace.overallMood,
+    ).toLowerCase();
+    _moodIntensity = trace.moodIntensity.toDouble().clamp(1, 10);
+    _energyLevel = (trace.energyLevel ?? 5).toDouble().clamp(1, 10);
+    _anxietyLevel = (trace.anxietyLevel ?? 3).toDouble().clamp(0, 10);
+    _sleepHours = (trace.sleepHours ?? 7.5).clamp(2, 14);
+    if (_noteController.text != hydratedNote) {
+      _noteController.text = hydratedNote;
+    }
+
+    _selectedTriggers.clear();
+    if (trace.situation != null && trace.situation!.trim().isNotEmpty) {
+      _selectedTriggers.addAll(
+        trace.situation!
+            .split(',')
+            .map((s) => s.trim())
+            .where((p) => p.isNotEmpty),
+      );
+    }
+
+    _selectedHelped.clear();
+    if (trace.behavioralResponse != null &&
+        trace.behavioralResponse!.trim().isNotEmpty) {
+      _selectedHelped.addAll(
+        trace.behavioralResponse!
+            .split(',')
+            .map((s) => s.trim())
+            .where((p) => p.isNotEmpty),
+      );
+    }
+  }
+
+  void _hydrateFromTrace(
+    MindTraceModel? trace, {
+    bool force = false,
+    bool snapOrb = false,
+  }) {
+    if (trace == null) {
+      if (_hydratedTraceSignature == null && !force) return;
       setState(() {
-        _selectedMood = 'calm';
-        _moodIntensity = 5.0;
-        _energyLevel = 5.0;
-        _anxietyLevel = 3.0;
-        _sleepHours = 7.5;
-        _noteController.clear();
-        _selectedTriggers.clear();
-        _selectedHelped.clear();
-        _savedConfirmed = false;
+        if (snapOrb) _allowOrbMorph = false;
+        _applyTraceFieldsSync(null);
       });
       return;
     }
 
     final sig = _traceSignature(trace);
     if (!force && _hydratedTraceSignature == sig) return;
-    _hydratedTraceSignature = sig;
-    final hydratedNote = trace.journalText ?? '';
-    _lastSavedNote = hydratedNote.trim();
     setState(() {
-      _selectedMood = EmotionDescriptor.canonicalKey(
-        trace.overallMood,
-      ).toLowerCase();
-      _moodIntensity = trace.moodIntensity.toDouble().clamp(1, 10);
-      _energyLevel = (trace.energyLevel ?? 5).toDouble().clamp(1, 10);
-      _anxietyLevel = (trace.anxietyLevel ?? 3).toDouble().clamp(0, 10);
-      _sleepHours = (trace.sleepHours ?? 7.5).clamp(2, 14);
-      if (_noteController.text != hydratedNote) {
-        _noteController.text = hydratedNote;
-      }
-
-      _selectedTriggers.clear();
-      if (trace.situation != null && trace.situation!.trim().isNotEmpty) {
-        _selectedTriggers.addAll(
-          trace.situation!
-              .split(',')
-              .map((s) => s.trim())
-              .where((p) => p.isNotEmpty),
-        );
-      }
-
-      _selectedHelped.clear();
-      if (trace.behavioralResponse != null &&
-          trace.behavioralResponse!.trim().isNotEmpty) {
-        _selectedHelped.addAll(
-          trace.behavioralResponse!
-              .split(',')
-              .map((s) => s.trim())
-              .where((p) => p.isNotEmpty),
-        );
-      }
+      if (snapOrb) _allowOrbMorph = false;
+      _applyTraceFieldsSync(trace);
     });
   }
 
@@ -300,6 +319,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
       await ref
           .read(mindTraceControllerProvider.notifier)
           .recordCheckIn(trace, generateAi: false);
+      ref.read(activeMoodProvider.notifier).setMoodByKey(trace.overallMood);
 
       if (mounted) {
         setState(() {
@@ -444,14 +464,20 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final strings = ref.watch(appStringsProvider);
+    final traceAsync = ref.watch(mindTraceControllerProvider);
     final todayTrace = ref.watch(todayTraceProvider);
+
+    if (!_hasHydratedInitial && traceAsync.hasValue) {
+      _applyTraceFieldsSync(todayTrace);
+      _hasHydratedInitial = true;
+    }
 
     ref.listen<MindTraceModel?>(todayTraceProvider, (_, next) {
       final nextSig = next != null ? _traceSignature(next) : null;
       if (nextSig != _hydratedTraceSignature) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _hydrateFromTrace(next);
-        });
+        final shouldSnap = !_hasHydratedInitial;
+        _hasHydratedInitial = true;
+        _hydrateFromTrace(next, snapOrb: shouldSnap);
       }
     });
 
@@ -465,7 +491,11 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildCheckInTodayTab(tokens, strings, todayTrace),
+                  (!_hasHydratedInitial && traceAsync.isLoading)
+                      ? const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : _buildCheckInTodayTab(tokens, strings, todayTrace),
                   _buildHistoryAndCalendarTab(tokens, strings),
                 ],
               ),
@@ -589,6 +619,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                     intensity: _moodIntensity.round(),
                     color: activeMoodColor,
                     size: 84,
+                    animateChanges: _allowOrbMorph,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -610,6 +641,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                   strings: strings,
                   onSelect: (key) {
                     setState(() {
+                      _allowOrbMorph = true;
                       _selectedMood = key;
                       _savedConfirmed = false;
                     });
@@ -622,6 +654,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                   strings: strings,
                   onChanged: (v) {
                     setState(() {
+                      _allowOrbMorph = true;
                       _moodIntensity = v;
                       _savedConfirmed = false;
                     });

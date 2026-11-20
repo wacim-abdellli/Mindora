@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../app/localization/app_strings.dart';
 import '../../../app/router/app_router.dart';
 import '../../../app/theme/mind_tokens.dart';
+import '../../../app/theme/theme_controller.dart';
 import '../../../core/safety/crisis_keywords.dart';
 import '../../../core/safety/safety_interceptor.dart';
 import '../../../core/security/encrypted_storage_helper.dart';
@@ -50,6 +51,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<CaseModel> _recentCases = [];
   bool _isLoading = true;
   String? _hydratedTraceSignature;
+  bool _hasHydratedInitial = false;
   final TextEditingController _todayNoteController = TextEditingController();
 
   final List<({String key, IconData icon})> _moodOptions = const [
@@ -63,25 +65,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    final traceAsync = ref.read(mindTraceControllerProvider);
+    if (traceAsync.hasValue) {
+      _applyTraceFieldsSync(traceAsync.value?.todayTrace);
+      _hasHydratedInitial = true;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _loadRecentCases();
-      final today = ref.read(todayTraceProvider);
-      _syncFromTraceIfNeeded(today);
     });
   }
 
   String _traceSignature(MindTraceModel trace) =>
       '${trace.id}_${trace.updatedAt.millisecondsSinceEpoch}';
 
+  void _applyTraceFieldsSync(MindTraceModel? trace) {
+    if (trace == null) {
+      _hydratedTraceSignature = null;
+      _selectedMoodIndex = 0;
+      _moodIntensity = 5.0;
+      _todayNoteController.clear();
+      return;
+    }
+
+    _hydratedTraceSignature = _traceSignature(trace);
+    final canonicalMood = EmotionDescriptor.canonicalKey(
+      trace.overallMood,
+    ).toLowerCase();
+    final moodIdx = _moodOptions.indexWhere((m) => m.key == canonicalMood);
+    if (moodIdx != -1) _selectedMoodIndex = moodIdx;
+    _moodIntensity = trace.moodIntensity.toDouble().clamp(1, 10);
+    final note = trace.journalText ?? '';
+    if (_todayNoteController.text != note) {
+      _todayNoteController.text = note;
+    }
+  }
+
   void _syncFromTraceIfNeeded(MindTraceModel? trace) {
     if (trace == null) {
       if (_hydratedTraceSignature == null) return;
       setState(() {
-        _hydratedTraceSignature = null;
-        _selectedMoodIndex = 0;
-        _moodIntensity = 5.0;
-        _todayNoteController.clear();
+        _applyTraceFieldsSync(null);
       });
       return;
     }
@@ -89,17 +113,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final sig = _traceSignature(trace);
     if (_hydratedTraceSignature == sig) return;
     setState(() {
-      _hydratedTraceSignature = sig;
-      final canonicalMood = EmotionDescriptor.canonicalKey(
-        trace.overallMood,
-      ).toLowerCase();
-      final moodIdx = _moodOptions.indexWhere((m) => m.key == canonicalMood);
-      if (moodIdx != -1) _selectedMoodIndex = moodIdx;
-      _moodIntensity = trace.moodIntensity.toDouble().clamp(1, 10);
-      final note = trace.journalText ?? '';
-      if (_todayNoteController.text != note) {
-        _todayNoteController.text = note;
-      }
+      _applyTraceFieldsSync(trace);
     });
   }
 
@@ -186,6 +200,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           .read(mindTraceControllerProvider.notifier)
           .recordCheckIn(savedTrace, generateAi: false);
     }
+    ref.read(activeMoodProvider.notifier).setMoodByKey(savedTrace.overallMood);
 
     // 3. Keep cache synchronized with authenticated encryption at rest
     final prefs = await SharedPreferences.getInstance();
@@ -328,22 +343,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         : (strings.isArabic ? 'صديقي' : (strings.isFrench ? 'Ami' : 'Friend'));
 
     final activeCase = ref.watch(activeCaseControllerProvider).value;
-    final traces = ref.watch(mindTraceControllerProvider).value ?? [];
+    final traceAsync = ref.watch(mindTraceControllerProvider);
+    final traces = traceAsync.value ?? [];
     final todayTrace = traces.todayTrace;
+
+    if (!_hasHydratedInitial && traceAsync.hasValue) {
+      _applyTraceFieldsSync(todayTrace);
+      _hasHydratedInitial = true;
+    }
+
+    ref.listen<MindTraceModel?>(todayTraceProvider, (_, next) {
+      _hasHydratedInitial = true;
+      _syncFromTraceIfNeeded(next);
+    });
+
     final headerMoodKey =
         todayTrace?.overallMood ??
         _moodOptions[_selectedMoodIndex.clamp(0, _moodOptions.length - 1)].key;
     final headerAvatarColor = _getMoodColor(headerMoodKey);
     final headerAvatarFg = tokens.onMood;
     final todayDateOverline = strings.formattedDateOverline(DateTime.now());
-
-    final nextSig = todayTrace != null ? _traceSignature(todayTrace) : null;
-    if (nextSig != _hydratedTraceSignature) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _syncFromTraceIfNeeded(todayTrace);
-      });
-    }
 
     return AmbientScaffold(
       body: SafeArea(

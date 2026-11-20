@@ -29,6 +29,7 @@ class OrganicMoodOrb extends StatefulWidget {
     this.onIntensityChanged,
     this.semanticLabel,
     this.idle = false,
+    this.animateChanges = true,
   });
 
   final String moodKey;
@@ -39,6 +40,7 @@ class OrganicMoodOrb extends StatefulWidget {
   final ValueChanged<int>? onIntensityChanged;
   final String? semanticLabel;
   final bool idle;
+  final bool animateChanges;
 
   @override
   State<OrganicMoodOrb> createState() => _OrganicMoodOrbState();
@@ -292,7 +294,8 @@ class _OrganicMoodOrbState extends State<OrganicMoodOrb>
         color: widget.color,
       );
       final reduceMotion = MediaQuery.disableAnimationsOf(context);
-      if (reduceMotion) {
+      if (!widget.animateChanges || reduceMotion) {
+        _fromSpec = _toSpec;
         _morphController!.value = 1.0;
       } else {
         _morphController!
