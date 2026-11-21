@@ -12,6 +12,7 @@ import '../../mind_trace/domain/mind_trace_model.dart';
 import '../../observatory/domain/symptom_report.dart';
 import '../../profile/domain/psychological_profile_model.dart';
 import '../domain/clinician_models.dart';
+import '../domain/post_visit_focus_model.dart';
 
 enum ClinicianSyncErrorCode {
   invalidFormat,
@@ -45,6 +46,7 @@ class ClinicianSyncService {
   final int defaultPbkdf2Iterations;
 
   static const String codePrefix = 'MF-CLINIC-V1:';
+  static const String carePlanPrefix = 'MF-CAREPLAN-V1:';
   static const Uuid _uuid = Uuid();
 
   /// Recursively canonicalizes JSON maps (sorted keys) so integrity hashes
@@ -201,6 +203,161 @@ class ClinicianSyncService {
     ClinicianSyncPacket packet,
     String passphrase, {
     int? pbkdf2Iterations,
+  }) {
+    final packetToEncrypt = packet.integrityHash.isEmpty
+        ? packet.copyWith(
+            integrityHash: computeIntegrityHash(packet.toCanonicalBodyJson()),
+          )
+        : packet;
+    return _encryptJsonWithPassphrase(
+      packetToEncrypt.toJson(),
+      prefix: codePrefix,
+      passphrase: passphrase,
+      pbkdf2Iterations: pbkdf2Iterations,
+    );
+  }
+
+  /// Decrypts and authenticates an `MF-CLINIC-V1:...` packet share code.
+  Future<ClinicianSyncPacket> decryptShareCode(
+    String rawCode,
+    String passphrase,
+  ) async {
+    final decodedMap = await _decryptJsonWithPassphrase(
+      rawCode: rawCode,
+      prefix: codePrefix,
+      passphrase: passphrase,
+    );
+
+    final rawCases = decodedMap['sharedCases'] as List<dynamic>? ?? const [];
+    final containsForgedPrivateCase = rawCases.any(
+      (item) => item is Map<String, dynamic> && item['isPrivate'] == true,
+    );
+    if (containsForgedPrivateCase) {
+      throw const ClinicianSyncException(
+        ClinicianSyncErrorCode.integrityMismatch,
+        'Private case detected inside handoff packet; rejected.',
+      );
+    }
+
+    final expectedHash = decodedMap['integrityHash'] as String? ?? '';
+    final bodyForHash = Map<String, dynamic>.from(decodedMap)
+      ..remove('integrityHash');
+    final actualHash = computeIntegrityHash(bodyForHash);
+
+    if (expectedHash.isEmpty ||
+        !AuthService.constantTimeEquals(
+          utf8.encode(expectedHash),
+          utf8.encode(actualHash),
+        )) {
+      throw const ClinicianSyncException(
+        ClinicianSyncErrorCode.integrityMismatch,
+        'Packet SHA-256 integrity hash mismatch.',
+      );
+    }
+
+    return ClinicianSyncPacket.fromJson(decodedMap);
+  }
+
+  /// Builds a SHA-256 integrity-signed [PostVisitFocusPlan] for `Clinician -> Patient`.
+  PostVisitFocusPlan buildPostVisitFocusPlan({
+    required String clinicianName,
+    String clinicName = '',
+    required List<String> focusTitles,
+    DateTime? followUpDate,
+    String observationCue = '',
+    DateTime? referenceNow,
+    String? planId,
+  }) {
+    final rawNow = referenceNow ?? DateTime.now();
+    final now = DateTime.parse(rawNow.toIso8601String());
+    final cleanFollowUp = followUpDate != null
+        ? DateTime.parse(followUpDate.toIso8601String())
+        : null;
+
+    final items = <FocusGoalItem>[];
+    for (var i = 0; i < focusTitles.length; i++) {
+      final title = focusTitles[i].trim();
+      if (title.isEmpty) continue;
+      items.add(
+        FocusGoalItem(
+          id: 'fg_${now.millisecondsSinceEpoch}_$i',
+          title: title,
+          isCompleted: false,
+        ),
+      );
+    }
+
+    final draft = PostVisitFocusPlan(
+      schemaVersion: 1,
+      planId: planId ?? 'plan_${now.millisecondsSinceEpoch}_${_uuid.v4().substring(0, 6)}',
+      clinicianName:
+          clinicianName.trim().isEmpty ? 'Clinician' : clinicianName.trim(),
+      clinicName: clinicName.trim(),
+      createdAt: now,
+      followUpDate: cleanFollowUp,
+      focusItems: items,
+      observationCue: observationCue.trim(),
+      isDismissed: false,
+      integrityHash: '',
+    );
+
+    final hash = computeIntegrityHash(draft.toCanonicalBodyJson());
+    return draft.copyWith(integrityHash: hash);
+  }
+
+  /// Encrypts a [PostVisitFocusPlan] into an offline-transferable `MF-CAREPLAN-V1:...` code.
+  Future<String> encryptCarePlanToCode(
+    PostVisitFocusPlan plan,
+    String passphrase, {
+    int? pbkdf2Iterations,
+  }) {
+    final signed = plan.integrityHash.isEmpty
+        ? plan.copyWith(
+            integrityHash: computeIntegrityHash(plan.toCanonicalBodyJson()),
+          )
+        : plan;
+    return _encryptJsonWithPassphrase(
+      signed.toJson(),
+      prefix: carePlanPrefix,
+      passphrase: passphrase,
+      pbkdf2Iterations: pbkdf2Iterations,
+    );
+  }
+
+  /// Decrypts and authenticates an `MF-CAREPLAN-V1:...` post-visit focus code.
+  Future<PostVisitFocusPlan> decryptCarePlanCode(
+    String rawCode,
+    String passphrase,
+  ) async {
+    final decodedMap = await _decryptJsonWithPassphrase(
+      rawCode: rawCode,
+      prefix: carePlanPrefix,
+      passphrase: passphrase,
+    );
+
+    final plan = PostVisitFocusPlan.fromJson(decodedMap);
+    final expectedHash = decodedMap['integrityHash'] as String? ?? '';
+    final actualHash = computeIntegrityHash(plan.toCanonicalBodyJson());
+
+    if (expectedHash.isEmpty ||
+        !AuthService.constantTimeEquals(
+          utf8.encode(expectedHash),
+          utf8.encode(actualHash),
+        )) {
+      throw const ClinicianSyncException(
+        ClinicianSyncErrorCode.integrityMismatch,
+        'Care plan SHA-256 integrity hash mismatch.',
+      );
+    }
+
+    return plan;
+  }
+
+  Future<String> _encryptJsonWithPassphrase(
+    Map<String, dynamic> payloadMap, {
+    required String prefix,
+    required String passphrase,
+    int? pbkdf2Iterations,
   }) async {
     final cleanPass = passphrase.trim();
     if (cleanPass.length < 6) {
@@ -218,12 +375,6 @@ class ClinicianSyncService {
       );
     }
 
-    final packetToEncrypt = packet.integrityHash.isEmpty
-        ? packet.copyWith(
-            integrityHash: computeIntegrityHash(packet.toCanonicalBodyJson()),
-          )
-        : packet;
-
     final salt = AuthService.generateSecureSalt(16);
     final hashRecord = AuthService.hashPassword(
       cleanPass,
@@ -234,8 +385,7 @@ class ClinicianSyncService {
     final keyBytes = base64Url.decode(parts[3]);
 
     final cipher = LocalDataCipher(secretKeyBytes: keyBytes);
-    final plaintextJson = jsonEncode(packetToEncrypt.toJson());
-    final encryptedPayload = await cipher.encryptString(plaintextJson);
+    final encryptedPayload = await cipher.encryptString(jsonEncode(payloadMap));
 
     final envelope = {
       'v': 1,
@@ -248,19 +398,19 @@ class ClinicianSyncService {
     final encodedEnvelope = base64Url.encode(
       utf8.encode(jsonEncode(envelope)),
     );
-    return '$codePrefix$encodedEnvelope';
+    return '$prefix$encodedEnvelope';
   }
 
-  /// Decrypts and authenticates an `MF-CLINIC-V1:...` packet share code.
-  Future<ClinicianSyncPacket> decryptShareCode(
-    String rawCode,
-    String passphrase,
-  ) async {
+  Future<Map<String, dynamic>> _decryptJsonWithPassphrase({
+    required String rawCode,
+    required String prefix,
+    required String passphrase,
+  }) async {
     final cleanedCode = rawCode.replaceAll(RegExp(r'\s+'), '');
-    if (!cleanedCode.startsWith(codePrefix)) {
-      throw const ClinicianSyncException(
+    if (!cleanedCode.startsWith(prefix)) {
+      throw ClinicianSyncException(
         ClinicianSyncErrorCode.invalidFormat,
-        'Code does not match MF-CLINIC-V1 format.',
+        'Code does not match $prefix format.',
       );
     }
 
@@ -274,7 +424,7 @@ class ClinicianSyncService {
 
     final Map<String, dynamic> envelope;
     try {
-      final b64Part = cleanedCode.substring(codePrefix.length);
+      final b64Part = cleanedCode.substring(prefix.length);
       final envelopeJson = utf8.decode(base64Url.decode(b64Part));
       final decoded = jsonDecode(envelopeJson);
       if (decoded is! Map<String, dynamic>) {
@@ -335,48 +485,18 @@ class ClinicianSyncService {
       );
     }
 
-    final Map<String, dynamic> decodedMap;
     try {
       final parsed = jsonDecode(plaintextJson);
       if (parsed is! Map<String, dynamic>) {
         throw const FormatException('Packet must be JSON object');
       }
-      decodedMap = parsed;
+      return parsed;
     } catch (_) {
       throw const ClinicianSyncException(
         ClinicianSyncErrorCode.invalidFormat,
         'Decrypted packet payload is malformed JSON.',
       );
     }
-
-    final rawCases = decodedMap['sharedCases'] as List<dynamic>? ?? const [];
-    final containsForgedPrivateCase = rawCases.any(
-      (item) => item is Map<String, dynamic> && item['isPrivate'] == true,
-    );
-    if (containsForgedPrivateCase) {
-      throw const ClinicianSyncException(
-        ClinicianSyncErrorCode.integrityMismatch,
-        'Private case detected inside handoff packet; rejected.',
-      );
-    }
-
-    final expectedHash = decodedMap['integrityHash'] as String? ?? '';
-    final bodyForHash = Map<String, dynamic>.from(decodedMap)
-      ..remove('integrityHash');
-    final actualHash = computeIntegrityHash(bodyForHash);
-
-    if (expectedHash.isEmpty ||
-        !AuthService.constantTimeEquals(
-          utf8.encode(expectedHash),
-          utf8.encode(actualHash),
-        )) {
-      throw const ClinicianSyncException(
-        ClinicianSyncErrorCode.integrityMismatch,
-        'Packet SHA-256 integrity hash mismatch.',
-      );
-    }
-
-    return ClinicianSyncPacket.fromJson(decodedMap);
   }
 
   /// Formats a plain-text, non-diagnostic clinical consultation summary ready

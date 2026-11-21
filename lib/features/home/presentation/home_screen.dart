@@ -22,6 +22,7 @@ import '../../../core/widgets/mind_button.dart';
 import '../../../core/widgets/mind_card.dart';
 import '../../../core/widgets/mind_pressable.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../clinician/controllers/clinician_providers.dart';
 import '../../investigation/controllers/investigation_providers.dart';
 import '../../investigation/domain/case_model.dart';
 import '../../investigation/domain/case_stage.dart';
@@ -33,6 +34,7 @@ import '../../profile/controllers/profile_controller.dart';
 import '../../support/presentation/contextual_support_sheet.dart';
 import 'widgets/home_active_case_card.dart';
 import 'widgets/home_daily_check_in_card.dart';
+import 'widgets/home_post_visit_focus_card.dart';
 import 'widgets/home_organic_exercise_art.dart';
 import 'widgets/home_weekly_rhythm_card.dart';
 
@@ -343,6 +345,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         : (strings.isArabic ? 'صديقي' : (strings.isFrench ? 'Ami' : 'Friend'));
 
     final activeCase = ref.watch(activeCaseControllerProvider).value;
+    final activeFocusPlan = ref.watch(postVisitFocusControllerProvider).value;
     final traceAsync = ref.watch(mindTraceControllerProvider);
     final traces = traceAsync.value ?? [];
     final todayTraces = traces.todayTraces;
@@ -579,6 +582,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
 
                 const SizedBox(height: 20),
+
+                // 2b. BETWEEN-SESSION PSYCHIATRIST FOCUS CARD (Only when active)
+                if (activeFocusPlan != null && !activeFocusPlan.isDismissed) ...[
+                  HomePostVisitFocusCard(
+                    plan: activeFocusPlan,
+                    onToggleItem: (itemId) => ref
+                        .read(postVisitFocusControllerProvider.notifier)
+                        .toggleGoalItem(itemId),
+                    onDismiss: () => ref
+                        .read(postVisitFocusControllerProvider.notifier)
+                        .dismissPlan(),
+                  ),
+                  const SizedBox(height: 20),
+                ],
 
                 // 3. ACTIVE CASE OR START INVESTIGATION CARD
                 if (activeCase != null && !activeCase.isCompleted)

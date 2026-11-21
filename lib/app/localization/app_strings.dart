@@ -2660,6 +2660,173 @@ class AppStrings {
     return '$count logs';
   }
 
+  // ---------------------------------------------------------------------------
+  // Milestone 4.1: Two-Way Care Loop — Between-Session Focus Plan
+  // ---------------------------------------------------------------------------
+
+  String get sharePostVisitFocusBtn => isArabic
+      ? 'إرسال خطة التركيز للمريض'
+      : (isFrench
+            ? 'Envoyer le plan entre séances'
+            : 'Send Between-Session Focus');
+
+  String get composeFocusTitle => isArabic
+      ? 'خطة التركيز بين الجلسات'
+      : (isFrench
+            ? 'Plan de suivi entre consultations'
+            : 'Between-Session Focus Plan');
+
+  String get composeFocusSubtitle => isArabic
+      ? 'نقاط متّفق عليها مع المريض للملاحظة قبل الموعد الجاي — اختياري وقابل للتعديل من طرف المريض.'
+      : (isFrench
+            ? 'Repères collaboratifs choisis avec le patient jusqu’au prochain rendez-vous.'
+            : 'Collaborative focus points agreed for the interval until the next consultation.');
+
+  String get followUpWindowLabel => isArabic
+      ? 'موعد المتابعة القادم'
+      : (isFrench ? 'FENÊTRE DE SUIVI' : 'FOLLOW-UP HORIZON');
+
+  String get followUpNoneLabel =>
+      isArabic ? 'مفتوح' : (isFrench ? 'Flexible' : 'Open');
+
+  String get focusItemsSectionLabel => isArabic
+      ? 'أولويات المتابعة (اختر نقطة أو أكثر)'
+      : (isFrench ? 'AXES CONVENUS (CHOIX RAPIDE)' : 'AGREED FOCUS AREAS');
+
+  String get customFocusItemHint => isArabic
+      ? 'أضف نقطة خاصة من الجلسة... (اختياري)'
+      : (isFrench
+            ? 'Ajouter un repère spécifique... (optionnel)'
+            : 'Add a custom focus item... (optional)');
+
+  String get observationCueLabel => isArabic
+      ? 'ملاحظة للمرافقة بين المواعيد (اختياري)'
+      : (isFrench
+            ? 'NOTE D’OBSERVATION (OPTIONNEL)'
+            : 'OBSERVATION CUE (OPTIONAL)');
+
+  String get observationCueHint => isArabic
+      ? 'مثلاً: لاحظ وقتاش ينقص التوتر بعد المغرب...'
+      : (isFrench
+            ? 'ex. Observer si l’apaisement du soir suit la coupure d’écran...'
+            : 'e.g., Notice what helps settle evening tension before sleep...');
+
+  String get generateCarePlanCodeBtn => isArabic
+      ? 'إنشاء رمز خطة مشفّر'
+      : (isFrench ? 'Générer un code plan chiffré' : 'Generate Encrypted Focus Code');
+
+  String get sendFocusToPatientDeviceBtn => isArabic
+      ? 'إرسال مباشرة لفضاء المريض على هذا الجهاز'
+      : (isFrench
+            ? 'Envoyer à l’espace patient local'
+            : 'Deliver to Patient Workspace on This Device');
+
+  String get focusDeliveredSnackbar => isArabic
+      ? 'تم إرسال خطة التركيز إلى الصفحة الرئيسية للمريض.'
+      : (isFrench
+            ? 'Plan de suivi affiché dans l’accueil patient.'
+            : 'Between-session focus delivered to Patient Home.');
+
+  String get carePlanCodeCopiedSnackbar => isArabic
+      ? 'تم نسخ رمز خطة التركيز المشفّر.'
+      : (isFrench ? 'Code de plan chiffré copié.' : 'Encrypted focus plan code copied.');
+
+  String get focusPresetSleepWindow => isArabic
+      ? 'مراقبة ساعة النوم والاستيقاظ'
+      : (isFrench ? 'Suivre le rythme veille / sommeil' : 'Note sleep & wake timing daily');
+
+  String get focusPresetEveningLog => isArabic
+      ? 'تسجيل لحظة المساء في التتبّع'
+      : (isFrench
+            ? 'Enregistrer un moment en soirée'
+            : 'Log an evening mood check-in');
+
+  String get focusPresetGroundingPause => isArabic
+      ? 'وقفة تنفّس قصيرة وقت الضغط'
+      : (isFrench
+            ? 'Pause respiration courte en cas de pic'
+            : 'Try a short breathing pause during spikes');
+
+  String get focusPresetEnergyPattern => isArabic
+      ? 'ملاحظة الطاقة بين الصباح والعشية'
+      : (isFrench
+            ? 'Comparer l’énergie matin vs soir'
+            : 'Track morning vs evening energy');
+
+  String get focusPresetThoughtLoop => isArabic
+      ? 'تسمية فكرة مكررة بدون حكم'
+      : (isFrench
+            ? 'Nommer une rumination en fait / hypothèse'
+            : 'Sort a recurring loop using Fact vs Assumption');
+
+  String get focusPresetWhatHelped => isArabic
+      ? 'تدوين حاجة صغيرة عاونتك كل نهار'
+      : (isFrench
+            ? 'Noter ce qui a apaisé la journée'
+            : 'Capture one thing that helped steady the day');
+
+  String get importCareFocusTitle => isArabic
+      ? 'إضافة خطة تركيز من الطبيب'
+      : (isFrench
+            ? 'Importer un plan du psychiatre'
+            : 'Import Focus Plan from Psychiatrist');
+
+  String get importCareFocusSub => isArabic
+      ? 'فكّ تشفير رمز MF-CAREPLAN-V1 من استشارتك'
+      : (isFrench
+            ? 'Déchiffrer un code MF-CAREPLAN-V1 reçu en consultation'
+            : 'Decrypt an MF-CAREPLAN-V1 focus card from your visit');
+
+  String get importCareFocusSubtitle => isArabic
+      ? 'ألصق الرمز وكلمة السر باش تظهر أولويات الجلسة في الصفحة الرئيسية.'
+      : (isFrench
+            ? 'Collez le code reçu et la phrase secrète pour afficher vos repères sur l’accueil.'
+            : 'Paste the care plan code and shared passphrase to pin your agreed focus points on Home.');
+
+  String get carePlanCodeFieldLabel => isArabic
+      ? 'رمز خطة التركيز (MF-CAREPLAN-V1:...)'
+      : (isFrench ? 'Code plan de suivi' : 'Focus Plan Code');
+
+  String get carePlanCodeFieldHint => 'MF-CAREPLAN-V1:...';
+
+  String get carePlanImportedSnackbar => isArabic
+      ? 'تمت إضافة خطة التركيز إلى الصفحة الرئيسية.'
+      : (isFrench
+            ? 'Plan de suivi activé sur votre accueil.'
+            : 'Focus plan added to Home.');
+
+  String get betweenSessionFocusTitle => isArabic
+      ? 'تركيز بين الجلسات'
+      : (isFrench ? 'REPERES ENTRE SEANCES' : 'BETWEEN-SESSION FOCUS');
+
+  String fromClinicianByline(String name) {
+    if (isArabic) return 'من $name';
+    if (isFrench) return 'Avec $name';
+    return 'Agreed with $name';
+  }
+
+  String followUpInDaysBadge(int days) {
+    if (isArabic) return 'الموعد خلال $days ي';
+    if (isFrench) return 'Suivi dans ${days}j';
+    return 'Visit in ${days}d';
+  }
+
+  String get followUpTodayBadge => isArabic
+      ? 'موعد اليوم'
+      : (isFrench ? 'Visite prévue' : 'Visit due');
+
+  String get observationCueBadge => isArabic
+      ? 'ملاحظة للتتبّع'
+      : (isFrench ? 'Repère d’observation' : 'Observation note');
+
+  String get dismissFocusBtn => isArabic
+      ? 'إخفاء البطاقة'
+      : (isFrench ? 'Masquer cette carte' : 'Dismiss focus card');
+
+  String get clearFocusBtn => isArabic
+      ? 'مسح الخطة'
+      : (isFrench ? 'Effacer le plan' : 'Clear plan');
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);

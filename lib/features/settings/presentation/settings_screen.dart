@@ -24,6 +24,7 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../backup/data/unified_backup_service.dart';
 import '../../case_file/presentation/clinical_export_preview_sheet.dart';
 import '../../clinician/presentation/clinician_shell_screen.dart';
+import '../../clinician/presentation/widgets/import_care_focus_sheet.dart';
 import '../../clinician/presentation/widgets/share_with_psychiatrist_sheet.dart';
 import '../../investigation/controllers/investigation_providers.dart';
 import '../../investigation/presentation/widgets/ai_engine_config_sheet.dart';
@@ -1483,6 +1484,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   title: strings.shareWithPsychiatristTitle,
                   subtitle: strings.shareWithPsychiatristSub,
                   onTap: () => ShareWithPsychiatristSheet.show(context),
+                ),
+                Divider(height: 1, thickness: 1, color: tokens.line),
+                _buildNavRow(
+                  tokens: tokens,
+                  icon: Icons.assignment_returned_outlined,
+                  title: strings.importCareFocusTitle,
+                  subtitle: strings.importCareFocusSub,
+                  onTap: () => ImportCareFocusSheet.show(context),
                 ),
                 Divider(height: 1, thickness: 1, color: tokens.line),
                 _buildNavRow(

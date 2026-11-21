@@ -1,10 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/security/secure_key_manager.dart';
+import '../../auth/controllers/auth_controller.dart';
 import '../data/clinician_sync_service.dart';
 import '../data/demo_clinical_cohort.dart';
+import '../data/local_care_plan_repository.dart';
 import '../data/local_clinician_repository.dart';
 import '../domain/clinician_models.dart';
+import '../domain/post_visit_focus_model.dart';
 
 final clinicianRepositoryProvider = Provider<LocalClinicianRepository>((ref) {
   final keyManager = ref.watch(secureKeyManagerProvider);
@@ -212,4 +215,79 @@ class ClinicianRosterNotifier
 final clinicianRosterProvider =
     AsyncNotifierProvider<ClinicianRosterNotifier, List<ClinicianPatientRecord>>(
   ClinicianRosterNotifier.new,
+);
+
+// -----------------------------------------------------------------------------
+// Patient-Side Active Between-Session Focus Plan (Two-Way Care Loop)
+// -----------------------------------------------------------------------------
+
+final carePlanRepositoryProvider = Provider<LocalCarePlanRepository>((ref) {
+  final userId = ref.watch(authControllerProvider.select((s) => s.user?.id));
+  final keyManager = ref.watch(secureKeyManagerProvider);
+  return LocalCarePlanRepository(userId: userId, keyManager: keyManager);
+});
+
+class PostVisitFocusNotifier extends AsyncNotifier<PostVisitFocusPlan?> {
+  int _mutationEpoch = 0;
+  PostVisitFocusPlan? _latestLocalValue;
+
+  @override
+  Future<PostVisitFocusPlan?> build() async {
+    final epochAtStart = _mutationEpoch;
+    final repo = ref.watch(carePlanRepositoryProvider);
+    final loaded = await repo.loadActivePlan();
+    if (_mutationEpoch != epochAtStart) {
+      return _latestLocalValue;
+    }
+    return loaded;
+  }
+
+  Future<void> savePlan(PostVisitFocusPlan plan) async {
+    final activePlan = plan.copyWith(isDismissed: false);
+    _mutationEpoch++;
+    _latestLocalValue = activePlan;
+    await ref.read(carePlanRepositoryProvider).savePlan(activePlan);
+    state = AsyncValue.data(activePlan);
+  }
+
+  Future<void> toggleGoalItem(String itemId) async {
+    final repo = ref.read(carePlanRepositoryProvider);
+    final current = state.value ?? await repo.loadActivePlan();
+    if (current == null) return;
+    final updatedItems = current.focusItems
+        .map(
+          (item) => item.id == itemId
+              ? item.copyWith(isCompleted: !item.isCompleted)
+              : item,
+        )
+        .toList(growable: false);
+    final updated = current.copyWith(focusItems: updatedItems);
+    _mutationEpoch++;
+    _latestLocalValue = updated;
+    await repo.savePlan(updated);
+    state = AsyncValue.data(updated);
+  }
+
+  Future<void> dismissPlan() async {
+    final repo = ref.read(carePlanRepositoryProvider);
+    final current = state.value ?? await repo.loadActivePlan();
+    if (current == null) return;
+    final updated = current.copyWith(isDismissed: true);
+    _mutationEpoch++;
+    _latestLocalValue = updated;
+    await repo.savePlan(updated);
+    state = AsyncValue.data(updated);
+  }
+
+  Future<void> clearPlan() async {
+    _mutationEpoch++;
+    _latestLocalValue = null;
+    await ref.read(carePlanRepositoryProvider).clearPlan();
+    state = const AsyncValue.data(null);
+  }
+}
+
+final postVisitFocusControllerProvider =
+    AsyncNotifierProvider<PostVisitFocusNotifier, PostVisitFocusPlan?>(
+  PostVisitFocusNotifier.new,
 );

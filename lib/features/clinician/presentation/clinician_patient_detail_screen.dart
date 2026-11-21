@@ -19,6 +19,7 @@ import '../../observatory/domain/default_symptom_library.dart';
 import '../../track/presentation/widgets/track_mood_utils.dart';
 import '../controllers/clinician_providers.dart';
 import '../domain/clinician_models.dart';
+import 'widgets/compose_post_visit_focus_sheet.dart';
 
 enum _ChartMetric { mood, sleep, energy, anxiety }
 
@@ -1144,6 +1145,17 @@ class _ClinicianPatientDetailScreenState
           ),
 
         const SizedBox(height: 16),
+        MindButton(
+          text: strings.sharePostVisitFocusBtn,
+          variant: MindButtonVariant.soft,
+          leadingIcon: Icons.send_outlined,
+          isFullWidth: true,
+          onPressed: () => ComposePostVisitFocusSheet.show(
+            context,
+            patientDisplayName: record.displayName,
+          ),
+        ),
+        const SizedBox(height: 10),
         MindButton(
           text: strings.ehrSummaryFullBtn,
           variant: MindButtonVariant.primary,

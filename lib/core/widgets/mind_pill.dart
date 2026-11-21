@@ -73,15 +73,19 @@ class MindPill extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                 ],
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontFamily: LabTheme.fontFamily,
-                    fontFamilyFallback: LabTheme.fontFallback,
-                    fontSize: fontSize,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected ? activeFg : inactiveFg,
-                    letterSpacing: -0.1,
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: LabTheme.fontFamily,
+                      fontFamilyFallback: LabTheme.fontFallback,
+                      fontSize: fontSize,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected ? activeFg : inactiveFg,
+                      letterSpacing: -0.1,
+                    ),
                   ),
                 ),
               ],
