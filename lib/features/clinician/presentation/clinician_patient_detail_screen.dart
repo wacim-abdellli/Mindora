@@ -29,9 +29,11 @@ class ClinicianPatientDetailScreen extends ConsumerStatefulWidget {
   const ClinicianPatientDetailScreen({
     super.key,
     required this.patientId,
+    this.embedded = false,
   });
 
   final String patientId;
+  final bool embedded;
 
   @override
   ConsumerState<ClinicianPatientDetailScreen> createState() =>
@@ -47,6 +49,21 @@ class _ClinicianPatientDetailScreenState
   @override
   void initState() {
     super.initState();
+    _scheduleMarkReviewed();
+  }
+
+  @override
+  void didUpdateWidget(covariant ClinicianPatientDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.patientId != oldWidget.patientId) {
+      _segmentIndex = 0;
+      _chartMetric = _ChartMetric.mood;
+      _activeSplineIndex = null;
+      _scheduleMarkReviewed();
+    }
+  }
+
+  void _scheduleMarkReviewed() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         ref.read(clinicianRosterProvider.notifier).markReviewed(widget.patientId);
@@ -114,34 +131,36 @@ class _ClinicianPatientDetailScreenState
     }
 
     if (rosterAsync.isLoading && record == null) {
+      const loader = Center(child: CircularProgressIndicator(strokeWidth: 2));
+      if (widget.embedded) {
+        return ColoredBox(color: tokens.bg, child: loader);
+      }
       return Scaffold(
         backgroundColor: tokens.bg,
-        body: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        body: loader,
       );
     }
 
     if (record == null) {
-      return Scaffold(
-        backgroundColor: tokens.bg,
-        appBar: AppBar(backgroundColor: tokens.bg, elevation: 0),
-        body: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Center(
-            child: MindCard(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.folder_off_outlined, size: 28, color: tokens.ink2),
-                  const SizedBox(height: 12),
-                  Text(
-                    strings.patientNotFoundTitle,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: tokens.ink,
-                    ),
+      final notFoundBody = Padding(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: MindCard(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.folder_off_outlined, size: 28, color: tokens.ink2),
+                const SizedBox(height: 12),
+                Text(
+                  strings.patientNotFoundTitle,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.ink,
                   ),
+                ),
+                if (!widget.embedded) ...[
                   const SizedBox(height: 16),
                   MindButton(
                     text: strings.backToPatientsBtn,
@@ -156,107 +175,126 @@ class _ClinicianPatientDetailScreenState
                     },
                   ),
                 ],
-              ),
+              ],
             ),
           ),
         ),
       );
+
+      if (widget.embedded) {
+        return ColoredBox(color: tokens.bg, child: notFoundBody);
+      }
+      return Scaffold(
+        backgroundColor: tokens.bg,
+        appBar: AppBar(backgroundColor: tokens.bg, elevation: 0),
+        body: notFoundBody,
+      );
     }
 
     final patientRecord = record;
+    final dossierContent = Column(
+      children: [
+        // Header
+        Padding(
+          padding: EdgeInsetsDirectional.fromSTEB(
+            widget.embedded ? 18 : 8,
+            widget.embedded ? 12 : 8,
+            12,
+            4,
+          ),
+          child: Row(
+            children: [
+              if (!widget.embedded) ...[
+                IconButton(
+                  tooltip: strings.backToPatientsBtn,
+                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                  icon: Icon(Icons.arrow_back_rounded, color: tokens.ink),
+                  onPressed: () {
+                    final nav = Navigator.of(context);
+                    if (nav.canPop()) {
+                      nav.pop();
+                    } else {
+                      GoRouter.maybeOf(context)?.go(AppRouter.clinician);
+                    }
+                  },
+                ),
+                const SizedBox(width: 4),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            patientRecord.displayName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: tokens.ink,
+                            ),
+                          ),
+                        ),
+                        if (patientRecord.isDemoCase) ...[
+                          const SizedBox(width: 8),
+                          MindBadge(label: strings.demoDatasetBadge),
+                        ],
+                      ],
+                    ),
+                    Text(
+                      '${strings.daysWindowLabel(patientRecord.latestPacket.consentScope.windowDays)} · '
+                      '${strings.momentsLoggedLabel(patientRecord.latestPacket.traces.length)}',
+                      style: TextStyle(fontSize: 12, color: tokens.ink2),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: strings.copyEhrSummaryBtn,
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                icon: Icon(Icons.content_copy_rounded, color: tokens.ink),
+                onPressed: () =>
+                    _copyEhrSummary(patientRecord, strings, tokens),
+              ),
+            ],
+          ),
+        ),
+
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 6, 18, 12),
+          child: MindSegmented(
+            index: _segmentIndex,
+            labels: [
+              strings.dossierTabOverview,
+              strings.dossierTabTimeline,
+              strings.dossierTabCases,
+              strings.dossierTabNotes,
+            ],
+            onChanged: (idx) => setState(() => _segmentIndex = idx),
+          ),
+        ),
+
+        Expanded(
+          child: switch (_segmentIndex) {
+            0 => _buildOverviewTab(patientRecord, tokens, strings),
+            1 => _buildTimelineTab(patientRecord, tokens, strings),
+            2 => _buildCasesTab(patientRecord, tokens, strings),
+            _ => _buildNotesTab(context, patientRecord, tokens, strings),
+          },
+        ),
+      ],
+    );
+
+    if (widget.embedded) {
+      return ColoredBox(color: tokens.bg, child: dossierContent);
+    }
 
     return Scaffold(
       backgroundColor: tokens.bg,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
-              child: Row(
-                children: [
-                  IconButton(
-                    tooltip: strings.backToPatientsBtn,
-                    constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                    icon: Icon(Icons.arrow_back_rounded, color: tokens.ink),
-                    onPressed: () {
-                      final nav = Navigator.of(context);
-                      if (nav.canPop()) {
-                        nav.pop();
-                      } else {
-                        GoRouter.maybeOf(context)?.go(AppRouter.clinician);
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                patientRecord.displayName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  color: tokens.ink,
-                                ),
-                              ),
-                            ),
-                            if (patientRecord.isDemoCase) ...[
-                              const SizedBox(width: 8),
-                              MindBadge(label: strings.demoDatasetBadge),
-                            ],
-                          ],
-                        ),
-                        Text(
-                          '${strings.daysWindowLabel(patientRecord.latestPacket.consentScope.windowDays)} · '
-                          '${strings.momentsLoggedLabel(patientRecord.latestPacket.traces.length)}',
-                          style: TextStyle(fontSize: 12, color: tokens.ink2),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: strings.copyEhrSummaryBtn,
-                    constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                    icon: Icon(Icons.content_copy_rounded, color: tokens.ink),
-                    onPressed: () =>
-                        _copyEhrSummary(patientRecord, strings, tokens),
-                  ),
-                ],
-              ),
-            ),
-
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 6, 18, 12),
-              child: MindSegmented(
-                index: _segmentIndex,
-                labels: [
-                  strings.dossierTabOverview,
-                  strings.dossierTabTimeline,
-                  strings.dossierTabCases,
-                  strings.dossierTabNotes,
-                ],
-                onChanged: (idx) => setState(() => _segmentIndex = idx),
-              ),
-            ),
-
-            Expanded(
-              child: switch (_segmentIndex) {
-                0 => _buildOverviewTab(patientRecord, tokens, strings),
-                1 => _buildTimelineTab(patientRecord, tokens, strings),
-                2 => _buildCasesTab(patientRecord, tokens, strings),
-                _ => _buildNotesTab(context, patientRecord, tokens, strings),
-              },
-            ),
-          ],
-        ),
-      ),
+      body: SafeArea(child: dossierContent),
     );
   }
 

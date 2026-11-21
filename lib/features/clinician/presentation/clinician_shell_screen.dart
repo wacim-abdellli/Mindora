@@ -29,6 +29,10 @@ enum _RosterFilter { all, shifts, unreviewed, demo }
 class ClinicianShellScreen extends ConsumerStatefulWidget {
   const ClinicianShellScreen({super.key});
 
+  /// Viewport width threshold switching from phone bottom dock to tablet/desktop
+  /// master-detail split workspace.
+  static const double splitBreakpoint = 840.0;
+
   @override
   ConsumerState<ClinicianShellScreen> createState() =>
       _ClinicianShellScreenState();
@@ -37,6 +41,7 @@ class ClinicianShellScreen extends ConsumerStatefulWidget {
 class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
   int _tabIndex = 0;
   _RosterFilter _filter = _RosterFilter.all;
+  String? _selectedPatientId;
 
   @override
   void initState() {
@@ -50,11 +55,46 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
     });
   }
 
+  List<ClinicianPatientRecord> _filteredRoster(
+    List<ClinicianPatientRecord> roster,
+    AppStrings strings,
+  ) {
+    return roster.where((r) {
+      switch (_filter) {
+        case _RosterFilter.all:
+          return true;
+        case _RosterFilter.shifts:
+          return r.divergences(strings).isNotEmpty;
+        case _RosterFilter.unreviewed:
+          return r.hasUnreviewedUpdate;
+        case _RosterFilter.demo:
+          return r.isDemoCase;
+      }
+    }).toList(growable: false);
+  }
+
+  String? _resolveSelectedPatientId(List<ClinicianPatientRecord> filtered) {
+    if (filtered.isEmpty) return null;
+    if (_selectedPatientId != null &&
+        filtered.any((r) => r.patientId == _selectedPatientId)) {
+      return _selectedPatientId;
+    }
+    return filtered.first.patientId;
+  }
+
   void _openPatientDossier(
     BuildContext context,
-    ClinicianPatientRecord record,
-  ) {
+    ClinicianPatientRecord record, {
+    bool isWide = false,
+  }) {
     HapticFeedback.lightImpact();
+    if (isWide) {
+      setState(() {
+        _selectedPatientId = record.patientId;
+        _tabIndex = 0;
+      });
+      return;
+    }
     final router = GoRouter.maybeOf(context);
     if (router != null) {
       router.push('/clinician/patient/${record.patientId}');
@@ -110,6 +150,133 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
     final roster = rosterAsync.value ?? const <ClinicianPatientRecord>[];
     final profile = profileAsync.value ?? const ClinicianProfile();
     final demoEnabled = demoEnabledAsync.value ?? true;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isWide = screenWidth >= ClinicianShellScreen.splitBreakpoint;
+    final filtered = _filteredRoster(roster, strings);
+    final effectiveSelectedId = _resolveSelectedPatientId(filtered);
+
+    if (isWide) {
+      final listWidth = screenWidth >= 1160 ? 410.0 : 350.0;
+      return Scaffold(
+        backgroundColor: tokens.bg,
+        body: SafeArea(
+          bottom: false,
+          child: Row(
+            children: [
+              _buildNavigationRail(context, tokens, strings, reduceMotion),
+              Expanded(
+                child: IndexedStack(
+                  index: _tabIndex,
+                  children: [
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: listWidth,
+                          child: _buildPatientsTab(
+                            context: context,
+                            tokens: tokens,
+                            strings: strings,
+                            roster: roster,
+                            filtered: filtered,
+                            profile: profile,
+                            isLoading: rosterAsync.isLoading && roster.isEmpty,
+                            isWide: true,
+                            selectedPatientId: effectiveSelectedId,
+                          ),
+                        ),
+                        VerticalDivider(
+                          width: 1,
+                          thickness: 1,
+                          color: tokens.line,
+                        ),
+                        Expanded(
+                          child: effectiveSelectedId == null
+                              ? Center(
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 420,
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(24),
+                                      child: MindCard(
+                                        padding: const EdgeInsets.all(20),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.folder_shared_outlined,
+                                              size: 32,
+                                              color: tokens.ink2,
+                                            ),
+                                            const SizedBox(height: 10),
+                                            Text(
+                                              strings.noPatientsEmptyTitle,
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w700,
+                                                color: tokens.ink,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              strings.noPatientsEmptySub,
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: tokens.ink2,
+                                                height: 1.4,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : ClinicianPatientDetailScreen(
+                                  key: ValueKey<String>(effectiveSelectedId),
+                                  patientId: effectiveSelectedId,
+                                  embedded: true,
+                                ),
+                        ),
+                      ],
+                    ),
+                    Align(
+                      alignment: Alignment.topCenter,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 920),
+                        child: _buildCohortOverviewTab(
+                          context: context,
+                          tokens: tokens,
+                          strings: strings,
+                          roster: roster,
+                          isWide: true,
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.topCenter,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 920),
+                        child: _buildPracticeTab(
+                          context: context,
+                          tokens: tokens,
+                          strings: strings,
+                          roster: roster,
+                          profile: profile,
+                          demoEnabled: demoEnabled,
+                          appLock: appLock,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: tokens.bg,
@@ -123,6 +290,7 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
               tokens: tokens,
               strings: strings,
               roster: roster,
+              filtered: filtered,
               profile: profile,
               isLoading: rosterAsync.isLoading && roster.isEmpty,
             ),
@@ -145,6 +313,153 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
         ),
       ),
       bottomNavigationBar: _buildFloatingDock(tokens, strings, reduceMotion),
+    );
+  }
+
+  Widget _buildNavigationRail(
+    BuildContext context,
+    MindTokens tokens,
+    AppStrings strings,
+    bool reduceMotion,
+  ) {
+    return MediaQuery.withClampedTextScaling(
+      minScaleFactor: 0.85,
+      maxScaleFactor: 1.15,
+      child: Container(
+        width: 88,
+        decoration: BoxDecoration(
+          color: tokens.surface,
+          border: BorderDirectional(
+            end: BorderSide(color: tokens.line, width: 1.0),
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        child: Column(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: tokens.cardTint,
+                borderRadius: BorderRadius.circular(tokens.chipRadius),
+                border: Border.all(color: tokens.line),
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                Icons.medical_services_outlined,
+                size: 20,
+                color: tokens.ink,
+              ),
+            ),
+            const SizedBox(height: 20),
+            _buildRailItem(
+              index: 0,
+              icon: Icons.people_outline_rounded,
+              activeIcon: Icons.people_rounded,
+              label: strings.clinicianTabPatients,
+              tokens: tokens,
+              strings: strings,
+              reduceMotion: reduceMotion,
+            ),
+            const SizedBox(height: 10),
+            _buildRailItem(
+              index: 1,
+              icon: Icons.insights_outlined,
+              activeIcon: Icons.insights_rounded,
+              label: strings.clinicianTabOverview,
+              tokens: tokens,
+              strings: strings,
+              reduceMotion: reduceMotion,
+            ),
+            const SizedBox(height: 10),
+            _buildRailItem(
+              index: 2,
+              icon: Icons.tune_outlined,
+              activeIcon: Icons.tune_rounded,
+              label: strings.clinicianTabPractice,
+              tokens: tokens,
+              strings: strings,
+              reduceMotion: reduceMotion,
+            ),
+            const Spacer(),
+            IconButton(
+              tooltip: strings.switchToPatientWorkspaceBtn,
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              icon: Icon(Icons.swap_horiz_rounded, color: tokens.ink2),
+              onPressed: () => _switchToPatientWorkspace(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRailItem({
+    required int index,
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+    required MindTokens tokens,
+    required AppStrings strings,
+    required bool reduceMotion,
+  }) {
+    final isSelected = _tabIndex == index;
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: label,
+      child: MindPressable(
+        onPressed: () {
+          HapticFeedback.selectionClick();
+          setState(() => _tabIndex = index);
+        },
+        borderRadius: BorderRadius.circular(14),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 48, minHeight: 56),
+          child: SizedBox(
+            width: 72,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedContainer(
+                  duration: reduceMotion
+                      ? Duration.zero
+                      : const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  width: 52,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color:
+                        isSelected ? tokens.navCapsuleFill : Colors.transparent,
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    isSelected ? activeIcon : icon,
+                    size: 20,
+                    color: isSelected ? tokens.ink : tokens.ink3,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: LabTheme.fontFamily,
+                    fontFamilyFallback: LabTheme.fontFallback,
+                    fontSize: 11,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected ? tokens.ink : tokens.ink3,
+                    letterSpacing: strings.isArabic ? 0 : -0.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -302,27 +617,17 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
     required MindTokens tokens,
     required AppStrings strings,
     required List<ClinicianPatientRecord> roster,
+    required List<ClinicianPatientRecord> filtered,
     required ClinicianProfile profile,
     required bool isLoading,
+    bool isWide = false,
+    String? selectedPatientId,
   }) {
     final shiftsTotal = roster
         .where((r) => r.divergences(strings).isNotEmpty)
         .length;
     final unreviewedTotal =
         roster.where((r) => r.hasUnreviewedUpdate).length;
-
-    final filtered = roster.where((r) {
-      switch (_filter) {
-        case _RosterFilter.all:
-          return true;
-        case _RosterFilter.shifts:
-          return r.divergences(strings).isNotEmpty;
-        case _RosterFilter.unreviewed:
-          return r.hasUnreviewedUpdate;
-        case _RosterFilter.demo:
-          return r.isDemoCase;
-      }
-    }).toList(growable: false);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(18, 14, 18, 28),
@@ -566,7 +871,14 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
           ...filtered.map(
             (record) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _buildPatientTriageCard(context, record, tokens, strings),
+              child: _buildPatientTriageCard(
+                context,
+                record,
+                tokens,
+                strings,
+                isWide: isWide,
+                isSelected: isWide && record.patientId == selectedPatientId,
+              ),
             ),
           ),
       ],
@@ -618,8 +930,10 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
     BuildContext context,
     ClinicianPatientRecord record,
     MindTokens tokens,
-    AppStrings strings,
-  ) {
+    AppStrings strings, {
+    bool isWide = false,
+    bool isSelected = false,
+  }) {
     final latest = record.latestTrace;
     final baseline = record.baseline;
     final recent = record.recentBaseline;
@@ -633,8 +947,10 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
 
     return MindCard(
       padding: const EdgeInsets.all(16),
+      variant: isSelected ? MindCardVariant.tint : MindCardVariant.plain,
+      borderColor: isSelected ? tokens.m1 : null,
       semanticLabel: '${record.displayName}, ${trackMoodLabel(moodKey, strings)}',
-      onTap: () => _openPatientDossier(context, record),
+      onTap: () => _openPatientDossier(context, record, isWide: isWide),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -768,6 +1084,7 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
     required MindTokens tokens,
     required AppStrings strings,
     required List<ClinicianPatientRecord> roster,
+    bool isWide = false,
   }) {
     final observationPairs = <(ClinicianPatientRecord, String, String)>[];
     final combinedEmotions = <String, int>{};
@@ -917,7 +1234,8 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
               padding: const EdgeInsets.only(bottom: 10),
               child: MindCard(
                 padding: const EdgeInsets.all(14),
-                onTap: () => _openPatientDossier(context, record),
+                onTap: () =>
+                    _openPatientDossier(context, record, isWide: isWide),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
