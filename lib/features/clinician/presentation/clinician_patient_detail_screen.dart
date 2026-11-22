@@ -13,6 +13,7 @@ import '../../../core/widgets/mind_pill.dart';
 import '../../../core/widgets/mind_segmented.dart';
 import '../../../core/widgets/smooth_spline_chart.dart';
 import '../../insights/domain/personal_baseline_model.dart';
+import '../../insights/presentation/widgets/observed_stabilizers_card.dart';
 import '../../mind_trace/domain/affect_taxonomy.dart';
 import '../../mind_trace/domain/daily_context_tags.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
@@ -751,6 +752,15 @@ class _ClinicianPatientDetailScreenState
                 }),
               ],
             ),
+          ),
+        ],
+
+        // Observed Stabilizers (Empirical Recovery Ledger)
+        if (scope.includeMoodMetrics && baseline.recoveryLedger.hasEvidence) ...[
+          const SizedBox(height: 16),
+          ObservedStabilizersCard(
+            ledger: baseline.recoveryLedger,
+            strings: strings,
           ),
         ],
       ],

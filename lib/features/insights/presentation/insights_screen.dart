@@ -27,6 +27,7 @@ import '../../track/presentation/widgets/track_mood_utils.dart';
 import '../data/pattern_awareness_service.dart';
 import '../domain/pattern_divergence_model.dart';
 import '../domain/personal_baseline_model.dart';
+import 'widgets/observed_stabilizers_card.dart';
 
 /// Insights destination: Turns self-observation into personal understanding.
 /// Matches Phone 4 in the master reference with mood trends spline, pattern cards,
@@ -237,6 +238,15 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                 tokens,
                 baseline,
                 strings,
+              ),
+              const SizedBox(height: 18),
+            ],
+
+            // 2d. Empirical Recovery Ledger (Observed Stabilizers)
+            if (baseline.recoveryLedger.hasEvidence) ...[
+              ObservedStabilizersCard(
+                ledger: baseline.recoveryLedger,
+                strings: strings,
               ),
               const SizedBox(height: 18),
             ],

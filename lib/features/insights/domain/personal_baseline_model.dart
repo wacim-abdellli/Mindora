@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import '../../../app/localization/app_strings.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
+import 'recovery_ledger_model.dart';
 
 /// Descriptive statistical aggregate of metrics co-occurring with one
 /// self-reported daily context or routine tag (non-causal).
@@ -64,6 +65,7 @@ class PersonalBaseline {
     this.diurnalIntensityAverages = const {},
     this.emotionFrequencyMap = const {},
     this.contextTagCorrelations = const [],
+    this.recoveryLedger = const RecoveryLedger.empty(),
   });
 
   /// Total distinct calendar days logged in the observation window.
@@ -163,6 +165,7 @@ class PersonalBaseline {
   final Map<DayTimeBucket, double> diurnalIntensityAverages;
   final Map<String, int> emotionFrequencyMap;
   final List<ContextTagCorrelation> contextTagCorrelations;
+  final RecoveryLedger recoveryLedger;
 
   static const PersonalBaseline empty = PersonalBaseline(
     totalRecordedDays: 0,
@@ -417,6 +420,10 @@ class PersonalBaseline {
       diurnalIntensityAverages: diurnalAverages,
       emotionFrequencyMap: emotionFreqMap,
       contextTagCorrelations: contextTagCorrelations,
+      recoveryLedger: RecoveryLedger.fromTraces(
+        windowTraces,
+        windowDays: baselineDays,
+      ),
     );
   }
 

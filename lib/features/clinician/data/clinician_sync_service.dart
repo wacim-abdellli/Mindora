@@ -579,7 +579,8 @@ class ClinicianSyncService {
 
     // 3. Affect Spectrum & Diurnal Rhythm
     if (baseline.emotionFrequencyMap.isNotEmpty ||
-        baseline.diurnalIntensityAverages.isNotEmpty) {
+        baseline.diurnalIntensityAverages.isNotEmpty ||
+        baseline.recoveryLedger.hasEvidence) {
       buf.writeln('[3] AFFECT SPECTRUM & DIURNAL RHYTHM');
       if (baseline.emotionFrequencyMap.isNotEmpty) {
         final topAffects = baseline.emotionFrequencyMap.entries.take(5).map(
@@ -616,6 +617,18 @@ class ClinicianSyncService {
           return '$label (${c.occurrences}x$moodPart$sleepPart)';
         });
         buf.writeln('Daily context & routine links: ${tagSummaries.join(' | ')}');
+      }
+      if (scope.includeMoodMetrics && baseline.recoveryLedger.hasEvidence) {
+        final stabParts = baseline.recoveryLedger.stabilizers.take(4).map((s) {
+          final label = s.localizedLabel(strings);
+          final shiftStr = s.avgSameDayShift != null && s.avgSameDayShift! < 0
+              ? ', ${s.avgSameDayShift!.toStringAsFixed(1)}/10 shift'
+              : (s.avgCoOccurringIntensity != null
+                    ? ', avg ${s.avgCoOccurringIntensity!.toStringAsFixed(1)}/10'
+                    : '');
+          return '$label (${s.totalOccurrences}x$shiftStr)';
+        });
+        buf.writeln('Observed stabilizers (self-reported): ${stabParts.join(' | ')}');
       }
       buf.writeln();
     }

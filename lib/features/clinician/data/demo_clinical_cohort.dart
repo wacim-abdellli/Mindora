@@ -30,29 +30,36 @@ abstract final class DemoClinicalCohort {
       final isRecentShift = d <= 3;
 
       final morningTs = DateTime(day.year, day.month, day.day, 8, 30);
+      final isCoolingBaselineDay = d == 6;
       nadiaTraces.add(
         MindTraceModel(
           id: 'demo_nadia_m_$d',
           userId: 'demo_nadia_b',
           date: morningTs,
-          overallMood: isRecentShift ? 'restless' : 'calm',
+          overallMood: isRecentShift || isCoolingBaselineDay ? 'restless' : 'calm',
           selectedEmotions: isRecentShift
               ? const ['restless', 'on_edge', 'focused']
-              : const ['calm', 'focused', 'content'],
-          moodIntensity: isRecentShift ? 6 : 4,
+              : (isCoolingBaselineDay
+                    ? const ['restless', 'focused']
+                    : const ['calm', 'focused', 'content']),
+          moodIntensity: isRecentShift ? 6 : (isCoolingBaselineDay ? 6 : 4),
           energyLevel: isRecentShift ? 5 : 7,
           anxietyLevel: isRecentShift ? 6 : 3,
           sleepHours: isRecentShift ? 5.1 : 7.6,
           situation: isRecentShift
               ? 'Early deadline notifications before breakfast'
               : 'Morning routine and espresso',
-          behavioralResponse: 'Brief breathing pause before opening messages',
+          behavioralResponse: isCoolingBaselineDay
+              ? 'Walk'
+              : 'Brief breathing pause before opening messages',
           journalText: isRecentShift
               ? 'Woke up before dawn with chest tightness; trying to pace the morning.'
               : 'Slept steadily and started work calmly.',
           contextTags: isRecentShift
               ? const ['high_workload', 'late_caffeine_screens']
-              : const ['routine_kept', 'sleep_consistent'],
+              : (isCoolingBaselineDay
+                    ? const ['physical_movement', 'routine_kept']
+                    : const ['routine_kept', 'sleep_consistent']),
           createdAt: morningTs,
           updatedAt: morningTs,
         ),
@@ -65,22 +72,28 @@ abstract final class DemoClinicalCohort {
             id: 'demo_nadia_e_$d',
             userId: 'demo_nadia_b',
             date: eveningTs,
-            overallMood: isRecentShift ? 'anxious' : 'restless',
+            overallMood: isRecentShift ? 'anxious' : (isCoolingBaselineDay ? 'calm' : 'restless'),
             selectedEmotions: isRecentShift
                 ? const ['anxious', 'overwhelmed', 'exhausted']
-                : const ['restless', 'wired'],
-            moodIntensity: isRecentShift ? 8 : 5,
+                : (isCoolingBaselineDay
+                      ? const ['calm', 'relieved']
+                      : const ['restless', 'wired']),
+            moodIntensity: isRecentShift ? 8 : (isCoolingBaselineDay ? 4 : 5),
             energyLevel: isRecentShift ? 3 : 5,
             anxietyLevel: isRecentShift ? 8 : 4,
             sleepHours: isRecentShift ? 5.1 : 7.4,
             situation: 'Reviewing tomorrow’s schedule late evening',
-            behavioralResponse: 'Turned off notifications after 21:00',
+            behavioralResponse: isCoolingBaselineDay
+                ? 'Walk'
+                : 'Turned off notifications after 21:00',
             journalText: isRecentShift
                 ? 'Mind keeps looping on worst-case timelines when the house gets quiet.'
                 : 'Slightly wired after finishing emails.',
             contextTags: isRecentShift
                 ? const ['late_caffeine_screens', 'high_workload']
-                : const ['physical_movement'],
+                : (isCoolingBaselineDay
+                      ? const ['physical_movement', 'routine_kept']
+                      : const ['physical_movement']),
             createdAt: eveningTs,
             updatedAt: eveningTs,
           ),

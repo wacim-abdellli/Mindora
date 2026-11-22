@@ -2853,6 +2853,40 @@ class AppStrings {
             ? 'Moyennes observées avec chaque repère — simple observation statistique.'
             : 'Observed averages co-occurring with each tag — purely descriptive.');
 
+  // ---------------------------------------------------------------------------
+  // Milestone 5.1: Empirical Recovery Ledger (Observed Stabilizers)
+  // ---------------------------------------------------------------------------
+
+  String get observedStabilizersTitle => isArabic
+      ? 'المهدّئات الملاحَظة'
+      : (isFrench ? 'STABILISATEURS OBSERVÉS' : 'OBSERVED STABILIZERS');
+
+  String get observedStabilizersSub => isArabic
+      ? 'أفعال وعادات رافقت تراجع التوتر أو توازناً أفضل في تسجيلاتك.'
+      : (isFrench
+            ? 'Actions et routines ayant accompagné un apaisement dans vos journaux.'
+            : 'Self-reported actions and routines linked with calmer shifts in your logs.');
+
+  String get stabilizerDisclaimer => isArabic
+      ? 'ملاحظة وصفية مبنية على معطياتك الذاتية فقط — وليست وصفة طبية.'
+      : (isFrench
+            ? 'Observation descriptive issue de vos données — pas une prescription.'
+            : 'Descriptive observation from your own check-ins — not medical advice.');
+
+  String sameDayShiftStat(double delta) {
+    final formatted = delta.toStringAsFixed(1);
+    if (isArabic) return 'متوسط $formatted/10 في نفس اليوم';
+    if (isFrench) return 'moy. $formatted/10 le même jour';
+    return 'avg $formatted/10 same-day shift';
+  }
+
+  String stabilizerAvgMoodStat(double avg) {
+    final formatted = avg.toStringAsFixed(1);
+    if (isArabic) return 'معدّل الشدّة $formatted/10';
+    if (isFrench) return 'intensité moy. $formatted/10';
+    return 'avg mood $formatted/10';
+  }
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);

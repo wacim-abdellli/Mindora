@@ -213,7 +213,7 @@ void main() {
           scrollable: find.byType(Scrollable).first,
         );
         expect(find.text('DAILY CONTEXT & ROUTINE LINKS'), findsOneWidget);
-        expect(find.text('Regular sleep'), findsOneWidget);
+        expect(find.text('Regular sleep'), findsWidgets);
 
         // Render ClinicianPatientDetailScreen for Nadia B. and verify Overview + Timeline
         await tester.pumpWidget(
