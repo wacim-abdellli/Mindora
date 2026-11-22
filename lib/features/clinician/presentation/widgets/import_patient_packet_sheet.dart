@@ -108,6 +108,17 @@ class _ImportPatientPacketSheetState
     }
   }
 
+  Future<void> _pasteFromClipboard() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text?.trim();
+    if (text != null && text.isNotEmpty && mounted) {
+      setState(() {
+        _codeController.text = text;
+        _errorText = null;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
@@ -201,6 +212,14 @@ class _ImportPatientPacketSheetState
                     tokens,
                     strings.syncCodeFieldHint,
                   ),
+                ),
+                const SizedBox(height: 8),
+                MindButton(
+                  text: strings.pasteFromClipboardBtn,
+                  variant: MindButtonVariant.soft,
+                  leadingIcon: Icons.content_paste_rounded,
+                  isFullWidth: true,
+                  onPressed: _pasteFromClipboard,
                 ),
                 const SizedBox(height: 12),
                 Text(

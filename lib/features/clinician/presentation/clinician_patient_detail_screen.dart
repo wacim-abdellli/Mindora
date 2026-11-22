@@ -22,6 +22,7 @@ import '../../track/presentation/widgets/track_mood_utils.dart';
 import '../controllers/clinician_providers.dart';
 import '../domain/clinician_models.dart';
 import '../domain/visit_diff_model.dart';
+import 'widgets/clinical_brief_preview_sheet.dart';
 import 'widgets/compose_post_visit_focus_sheet.dart';
 
 enum _ChartMetric { mood, sleep, energy, anxiety }
@@ -253,6 +254,15 @@ class _ClinicianPatientDetailScreenState
                       style: TextStyle(fontSize: 12, color: tokens.ink2),
                     ),
                   ],
+                ),
+              ),
+              IconButton(
+                tooltip: strings.previewClinicalBriefBtn,
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                icon: Icon(Icons.picture_as_pdf_outlined, color: tokens.ink),
+                onPressed: () => ClinicalBriefPreviewSheet.show(
+                  context,
+                  record: patientRecord,
                 ),
               ),
               IconButton(

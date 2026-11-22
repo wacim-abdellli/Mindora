@@ -9,6 +9,7 @@ import '../../../../app/theme/mind_tokens.dart';
 import '../../../../core/widgets/mind_button.dart';
 import '../../../../core/widgets/mind_card.dart';
 import '../../../../core/widgets/mind_pill.dart';
+import '../../../../core/widgets/mind_qr_code.dart';
 import '../../controllers/clinician_providers.dart';
 import '../../domain/post_visit_focus_model.dart';
 
@@ -440,6 +441,23 @@ class _ComposePostVisitFocusSheetState
                                 leadingIcon: Icons.copy_rounded,
                                 isFullWidth: true,
                                 onPressed: () => _copyCode(strings, tokens),
+                              ),
+                              const SizedBox(height: 12),
+                              MindQrCodeView(
+                                data: _generatedCode!,
+                                size: 170,
+                                semanticLabel: strings.showInRoomQrBtn,
+                                overflowNotice: strings.qrCapacityExceededNote,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                strings.inRoomQrPinReminder,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: tokens.ink2,
+                                  height: 1.35,
+                                ),
                               ),
                             ],
                           ),

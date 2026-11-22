@@ -105,6 +105,17 @@ class _ImportCareFocusSheetState extends ConsumerState<ImportCareFocusSheet> {
     }
   }
 
+  Future<void> _pasteFromClipboard() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text?.trim();
+    if (text != null && text.isNotEmpty && mounted) {
+      setState(() {
+        _codeCtrl.text = text;
+        _errorText = null;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
@@ -198,6 +209,14 @@ class _ImportCareFocusSheetState extends ConsumerState<ImportCareFocusSheet> {
                     tokens,
                     strings.carePlanCodeFieldHint,
                   ),
+                ),
+                const SizedBox(height: 8),
+                MindButton(
+                  text: strings.pasteFromClipboardBtn,
+                  variant: MindButtonVariant.soft,
+                  leadingIcon: Icons.content_paste_rounded,
+                  isFullWidth: true,
+                  onPressed: _pasteFromClipboard,
                 ),
                 const SizedBox(height: 12),
                 Text(

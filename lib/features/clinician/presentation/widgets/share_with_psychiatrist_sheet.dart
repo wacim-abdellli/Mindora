@@ -10,6 +10,7 @@ import '../../../../core/widgets/mind_badge.dart';
 import '../../../../core/widgets/mind_button.dart';
 import '../../../../core/widgets/mind_card.dart';
 import '../../../../core/widgets/mind_pill.dart';
+import '../../../../core/widgets/mind_qr_code.dart';
 import '../../../auth/controllers/auth_controller.dart';
 import '../../../case_file/data/clinical_export_log_service.dart';
 import '../../../investigation/controllers/investigation_providers.dart';
@@ -18,6 +19,7 @@ import '../../../observatory/controllers/observatory_controllers.dart';
 import '../../../profile/controllers/profile_controller.dart';
 import '../../controllers/clinician_providers.dart';
 import '../../domain/clinician_models.dart';
+import 'clinical_brief_preview_sheet.dart';
 import 'pre_visit_brief_sheet.dart';
 
 /// Consent-scoped Care Handoff sheet on the Patient side.
@@ -71,8 +73,27 @@ class _ShareWithPsychiatristSheetState
 
   bool _isGeneratingCode = false;
   bool _isDeliveringLocal = false;
+  bool _showQr = false;
   String? _generatedCode;
   String? _errorText;
+
+  Future<void> _openPrintableBrief() async {
+    final packet = await _buildCurrentPacket();
+    if (!mounted) return;
+    final record = ClinicianPatientRecord(
+      patientId: packet.patientAnonymousId,
+      displayName: packet.patientDisplayName,
+      isDemoCase: false,
+      importedAt: packet.generatedAt,
+      lastSyncedAt: packet.generatedAt,
+      latestPacket: packet,
+    );
+    await ClinicalBriefPreviewSheet.show(
+      context,
+      record: record,
+      encryptedCode: _generatedCode,
+    );
+  }
 
   @override
   void initState() {
@@ -646,6 +667,37 @@ class _ShareWithPsychiatristSheetState
                                 onPressed: () =>
                                     _copyGeneratedCode(strings, tokens),
                               ),
+                              const SizedBox(height: 8),
+                              MindButton(
+                                text: _showQr
+                                    ? strings.hideInRoomQrBtn
+                                    : strings.showInRoomQrBtn,
+                                variant: MindButtonVariant.soft,
+                                leadingIcon: Icons.qr_code_2_rounded,
+                                isFullWidth: true,
+                                onPressed: () =>
+                                    setState(() => _showQr = !_showQr),
+                              ),
+                              if (_showQr) ...[
+                                const SizedBox(height: 12),
+                                MindQrCodeView(
+                                  data: _generatedCode!,
+                                  size: 196,
+                                  semanticLabel: strings.showInRoomQrBtn,
+                                  overflowNotice:
+                                      strings.qrCapacityExceededNote,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  strings.inRoomQrPinReminder,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: tokens.ink2,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -662,6 +714,17 @@ class _ShareWithPsychiatristSheetState
                         isLoading: _isDeliveringLocal,
                         onPressed: () =>
                             _sendToLocalWorkspace(context, strings, tokens),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      // Channel 3: Printable 1-Page A4 Clinical Brief (PDF)
+                      MindButton(
+                        text: strings.previewClinicalBriefBtn,
+                        variant: MindButtonVariant.secondary,
+                        leadingIcon: Icons.picture_as_pdf_outlined,
+                        isFullWidth: true,
+                        onPressed: _openPrintableBrief,
                       ),
                     ],
                   ),

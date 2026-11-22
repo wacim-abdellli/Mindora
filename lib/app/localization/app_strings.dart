@@ -2953,6 +2953,62 @@ class AppStrings {
       ? 'عوامل تراجعت'
       : (isFrench ? 'Repères en recul' : 'Less frequent');
 
+  // ---------------------------------------------------------------------------
+  // Milestone 5.3: Zero-Cloud In-Room QR Handoff & Printable A4 Clinical Brief PDF
+  // ---------------------------------------------------------------------------
+
+  String get showInRoomQrBtn => isArabic
+      ? 'إظهار رمز QR في العيادة'
+      : (isFrench ? 'Afficher QR en cabinet' : 'Show In-Room QR');
+
+  String get hideInRoomQrBtn => isArabic
+      ? 'إخفاء رمز QR'
+      : (isFrench ? 'Masquer QR' : 'Hide QR Code');
+
+  String get inRoomQrPinReminder => isArabic
+      ? 'خلّي الطبيب يسكانّي الرمز وعطيه كلمة السر شفهياً — المعطيات ما تمشيش للسيرفر.'
+      : (isFrench
+            ? 'Le praticien scanne ce QR puis vous saisissez votre phrase secrète — zéro cloud.'
+            : 'Let your psychiatrist scan this QR and enter your verbal room PIN — zero cloud.');
+
+  String get qrCapacityExceededNote => isArabic
+      ? 'حجم الحزمة أكبر من طاقة QR؛ استعمل نسخ الرمز المشفّر.'
+      : (isFrench
+            ? 'Paquet trop volumineux pour un seul QR ; utilisez la copie chiffrée.'
+            : 'Packet exceeds single-QR byte capacity; copy the encrypted text code instead.');
+
+  String get pasteFromClipboardBtn => isArabic
+      ? 'لصق من الحافظة'
+      : (isFrench ? 'Coller du presse-papiers' : 'Paste from Clipboard');
+
+  String get previewClinicalBriefBtn => isArabic
+      ? 'معاينة ملخص الزيارة PDF (A4)'
+      : (isFrench ? 'Aperçu synthèse PDF (A4)' : 'Preview Printable A4 Brief');
+
+  String get clinicalBriefTitle => isArabic
+      ? 'ملخص استشارة سريري (A4)'
+      : (isFrench ? 'Synthèse clinique A4' : 'Printable Consultation Brief (A4)');
+
+  String get clinicalBriefSubtitle => isArabic
+      ? 'وثيقة وصفية غير تشخيصية جاهزة للطباعة أو المشاركة.'
+      : (isFrench
+            ? 'Document descriptif non diagnostique prêt pour la consultation.'
+            : 'Observational, non-diagnostic 1-page summary ready for clinical visits.');
+
+  String get savePdfBriefBtn => isArabic
+      ? 'حفظ ملف A4 PDF'
+      : (isFrench ? 'Enregistrer en PDF A4' : 'Save A4 PDF');
+
+  String get copyClinicalTextBtn => isArabic
+      ? 'نسخ النص السريري'
+      : (isFrench ? 'Copier le texte clinique' : 'Copy Clinical Text');
+
+  String pdfSavedSnackbar(String fileName) {
+    if (isArabic) return 'تم حفظ الملف: $fileName';
+    if (isFrench) return 'PDF enregistré : $fileName';
+    return 'Saved A4 PDF: $fileName';
+  }
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);

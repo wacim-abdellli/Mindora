@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:uuid/uuid.dart';
@@ -387,13 +388,20 @@ class ClinicianSyncService {
     final keyBytes = base64Url.decode(parts[3]);
 
     final cipher = LocalDataCipher(secretKeyBytes: keyBytes);
-    final encryptedPayload = await cipher.encryptString(jsonEncode(payloadMap));
+    final rawJson = jsonEncode(payloadMap);
+    final rawBytes = utf8.encode(rawJson);
+    final compressedB64 = base64Url.encode(gzip.encode(rawBytes));
+    final useGzip = compressedB64.length < rawJson.length;
+    final encryptedPayload = await cipher.encryptString(
+      useGzip ? compressedB64 : rawJson,
+    );
 
     final envelope = {
       'v': 1,
       'kdf': 'pbkdf2_sha256',
       'iter': iterations,
       'salt': base64Url.encode(salt),
+      if (useGzip) 'enc': 'gz',
       'payload': encryptedPayload,
     };
 
@@ -488,7 +496,10 @@ class ClinicianSyncService {
     }
 
     try {
-      final parsed = jsonDecode(plaintextJson);
+      final jsonText = envelope['enc'] == 'gz'
+          ? utf8.decode(gzip.decode(base64Url.decode(plaintextJson)))
+          : plaintextJson;
+      final parsed = jsonDecode(jsonText);
       if (parsed is! Map<String, dynamic>) {
         throw const FormatException('Packet must be JSON object');
       }
