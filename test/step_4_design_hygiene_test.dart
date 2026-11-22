@@ -10,7 +10,7 @@ import 'package:mind_forensics/app/router/app_router.dart';
 import 'package:mind_forensics/app/theme/lab_theme.dart';
 import 'package:mind_forensics/app/theme/mind_tokens.dart';
 import 'package:mind_forensics/core/widgets/mind_pressable.dart';
-import 'package:mind_forensics/core/widgets/neural_waveform_visualizer.dart';
+import 'package:mind_forensics/core/widgets/organic_mood_orb.dart';
 import 'package:mind_forensics/features/home/presentation/home_screen.dart';
 import 'package:mind_forensics/features/home/presentation/widgets/home_daily_check_in_card.dart';
 import 'package:mind_forensics/features/mind_trace/domain/mind_trace_model.dart';
@@ -92,7 +92,7 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('HomeDailyCheckInCard omits NeuralWaveformVisualizer and navigates VIEW to /track', (tester) async {
+    testWidgets('HomeDailyCheckInCard renders OrganicMoodOrb and navigates VIEW to /track', (tester) async {
       final now = DateTime.now();
       final todayTrace = MindTraceModel(
         id: 't_today',
@@ -154,7 +154,7 @@ void main() {
       await tester.pumpWidget(MaterialApp.router(routerConfig: router));
       await tester.pumpAndSettle();
 
-      expect(find.byType(NeuralWaveformVisualizer), findsNothing);
+      expect(find.byType(OrganicMoodOrb), findsOneWidget);
       expect(find.text('Calm'), findsOneWidget);
       expect(find.text('VIEW'), findsOneWidget);
 

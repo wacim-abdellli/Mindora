@@ -2105,7 +2105,7 @@ class AppStrings {
       : (isFrench ? 'Enregistrer ce moment' : 'Log New Moment');
 
   String get logMomentShortBtn =>
-      isArabic ? '+ لحظة' : (isFrench ? '+ Moment' : '+ Log moment');
+      isArabic ? 'لحظة جديدة' : (isFrench ? 'Moment' : 'Log moment');
 
   String momentsCountLabel(int count) {
     if (isArabic) return '$count لحظات';
@@ -2394,9 +2394,13 @@ class AppStrings {
       isArabic ? 'تجريبي' : (isFrench ? 'DÉMO' : 'DEMO');
 
   String shiftsCountBadge(int count) {
-    if (isArabic) return '$count تغيّرات';
-    if (isFrench) return '$count écarts';
-    return '$count shifts';
+    if (isArabic) {
+      return count == 1 ? 'تغيّر واحد' : '$count تغيّرات';
+    }
+    if (isFrench) {
+      return count == 1 ? '1 écart' : '$count écarts';
+    }
+    return count == 1 ? '1 shift' : '$count shifts';
   }
 
   String get baselineSteadyBadge => isArabic
@@ -2534,7 +2538,7 @@ class AppStrings {
       isArabic ? 'التسلسل' : (isFrench ? 'Chronologie' : 'Timeline');
 
   String get dossierTabCases =>
-      isArabic ? 'الاستكشاف' : (isFrench ? 'Explorations' : 'Cases');
+      isArabic ? 'الحالات' : (isFrench ? 'Explorations' : 'Cases');
 
   String get dossierTabNotes =>
       isArabic ? 'ملاحظاتي' : (isFrench ? 'Notes' : 'Notes');

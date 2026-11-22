@@ -788,37 +788,32 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
 
         const SizedBox(height: 14),
 
-        // Filter Pills (horizontal scroll keeps 320px safe)
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              MindPill(
-                label: strings.filterAll,
-                isSelected: _filter == _RosterFilter.all,
-                onTap: () => setState(() => _filter = _RosterFilter.all),
-              ),
-              const SizedBox(width: 8),
-              MindPill(
-                label: strings.filterShiftsNoted,
-                isSelected: _filter == _RosterFilter.shifts,
-                onTap: () => setState(() => _filter = _RosterFilter.shifts),
-              ),
-              const SizedBox(width: 8),
-              MindPill(
-                label: strings.filterNewUpdates,
-                isSelected: _filter == _RosterFilter.unreviewed,
-                onTap: () =>
-                    setState(() => _filter = _RosterFilter.unreviewed),
-              ),
-              const SizedBox(width: 8),
-              MindPill(
-                label: strings.filterDemoCohort,
-                isSelected: _filter == _RosterFilter.demo,
-                onTap: () => setState(() => _filter = _RosterFilter.demo),
-              ),
-            ],
-          ),
+        // Filter Pills (Wrap prevents right-edge pill clipping across mobile & split pane)
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            MindPill(
+              label: strings.filterAll,
+              isSelected: _filter == _RosterFilter.all,
+              onTap: () => setState(() => _filter = _RosterFilter.all),
+            ),
+            MindPill(
+              label: strings.filterShiftsNoted,
+              isSelected: _filter == _RosterFilter.shifts,
+              onTap: () => setState(() => _filter = _RosterFilter.shifts),
+            ),
+            MindPill(
+              label: strings.filterNewUpdates,
+              isSelected: _filter == _RosterFilter.unreviewed,
+              onTap: () => setState(() => _filter = _RosterFilter.unreviewed),
+            ),
+            MindPill(
+              label: strings.filterDemoCohort,
+              isSelected: _filter == _RosterFilter.demo,
+              onTap: () => setState(() => _filter = _RosterFilter.demo),
+            ),
+          ],
         ),
 
         const SizedBox(height: 16),

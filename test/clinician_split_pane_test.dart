@@ -61,6 +61,8 @@ void main() {
           120,
           scrollable: find.byType(Scrollable).first,
         );
+        await tester.ensureVisible(find.text('Karim M.'));
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Karim M.'));
         await tester.pumpAndSettle();
 

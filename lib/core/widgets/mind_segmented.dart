@@ -50,8 +50,8 @@ class MindSegmented extends StatelessWidget {
                         : const Duration(milliseconds: 180),
                     curve: Curves.easeOutCubic,
                     constraints: const BoxConstraints(minHeight: 48),
-                    padding: const EdgeInsetsDirectional.symmetric(
-                      horizontal: 10,
+                    padding: EdgeInsetsDirectional.symmetric(
+                      horizontal: labels.length >= 4 ? 4 : 10,
                       vertical: 8,
                     ),
                     alignment: Alignment.center,
@@ -68,22 +68,43 @@ class MindSegmented extends StatelessWidget {
                           ? tokens.segmentedActiveShadows
                           : const <BoxShadow>[],
                     ),
-                    child: Text(
-                      labels[i],
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: LabTheme.fontFamily,
-                        fontFamilyFallback: LabTheme.fontFallback,
-                        fontSize: 13.5,
-                        height: 1.2,
-                        fontWeight: index == i
-                            ? FontWeight.w700
-                            : FontWeight.w600,
-                        color: index == i ? tokens.ink : tokens.ink2,
-                      ),
-                    ),
+                    child: labels.length >= 4
+                        ? FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.center,
+                            child: Text(
+                              labels[i],
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              softWrap: false,
+                              style: TextStyle(
+                                fontFamily: LabTheme.fontFamily,
+                                fontFamilyFallback: LabTheme.fontFallback,
+                                fontSize: 13.5,
+                                height: 1.2,
+                                fontWeight: index == i
+                                    ? FontWeight.w700
+                                    : FontWeight.w600,
+                                color: index == i ? tokens.ink : tokens.ink2,
+                              ),
+                            ),
+                          )
+                        : Text(
+                            labels[i],
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: LabTheme.fontFamily,
+                              fontFamilyFallback: LabTheme.fontFallback,
+                              fontSize: 13.5,
+                              height: 1.2,
+                              fontWeight: index == i
+                                  ? FontWeight.w700
+                                  : FontWeight.w600,
+                              color: index == i ? tokens.ink : tokens.ink2,
+                            ),
+                          ),
                   ),
                 ),
               ),

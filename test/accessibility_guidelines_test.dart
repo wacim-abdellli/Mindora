@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:mind_forensics/app/localization/app_strings.dart';
+import 'package:mind_forensics/app/theme/lab_theme.dart';
 import 'package:mind_forensics/app/theme/mind_tokens.dart';
 import 'package:mind_forensics/core/widgets/fingerprint_thread_signature.dart';
-import 'package:mind_forensics/core/widgets/neural_brain_wireframe.dart';
-import 'package:mind_forensics/core/widgets/radial_mood_dial.dart';
-import 'package:mind_forensics/core/widgets/slide_to_anchor.dart';
+import 'package:mind_forensics/core/widgets/mind_button.dart';
+import 'package:mind_forensics/core/widgets/mind_segmented.dart';
+import 'package:mind_forensics/core/widgets/organic_mood_orb.dart';
+import 'package:mind_forensics/features/clinician/presentation/clinician_patient_detail_screen.dart';
 import 'package:mind_forensics/features/home/presentation/home_screen.dart';
-import 'package:mind_forensics/features/investigation/presentation/widgets/somatic_body_radar.dart';
 import 'package:mind_forensics/features/investigation/presentation/widgets/vagal_breathing_visualizer.dart';
 import 'package:mind_forensics/features/support/presentation/contextual_support_sheet.dart';
+import 'package:mind_forensics/features/track/presentation/widgets/track_mood_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -21,99 +24,22 @@ void main() {
   });
 
   group('Phase 8 Accessibility & Reduced Motion Guidelines', () {
-    testWidgets('RadialMoodDial meets tap target and labeled button guidelines',
+    testWidgets('TrackMoodPicker meets tap target and labeled button guidelines',
         (tester) async {
       final handle = tester.ensureSemantics();
       try {
-        int selected = 2;
+        String selected = 'heavy';
         await tester.pumpWidget(
           MaterialApp(
-            theme: ThemeData.dark(),
-            home: Scaffold(
-              body: Center(
-                child: RadialMoodDial(
-                  moods: const [
-                    MoodItem(key: 'heavy', label: 'Heavy', icon: Icons.cloud_outlined),
-                    MoodItem(key: 'tense', label: 'Tense', icon: Icons.bolt_outlined),
-                    MoodItem(key: 'steady', label: 'Steady', icon: Icons.spa_outlined),
-                    MoodItem(key: 'calm', label: 'Calm', icon: Icons.water_outlined),
-                  ],
-                  selectedIndex: selected,
-                  onChanged: (idx) => selected = idx,
-                ),
-              ),
-            ),
-          ),
-        );
-        await tester.pumpAndSettle();
-
-        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
-        await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
-        await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-
-        expect(find.bySemanticsLabel('Calm'), findsOneWidget);
-        await tester.tap(find.bySemanticsLabel('Calm'));
-        expect(selected, 3);
-      } finally {
-        handle.dispose();
-      }
-    });
-
-    testWidgets('SlideToAnchor supports TalkBack SemanticsAction.tap activation',
-        (tester) async {
-      final handle = tester.ensureSemantics();
-      try {
-        var completed = false;
-        await tester.pumpWidget(
-          MaterialApp(
-            theme: ThemeData.dark(),
-            home: Scaffold(
-              body: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: SlideToAnchor(
-                    label: 'Slide to save anchor',
-                    onCompleted: () async {
-                      completed = true;
-                    },
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-        await tester.pumpAndSettle();
-
-        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
-        await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
-        await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-
-        tester.semantics.tap(find.semantics.byLabel('Slide to save anchor'));
-        await tester.pumpAndSettle();
-
-        expect(completed, isTrue);
-      } finally {
-        handle.dispose();
-      }
-    });
-
-    testWidgets('SomaticBodyRadar nodes meet 48dp guidelines and expose labels',
-        (tester) async {
-      final handle = tester.ensureSemantics();
-      try {
-        String? picked;
-        await tester.pumpWidget(
-          MaterialApp(
-            theme: ThemeData.dark(),
+            theme: buildMindTheme(Brightness.dark),
             home: Scaffold(
               body: Center(
                 child: SizedBox(
-                  width: 340,
-                  child: SomaticBodyRadar(
-                    selectedSensation: 'Chest tightness',
-                    onSensationSelected: (val) => picked = val,
-                    isDark: true,
-                    arousalIntensity: 6,
+                  width: 360,
+                  child: TrackMoodPicker(
+                    selectedMoodKey: selected,
+                    strings: const AppStrings('en'),
+                    onSelect: (key) => selected = key,
                   ),
                 ),
               ),
@@ -126,8 +52,88 @@ void main() {
         await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
         await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
 
-        await tester.tap(find.bySemanticsLabel('Cranial / Head'));
-        expect(picked, 'Cranial / Head');
+        await tester.tap(find.text('Calm'));
+        await tester.pumpAndSettle();
+        expect(selected, 'calm');
+      } finally {
+        handle.dispose();
+      }
+    });
+
+    testWidgets('MindButton and MindSegmented meet tap target and labeled button guidelines',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      try {
+        var pressed = false;
+        var segment = 0;
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: buildMindTheme(Brightness.dark),
+            home: StatefulBuilder(
+              builder: (context, setState) => Scaffold(
+                body: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        MindSegmented(
+                          index: segment,
+                          labels: const ['Overview', 'Timeline'],
+                          onChanged: (idx) => setState(() => segment = idx),
+                        ),
+                        const SizedBox(height: 16),
+                        MindButton(
+                          text: 'Save Check-In',
+                          onPressed: () => pressed = true,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+
+        await tester.tap(find.text('Timeline'));
+        await tester.pumpAndSettle();
+        expect(segment, 1);
+
+        await tester.tap(find.text('Save Check-In'));
+        await tester.pumpAndSettle();
+        expect(pressed, isTrue);
+      } finally {
+        handle.dispose();
+      }
+    });
+
+    testWidgets('ClinicianPatientDetailScreen meets labeled and tap target guidelines',
+        (tester) async {
+      tester.view.physicalSize = const Size(900, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final handle = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              theme: buildMindTheme(Brightness.dark),
+              home: const ClinicianPatientDetailScreen(patientId: 'demo_nadia_b'),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
       } finally {
         handle.dispose();
       }
@@ -141,7 +147,7 @@ void main() {
           MediaQuery(
             data: const MediaQueryData(disableAnimations: true),
             child: MaterialApp(
-              theme: ThemeData.dark(),
+              theme: buildMindTheme(Brightness.dark),
               home: const Scaffold(
                 body: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -152,7 +158,13 @@ void main() {
                       primaryColor: MindTokens.moodRestless,
                       accentColor: MindTokens.moodCalm,
                     ),
-                    NeuralBrainWireframe(size: 80, animate: true),
+                    OrganicMoodOrb(
+                      moodKey: 'calm',
+                      intensity: 6,
+                      color: MindTokens.moodCalm,
+                      size: 80,
+                      animateChanges: true,
+                    ),
                     VagalBreathingVisualizer(
                       phase: 0,
                       secondsLeft: 4,

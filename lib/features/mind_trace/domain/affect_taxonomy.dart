@@ -330,7 +330,9 @@ abstract final class AffectTaxonomy {
         _ => raw,
       };
     }
-    return raw;
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return raw;
+    return '${trimmed[0].toUpperCase()}${trimmed.substring(1)}';
   }
 
   static bool isCoreMood(String raw) => _normalizeCoreOrNull(raw) != null;
