@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/security/secure_key_manager.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../data/clinic_handoff_bridge.dart';
 import '../data/clinician_sync_service.dart';
 import '../data/demo_clinical_cohort.dart';
 import '../data/local_care_plan_repository.dart';
@@ -16,6 +17,10 @@ final clinicianRepositoryProvider = Provider<LocalClinicianRepository>((ref) {
 
 final clinicianSyncServiceProvider = Provider<ClinicianSyncService>((ref) {
   return const ClinicianSyncService();
+});
+
+final clinicHandoffBridgeProvider = Provider<ClinicHandoffBridge>((ref) {
+  return const DefaultClinicHandoffBridge();
 });
 
 class WorkspaceRoleNotifier extends Notifier<AppWorkspaceRole> {

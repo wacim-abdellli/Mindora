@@ -68,6 +68,8 @@
 	</array>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Mindora uses Face ID to protect your private reflection vault.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Mindora uses the camera only to scan encrypted in-room care handoff QR codes locally — no images are stored or uploaded.</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>tel</string>

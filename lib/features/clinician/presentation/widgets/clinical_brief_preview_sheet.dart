@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/localization/app_strings.dart';
 import '../../../../app/theme/mind_tokens.dart';
 import '../../../../core/widgets/mind_button.dart';
+import '../../controllers/clinician_providers.dart';
 import '../../data/clinical_brief_pdf_service.dart';
 import '../../domain/clinician_models.dart';
 
@@ -47,6 +48,7 @@ class _ClinicalBriefPreviewSheetState
   ClinicalBriefRenderResult? _result;
   String? _errorText;
   bool _isSaving = false;
+  bool _isSharing = false;
 
   @override
   void didChangeDependencies() {
@@ -95,6 +97,30 @@ class _ClinicalBriefPreviewSheetState
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _sharePdf(AppStrings strings, MindTokens tokens) async {
+    final res = _result;
+    if (res == null) return;
+    setState(() => _isSharing = true);
+    try {
+      final ts = DateTime.now().millisecondsSinceEpoch;
+      final fileName = 'mind_forensics_brief_$ts.pdf';
+      final filePath = await _pdfService.savePdfToLocalFile(
+        res.pdfBytes,
+        fileName: fileName,
+      );
+      await ref.read(clinicHandoffBridgeProvider).sharePdfFile(
+            filePath: filePath,
+            subject: strings.pdfShareSubject,
+            text: strings.clinicalBriefSubtitle,
+          );
+      if (mounted) {
+        HapticFeedback.mediumImpact();
+      }
+    } finally {
+      if (mounted) setState(() => _isSharing = false);
     }
   }
 
@@ -233,8 +259,17 @@ class _ClinicalBriefPreviewSheetState
                       ),
                       const SizedBox(height: 14),
                       MindButton(
-                        text: strings.savePdfBriefBtn,
+                        text: strings.sharePdfBriefBtn,
                         variant: MindButtonVariant.primary,
+                        leadingIcon: Icons.ios_share_rounded,
+                        isFullWidth: true,
+                        isLoading: _isSharing,
+                        onPressed: () => _sharePdf(strings, tokens),
+                      ),
+                      const SizedBox(height: 10),
+                      MindButton(
+                        text: strings.savePdfBriefBtn,
+                        variant: MindButtonVariant.secondary,
                         leadingIcon: Icons.download_rounded,
                         isFullWidth: true,
                         isLoading: _isSaving,
@@ -243,7 +278,7 @@ class _ClinicalBriefPreviewSheetState
                       const SizedBox(height: 10),
                       MindButton(
                         text: strings.copyClinicalTextBtn,
-                        variant: MindButtonVariant.secondary,
+                        variant: MindButtonVariant.soft,
                         leadingIcon: Icons.copy_rounded,
                         isFullWidth: true,
                         onPressed: () => _copyText(strings, tokens),

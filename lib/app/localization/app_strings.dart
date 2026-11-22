@@ -4667,6 +4667,54 @@ class AppStrings {
             ? 'Synthèse descriptive de vos observations — ne constitue pas un diagnostic médical.'
             : 'Descriptive synthesis of recorded logs for clear review — not a medical diagnosis.');
 
+  // ---------------------------------------------------------------------------
+  // Milestone 6.1: Native PDF Share Sheet & In-Room Camera QR Scanner
+  // ---------------------------------------------------------------------------
+
+  String get sharePdfBriefBtn => isArabic
+      ? 'مشاركة / طباعة A4 PDF'
+      : (isFrench ? 'Partager / Imprimer PDF A4' : 'Share / Print A4 PDF');
+
+  String get pdfShareSubject => isArabic
+      ? 'Mindora — ملخص استشارة سريري (A4)'
+      : (isFrench
+            ? 'Mindora — Synthèse clinique A4'
+            : 'Mindora — Clinical Consultation Brief (A4)');
+
+  String get scanInRoomQrBtn => isArabic
+      ? 'مسح رمز QR داخل العيادة'
+      : (isFrench ? 'Scanner QR en cabinet' : 'Scan In-Room QR');
+
+  String get qrScannerTitle => isArabic
+      ? 'قارئ رمز النقل المشفّر'
+      : (isFrench ? 'Scanner de transfert chiffré' : 'Encrypted Handoff QR');
+
+  String get qrScannerSubtitle => isArabic
+      ? 'وجّه الكاميرا نحو رمز QR — الفك يتم محلياً بدون خادم.'
+      : (isFrench
+            ? 'Visez le QR Mindora — lecture locale sans cloud.'
+            : 'Point your camera at a Mindora QR code — stays offline.');
+
+  String qrScannerWrongPrefixError(String expectedPrefix) {
+    if (isArabic) {
+      return 'هذا الرمز ليس حزمة Mindora متوقعة ($expectedPrefix).';
+    }
+    if (isFrench) {
+      return 'Ce QR ne correspond pas au préfixe attendu ($expectedPrefix).';
+    }
+    return 'Not a matching Mindora handoff QR ($expectedPrefix).';
+  }
+
+  String get qrScannerUnsupportedNote => isArabic
+      ? 'الكاميرا غير متوفرة على هذا الجهاز المكتبي — استعمل اللصق من الحافظة.'
+      : (isFrench
+            ? 'Caméra indisponible sur ce bureau — utilisez le collage depuis le presse-papiers.'
+            : 'Camera preview is unavailable on this desktop target — use Paste from Clipboard.');
+
+  String get qrScannerTorchTooltip => isArabic
+      ? 'تشغيل أو إيقاف الإضاءة'
+      : (isFrench ? 'Activer/couper la lampe' : 'Toggle torch');
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);

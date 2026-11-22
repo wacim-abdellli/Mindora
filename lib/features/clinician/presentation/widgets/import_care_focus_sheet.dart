@@ -116,6 +116,21 @@ class _ImportCareFocusSheetState extends ConsumerState<ImportCareFocusSheet> {
     }
   }
 
+  Future<void> _scanQrCode(AppStrings strings) async {
+    final scanned = await ref.read(clinicHandoffBridgeProvider).scanQrCode(
+          context,
+          expectedPrefix: ClinicianSyncService.carePlanPrefix,
+          title: strings.qrScannerTitle,
+          subtitle: strings.qrScannerSubtitle,
+        );
+    if (scanned != null && scanned.isNotEmpty && mounted) {
+      setState(() {
+        _codeCtrl.text = scanned;
+        _errorText = null;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
@@ -209,6 +224,14 @@ class _ImportCareFocusSheetState extends ConsumerState<ImportCareFocusSheet> {
                     tokens,
                     strings.carePlanCodeFieldHint,
                   ),
+                ),
+                const SizedBox(height: 8),
+                MindButton(
+                  text: strings.scanInRoomQrBtn,
+                  variant: MindButtonVariant.secondary,
+                  leadingIcon: Icons.qr_code_scanner_rounded,
+                  isFullWidth: true,
+                  onPressed: () => _scanQrCode(strings),
                 ),
                 const SizedBox(height: 8),
                 MindButton(
