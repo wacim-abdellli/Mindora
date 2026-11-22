@@ -8,6 +8,7 @@ import '../../../core/security/local_data_cipher.dart';
 import '../../auth/data/auth_service.dart';
 import '../../investigation/domain/case_model.dart';
 import '../../mind_trace/domain/affect_taxonomy.dart';
+import '../../mind_trace/domain/daily_context_tags.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
 import '../../observatory/domain/symptom_report.dart';
 import '../../profile/domain/psychological_profile_model.dart';
@@ -115,6 +116,7 @@ class ClinicianSyncService {
                 clearEnergyLevel: true,
                 clearAnxietyLevel: true,
                 clearPhysicalTension: true,
+                contextTags: const [],
               );
             }
             return sanitized;
@@ -600,6 +602,20 @@ class ClinicianSyncService {
                   '${b.name}: ${baseline.diurnalIntensityAverages[b]!.toStringAsFixed(1)}/10',
             );
         buf.writeln('Time-of-day rhythm: ${parts.join(' | ')}');
+      }
+      if (scope.includeSleepEnergyAnxiety &&
+          baseline.contextTagCorrelations.isNotEmpty) {
+        final tagSummaries = baseline.contextTagCorrelations.take(4).map((c) {
+          final label = DailyContextTags.localizedLabel(c.tagKey, strings);
+          final sleepPart = c.avgSleepHours != null
+              ? ', sleep ${c.avgSleepHours!.toStringAsFixed(1)}h'
+              : '';
+          final moodPart = c.avgMoodIntensity != null
+              ? ', mood ${c.avgMoodIntensity!.toStringAsFixed(1)}/10'
+              : '';
+          return '$label (${c.occurrences}x$moodPart$sleepPart)';
+        });
+        buf.writeln('Daily context & routine links: ${tagSummaries.join(' | ')}');
       }
       buf.writeln();
     }

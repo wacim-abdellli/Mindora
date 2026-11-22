@@ -39,6 +39,7 @@ class MindTraceModel {
     this.investigationAnswers = const {},
     this.aiReflection,
     this.suggestedJourneyActivityId,
+    this.contextTags = const [],
     this.isCompleted = true,
     required this.createdAt,
     required this.updatedAt,
@@ -69,6 +70,7 @@ class MindTraceModel {
   final Map<String, String> investigationAnswers;
   final String? aiReflection;
   final String? suggestedJourneyActivityId;
+  final List<String> contextTags;
   final bool isCompleted;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -164,6 +166,7 @@ class MindTraceModel {
     bool clearAiReflection = false,
     String? suggestedJourneyActivityId,
     bool clearSuggestedJourneyActivityId = false,
+    List<String>? contextTags,
     bool? isCompleted,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -216,6 +219,7 @@ class MindTraceModel {
       suggestedJourneyActivityId: clearSuggestedJourneyActivityId
           ? null
           : (suggestedJourneyActivityId ?? this.suggestedJourneyActivityId),
+      contextTags: contextTags ?? this.contextTags,
       isCompleted: isCompleted ?? this.isCompleted,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -248,6 +252,7 @@ class MindTraceModel {
         'investigationAnswers': investigationAnswers,
         'aiReflection': aiReflection,
         'suggestedJourneyActivityId': suggestedJourneyActivityId,
+        'contextTags': contextTags,
         'isCompleted': isCompleted,
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt.toIso8601String(),
@@ -289,6 +294,10 @@ class MindTraceModel {
       aiReflection: json['aiReflection'] as String?,
       suggestedJourneyActivityId:
           json['suggestedJourneyActivityId'] as String?,
+      contextTags: (json['contextTags'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList(growable: false) ??
+          const [],
       isCompleted: json['isCompleted'] as bool? ?? true,
       createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.now(),

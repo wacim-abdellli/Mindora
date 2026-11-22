@@ -14,6 +14,7 @@ import '../../../core/widgets/mind_segmented.dart';
 import '../../../core/widgets/smooth_spline_chart.dart';
 import '../../insights/domain/personal_baseline_model.dart';
 import '../../mind_trace/domain/affect_taxonomy.dart';
+import '../../mind_trace/domain/daily_context_tags.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
 import '../../observatory/domain/default_symptom_library.dart';
 import '../../track/presentation/widgets/track_mood_utils.dart';
@@ -359,6 +360,7 @@ class _ClinicianPatientDetailScreenState
         : null;
 
     return ListView(
+      key: PageStorageKey<String>('dossier_overview_${record.patientId}'),
       padding: const EdgeInsets.fromLTRB(18, 4, 18, 28),
       children: [
         // Consent Banner
@@ -660,6 +662,97 @@ class _ClinicianPatientDetailScreenState
             ),
           ),
         ],
+
+        // Daily Context & Routine Links
+        if (scope.includeSleepEnergyAnxiety &&
+            baseline.contextTagCorrelations.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          MindCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  strings.dailyContextSectionTitle,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: strings.isArabic ? 0 : 0.7,
+                    color: tokens.ink2,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                ...baseline.contextTagCorrelations.take(6).map((c) {
+                  final tag = DailyContextTags.byKey(c.tagKey);
+                  final metrics = <String>[
+                    '${c.occurrences}x',
+                    if (c.avgMoodIntensity != null)
+                      '${c.avgMoodIntensity!.toStringAsFixed(1)}/10',
+                    if (c.avgSleepHours != null)
+                      '${c.avgSleepHours!.toStringAsFixed(1)}h',
+                  ];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: tokens.surface2,
+                        borderRadius: BorderRadius.circular(tokens.chipRadius),
+                        border: Border.all(color: tokens.line),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                tag?.icon ?? Icons.label_outline_rounded,
+                                size: 15,
+                                color: tokens.ink,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  DailyContextTags.localizedLabel(
+                                    c.tagKey,
+                                    strings,
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: tokens.ink,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Padding(
+                            padding:
+                                const EdgeInsetsDirectional.only(start: 23),
+                            child: Text(
+                              metrics.join(' · '),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: tokens.ink2,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -768,6 +861,7 @@ class _ClinicianPatientDetailScreenState
       ..sort((a, b) => b.effectiveTimestamp.compareTo(a.effectiveTimestamp));
 
     return ListView(
+      key: PageStorageKey<String>('dossier_timeline_${record.patientId}'),
       padding: const EdgeInsets.fromLTRB(18, 4, 18, 28),
       children: [
         if (!scope.includePersonalNotes) ...[
@@ -875,6 +969,21 @@ class _ClinicianPatientDetailScreenState
                         ),
                       ),
                     ],
+                    if (scope.includeSleepEnergyAnxiety &&
+                        t.contextTags.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: t.contextTags.map((k) {
+                          final tag = DailyContextTags.byKey(k);
+                          return MindBadge(
+                            icon: tag?.icon,
+                            label: DailyContextTags.localizedLabel(k, strings),
+                          );
+                        }).toList(),
+                      ),
+                    ],
                     if (scope.includePersonalNotes &&
                         t.journalText != null &&
                         t.journalText!.trim().isNotEmpty) ...[
@@ -911,6 +1020,7 @@ class _ClinicianPatientDetailScreenState
         packet.sharedCases.where((c) => !c.isPrivate).toList(growable: false);
 
     return ListView(
+      key: PageStorageKey<String>('dossier_cases_${record.patientId}'),
       padding: const EdgeInsets.fromLTRB(18, 4, 18, 28),
       children: [
         MindCard(
@@ -1087,6 +1197,7 @@ class _ClinicianPatientDetailScreenState
     AppStrings strings,
   ) {
     return ListView(
+      key: PageStorageKey<String>('dossier_notes_${record.patientId}'),
       padding: const EdgeInsets.fromLTRB(18, 4, 18, 28),
       children: [
         MindCard(

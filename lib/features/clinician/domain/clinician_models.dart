@@ -347,6 +347,7 @@ class ClinicianSyncPacket {
                   clearEnergyLevel: true,
                   clearAnxietyLevel: true,
                   clearPhysicalTension: true,
+                  contextTags: const [],
                 );
               }
               return cleaned;

@@ -2827,6 +2827,28 @@ class AppStrings {
       ? 'مسح الخطة'
       : (isFrench ? 'Effacer le plan' : 'Clear plan');
 
+  // ---------------------------------------------------------------------------
+  // Milestone 4.3: Optional Daily Context & Routine Tags
+  // ---------------------------------------------------------------------------
+
+  String get dailyContextTagsLabel => isArabic
+      ? 'روتين وسياق اليوم (اختياري)'
+      : (isFrench
+            ? 'Contexte & routine du jour (optionnel)'
+            : 'Daily routine & context (optional)');
+
+  String get dailyContextSectionTitle => isArabic
+      ? 'ارتباطات السياق والروتين'
+      : (isFrench
+            ? 'CONTEXTE QUOTIDIEN & OBSERVATIONS'
+            : 'DAILY CONTEXT & ROUTINE LINKS');
+
+  String get dailyContextCorrelationSub => isArabic
+      ? 'مقارنة إحصائية لما يرافق أيامك — ملاحظة وصفية فقط.'
+      : (isFrench
+            ? 'Moyennes observées avec chaque repère — simple observation statistique.'
+            : 'Observed averages co-occurring with each tag — purely descriptive.');
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);

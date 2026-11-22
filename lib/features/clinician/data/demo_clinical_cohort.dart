@@ -50,6 +50,9 @@ abstract final class DemoClinicalCohort {
           journalText: isRecentShift
               ? 'Woke up before dawn with chest tightness; trying to pace the morning.'
               : 'Slept steadily and started work calmly.',
+          contextTags: isRecentShift
+              ? const ['high_workload', 'late_caffeine_screens']
+              : const ['routine_kept', 'sleep_consistent'],
           createdAt: morningTs,
           updatedAt: morningTs,
         ),
@@ -75,6 +78,9 @@ abstract final class DemoClinicalCohort {
             journalText: isRecentShift
                 ? 'Mind keeps looping on worst-case timelines when the house gets quiet.'
                 : 'Slightly wired after finishing emails.',
+            contextTags: isRecentShift
+                ? const ['late_caffeine_screens', 'high_workload']
+                : const ['physical_movement'],
             createdAt: eveningTs,
             updatedAt: eveningTs,
           ),
@@ -213,6 +219,7 @@ abstract final class DemoClinicalCohort {
           sleepHours: 8.3,
           behavioralResponse: 'Brief tea & sunlight walk at 17:00',
           journalText: 'By early evening the heaviness lifts and focus returns.',
+          contextTags: const ['physical_movement', 'social_connection'],
           createdAt: eveningTs,
           updatedAt: eveningTs,
         ),
@@ -302,6 +309,7 @@ abstract final class DemoClinicalCohort {
           energyLevel: 7,
           anxietyLevel: 2,
           sleepHours: 7.5,
+          contextTags: const ['routine_kept', 'sleep_consistent'],
           createdAt: ts,
           updatedAt: ts,
         ),

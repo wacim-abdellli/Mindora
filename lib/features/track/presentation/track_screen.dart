@@ -28,6 +28,7 @@ import '../../investigation/domain/case_model.dart';
 import '../../investigation/domain/conversation_mode.dart';
 import '../../mind_trace/controllers/mind_trace_controller.dart';
 import '../../mind_trace/domain/affect_taxonomy.dart';
+import '../../mind_trace/domain/daily_context_tags.dart';
 import '../../mind_trace/domain/emotion_descriptors.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
 import '../../mind_trace/presentation/widgets/daily_mind_trace_stepper.dart';
@@ -86,6 +87,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
   bool _showAllNuancedEmotions = false;
   final Set<String> _selectedTriggers = {};
   final Set<String> _selectedHelped = {};
+  final Set<String> _selectedContextTags = {};
   bool _isComposingNewMoment = false;
   String? _editingTraceId;
   bool _isSaving = false;
@@ -178,6 +180,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
       _selectedNuancedEmotions.clear();
       _selectedTriggers.clear();
       _selectedHelped.clear();
+      _selectedContextTags.clear();
       _savedConfirmed = false;
       return;
     }
@@ -221,6 +224,10 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
             .where((p) => p.isNotEmpty),
       );
     }
+
+    _selectedContextTags
+      ..clear()
+      ..addAll(trace.contextTags);
   }
 
   void _hydrateFromTrace(
@@ -264,6 +271,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
       _selectedNuancedEmotions.clear();
       _selectedTriggers.clear();
       _selectedHelped.clear();
+      _selectedContextTags.clear();
       _savedConfirmed = false;
       if (_tabController.index != 0) {
         _tabController.animateTo(0);
@@ -456,6 +464,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
               clearBehavioralResponse: helpedStr == null,
               journalText: noteText,
               clearJournalText: noteText == null,
+              contextTags: _selectedContextTags.toList(growable: false),
               updatedAt: now,
             )
           : MindTraceModel(
@@ -471,6 +480,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
               situation: situationStr,
               behavioralResponse: helpedStr,
               journalText: noteText,
+              contextTags: _selectedContextTags.toList(growable: false),
               createdAt: now,
               updatedAt: now,
             );
@@ -1468,6 +1478,40 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                       _selectedHelped.remove(item);
                     } else {
                       _selectedHelped.add(item);
+                    }
+                  });
+                },
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            strings.dailyContextTagsLabel,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              color: tokens.ink,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: DailyContextTags.all.map((tag) {
+              final isSel = _selectedContextTags.contains(tag.key);
+              return MindPill(
+                icon: tag.icon,
+                label: tag.localized(strings),
+                isSelected: isSel,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setState(() {
+                    _savedConfirmed = false;
+                    if (isSel) {
+                      _selectedContextTags.remove(tag.key);
+                    } else {
+                      _selectedContextTags.add(tag.key);
                     }
                   });
                 },

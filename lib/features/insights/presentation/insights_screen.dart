@@ -19,6 +19,7 @@ import '../../investigation/controllers/investigation_providers.dart';
 import '../../investigation/domain/case_model.dart';
 import '../../mind_trace/controllers/mind_trace_controller.dart';
 import '../../mind_trace/domain/affect_taxonomy.dart';
+import '../../mind_trace/domain/daily_context_tags.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
 import '../../progress/data/progress_analytics_service.dart';
 import '../../progress/domain/progress_analytics_model.dart';
@@ -223,6 +224,16 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                 baseline.diurnalIntensityAverages.length >= 2 ||
                 baseline.multiEntryDaysCount > 0) ...[
               _buildAffectSpectrumAndDiurnalCard(
+                tokens,
+                baseline,
+                strings,
+              ),
+              const SizedBox(height: 18),
+            ],
+
+            // 2c. Daily Routine & Context Correlations
+            if (baseline.contextTagCorrelations.isNotEmpty) ...[
+              _buildDailyContextCorrelationsCard(
                 tokens,
                 baseline,
                 strings,
@@ -883,6 +894,96 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
               ],
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDailyContextCorrelationsCard(
+    MindTokens tokens,
+    PersonalBaseline baseline,
+    AppStrings strings,
+  ) {
+    final items = baseline.contextTagCorrelations.take(6).toList();
+    return MindCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            strings.dailyContextSectionTitle,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              letterSpacing: strings.isArabic ? 0 : 0.7,
+              color: tokens.ink2,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            strings.dailyContextCorrelationSub,
+            style: TextStyle(fontSize: 12, color: tokens.ink3),
+          ),
+          const SizedBox(height: 12),
+          ...items.map((c) {
+            final tag = DailyContextTags.byKey(c.tagKey);
+            final metrics = <String>[
+              '${c.occurrences}x',
+              if (c.avgMoodIntensity != null)
+                '${strings.metricMoodLabel}: ${c.avgMoodIntensity!.toStringAsFixed(1)}/10',
+              if (c.avgSleepHours != null)
+                '${strings.metricSleepLabel}: ${c.avgSleepHours!.toStringAsFixed(1)}h',
+            ];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: tokens.surface2,
+                  borderRadius: BorderRadius.circular(tokens.chipRadius),
+                  border: Border.all(color: tokens.line),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          tag?.icon ?? Icons.label_outline_rounded,
+                          size: 16,
+                          color: tokens.ink,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            DailyContextTags.localizedLabel(c.tagKey, strings),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: tokens.ink,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(start: 24),
+                      child: Text(
+                        metrics.join(' · '),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: tokens.ink2,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
         ],
       ),
     );

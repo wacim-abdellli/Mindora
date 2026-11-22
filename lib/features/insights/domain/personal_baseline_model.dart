@@ -3,6 +3,25 @@ import 'package:flutter/foundation.dart';
 import '../../../app/localization/app_strings.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
 
+/// Descriptive statistical aggregate of metrics co-occurring with one
+/// self-reported daily context or routine tag (non-causal).
+@immutable
+class ContextTagCorrelation {
+  const ContextTagCorrelation({
+    required this.tagKey,
+    required this.occurrences,
+    this.avgMoodIntensity,
+    this.avgAnxietyLevel,
+    this.avgSleepHours,
+  });
+
+  final String tagKey;
+  final int occurrences;
+  final double? avgMoodIntensity;
+  final double? avgAnxietyLevel;
+  final double? avgSleepHours;
+}
+
 /// Represents an individual's self-reported personal baseline.
 ///
 /// Strictly abides by Part 7.1 & Clinical Guardrails:
@@ -44,6 +63,7 @@ class PersonalBaseline {
     this.multiEntryDaysCount = 0,
     this.diurnalIntensityAverages = const {},
     this.emotionFrequencyMap = const {},
+    this.contextTagCorrelations = const [],
   });
 
   /// Total distinct calendar days logged in the observation window.
@@ -142,6 +162,7 @@ class PersonalBaseline {
   final int multiEntryDaysCount;
   final Map<DayTimeBucket, double> diurnalIntensityAverages;
   final Map<String, int> emotionFrequencyMap;
+  final List<ContextTagCorrelation> contextTagCorrelations;
 
   static const PersonalBaseline empty = PersonalBaseline(
     totalRecordedDays: 0,
@@ -294,6 +315,46 @@ class PersonalBaseline {
       for (final entry in sortedEmotions) entry.key: entry.value,
     };
 
+    // Context & routine tag correlations across all logged moments
+    final tagTracesMap = <String, List<MindTraceModel>>{};
+    for (final t in windowTraces) {
+      for (final rawKey in t.contextTags) {
+        final key = rawKey.trim();
+        if (key.isNotEmpty) {
+          tagTracesMap.putIfAbsent(key, () => []).add(t);
+        }
+      }
+    }
+    final contextTagCorrelations = tagTracesMap.entries.map((entry) {
+      final list = entry.value;
+      final moods = list
+          .map((t) => t.moodIntensity)
+          .where((m) => m >= 1 && m <= 10)
+          .toList();
+      final anxieties = list
+          .map((t) => t.anxietyLevel)
+          .whereType<int>()
+          .where((a) => a >= 0 && a <= 10)
+          .toList();
+      final sleeps = list
+          .map((t) => t.sleepHours)
+          .whereType<double>()
+          .where((s) => s > 0 && s <= 24)
+          .toList();
+      return ContextTagCorrelation(
+        tagKey: entry.key,
+        occurrences: list.length,
+        avgMoodIntensity: _calculateMean(moods),
+        avgAnxietyLevel: _calculateMean(anxieties),
+        avgSleepHours: _calculateMean(sleeps),
+      );
+    }).toList()
+      ..sort((a, b) {
+        final byCount = b.occurrences.compareTo(a.occurrences);
+        if (byCount != 0) return byCount;
+        return a.tagKey.compareTo(b.tagKey);
+      });
+
     // Symptoms frequencies
     final symptomCounts = <String, int>{};
     for (final t in dailyTraces) {
@@ -355,6 +416,7 @@ class PersonalBaseline {
       multiEntryDaysCount: dailySwings.length,
       diurnalIntensityAverages: diurnalAverages,
       emotionFrequencyMap: emotionFreqMap,
+      contextTagCorrelations: contextTagCorrelations,
     );
   }
 
