@@ -12,7 +12,11 @@ void main() {
     final fontLoader = FontLoader('Inter');
     final boldFont = File('assets/fonts/Inter-Bold.ttf');
     if (boldFont.existsSync()) {
-      fontLoader.addFont(boldFont.readAsBytes().then((b) => ByteData.sublistView(Uint8List.fromList(b))));
+      fontLoader.addFont(
+        boldFont.readAsBytes().then(
+          (b) => ByteData.sublistView(Uint8List.fromList(b)),
+        ),
+      );
       await fontLoader.load();
     }
 
@@ -23,7 +27,10 @@ void main() {
       {'file': '04_mood_tracking.png', 'label': '4. Mood Tracking'},
       {'file': '05_ai_companion.png', 'label': '5. AI Companion Hub'},
       {'file': '06_insights_progress.png', 'label': '6. Insights / Progress'},
-      {'file': '07_psychological_profile.png', 'label': '7. Psychological Profile'},
+      {
+        'file': '07_psychological_profile.png',
+        'label': '7. Psychological Profile',
+      },
       {'file': '08_main_navigation.png', 'label': '8. Main Navigation'},
     ];
 
@@ -54,7 +61,7 @@ void main() {
     // Header Title
     final titlePainter = TextPainter(
       text: const TextSpan(
-        text: 'MIND FORENSICS — PHASE 2: VISUAL QUALITY ASSURANCE CONTACT SHEET',
+        text: 'Mindora — PHASE 2: VISUAL QUALITY ASSURANCE CONTACT SHEET',
         style: TextStyle(
           color: Color(0xFFF0F2EC),
           fontSize: 32,
@@ -70,7 +77,8 @@ void main() {
     // Subtitle
     final subPainter = TextPainter(
       text: const TextSpan(
-        text: '8 Core Screens Rendered with Inter Typography, Luxury Vercel Palette & Data Integrity',
+        text:
+            '8 Core Screens Rendered with Inter Typography, Luxury Vercel Palette & Data Integrity',
         style: TextStyle(
           color: Color(0xFF91AD9A),
           fontSize: 20,
@@ -130,8 +138,13 @@ void main() {
     }
 
     final picture = recorder.endRecording();
-    final contactSheetImage = await picture.toImage(totalW.toInt(), totalH.toInt());
-    final byteData = await contactSheetImage.toByteData(format: ui.ImageByteFormat.png);
+    final contactSheetImage = await picture.toImage(
+      totalW.toInt(),
+      totalH.toInt(),
+    );
+    final byteData = await contactSheetImage.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
     final pngBytes = byteData!.buffer.asUint8List();
 
     // Save contact sheet to verified project destinations
@@ -150,4 +163,3 @@ void main() {
     }
   });
 }
-

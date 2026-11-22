@@ -15,7 +15,7 @@ enum MindCardVariant {
   flat,
 }
 
-/// Token-driven card primitive for Mind Forensics.
+/// Token-driven card primitive for Mindora.
 ///
 /// Reads surface, border, corner radius (`28px`), and theme elevation strictly
 /// from `context.tokens` without per-widget brightness conditionals.

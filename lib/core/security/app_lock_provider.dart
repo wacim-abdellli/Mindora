@@ -32,7 +32,8 @@ class AppLockState {
 
 /// Controller managing the biometric vault lock lifecycle using Notifier.
 class AppLockNotifier extends Notifier<AppLockState> {
-  BiometricSecurityService get _securityService => ref.read(biometricServiceProvider);
+  BiometricSecurityService get _securityService =>
+      ref.read(biometricServiceProvider);
 
   @override
   AppLockState build() {
@@ -55,7 +56,8 @@ class AppLockNotifier extends Notifier<AppLockState> {
 
   /// Attempts biometric unlock.
   Future<bool> unlock({String? reason}) async {
-    final enabled = state.isEnabled || await BiometricSecurityService.isBiometricEnabled();
+    final enabled =
+        state.isEnabled || await BiometricSecurityService.isBiometricEnabled();
     if (!enabled) {
       state = state.copyWith(isLocked: false, isInitialized: true);
       return true;
@@ -64,7 +66,7 @@ class AppLockNotifier extends Notifier<AppLockState> {
     state = state.copyWith(isAuthenticating: true);
     try {
       final success = await _securityService.authenticate(
-        reason: reason ?? 'Authenticate to unlock your Mind Forensics vault',
+        reason: reason ?? 'Authenticate to unlock your Mindora vault',
       );
       if (success) {
         state = state.copyWith(
@@ -145,5 +147,6 @@ final biometricServiceProvider = Provider<BiometricSecurityService>((ref) {
   return BiometricSecurityService();
 });
 
-final appLockProvider =
-    NotifierProvider<AppLockNotifier, AppLockState>(AppLockNotifier.new);
+final appLockProvider = NotifierProvider<AppLockNotifier, AppLockState>(
+  AppLockNotifier.new,
+);

@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../../../app/localization/app_strings.dart';
 import '../../../core/security/local_data_cipher.dart';
 import '../../auth/data/auth_service.dart';
+import '../../insights/domain/forensic_loop_model.dart';
 import '../../investigation/domain/case_model.dart';
 import '../../mind_trace/domain/affect_taxonomy.dart';
 import '../../mind_trace/domain/daily_context_tags.dart';
@@ -41,9 +42,7 @@ class ClinicianSyncException implements Exception {
 /// 3. PBKDF2-HMAC-SHA256 + AES-256-GCM authenticated encryption (`MF-CLINIC-V1:...`).
 /// 4. Deterministic SHA-256 packet integrity verification.
 class ClinicianSyncService {
-  const ClinicianSyncService({
-    this.defaultPbkdf2Iterations = 100000,
-  });
+  const ClinicianSyncService({this.defaultPbkdf2Iterations = 100000});
 
   final int defaultPbkdf2Iterations;
 
@@ -56,9 +55,7 @@ class ClinicianSyncService {
   static dynamic _canonicalizeValue(dynamic value) {
     if (value is Map) {
       final sortedKeys = value.keys.map((k) => k.toString()).toList()..sort();
-      return {
-        for (final k in sortedKeys) k: _canonicalizeValue(value[k]),
-      };
+      return {for (final k in sortedKeys) k: _canonicalizeValue(value[k])};
     }
     if (value is List) {
       return value.map(_canonicalizeValue).toList(growable: false);
@@ -92,36 +89,39 @@ class ClinicianSyncService {
     final cutoffDay = todayStart.subtract(Duration(days: windowDays - 1));
 
     final scopedTraces = consentScope.includeMoodMetrics
-        ? traces.where((t) {
-            final d = DateTime(t.date.year, t.date.month, t.date.day);
-            return !d.isBefore(cutoffDay);
-          }).map((t) {
-            var sanitized = t;
-            if (!consentScope.includePersonalNotes) {
-              sanitized = sanitized.copyWith(
-                clearJournalText: true,
-                clearSituation: true,
-                clearBehavioralResponse: true,
-                clearAiReflection: true,
-                clearVoiceNotePath: true,
-                dynamicAnswers: const {},
-                investigationAnswers: const {},
-                clearSymptomsAndExperiences:
-                    !consentScope.includeSymptomReports,
-              );
-            }
-            if (!consentScope.includeSleepEnergyAnxiety) {
-              sanitized = sanitized.copyWith(
-                clearSleepHours: true,
-                clearSleepQuality: true,
-                clearEnergyLevel: true,
-                clearAnxietyLevel: true,
-                clearPhysicalTension: true,
-                contextTags: const [],
-              );
-            }
-            return sanitized;
-          }).toList()
+        ? traces
+              .where((t) {
+                final d = DateTime(t.date.year, t.date.month, t.date.day);
+                return !d.isBefore(cutoffDay);
+              })
+              .map((t) {
+                var sanitized = t;
+                if (!consentScope.includePersonalNotes) {
+                  sanitized = sanitized.copyWith(
+                    clearJournalText: true,
+                    clearSituation: true,
+                    clearBehavioralResponse: true,
+                    clearAiReflection: true,
+                    clearVoiceNotePath: true,
+                    dynamicAnswers: const {},
+                    investigationAnswers: const {},
+                    clearSymptomsAndExperiences:
+                        !consentScope.includeSymptomReports,
+                  );
+                }
+                if (!consentScope.includeSleepEnergyAnxiety) {
+                  sanitized = sanitized.copyWith(
+                    clearSleepHours: true,
+                    clearSleepQuality: true,
+                    clearEnergyLevel: true,
+                    clearAnxietyLevel: true,
+                    clearPhysicalTension: true,
+                    contextTags: const [],
+                  );
+                }
+                return sanitized;
+              })
+              .toList()
         : <MindTraceModel>[];
 
     scopedTraces.sort(
@@ -130,17 +130,14 @@ class ClinicianSyncService {
 
     // Hard privacy gate: NEVER include cases marked isPrivate == true.
     final scopedCases = consentScope.includeSharedCases
-        ? cases
-            .where((c) => !c.isPrivate)
-            .where((c) {
-              final d = DateTime(
-                c.updatedAt.year,
-                c.updatedAt.month,
-                c.updatedAt.day,
-              );
-              return !d.isBefore(cutoffDay);
-            })
-            .toList()
+        ? cases.where((c) => !c.isPrivate).where((c) {
+            final d = DateTime(
+              c.updatedAt.year,
+              c.updatedAt.month,
+              c.updatedAt.day,
+            );
+            return !d.isBefore(cutoffDay);
+          }).toList()
         : <CaseModel>[];
 
     scopedCases.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
@@ -172,7 +169,8 @@ class ClinicianSyncService {
             );
     }
 
-    final scopedAgenda = (consentScope.includePreVisitAgenda &&
+    final scopedAgenda =
+        (consentScope.includePreVisitAgenda &&
             preVisitAgenda != null &&
             !preVisitAgenda.isEmpty)
         ? preVisitAgenda
@@ -180,7 +178,9 @@ class ClinicianSyncService {
 
     final draft = ClinicianSyncPacket(
       schemaVersion: 1,
-      packetId: packetId ?? 'pkt_${now.millisecondsSinceEpoch}_${_uuid.v4().substring(0, 6)}',
+      packetId:
+          packetId ??
+          'pkt_${now.millisecondsSinceEpoch}_${_uuid.v4().substring(0, 6)}',
       generatedAt: now,
       patientDisplayName: patientDisplayName.trim().isEmpty
           ? 'Shared Patient'
@@ -292,9 +292,12 @@ class ClinicianSyncService {
 
     final draft = PostVisitFocusPlan(
       schemaVersion: 1,
-      planId: planId ?? 'plan_${now.millisecondsSinceEpoch}_${_uuid.v4().substring(0, 6)}',
-      clinicianName:
-          clinicianName.trim().isEmpty ? 'Clinician' : clinicianName.trim(),
+      planId:
+          planId ??
+          'plan_${now.millisecondsSinceEpoch}_${_uuid.v4().substring(0, 6)}',
+      clinicianName: clinicianName.trim().isEmpty
+          ? 'Clinician'
+          : clinicianName.trim(),
       clinicName: clinicName.trim(),
       createdAt: now,
       followUpDate: cleanFollowUp,
@@ -405,9 +408,7 @@ class ClinicianSyncService {
       'payload': encryptedPayload,
     };
 
-    final encodedEnvelope = base64Url.encode(
-      utf8.encode(jsonEncode(envelope)),
-    );
+    final encodedEnvelope = base64Url.encode(utf8.encode(jsonEncode(envelope)));
     return '$prefix$encodedEnvelope';
   }
 
@@ -528,12 +529,16 @@ class ClinicianSyncService {
 
     final buf = StringBuffer();
     buf.writeln('============================================================');
-    buf.writeln(isAr
-        ? 'MIND FORENSICS — ملخص استشارة سريري (EHR BRIEF)'
-        : (isFr
-            ? 'MIND FORENSICS — SYNTHÈSE CLINIQUE DE CONSULTATION (EHR)'
-            : 'MIND FORENSICS — CLINICAL CONSULTATION SUMMARY (EHR)'));
-    buf.writeln('Patient: ${record.displayName}${record.isDemoCase ? ' [DEMO]' : ''}');
+    buf.writeln(
+      isAr
+          ? 'Mindora — ملخص استشارة سريري (EHR BRIEF)'
+          : (isFr
+                ? 'Mindora — SYNTHÈSE CLINIQUE DE CONSULTATION (EHR)'
+                : 'Mindora — CLINICAL CONSULTATION SUMMARY (EHR)'),
+    );
+    buf.writeln(
+      'Patient: ${record.displayName}${record.isDemoCase ? ' [DEMO]' : ''}',
+    );
     buf.writeln(
       'Sync Window: ${scope.windowDays}d | Traces: ${packet.traces.length} | Shared Cases: ${packet.sharedCases.length}',
     );
@@ -552,7 +557,9 @@ class ClinicianSyncService {
         buf.writeln('Patient question: ${agenda.patientQuestion.trim()}');
       }
       if (agenda.whatHelpedRecently.trim().isNotEmpty) {
-        buf.writeln('What helped recently: ${agenda.whatHelpedRecently.trim()}');
+        buf.writeln(
+          'What helped recently: ${agenda.whatHelpedRecently.trim()}',
+        );
       }
       if (agenda.focusPlanFeedback.trim().isNotEmpty) {
         buf.writeln(
@@ -597,24 +604,34 @@ class ClinicianSyncService {
     final visitDiff = record.visitDiff;
     if (visitDiff != null &&
         (visitDiff.hasMetricDelta || visitDiff.focusPlanFeedback.isNotEmpty)) {
-      buf.writeln('[2b] SINCE LAST VISIT COMPARISON (${visitDiff.daysBetween}d apart)');
+      buf.writeln(
+        '[2b] SINCE LAST VISIT COMPARISON (${visitDiff.daysBetween}d apart)',
+      );
       String signed(double v, [String suffix = '']) {
         final s = v >= 0 ? '+' : '';
         return '$s${v.toStringAsFixed(1)}$suffix';
       }
 
       if (visitDiff.moodDelta != null) {
-        buf.writeln('- Mood delta vs last visit: ${signed(visitDiff.moodDelta!, '/10')}');
+        buf.writeln(
+          '- Mood delta vs last visit: ${signed(visitDiff.moodDelta!, '/10')}',
+        );
       }
       if (scope.includeSleepEnergyAnxiety) {
         if (visitDiff.sleepDelta != null) {
-          buf.writeln('- Sleep delta vs last visit: ${signed(visitDiff.sleepDelta!, 'h')}');
+          buf.writeln(
+            '- Sleep delta vs last visit: ${signed(visitDiff.sleepDelta!, 'h')}',
+          );
         }
         if (visitDiff.energyDelta != null) {
-          buf.writeln('- Energy delta vs last visit: ${signed(visitDiff.energyDelta!, '/10')}');
+          buf.writeln(
+            '- Energy delta vs last visit: ${signed(visitDiff.energyDelta!, '/10')}',
+          );
         }
         if (visitDiff.anxietyDelta != null) {
-          buf.writeln('- Anxiety delta vs last visit: ${signed(visitDiff.anxietyDelta!, '/10')}');
+          buf.writeln(
+            '- Anxiety delta vs last visit: ${signed(visitDiff.anxietyDelta!, '/10')}',
+          );
         }
       }
       if (visitDiff.eveningIntensityDelta != null) {
@@ -636,7 +653,9 @@ class ClinicianSyncService {
         baseline.recoveryLedger.hasEvidence) {
       buf.writeln('[3] AFFECT SPECTRUM & DIURNAL RHYTHM');
       if (baseline.emotionFrequencyMap.isNotEmpty) {
-        final topAffects = baseline.emotionFrequencyMap.entries.take(5).map(
+        final topAffects = baseline.emotionFrequencyMap.entries
+            .take(5)
+            .map(
               (e) =>
                   '${AffectTaxonomy.localizedLabel(e.key, strings)} (${e.value}x)',
             );
@@ -669,7 +688,9 @@ class ClinicianSyncService {
               : '';
           return '$label (${c.occurrences}x$moodPart$sleepPart)';
         });
-        buf.writeln('Daily context & routine links: ${tagSummaries.join(' | ')}');
+        buf.writeln(
+          'Daily context & routine links: ${tagSummaries.join(' | ')}',
+        );
       }
       if (scope.includeMoodMetrics && baseline.recoveryLedger.hasEvidence) {
         final stabParts = baseline.recoveryLedger.stabilizers.take(4).map((s) {
@@ -681,15 +702,35 @@ class ClinicianSyncService {
                     : '');
           return '$label (${s.totalOccurrences}x$shiftStr)';
         });
-        buf.writeln('Observed stabilizers (self-reported): ${stabParts.join(' | ')}');
+        buf.writeln(
+          'Observed stabilizers (self-reported): ${stabParts.join(' | ')}',
+        );
       }
       buf.writeln();
+    }
+
+    // 3b. Observed Forensic Loop (privacy-respecting synthesis)
+    if (scope.includeMoodMetrics) {
+      final loop = ForensicLoopLink.synthesize(
+        baseline: baseline,
+        cases: scope.includeSharedCases ? packet.sharedCases : const [],
+        strings: strings,
+        excludePrivateCases: true,
+        includeSomatic: scope.includeSleepEnergyAnxiety,
+      );
+      if (loop.hasSufficientSignal) {
+        buf.writeln('[3b] OBSERVED FORENSIC LOOP');
+        buf.writeln(loop.compactSummary(strings));
+        buf.writeln();
+      }
     }
 
     // 4. Objective Pattern Observations
     buf.writeln('[4] OBJECTIVE BASELINE SHIFTS');
     if (divergences.isEmpty) {
-      buf.writeln('No notable metric divergence detected vs personal baseline.');
+      buf.writeln(
+        'No notable metric divergence detected vs personal baseline.',
+      );
     } else {
       for (final d in divergences) {
         buf.writeln('* ${d.title} (${d.timeWindow})');
@@ -699,8 +740,9 @@ class ClinicianSyncService {
     buf.writeln();
 
     // 5. Shared CBT-Inspired Reflections
-    final shareableCases =
-        packet.sharedCases.where((c) => !c.isPrivate).toList(growable: false);
+    final shareableCases = packet.sharedCases
+        .where((c) => !c.isPrivate)
+        .toList(growable: false);
     buf.writeln('[5] SHARED COGNITIVE EXPLORATIONS (INSPIRED BY CBT)');
     if (!scope.includeSharedCases) {
       buf.writeln('Excluded by patient consent.');
@@ -736,7 +778,7 @@ class ClinicianSyncService {
     }
 
     buf.writeln(
-      'NOTE: Mind Forensics clinical observation summary — non-diagnostic record; excludes private cases.',
+      'NOTE: Mindora clinical observation summary — non-diagnostic record; excludes private cases.',
     );
     return buf.toString().trimRight();
   }

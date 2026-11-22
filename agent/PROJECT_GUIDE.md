@@ -1,6 +1,6 @@
-# Mind Forensics — Autonomous Agent & Engineering Master Guide
+# Mindora — Autonomous Agent & Engineering Master Guide
 
-> **Project Identity:** *Mind Forensics* is an evidence-based cognitive forensic mental wellness mobile application built in Flutter and Dart. It transitions users from passive emotional validation to rigorous, collaborative forensic deconstruction of automatic negative thoughts and cognitive distortions.
+> **Project Identity:** *Mindora* is an evidence-based cognitive forensic mental wellness mobile application built in Flutter and Dart. It transitions users from passive emotional validation to rigorous, collaborative forensic deconstruction of automatic negative thoughts and cognitive distortions.
 
 ---
 
@@ -8,7 +8,7 @@
 
 Traditional mental health applications often fall into the **validation trap**: validating irrational catastrophic assumptions without examining the underlying evidence, inadvertently reinforcing cognitive distortions.
 
-Mind Forensics treats every emotional disturbance as a **Forensic Case**:
+Mindora treats every emotional disturbance as a **Forensic Case**:
 1. **Incident (The Crime Scene):** What objectively happened in the physical environment?
 2. **Evidence Chain:** Splitting internal experience into four distinct components:
    - **Trigger:** Environmental stimulus or internal physical sensation.
@@ -33,7 +33,7 @@ Mind Forensics treats every emotional disturbance as a **Forensic Case**:
 
 ## 2. Directory Taxonomy & Architecture
 
-Mind Forensics follows a strict feature-first, layered architectural pattern powered by `flutter_riverpod` and `go_router`:
+Mindora follows a strict feature-first, layered architectural pattern powered by `flutter_riverpod` and `go_router`:
 
 ```
 lib/
@@ -84,7 +84,7 @@ lib/
 
 ## 3. UI/UX Design System: Luxury Vercel Dark & Minimalist Precision
 
-Mind Forensics enforces an elite, modern, distraction-free aesthetic inspired by Vercel, Linear, and luxury developer tooling.
+Mindora enforces an elite, modern, distraction-free aesthetic inspired by Vercel, Linear, and luxury developer tooling.
 
 ### Palette Tokens (`LabColors`)
 * **Background (OLED Black):** `0xFF000000` (Pitch black for battery efficiency and contrast)
@@ -110,7 +110,7 @@ Mind Forensics enforces an elite, modern, distraction-free aesthetic inspired by
 
 ## 4. Multilingual Engine (Tunisian Arabic, French, English)
 
-Mind Forensics natively supports three locales:
+Mindora natively supports three locales:
 - `en`: English (International forensic clinical standard)
 - `fr`: French (Clinical precision standard)
 - `ar`: Arabic (Authentic Tunisian dialectal phrasing with formal Arabic clinical rigor, full RTL layout)

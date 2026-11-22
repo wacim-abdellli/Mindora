@@ -17,22 +17,20 @@ void main() {
   });
 
   group('Home Screen Step 2 Clean & Calm Layout Tests', () {
-    testWidgets('Renders clean 4-block Home without chart/switcher clutter', (tester) async {
+    testWidgets('Renders clean 4-block Home without chart/switcher clutter', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(tester.view.reset);
 
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: HomeScreen(),
-          ),
-        ),
+        const ProviderScope(child: MaterialApp(home: HomeScreen())),
       );
       await tester.pumpAndSettle();
 
       // 1. App bar & greeting
-      expect(find.text('Mind Forensics'), findsOneWidget);
+      expect(find.text('Mindora'), findsOneWidget);
       expect(find.textContaining('Dear'), findsOneWidget);
 
       // 2. Step 6 Daily check-in card (plain human affect labels + intensity, zero telemetry waveform)
@@ -52,7 +50,9 @@ void main() {
       expect(find.text('5 min'), findsOneWidget);
     });
 
-    testWidgets('Reflects today check-in summary calmly on Home when logged', (tester) async {
+    testWidgets('Reflects today check-in summary calmly on Home when logged', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(tester.view.reset);
@@ -62,25 +62,25 @@ void main() {
 
       final now = DateTime.now();
       final repo = container.read(mindTraceRepositoryProvider);
-      await repo.saveTrace(MindTraceModel(
-        id: 'trace_today_home',
-        userId: 'test_user',
-        date: now,
-        overallMood: 'calm',
-        moodIntensity: 7,
-        energyLevel: 7,
-        anxietyLevel: 3,
-        journalText: 'Steady breath after afternoon walk',
-        createdAt: now,
-        updatedAt: now,
-      ));
+      await repo.saveTrace(
+        MindTraceModel(
+          id: 'trace_today_home',
+          userId: 'test_user',
+          date: now,
+          overallMood: 'calm',
+          moodIntensity: 7,
+          energyLevel: 7,
+          anxietyLevel: 3,
+          journalText: 'Steady breath after afternoon walk',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
 
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(
-            home: HomeScreen(),
-          ),
+          child: const MaterialApp(home: HomeScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -88,106 +88,110 @@ void main() {
       expect(find.textContaining('Calm (7/10)'), findsOneWidget);
     });
 
-    testWidgets('Logging a check-in on Home saves to MindTraceController and updates todayTraceProvider', (tester) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(tester.view.reset);
+    testWidgets(
+      'Logging a check-in on Home saves to MindTraceController and updates todayTraceProvider',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(tester.view.reset);
 
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
 
-      await tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: const MaterialApp(
-            home: HomeScreen(),
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(home: HomeScreen()),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      // Tap Log Daily Check-in (options-first, zero compulsory typing)
-      final saveBtn = find.text('Log Daily Check-in');
-      await tester.ensureVisible(saveBtn);
-      await tester.tap(saveBtn);
-      await tester.pumpAndSettle();
+        // Tap Log Daily Check-in (options-first, zero compulsory typing)
+        final saveBtn = find.text('Log Daily Check-in');
+        await tester.ensureVisible(saveBtn);
+        await tester.tap(saveBtn);
+        await tester.pumpAndSettle();
 
-      // Verify trace was added into the central MindTraceNotifier state
-      final traces = container.read(mindTraceControllerProvider).value ?? [];
-      expect(traces.isNotEmpty, isTrue);
-      expect(traces.first.overallMood, equals('calm'));
+        // Verify trace was added into the central MindTraceNotifier state
+        final traces = container.read(mindTraceControllerProvider).value ?? [];
+        expect(traces.isNotEmpty, isTrue);
+        expect(traces.first.overallMood, equals('calm'));
 
-      // Verify todayTraceProvider is now populated
-      final todayTrace = container.read(todayTraceProvider);
-      expect(todayTrace, isNotNull);
-      expect(todayTrace?.overallMood, equals('calm'));
-    });
+        // Verify todayTraceProvider is now populated
+        final todayTrace = container.read(todayTraceProvider);
+        expect(todayTrace, isNotNull);
+        expect(todayTrace?.overallMood, equals('calm'));
+      },
+    );
 
-    testWidgets('Entering optional note in Home check-in persists note to journalText', (tester) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(tester.view.reset);
+    testWidgets(
+      'Entering optional note in Home check-in persists note to journalText',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(tester.view.reset);
 
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
 
-      await tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: const MaterialApp(
-            home: HomeScreen(),
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(home: HomeScreen()),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      final noteField = find.byType(TextField);
-      expect(noteField, findsOneWidget);
-      await tester.ensureVisible(noteField);
-      await tester.enterText(noteField, 'Felt peaceful during evening walk');
-      await tester.pumpAndSettle();
+        final noteField = find.byType(TextField);
+        expect(noteField, findsOneWidget);
+        await tester.ensureVisible(noteField);
+        await tester.enterText(noteField, 'Felt peaceful during evening walk');
+        await tester.pumpAndSettle();
 
-      final saveBtn = find.text('Log Daily Check-in');
-      await tester.ensureVisible(saveBtn);
-      await tester.tap(saveBtn);
-      await tester.pumpAndSettle();
+        final saveBtn = find.text('Log Daily Check-in');
+        await tester.ensureVisible(saveBtn);
+        await tester.tap(saveBtn);
+        await tester.pumpAndSettle();
 
-      final todayTrace = container.read(todayTraceProvider);
-      expect(todayTrace, isNotNull);
-      expect(todayTrace?.journalText, equals('Felt peaceful during evening walk'));
-    });
+        final todayTrace = container.read(todayTraceProvider);
+        expect(todayTrace, isNotNull);
+        expect(
+          todayTrace?.journalText,
+          equals('Felt peaceful during evening walk'),
+        );
+      },
+    );
 
-    testWidgets('Tapping Relieve stress opens the 4-4-4-4 Vagal Breathing sheet', (tester) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(tester.view.reset);
+    testWidgets(
+      'Tapping Relieve stress opens the 4-4-4-4 Vagal Breathing sheet',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(tester.view.reset);
 
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: HomeScreen(),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          const ProviderScope(child: MaterialApp(home: HomeScreen())),
+        );
+        await tester.pumpAndSettle();
 
-      // Tap on Relieve stress exercise card
-      final exerciseCard = find.text('Relieve stress');
-      expect(exerciseCard, findsOneWidget);
-      await tester.ensureVisible(exerciseCard);
-      await tester.pumpAndSettle();
-      await tester.tap(exerciseCard);
-      // Use fixed pump duration because Vagal Breathing has an active Timer.periodic
-      await tester.pump(const Duration(milliseconds: 500));
+        // Tap on Relieve stress exercise card
+        final exerciseCard = find.text('Relieve stress');
+        expect(exerciseCard, findsOneWidget);
+        await tester.ensureVisible(exerciseCard);
+        await tester.pumpAndSettle();
+        await tester.tap(exerciseCard);
+        // Use fixed pump duration because Vagal Breathing has an active Timer.periodic
+        await tester.pump(const Duration(milliseconds: 500));
 
-      // Verify modal bottom sheet opened with breathing controls
-      expect(find.byType(ContextualSupportSheet), findsOneWidget);
-      expect(find.text('Begin 4-4-4-4 Breathing'), findsOneWidget);
+        // Verify modal bottom sheet opened with breathing controls
+        expect(find.byType(ContextualSupportSheet), findsOneWidget);
+        expect(find.text('Begin 4-4-4-4 Breathing'), findsOneWidget);
 
-      // Close sheet
-      Navigator.of(tester.element(find.byType(ContextualSupportSheet))).pop();
-      await tester.pump(const Duration(milliseconds: 500));
-      expect(find.byType(ContextualSupportSheet), findsNothing);
-    });
+        // Close sheet
+        Navigator.of(tester.element(find.byType(ContextualSupportSheet))).pop();
+        await tester.pump(const Duration(milliseconds: 500));
+        expect(find.byType(ContextualSupportSheet), findsNothing);
+      },
+    );
   });
 }

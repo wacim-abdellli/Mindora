@@ -219,7 +219,7 @@ class _ClinicalBriefPreviewSheetState
                       Container(
                         decoration: BoxDecoration(
                           borderRadius:
-                              BorderRadius.circular(tokens.chipRadius),
+                              BorderRadius.circular(tokens.inputRadius),
                           border: Border.all(color: tokens.line),
                         ),
                         clipBehavior: Clip.antiAlias,

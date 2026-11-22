@@ -65,7 +65,7 @@ enum CloudSyncState {
 }
 
 /// Unified Service orchestrating complete backup, restoration, and cloud synchronization
-/// across all Mind Forensics clinical data models.
+/// across all Mindora clinical data models.
 class UnifiedBackupService {
   UnifiedBackupService(this._ref);
 
@@ -85,12 +85,14 @@ class UnifiedBackupService {
   }
 
   /// Evaluates current cloud synchronization status.
-  Future<({CloudSyncState state, String description})> getCloudSyncStatus() async {
+  Future<({CloudSyncState state, String description})>
+  getCloudSyncStatus() async {
     // Audit Firebase infrastructure: check for actual cloud project linkage
     // Without google-services.json, Firebase cannot securely connect to Firestore.
     return (
       state: CloudSyncState.missingConfiguration,
-      description: 'Firebase Spark credentials not configured (Missing google-services.json). Encrypted local sovereign storage is active.',
+      description:
+          'Firebase Spark credentials not configured (Missing google-services.json). Encrypted local sovereign storage is active.',
     );
   }
 
@@ -124,7 +126,7 @@ class UnifiedBackupService {
 
       final Map<String, dynamic> backupData = {
         'schemaVersion': schemaVersion,
-        'app': 'Mind Forensics',
+        'app': 'Mindora',
         'exportedAt': now.toIso8601String(),
         'userId': userId,
         'userCodename': codename,
@@ -133,7 +135,8 @@ class UnifiedBackupService {
           'sessionCount': cases.length,
           'memoryCount': memories.length,
           'symptomReportCount': symptomReports.length,
-          'hasProfile': profile.preferredName.isNotEmpty || profile.conditions.isNotEmpty,
+          'hasProfile':
+              profile.preferredName.isNotEmpty || profile.conditions.isNotEmpty,
           'hasJourney': journey.activities.isNotEmpty,
         },
         'traces': traces.map((t) => t.toJson()).toList(),
@@ -159,7 +162,10 @@ class UnifiedBackupService {
         plaintext: jsonStr,
         cipher: cipher,
       );
-      await prefs.setInt(prefLastBackupCount, traces.length + cases.length + memories.length);
+      await prefs.setInt(
+        prefLastBackupCount,
+        traces.length + cases.length + memories.length,
+      );
 
       return BackupOperationResult(
         success: true,
@@ -181,12 +187,15 @@ class UnifiedBackupService {
   /// Restores and hydrates all clinical records from a validated backup JSON payload.
   Future<BackupOperationResult> restoreFromBackupJson(String rawJson) async {
     try {
-      final Map<String, dynamic> data = jsonDecode(rawJson) as Map<String, dynamic>;
+      final Map<String, dynamic> data =
+          jsonDecode(rawJson) as Map<String, dynamic>;
 
-      if (data['app'] != 'Mind Forensics' && data['sessions'] == null && data['traces'] == null) {
+      if (data['app'] != 'Mindora' &&
+          data['sessions'] == null &&
+          data['traces'] == null) {
         return const BackupOperationResult(
           success: false,
-          message: 'Invalid backup format: missing Mind Forensics schema headers.',
+          message: 'Invalid backup format: missing Mindora schema headers.',
         );
       }
 
@@ -195,7 +204,8 @@ class UnifiedBackupService {
       if (majorVersion > 2) {
         return BackupOperationResult(
           success: false,
-          message: 'Unsupported backup schema version ($schema). Please update Mind Forensics.',
+          message:
+              'Unsupported backup schema version ($schema). Please update Mindora.',
         );
       }
 
@@ -208,7 +218,8 @@ class UnifiedBackupService {
         final traceRepo = _ref.read(mindTraceRepositoryProvider);
         final existingTraces = await traceRepo.getAllTraces();
         final existingIds = existingTraces.map((t) => t.id).toSet();
-        final rawTraces = (data['traces'] as List).whereType<Map<String, dynamic>>();
+        final rawTraces = (data['traces'] as List)
+            .whereType<Map<String, dynamic>>();
         for (final item in rawTraces) {
           try {
             final trace = MindTraceModel.fromJson(item);
@@ -226,7 +237,8 @@ class UnifiedBackupService {
         final caseRepo = _ref.read(caseRepositoryProvider);
         final existingCases = await caseRepo.getAllCases();
         final existingIds = existingCases.map((c) => c.id).toSet();
-        final rawCases = (data['sessions'] as List).whereType<Map<String, dynamic>>();
+        final rawCases = (data['sessions'] as List)
+            .whereType<Map<String, dynamic>>();
         for (final item in rawCases) {
           try {
             final caseModel = CaseModel.fromJson(item);
@@ -245,7 +257,8 @@ class UnifiedBackupService {
         final memoryRepo = _ref.read(journalMemoryRepositoryProvider);
         final existingMemories = await memoryRepo.getAllMemories();
         final existingIds = existingMemories.map((m) => m.id).toSet();
-        final rawMemories = (data['memories'] as List).whereType<Map<String, dynamic>>();
+        final rawMemories = (data['memories'] as List)
+            .whereType<Map<String, dynamic>>();
         for (final item in rawMemories) {
           try {
             final memory = JournalMemoryModel.fromJson(item);
@@ -262,7 +275,9 @@ class UnifiedBackupService {
       if (data['profile'] is Map<String, dynamic>) {
         final profileRepo = _ref.read(profileRepositoryProvider);
         try {
-          final profile = PsychologicalProfileModel.fromJson(data['profile'] as Map<String, dynamic>);
+          final profile = PsychologicalProfileModel.fromJson(
+            data['profile'] as Map<String, dynamic>,
+          );
           await profileRepo.saveProfile(profile);
           _ref.invalidate(profileControllerProvider);
         } catch (_) {}
@@ -284,7 +299,8 @@ class UnifiedBackupService {
       // 6. Restore Symptom reports & Custom symptoms if present
       if (data['customSymptoms'] is List) {
         final symptomRepo = _ref.read(symptomRepositoryProvider);
-        final rawCustom = (data['customSymptoms'] as List).whereType<Map<String, dynamic>>();
+        final rawCustom = (data['customSymptoms'] as List)
+            .whereType<Map<String, dynamic>>();
         for (final item in rawCustom) {
           try {
             await symptomRepo.saveCustomSymptom(SymptomEntry.fromJson(item));
@@ -295,7 +311,8 @@ class UnifiedBackupService {
         final symptomRepo = _ref.read(symptomRepositoryProvider);
         final existingReports = await symptomRepo.getAllReports();
         final existingIds = existingReports.map((r) => r.id).toSet();
-        final rawReports = (data['symptomReports'] as List).whereType<Map<String, dynamic>>();
+        final rawReports = (data['symptomReports'] as List)
+            .whereType<Map<String, dynamic>>();
         for (final item in rawReports) {
           try {
             final report = SymptomReport.fromJson(item);
@@ -343,7 +360,9 @@ class UnifiedBackupService {
   static const int kBackupPbkdf2Iterations = 100000;
 
   /// Generates an optional password-encrypted backup package using AES-256-GCM.
-  Future<BackupOperationResult> createPasswordEncryptedBackup(String password) async {
+  Future<BackupOperationResult> createPasswordEncryptedBackup(
+    String password,
+  ) async {
     final rawResult = await createFullBackup();
     if (!rawResult.success || rawResult.rawJson == null) {
       return rawResult;
@@ -363,7 +382,7 @@ class UnifiedBackupService {
       final ciphertext = await cipher.encryptString(rawResult.rawJson!);
 
       final encryptedPayload = {
-        'app': 'Mind Forensics',
+        'app': 'Mindora',
         'encrypted': true,
         'schemaVersion': '2.0.0',
         'kdf': 'pbkdf2_sha256',
@@ -372,7 +391,9 @@ class UnifiedBackupService {
         'ciphertext': ciphertext,
       };
 
-      final jsonStr = const JsonEncoder.withIndent('  ').convert(encryptedPayload);
+      final jsonStr = const JsonEncoder.withIndent(
+        '  ',
+      ).convert(encryptedPayload);
 
       return BackupOperationResult(
         success: true,
@@ -397,14 +418,16 @@ class UnifiedBackupService {
     String password,
   ) async {
     try {
-      final Map<String, dynamic> data = jsonDecode(encryptedJson) as Map<String, dynamic>;
+      final Map<String, dynamic> data =
+          jsonDecode(encryptedJson) as Map<String, dynamic>;
       if (data['encrypted'] != true || data['ciphertext'] == null) {
         return await restoreFromBackupJson(encryptedJson);
       }
 
       final saltB64 = data['salt'] as String?;
       final ciphertext = data['ciphertext'] as String?;
-      final iterations = data['iterations'] as int? ?? AuthService.kPbkdf2Iterations;
+      final iterations =
+          data['iterations'] as int? ?? AuthService.kPbkdf2Iterations;
 
       if (saltB64 == null || ciphertext == null) {
         return const BackupOperationResult(
@@ -429,7 +452,8 @@ class UnifiedBackupService {
     } catch (e) {
       return const BackupOperationResult(
         success: false,
-        message: 'Decryption failed: Incorrect password or tampered backup payload.',
+        message:
+            'Decryption failed: Incorrect password or tampered backup payload.',
       );
     }
   }

@@ -2,16 +2,16 @@ import '../../profile/domain/condition_type.dart';
 import 'conversation_mode.dart';
 
 /// The canonical, versioned System Prompt and Clinical Reasoning Engine
-/// for the Mind Forensics AI Companion.
+/// for the Mindora AI Companion.
 ///
 /// Version: 1.2.0
 class AiCompanionSystemPrompt {
   /// The official semantic version of this prompt specification.
   static const String promptVersion = '1.2.0';
 
-  /// Foundational system instruction mandated by Mind Forensics Master Product Specification.
+  /// Foundational system instruction mandated by Mindora Master Product Specification.
   static const String coreIdentityPrompt = '''
-You are the AI Companion inside Mind Forensics.
+You are the AI Companion inside Mindora.
 You operate as a Psychological Inquiry Specialist guiding disciplined, compassionate self-investigation inspired by Cognitive Behavioral Therapy (CBT), somatic awareness, and forensic distinction between facts and assumptions.
 
 You are an AI system, not a licensed therapist, psychiatrist, or medical professional.
@@ -200,7 +200,8 @@ CORE CONVERSATIONAL REASONING PRINCIPLES:
       buffer.writeln(buildConditionGuidelines(conditions));
     }
     buffer.writeln(buildLanguageDirective(languageCode));
-    if (contextualUserPrompt != null && contextualUserPrompt.trim().isNotEmpty) {
+    if (contextualUserPrompt != null &&
+        contextualUserPrompt.trim().isNotEmpty) {
       buffer.writeln('\nPERSONALIZED CONTEXT (CONFIDENTIAL & USER-CONSENTED):');
       buffer.writeln(contextualUserPrompt.trim());
     }
@@ -211,4 +212,3 @@ CORE CONVERSATIONAL REASONING PRINCIPLES:
     return buffer.toString();
   }
 }
-

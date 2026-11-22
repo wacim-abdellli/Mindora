@@ -15,7 +15,7 @@ import '../../clinician/presentation/clinician_shell_screen.dart';
 import '../controllers/auth_controller.dart';
 import '../domain/auth_state.dart';
 
-/// The Sovereign Authentication & Vault Unlock Screen for Mind Forensics.
+/// The Sovereign Authentication & Vault Unlock Screen for Mindora.
 ///
 /// Features:
 /// - Unlock existing cloud vault (Email & Password)
@@ -98,7 +98,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     HapticFeedback.selectionClick();
     final lockNotifier = ref.read(appLockProvider.notifier);
     final unlocked = await lockNotifier.unlock(
-      reason: 'Authenticate to access Mind Forensics',
+      reason: 'Authenticate to access Mindora',
     );
     if (unlocked && mounted) {
       final authState = ref.read(authControllerProvider);
@@ -116,8 +116,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               strings.isArabic
                   ? 'الرجاء تسجيل الدخول أو فتح الخزينة للمتابعة.'
                   : (strings.isFrench
-                      ? 'Veuillez vous connecter ou ouvrir un espace privé pour continuer.'
-                      : 'Sign in or continue to a vault session to enter.'),
+                        ? 'Veuillez vous connecter ou ouvrir un espace privé pour continuer.'
+                        : 'Sign in or continue to a vault session to enter.'),
             ),
           ),
         );
@@ -143,7 +143,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       backgroundColor: bg,
       appBar: AppBar(
         title: Text(
-          'Mind Forensics',
+          'Mindora',
           style: LabTheme.textStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
@@ -151,10 +151,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             color: textPrimary,
           ),
         ),
-        actions: const [
-          SupportButton(),
-          SizedBox(width: 8),
-        ],
+        actions: const [SupportButton(), SizedBox(width: 8)],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -209,7 +206,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             if (_isSignUp) {
                               HapticFeedback.lightImpact();
                               setState(() => _isSignUp = false);
-                              ref.read(authControllerProvider.notifier).clearError();
+                              ref
+                                  .read(authControllerProvider.notifier)
+                                  .clearError();
                             }
                           },
                           child: AnimatedContainer(
@@ -221,7 +220,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                               color: !_isSignUp
                                   ? tokens.ink
                                   : Colors.transparent,
-                              borderRadius: BorderRadius.circular(tokens.buttonRadius - 2),
+                              borderRadius: BorderRadius.circular(
+                                tokens.buttonRadius - 2,
+                              ),
                             ),
                             child: Text(
                               strings.signInTab.toUpperCase(),
@@ -230,9 +231,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                 fontSize: 11,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 0.5,
-                                color: !_isSignUp
-                                    ? tokens.bg
-                                    : textSecondary,
+                                color: !_isSignUp ? tokens.bg : textSecondary,
                               ),
                             ),
                           ),
@@ -245,7 +244,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             if (!_isSignUp) {
                               HapticFeedback.lightImpact();
                               setState(() => _isSignUp = true);
-                              ref.read(authControllerProvider.notifier).clearError();
+                              ref
+                                  .read(authControllerProvider.notifier)
+                                  .clearError();
                             }
                           },
                           child: AnimatedContainer(
@@ -257,7 +258,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                               color: _isSignUp
                                   ? tokens.ink
                                   : Colors.transparent,
-                              borderRadius: BorderRadius.circular(tokens.buttonRadius - 2),
+                              borderRadius: BorderRadius.circular(
+                                tokens.buttonRadius - 2,
+                              ),
                             ),
                             child: Text(
                               strings.signUpTab.toUpperCase(),
@@ -266,9 +269,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                 fontSize: 11,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 0.5,
-                                color: _isSignUp
-                                    ? tokens.bg
-                                    : textSecondary,
+                                color: _isSignUp ? tokens.bg : textSecondary,
                               ),
                             ),
                           ),
@@ -283,7 +284,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 // Error Banner
                 if (authState.errorMessage != null) ...[
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
                       color: tokens.safetySoft,
@@ -340,8 +344,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   keyboardType: TextInputType.emailAddress,
                   style: TextStyle(color: textPrimary, fontSize: 13),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Email is required';
-                    if (!v.contains('@')) return 'Enter a valid email address';
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Email is required';
+                    }
+                    if (!v.contains('@')) {
+                      return 'Enter a valid email address';
+                    }
                     return null;
                   },
                   decoration: _inputDecoration(
@@ -362,8 +370,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   obscureText: _obscurePassword,
                   style: TextStyle(color: textPrimary, fontSize: 13),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Password is required';
-                    if (v.trim().length < 6) return 'Password must be at least 6 characters';
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Password is required';
+                    }
+                    if (v.trim().length < 6) {
+                      return 'Password must be at least 6 characters';
+                    }
                     return null;
                   },
                   decoration: _inputDecoration(
@@ -399,7 +411,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       foregroundColor: tokens.bg,
                       minimumSize: const Size.fromHeight(48),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(tokens.buttonRadius),
+                        borderRadius: BorderRadius.circular(
+                          tokens.buttonRadius,
+                        ),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
@@ -437,12 +451,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: sageAccent,
                         minimumSize: const Size.fromHeight(48),
-                        side: BorderSide(
-                          color: borderColor,
-                          width: 1,
-                        ),
+                        side: BorderSide(color: borderColor, width: 1),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(tokens.buttonRadius),
+                          borderRadius: BorderRadius.circular(
+                            tokens.buttonRadius,
+                          ),
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
@@ -492,10 +505,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     decoration: BoxDecoration(
                       color: surfaceColor,
                       borderRadius: BorderRadius.circular(tokens.cardRadius),
-                      border: Border.all(
-                        color: borderColor,
-                        width: 1,
-                      ),
+                      border: Border.all(color: borderColor, width: 1),
                       boxShadow: tokens.shadows,
                     ),
                     child: Column(
@@ -507,7 +517,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 color: sageAccent.withValues(alpha: 0.14),
-                                borderRadius: BorderRadius.circular(tokens.chipRadius),
+                                borderRadius: BorderRadius.circular(
+                                  tokens.chipRadius,
+                                ),
                               ),
                               child: Icon(
                                 Icons.shield_outlined,
@@ -535,10 +547,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                       const SizedBox(width: 6),
                                       Container(
                                         padding: const EdgeInsets.symmetric(
-                                            horizontal: 6, vertical: 2),
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: sageAccent.withValues(alpha: 0.15),
-                                          borderRadius: BorderRadius.circular(4),
+                                          color: sageAccent.withValues(
+                                            alpha: 0.15,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
                                         ),
                                         child: Text(
                                           'PRIVATE',
@@ -597,17 +615,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   borderRadius: BorderRadius.circular(tokens.chipRadius),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 10),
+                      horizontal: 8,
+                      vertical: 10,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           strings.newInvestigatorPrompt,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: textSecondary,
-                          ),
+                          style: TextStyle(fontSize: 12, color: textSecondary),
                         ),
                         const SizedBox(width: 6),
                         Text(
@@ -644,7 +661,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         );
                       }
                     },
-                    borderRadius: BorderRadius.circular(context.tokens.chipRadius),
+                    borderRadius: BorderRadius.circular(
+                      context.tokens.chipRadius,
+                    ),
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(minHeight: 48),
                       child: Padding(
@@ -714,7 +733,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   }) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(fontSize: 12, color: textSecondary.withValues(alpha: 0.6)),
+      hintStyle: TextStyle(
+        fontSize: 12,
+        color: textSecondary.withValues(alpha: 0.6),
+      ),
       prefixIcon: Icon(prefixIcon, size: 16, color: textSecondary),
       suffixIcon: suffixIcon,
       filled: true,
@@ -735,4 +757,3 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     );
   }
 }
-

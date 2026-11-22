@@ -1,7 +1,7 @@
 # Capability: Cost and Data Rules
 
 ## Overview
-Mind Forensics enforces strict operational cost boundaries and data privacy safeguards during development, staging, and production rollouts.
+Mindora enforces strict operational cost boundaries and data privacy safeguards during development, staging, and production rollouts.
 
 ## Requirements
 

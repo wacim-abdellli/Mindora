@@ -62,7 +62,7 @@ class CloudSyncService {
   String exportBackupJson(List<CaseModel> sessions) {
     final list = sessions.map((c) => c.toJson()).toList();
     final Map<String, dynamic> payload = {
-      'app': 'Mind Forensics',
+      'app': 'Mindora',
       'version': '1.0.0',
       'exportedAt': DateTime.now().toIso8601String(),
       'sessionCount': sessions.length,
@@ -74,7 +74,8 @@ class CloudSyncService {
   /// Parses and validates an imported session backup.
   List<CaseModel> parseBackupJson(String rawJson) {
     try {
-      final Map<String, dynamic> decoded = jsonDecode(rawJson) as Map<String, dynamic>;
+      final Map<String, dynamic> decoded =
+          jsonDecode(rawJson) as Map<String, dynamic>;
       final rawList = decoded['sessions'] as List<dynamic>?;
       if (rawList == null) return [];
 
@@ -91,4 +92,3 @@ class CloudSyncService {
 final cloudSyncServiceProvider = Provider<CloudSyncService>((ref) {
   return CloudSyncService();
 });
-

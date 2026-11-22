@@ -25,15 +25,19 @@ void main() {
       expect(AiCompanionSystemPrompt.promptVersion, '1.2.0');
       expect(
         AiCompanionSystemPrompt.coreIdentityPrompt,
-        contains('You are the AI Companion inside Mind Forensics.'),
+        contains('You are the AI Companion inside Mindora.'),
       );
       expect(
         AiCompanionSystemPrompt.coreIdentityPrompt,
-        contains('You are an AI system, not a licensed therapist, psychiatrist, or medical professional.'),
+        contains(
+          'You are an AI system, not a licensed therapist, psychiatrist, or medical professional.',
+        ),
       );
       expect(
         AiCompanionSystemPrompt.coreIdentityPrompt,
-        contains('Your purpose is to help users explore and understand their experiences with clarity, curiosity, and respect.'),
+        contains(
+          'Your purpose is to help users explore and understand their experiences with clarity, curiosity, and respect.',
+        ),
       );
     });
 
@@ -53,30 +57,53 @@ void main() {
     });
 
     test('Condition-aware safety guidelines are dynamically assembled', () {
-      final ocdGuidance = AiCompanionSystemPrompt.buildConditionGuidelines([ConditionType.ocd]);
+      final ocdGuidance = AiCompanionSystemPrompt.buildConditionGuidelines([
+        ConditionType.ocd,
+      ]);
       expect(ocdGuidance, contains('OCD & INTRUSIVE THOUGHTS'));
-      expect(ocdGuidance, contains('Strictly avoid offering reassurance loops'));
-
-      final bipolarGuidance = AiCompanionSystemPrompt.buildConditionGuidelines([ConditionType.bipolarI]);
-      expect(bipolarGuidance, contains('BIPOLAR SPECTRUM'));
-
-      final eatingGuidance = AiCompanionSystemPrompt.buildConditionGuidelines([ConditionType.eatingDisorders]);
-      expect(eatingGuidance, contains('Strictly never comment on weight, calorie intake'));
-    });
-
-    test('buildFullPrompt combines mode, language, condition and context safely', () {
-      final prompt = AiCompanionSystemPrompt.buildFullPrompt(
-        mode: ConversationMode.exploreThought,
-        languageCode: 'en',
-        conditions: [ConditionType.generalizedAnxiety],
-        contextualUserPrompt: 'User preferred name: Alex',
+      expect(
+        ocdGuidance,
+        contains('Strictly avoid offering reassurance loops'),
       );
 
-      expect(prompt, contains('CURRENT CONVERSATION MODE: EXPLORE A THOUGHT'));
-      expect(prompt, contains('ANXIETY SPECTRUM'));
-      expect(prompt, contains('User preferred name: Alex'));
-      expect(prompt, contains('Respond in warm, clear, attentive, and psychologically informed English'));
+      final bipolarGuidance = AiCompanionSystemPrompt.buildConditionGuidelines([
+        ConditionType.bipolarI,
+      ]);
+      expect(bipolarGuidance, contains('BIPOLAR SPECTRUM'));
+
+      final eatingGuidance = AiCompanionSystemPrompt.buildConditionGuidelines([
+        ConditionType.eatingDisorders,
+      ]);
+      expect(
+        eatingGuidance,
+        contains('Strictly never comment on weight, calorie intake'),
+      );
     });
+
+    test(
+      'buildFullPrompt combines mode, language, condition and context safely',
+      () {
+        final prompt = AiCompanionSystemPrompt.buildFullPrompt(
+          mode: ConversationMode.exploreThought,
+          languageCode: 'en',
+          conditions: [ConditionType.generalizedAnxiety],
+          contextualUserPrompt: 'User preferred name: Alex',
+        );
+
+        expect(
+          prompt,
+          contains('CURRENT CONVERSATION MODE: EXPLORE A THOUGHT'),
+        );
+        expect(prompt, contains('ANXIETY SPECTRUM'));
+        expect(prompt, contains('User preferred name: Alex'));
+        expect(
+          prompt,
+          contains(
+            'Respond in warm, clear, attentive, and psychologically informed English',
+          ),
+        );
+      },
+    );
   });
 
   group('AI Companion Personalization & Context Selection Tests', () {
@@ -87,8 +114,9 @@ void main() {
         updatedAt: DateTime(2026, 1, 1),
         conditions: const [
           UserConditionEntry(
-              condition: ConditionType.depression,
-              status: DiagnosticStatus.professionallyDiagnosed),
+            condition: ConditionType.depression,
+            status: DiagnosticStatus.professionallyDiagnosed,
+          ),
         ],
       );
 
@@ -103,66 +131,73 @@ void main() {
       expect(context, isNot(contains('USER PROFILE CONTEXT')));
     });
 
-    test('Injects profile, trace and journey context when consent is enabled', () {
-      final profileWithConsent = PsychologicalProfileModel(
-        preferredName: 'Leila',
-        shareWithAiCompanion: true,
-        updatedAt: DateTime(2026, 1, 1),
-        conditions: const [
-          UserConditionEntry(
+    test(
+      'Injects profile, trace and journey context when consent is enabled',
+      () {
+        final profileWithConsent = PsychologicalProfileModel(
+          preferredName: 'Leila',
+          shareWithAiCompanion: true,
+          updatedAt: DateTime(2026, 1, 1),
+          conditions: const [
+            UserConditionEntry(
               condition: ConditionType.generalizedAnxiety,
-              status: DiagnosticStatus.selfIdentifiedExploring),
-        ],
-        selectedSymptoms: const ['Racing heart', 'Restlessness'],
-        selectedGoals: const ['Understand emotional triggers'],
-        personalContext: 'Looking for a calm, non-judgmental space.',
-        communicationTone: 'Warm & reflective',
-      );
+              status: DiagnosticStatus.selfIdentifiedExploring,
+            ),
+          ],
+          selectedSymptoms: const ['Racing heart', 'Restlessness'],
+          selectedGoals: const ['Understand emotional triggers'],
+          personalContext: 'Looking for a calm, non-judgmental space.',
+          communicationTone: 'Warm & reflective',
+        );
 
-      final trace = MindTraceModel(
-        id: 'trace-1',
-        date: DateTime.now(),
-        overallMood: 'reflective',
-        moodIntensity: 7,
-        selectedEmotions: const ['Hopeful', 'Anxious'],
-        energyLevel: 6,
-        journalText: 'A thoughtful morning.',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
+        final trace = MindTraceModel(
+          id: 'trace-1',
+          date: DateTime.now(),
+          overallMood: 'reflective',
+          moodIntensity: 7,
+          selectedEmotions: const ['Hopeful', 'Anxious'],
+          energyLevel: 6,
+          journalText: 'A thoughtful morning.',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
 
-      final context = AiCompanionContextSelector.buildContext(
-        profile: profileWithConsent,
-        latestTrace: trace,
-        journey: null,
-      );
+        final context = AiCompanionContextSelector.buildContext(
+          profile: profileWithConsent,
+          latestTrace: trace,
+          journey: null,
+        );
 
-      expect(context, contains('Leila'));
-      expect(context, contains('Generalized Anxiety'));
-      expect(context, contains('Racing heart'));
-      expect(context, contains('Understand emotional triggers'));
-      expect(context, contains('Looking for a calm, non-judgmental space.'));
-      expect(context, contains('Warm & reflective'));
-      expect(context, contains('DAILY MIND TRACE (Recent Check-in):'));
-      expect(context, contains('reflective (Intensity: 7/10)'));
-    });
+        expect(context, contains('Leila'));
+        expect(context, contains('Generalized Anxiety'));
+        expect(context, contains('Racing heart'));
+        expect(context, contains('Understand emotional triggers'));
+        expect(context, contains('Looking for a calm, non-judgmental space.'));
+        expect(context, contains('Warm & reflective'));
+        expect(context, contains('DAILY MIND TRACE (Recent Check-in):'));
+        expect(context, contains('reflective (Intensity: 7/10)'));
+      },
+    );
 
-    test('forceDisablePersonalization completely clears all injected context', () {
-      final profile = PsychologicalProfileModel(
-        preferredName: 'Nadia',
-        shareWithAiCompanion: true,
-        updatedAt: DateTime(2026, 1, 1),
-      );
+    test(
+      'forceDisablePersonalization completely clears all injected context',
+      () {
+        final profile = PsychologicalProfileModel(
+          preferredName: 'Nadia',
+          shareWithAiCompanion: true,
+          updatedAt: DateTime(2026, 1, 1),
+        );
 
-      final context = AiCompanionContextSelector.buildContext(
-        profile: profile,
-        latestTrace: null,
-        journey: null,
-        forceDisablePersonalization: true,
-      );
+        final context = AiCompanionContextSelector.buildContext(
+          profile: profile,
+          latestTrace: null,
+          journey: null,
+          forceDisablePersonalization: true,
+        );
 
-      expect(context, isEmpty);
-    });
+        expect(context, isEmpty);
+      },
+    );
   });
 
   group('ConversationMode & Starters Tests', () {
@@ -244,137 +279,135 @@ void main() {
       SharedPreferences.setMockInitialValues({});
     });
 
-    testWidgets('AiCompanionHubView renders identity header, all 6 modes, and starters',
-        (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(800, 2400);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets(
+      'AiCompanionHubView renders identity header, all 6 modes, and starters',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(800, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: AiCompanionHubView(),
-            ),
+        await tester.pumpWidget(
+          const ProviderScope(
+            child: MaterialApp(home: Scaffold(body: AiCompanionHubView())),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      // Verify header and introduction
-      expect(find.text('AI COMPANION'), findsOneWidget);
-      expect(find.text('“An intelligent space to explore what is happening within you.”'), findsOneWidget);
-
-      // Verify 6 modes are listed
-      expect(find.text('Explore a Thought'), findsOneWidget);
-      expect(find.text('Understand an Emotion'), findsOneWidget);
-      expect(find.text('Psychological Analysis'), findsOneWidget);
-      expect(find.text('Guided Reflection'), findsOneWidget);
-      expect(find.text('Just Talk'), findsOneWidget);
-      expect(find.text('Grounding'), findsOneWidget);
-
-      // Verify Start New Conversation CTA
-      expect(find.text('NEW CONVERSATION'), findsOneWidget);
-
-      // Verify Suggested Starters section
-      expect(find.text('SUGGESTED STARTERS'), findsOneWidget);
-    });
-
-    testWidgets('FlashCaseScreen supports switching between Hub and Live Dialogue',
-        (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(800, 2400);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: FlashCaseScreen(),
+        // Verify header and introduction
+        expect(find.text('AI COMPANION'), findsOneWidget);
+        expect(
+          find.text(
+            '“An intelligent space to explore what is happening within you.”',
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+          findsOneWidget,
+        );
 
-      // Initially active conversation dialogue & warm welcome state are open
-      expect(find.text('AI Guide'), findsAtLeastNWidgets(1));
-      expect(find.text("What's on your mind?"), findsOneWidget);
-      expect(find.text('Local On-Device'), findsOneWidget);
-      expect(find.text('Talk with your companion...'), findsOneWidget);
+        // Verify 6 modes are listed
+        expect(find.text('Explore a Thought'), findsOneWidget);
+        expect(find.text('Understand an Emotion'), findsOneWidget);
+        expect(find.text('Psychological Analysis'), findsOneWidget);
+        expect(find.text('Guided Reflection'), findsOneWidget);
+        expect(find.text('Just Talk'), findsOneWidget);
+        expect(find.text('Grounding'), findsOneWidget);
 
-      // Tap grid icon in AppBar to toggle Hub view
-      await tester.tap(find.byIcon(Icons.grid_view_rounded));
-      await tester.pumpAndSettle();
+        // Verify Start New Conversation CTA
+        expect(find.text('NEW CONVERSATION'), findsOneWidget);
 
-      // Verify Hub view is now presented
-      expect(find.text('AI HUB'), findsOneWidget);
-      expect(find.text('6 MODES'), findsOneWidget);
-      expect(find.text('Explore a Thought'), findsAtLeastNWidgets(1));
-
-      // Tap back button in AppBar to return to chat
-      await tester.tap(find.byIcon(Icons.arrow_back_rounded));
-      await tester.pumpAndSettle();
-
-      // Verify returned to dialogue
-      expect(find.text('Talk with your companion...'), findsOneWidget);
-    });
+        // Verify Suggested Starters section
+        expect(find.text('SUGGESTED STARTERS'), findsOneWidget);
+      },
+    );
 
     testWidgets(
-        'FlashCaseScreen header exposes tappable Mode Switcher & Engine Badge and sends welcome starter cleanly',
-        (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(800, 1600);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+      'FlashCaseScreen supports switching between Hub and Live Dialogue',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(800, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: FlashCaseScreen(),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          const ProviderScope(child: MaterialApp(home: FlashCaseScreen())),
+        );
+        await tester.pumpAndSettle();
 
-      // Engine badge (Local) opens AiEngineConfigSheet directly
-      expect(find.text('Local'), findsOneWidget);
-      await tester.tap(find.text('Local'));
-      await tester.pumpAndSettle();
-      expect(find.byType(AiEngineConfigSheet), findsOneWidget);
+        // Initially active conversation dialogue & warm welcome state are open
+        expect(find.text('AI Guide'), findsAtLeastNWidgets(1));
+        expect(find.text("What's on your mind?"), findsOneWidget);
+        expect(find.text('Local On-Device'), findsOneWidget);
+        expect(find.text('Talk with your companion...'), findsOneWidget);
 
-      Navigator.of(tester.element(find.byType(AiEngineConfigSheet))).pop();
-      await tester.pumpAndSettle();
+        // Tap grid icon in AppBar to toggle Hub view
+        await tester.tap(find.byIcon(Icons.grid_view_rounded));
+        await tester.pumpAndSettle();
 
-      // Mode Switcher Pill opens ModeChooserSheet with all 6 modes
-      await tester.tap(find.text('Explore a Thought'));
-      await tester.pumpAndSettle();
-      expect(find.byType(ModeChooserSheet), findsOneWidget);
-      expect(find.text('Choose a conversation style'), findsOneWidget);
+        // Verify Hub view is now presented
+        expect(find.text('AI HUB'), findsOneWidget);
+        expect(find.text('6 MODES'), findsOneWidget);
+        expect(find.text('Explore a Thought'), findsAtLeastNWidgets(1));
 
-      await tester.tap(find.text('Grounding'));
-      await tester.pumpAndSettle();
+        // Tap back button in AppBar to return to chat
+        await tester.tap(find.byIcon(Icons.arrow_back_rounded));
+        await tester.pumpAndSettle();
 
-      // Mode pill + starters updated cleanly for Grounding
-      expect(find.text('Grounding'), findsOneWidget);
-      expect(
-        find.text('Guide me through a 5-4-3-2-1 sensory grounding.'),
-        findsOneWidget,
-      );
+        // Verify returned to dialogue
+        expect(find.text('Talk with your companion...'), findsOneWidget);
+      },
+    );
 
-      // Tapping starter sends message and enters active conversation
-      await tester.tap(
-        find.text('Guide me through a 5-4-3-2-1 sensory grounding.'),
-      );
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'FlashCaseScreen header exposes tappable Mode Switcher & Engine Badge and sends welcome starter cleanly',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(800, 1600);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      expect(
-        find.text('Guide me through a 5-4-3-2-1 sensory grounding.'),
-        findsOneWidget,
-      );
-      expect(find.text('Save Takeaway Report'), findsOneWidget);
-    });
+        await tester.pumpWidget(
+          const ProviderScope(child: MaterialApp(home: FlashCaseScreen())),
+        );
+        await tester.pumpAndSettle();
+
+        // Engine badge (Local) opens AiEngineConfigSheet directly
+        expect(find.text('Local'), findsOneWidget);
+        await tester.tap(find.text('Local'));
+        await tester.pumpAndSettle();
+        expect(find.byType(AiEngineConfigSheet), findsOneWidget);
+
+        Navigator.of(tester.element(find.byType(AiEngineConfigSheet))).pop();
+        await tester.pumpAndSettle();
+
+        // Mode Switcher Pill opens ModeChooserSheet with all 6 modes
+        await tester.tap(find.text('Explore a Thought'));
+        await tester.pumpAndSettle();
+        expect(find.byType(ModeChooserSheet), findsOneWidget);
+        expect(find.text('Choose a conversation style'), findsOneWidget);
+
+        await tester.tap(find.text('Grounding'));
+        await tester.pumpAndSettle();
+
+        // Mode pill + starters updated cleanly for Grounding
+        expect(find.text('Grounding'), findsOneWidget);
+        expect(
+          find.text('Guide me through a 5-4-3-2-1 sensory grounding.'),
+          findsOneWidget,
+        );
+
+        // Tapping starter sends message and enters active conversation
+        await tester.tap(
+          find.text('Guide me through a 5-4-3-2-1 sensory grounding.'),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Guide me through a 5-4-3-2-1 sensory grounding.'),
+          findsOneWidget,
+        );
+        expect(find.text('Save Takeaway Report'), findsOneWidget);
+      },
+    );
   });
 }

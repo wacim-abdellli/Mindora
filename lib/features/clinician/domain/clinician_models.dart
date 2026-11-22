@@ -8,7 +8,7 @@ import '../../observatory/domain/symptom_report.dart';
 import '../../profile/domain/psychological_profile_model.dart';
 import 'visit_diff_model.dart';
 
-/// Active workspace mode for the two-sided Mind Forensics platform.
+/// Active workspace mode for the two-sided Mindora platform.
 enum AppWorkspaceRole {
   patient,
   clinician;
@@ -143,15 +143,15 @@ class ClinicalConsentScope {
   }
 
   Map<String, dynamic> toJson() => {
-        'windowDays': windowDays,
-        'includeMoodMetrics': includeMoodMetrics,
-        'includeSleepEnergyAnxiety': includeSleepEnergyAnxiety,
-        'includePersonalNotes': includePersonalNotes,
-        'includeSharedCases': includeSharedCases,
-        'includeSymptomReports': includeSymptomReports,
-        'includePsychologicalProfile': includePsychologicalProfile,
-        'includePreVisitAgenda': includePreVisitAgenda,
-      };
+    'windowDays': windowDays,
+    'includeMoodMetrics': includeMoodMetrics,
+    'includeSleepEnergyAnxiety': includeSleepEnergyAnxiety,
+    'includePersonalNotes': includePersonalNotes,
+    'includeSharedCases': includeSharedCases,
+    'includeSymptomReports': includeSymptomReports,
+    'includePsychologicalProfile': includePsychologicalProfile,
+    'includePreVisitAgenda': includePreVisitAgenda,
+  };
 
   factory ClinicalConsentScope.fromJson(Map<String, dynamic> json) {
     return ClinicalConsentScope(
@@ -208,16 +208,17 @@ class PreVisitAgenda {
   }
 
   Map<String, dynamic> toJson() => {
-        'selectedTopics': selectedTopics,
-        'patientQuestion': patientQuestion,
-        'whatHelpedRecently': whatHelpedRecently,
-        'focusPlanFeedback': focusPlanFeedback,
-        'updatedAt': updatedAt.toIso8601String(),
-      };
+    'selectedTopics': selectedTopics,
+    'patientQuestion': patientQuestion,
+    'whatHelpedRecently': whatHelpedRecently,
+    'focusPlanFeedback': focusPlanFeedback,
+    'updatedAt': updatedAt.toIso8601String(),
+  };
 
   factory PreVisitAgenda.fromJson(Map<String, dynamic> json) {
     return PreVisitAgenda(
-      selectedTopics: (json['selectedTopics'] as List<dynamic>?)
+      selectedTopics:
+          (json['selectedTopics'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],
@@ -292,37 +293,40 @@ class ClinicianSyncPacket {
           .where((c) => !c.isPrivate)
           .toList(growable: false),
       symptomReports: symptomReports ?? this.symptomReports,
-      profileSnapshot:
-          clearProfileSnapshot ? null : (profileSnapshot ?? this.profileSnapshot),
-      preVisitAgenda:
-          clearPreVisitAgenda ? null : (preVisitAgenda ?? this.preVisitAgenda),
+      profileSnapshot: clearProfileSnapshot
+          ? null
+          : (profileSnapshot ?? this.profileSnapshot),
+      preVisitAgenda: clearPreVisitAgenda
+          ? null
+          : (preVisitAgenda ?? this.preVisitAgenda),
       integrityHash: integrityHash ?? this.integrityHash,
     );
   }
 
   /// Canonical JSON payload (excluding `integrityHash`) for SHA-256 verification.
   Map<String, dynamic> toCanonicalBodyJson() => {
-        'schemaVersion': schemaVersion,
-        'packetId': packetId,
-        'generatedAt': generatedAt.toIso8601String(),
-        'patientDisplayName': patientDisplayName,
-        'patientAnonymousId': patientAnonymousId,
-        'consentScope': consentScope.toJson(),
-        'traces': traces.map((t) => t.toJson()).toList(growable: false),
-        'sharedCases': sharedCases
-            .where((c) => !c.isPrivate)
-            .map((c) => c.toJson())
-            .toList(growable: false),
-        'symptomReports':
-            symptomReports.map((r) => r.toJson()).toList(growable: false),
-        'profileSnapshot': profileSnapshot?.toJson(),
-        'preVisitAgenda': preVisitAgenda?.toJson(),
-      };
+    'schemaVersion': schemaVersion,
+    'packetId': packetId,
+    'generatedAt': generatedAt.toIso8601String(),
+    'patientDisplayName': patientDisplayName,
+    'patientAnonymousId': patientAnonymousId,
+    'consentScope': consentScope.toJson(),
+    'traces': traces.map((t) => t.toJson()).toList(growable: false),
+    'sharedCases': sharedCases
+        .where((c) => !c.isPrivate)
+        .map((c) => c.toJson())
+        .toList(growable: false),
+    'symptomReports': symptomReports
+        .map((r) => r.toJson())
+        .toList(growable: false),
+    'profileSnapshot': profileSnapshot?.toJson(),
+    'preVisitAgenda': preVisitAgenda?.toJson(),
+  };
 
   Map<String, dynamic> toJson() => {
-        ...toCanonicalBodyJson(),
-        'integrityHash': integrityHash,
-      };
+    ...toCanonicalBodyJson(),
+    'integrityHash': integrityHash,
+  };
 
   factory ClinicianSyncPacket.fromJson(Map<String, dynamic> json) {
     final scope = json['consentScope'] is Map<String, dynamic>
@@ -333,48 +337,48 @@ class ClinicianSyncPacket {
 
     final parsedTraces = scope.includeMoodMetrics
         ? ((json['traces'] as List<dynamic>?) ?? const [])
-            .map((e) => MindTraceModel.fromJson(e as Map<String, dynamic>))
-            .map((t) {
-              var cleaned = t;
-              if (!scope.includePersonalNotes) {
-                cleaned = cleaned.copyWith(
-                  clearJournalText: true,
-                  clearSituation: true,
-                  clearBehavioralResponse: true,
-                  clearAiReflection: true,
-                  clearVoiceNotePath: true,
-                  dynamicAnswers: const {},
-                  investigationAnswers: const {},
-                  clearSymptomsAndExperiences: !scope.includeSymptomReports,
-                );
-              }
-              if (!scope.includeSleepEnergyAnxiety) {
-                cleaned = cleaned.copyWith(
-                  clearSleepHours: true,
-                  clearSleepQuality: true,
-                  clearEnergyLevel: true,
-                  clearAnxietyLevel: true,
-                  clearPhysicalTension: true,
-                  contextTags: const [],
-                );
-              }
-              return cleaned;
-            })
-            .toList(growable: false)
+              .map((e) => MindTraceModel.fromJson(e as Map<String, dynamic>))
+              .map((t) {
+                var cleaned = t;
+                if (!scope.includePersonalNotes) {
+                  cleaned = cleaned.copyWith(
+                    clearJournalText: true,
+                    clearSituation: true,
+                    clearBehavioralResponse: true,
+                    clearAiReflection: true,
+                    clearVoiceNotePath: true,
+                    dynamicAnswers: const {},
+                    investigationAnswers: const {},
+                    clearSymptomsAndExperiences: !scope.includeSymptomReports,
+                  );
+                }
+                if (!scope.includeSleepEnergyAnxiety) {
+                  cleaned = cleaned.copyWith(
+                    clearSleepHours: true,
+                    clearSleepQuality: true,
+                    clearEnergyLevel: true,
+                    clearAnxietyLevel: true,
+                    clearPhysicalTension: true,
+                    contextTags: const [],
+                  );
+                }
+                return cleaned;
+              })
+              .toList(growable: false)
         : const <MindTraceModel>[];
 
     // Hard exclusion of any CaseModel marked private, even from altered JSON.
     final parsedCases = scope.includeSharedCases
         ? ((json['sharedCases'] as List<dynamic>?) ?? const [])
-            .map((e) => CaseModel.fromJson(e as Map<String, dynamic>))
-            .where((c) => !c.isPrivate)
-            .toList(growable: false)
+              .map((e) => CaseModel.fromJson(e as Map<String, dynamic>))
+              .where((c) => !c.isPrivate)
+              .toList(growable: false)
         : const <CaseModel>[];
 
     final parsedSymptoms = scope.includeSymptomReports
         ? ((json['symptomReports'] as List<dynamic>?) ?? const [])
-            .map((e) => SymptomReport.fromJson(e as Map<String, dynamic>))
-            .toList(growable: false)
+              .map((e) => SymptomReport.fromJson(e as Map<String, dynamic>))
+              .toList(growable: false)
         : const <SymptomReport>[];
 
     PsychologicalProfileModel? parsedProfile;
@@ -395,7 +399,8 @@ class ClinicianSyncPacket {
       }
     }
 
-    final parsedAgenda = scope.includePreVisitAgenda &&
+    final parsedAgenda =
+        scope.includePreVisitAgenda &&
             json['preVisitAgenda'] is Map<String, dynamic>
         ? PreVisitAgenda.fromJson(
             json['preVisitAgenda'] as Map<String, dynamic>,
@@ -456,12 +461,12 @@ class ClinicianSessionNote {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt.toIso8601String(),
-        'category': category.name,
-        'content': content,
-      };
+    'id': id,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+    'category': category.name,
+    'content': content,
+  };
 
   factory ClinicianSessionNote.fromJson(Map<String, dynamic> json) {
     return ClinicianSessionNote(
@@ -483,7 +488,7 @@ class ClinicianProfile {
   const ClinicianProfile({
     this.displayName = 'Dr. Salma Ben Amor',
     this.specialty = 'Psychiatrist',
-    this.clinicName = 'Tunis Mind Forensics Practice',
+    this.clinicName = 'Tunis Mindora Practice',
     this.licenseRef = '',
   });
 
@@ -507,18 +512,17 @@ class ClinicianProfile {
   }
 
   Map<String, dynamic> toJson() => {
-        'displayName': displayName,
-        'specialty': specialty,
-        'clinicName': clinicName,
-        'licenseRef': licenseRef,
-      };
+    'displayName': displayName,
+    'specialty': specialty,
+    'clinicName': clinicName,
+    'licenseRef': licenseRef,
+  };
 
   factory ClinicianProfile.fromJson(Map<String, dynamic> json) {
     return ClinicianProfile(
       displayName: json['displayName'] as String? ?? 'Dr. Salma Ben Amor',
       specialty: json['specialty'] as String? ?? 'Psychiatrist',
-      clinicName:
-          json['clinicName'] as String? ?? 'Tunis Mind Forensics Practice',
+      clinicName: json['clinicName'] as String? ?? 'Tunis Mindora Practice',
       licenseRef: json['licenseRef'] as String? ?? '',
     );
   }
@@ -552,12 +556,11 @@ class ClinicianPatientRecord {
       ? null
       : VisitComparisonDiff.compute(previousPackets.first, latestPacket);
 
-  PersonalBaseline get baseline =>
-      PersonalBaseline.fromTraces(
-        latestPacket.traces,
-        baselineDays: latestPacket.consentScope.windowDays.clamp(1, 365),
-        referenceDate: latestPacket.generatedAt,
-      );
+  PersonalBaseline get baseline => PersonalBaseline.fromTraces(
+    latestPacket.traces,
+    baselineDays: latestPacket.consentScope.windowDays.clamp(1, 365),
+    referenceDate: latestPacket.generatedAt,
+  );
 
   PersonalBaseline get recentBaseline {
     if (latestPacket.traces.isEmpty) {
@@ -566,12 +569,17 @@ class ClinicianPatientRecord {
     final sorted = List<MindTraceModel>.from(latestPacket.traces)
       ..sort((a, b) => b.effectiveTimestamp.compareTo(a.effectiveTimestamp));
     final anchor = sorted.first.date;
-    final cutoff = DateTime(anchor.year, anchor.month, anchor.day)
-        .subtract(const Duration(days: 6));
-    final recentTraces = sorted.where((t) {
-      final d = DateTime(t.date.year, t.date.month, t.date.day);
-      return !d.isBefore(cutoff);
-    }).toList(growable: false);
+    final cutoff = DateTime(
+      anchor.year,
+      anchor.month,
+      anchor.day,
+    ).subtract(const Duration(days: 6));
+    final recentTraces = sorted
+        .where((t) {
+          final d = DateTime(t.date.year, t.date.month, t.date.day);
+          return !d.isBefore(cutoff);
+        })
+        .toList(growable: false);
     return PersonalBaseline.fromTraces(recentTraces);
   }
 
@@ -617,18 +625,20 @@ class ClinicianPatientRecord {
   }
 
   Map<String, dynamic> toJson() => {
-        'patientId': patientId,
-        'displayName': displayName,
-        'isDemoCase': isDemoCase,
-        'importedAt': importedAt.toIso8601String(),
-        'lastSyncedAt': lastSyncedAt.toIso8601String(),
-        'latestPacket': latestPacket.toJson(),
-        'previousPackets':
-            previousPackets.map((p) => p.toJson()).toList(growable: false),
-        'clinicianNotes':
-            clinicianNotes.map((n) => n.toJson()).toList(growable: false),
-        'reviewedAt': reviewedAt?.toIso8601String(),
-      };
+    'patientId': patientId,
+    'displayName': displayName,
+    'isDemoCase': isDemoCase,
+    'importedAt': importedAt.toIso8601String(),
+    'lastSyncedAt': lastSyncedAt.toIso8601String(),
+    'latestPacket': latestPacket.toJson(),
+    'previousPackets': previousPackets
+        .map((p) => p.toJson())
+        .toList(growable: false),
+    'clinicianNotes': clinicianNotes
+        .map((n) => n.toJson())
+        .toList(growable: false),
+    'reviewedAt': reviewedAt?.toIso8601String(),
+  };
 
   factory ClinicianPatientRecord.fromJson(Map<String, dynamic> json) {
     final packet = ClinicianSyncPacket.fromJson(
@@ -636,8 +646,7 @@ class ClinicianPatientRecord {
     );
     return ClinicianPatientRecord(
       patientId: json['patientId'] as String? ?? packet.patientAnonymousId,
-      displayName:
-          json['displayName'] as String? ?? packet.patientDisplayName,
+      displayName: json['displayName'] as String? ?? packet.patientDisplayName,
       isDemoCase: json['isDemoCase'] as bool? ?? false,
       importedAt: json['importedAt'] != null
           ? DateTime.tryParse(json['importedAt'] as String) ?? DateTime.now()
@@ -646,17 +655,17 @@ class ClinicianPatientRecord {
           ? DateTime.tryParse(json['lastSyncedAt'] as String) ?? DateTime.now()
           : DateTime.now(),
       latestPacket: packet,
-      previousPackets: (json['previousPackets'] as List<dynamic>?)
+      previousPackets:
+          (json['previousPackets'] as List<dynamic>?)
               ?.map(
-                (e) =>
-                    ClinicianSyncPacket.fromJson(e as Map<String, dynamic>),
+                (e) => ClinicianSyncPacket.fromJson(e as Map<String, dynamic>),
               )
               .toList(growable: false) ??
           const [],
-      clinicianNotes: (json['clinicianNotes'] as List<dynamic>?)
+      clinicianNotes:
+          (json['clinicianNotes'] as List<dynamic>?)
               ?.map(
-                (e) =>
-                    ClinicianSessionNote.fromJson(e as Map<String, dynamic>),
+                (e) => ClinicianSessionNote.fromJson(e as Map<String, dynamic>),
               )
               .toList(growable: false) ??
           const [],

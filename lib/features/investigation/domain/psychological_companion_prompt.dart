@@ -3,13 +3,13 @@ import '../../profile/domain/condition_type.dart';
 import '../../profile/domain/psychological_profile_model.dart';
 
 /// The foundational system prompt, clinical principles, and context builder
-/// for the Mind Forensics Psychological Companion.
+/// for the Mindora Psychological Companion.
 class PsychologicalCompanionPrompt {
   /// The foundational system instruction mandated for the Psychological Companion.
   static const String baseSystemInstruction = '''
 IDENTITY AND ROLE
 
-You are the Mind Forensics Psychological Companion, an AI designed to support psychological self-exploration, emotional awareness, and personal development.
+You are the Mindora Psychological Companion, an AI designed to support psychological self-exploration, emotional awareness, and personal development.
 
 Your communication style is informed by evidence-based psychological approaches, including approaches inspired by Cognitive Behavioral Therapy (CBT), Dialectical Behavior Therapy (DBT), mindfulness-based approaches, and trauma-informed care.
 
@@ -112,7 +112,7 @@ Do not reduce a person to their diagnosis.
 Two people with the same diagnosis can have completely different experiences.
 Treat every user as an individual.
 
-THE PHILOSOPHY OF MIND FORENSICS
+THE PHILOSOPHY OF Mindora
 
 A thought is something to explore, not automatically something to believe.
 An emotion is something to understand, not something to judge.
@@ -200,7 +200,10 @@ Your purpose is to help them understand themselves more clearly and safely.
     }
 
     // Profile Context (Only if consent given and memory enabled)
-    if (includeMemory && profile != null && profile.shareWithAiCompanion && !profile.isEmpty) {
+    if (includeMemory &&
+        profile != null &&
+        profile.shareWithAiCompanion &&
+        !profile.isEmpty) {
       buffer.writeln('\nUSER PSYCHOLOGICAL PROFILE (CONFIDENTIAL CONTEXT):');
 
       if (profile.preferredName.trim().isNotEmpty) {
@@ -208,15 +211,21 @@ Your purpose is to help them understand themselves more clearly and safely.
       }
 
       if (profile.isMinor) {
-        buffer.writeln('• Minor Protection Notice: The user is under 18 years old. Ensure all interactions remain age-appropriate, gently supportive, and strictly non-clinical. Never simulate medical or diagnostic authority.');
+        buffer.writeln(
+          '• Minor Protection Notice: The user is under 18 years old. Ensure all interactions remain age-appropriate, gently supportive, and strictly non-clinical. Never simulate medical or diagnostic authority.',
+        );
       }
 
       if (profile.mentalHealthBackground.isNotEmpty) {
-        buffer.writeln('• Mental-Health Starting Point: ${profile.mentalHealthBackground}');
+        buffer.writeln(
+          '• Mental-Health Starting Point: ${profile.mentalHealthBackground}',
+        );
       }
 
       if (profile.professionalSupport.isNotEmpty) {
-        buffer.writeln('• Professional Care Status: ${profile.professionalSupport}');
+        buffer.writeln(
+          '• Professional Care Status: ${profile.professionalSupport}',
+        );
       }
 
       if (profile.conditions.isNotEmpty) {
@@ -230,38 +239,54 @@ Your purpose is to help them understand themselves more clearly and safely.
       }
 
       if (profile.selectedSymptoms.isNotEmpty) {
-        buffer.writeln('• Reported Symptoms & Difficulties: ${profile.selectedSymptoms.join(", ")}');
+        buffer.writeln(
+          '• Reported Symptoms & Difficulties: ${profile.selectedSymptoms.join(", ")}',
+        );
       } else if (profile.symptomsAndExperiences.trim().isNotEmpty) {
-        buffer.writeln('• Reported Experiences: ${profile.symptomsAndExperiences.trim()}');
+        buffer.writeln(
+          '• Reported Experiences: ${profile.symptomsAndExperiences.trim()}',
+        );
       }
 
       if (profile.duration.trim().isNotEmpty) {
         buffer.writeln('• Experience Duration: ${profile.duration.trim()}');
       }
       if (profile.symptomNotes.trim().isNotEmpty) {
-        buffer.writeln('• Current Difficulties: ${profile.symptomNotes.trim()}');
+        buffer.writeln(
+          '• Current Difficulties: ${profile.symptomNotes.trim()}',
+        );
       } else if (profile.currentDifficulties.trim().isNotEmpty) {
-        buffer.writeln('• Current Difficulties: ${profile.currentDifficulties.trim()}');
+        buffer.writeln(
+          '• Current Difficulties: ${profile.currentDifficulties.trim()}',
+        );
       }
 
       if (profile.personalTriggers.trim().isNotEmpty) {
         buffer.writeln('• Known Triggers: ${profile.personalTriggers.trim()}');
       }
       if (profile.currentTreatment.trim().isNotEmpty) {
-        buffer.writeln('• Support / Current Treatment: ${profile.currentTreatment.trim()}');
+        buffer.writeln(
+          '• Support / Current Treatment: ${profile.currentTreatment.trim()}',
+        );
       }
 
       if (profile.selectedGoals.isNotEmpty) {
-        buffer.writeln('• Personal Goals: ${profile.selectedGoals.join(", ")}'
-            '${profile.customGoal.isNotEmpty ? ", ${profile.customGoal}" : ""}');
+        buffer.writeln(
+          '• Personal Goals: ${profile.selectedGoals.join(", ")}'
+          '${profile.customGoal.isNotEmpty ? ", ${profile.customGoal}" : ""}',
+        );
       } else if (profile.personalGoals.trim().isNotEmpty) {
         buffer.writeln('• Personal Goals: ${profile.personalGoals.trim()}');
       }
 
       if (profile.personalContext.trim().isNotEmpty) {
-        buffer.writeln('• Personal Context: "${profile.personalContext.trim()}"');
+        buffer.writeln(
+          '• Personal Context: "${profile.personalContext.trim()}"',
+        );
       } else if (profile.notesForAiCompanion.trim().isNotEmpty) {
-        buffer.writeln('• Personal Message to Companion: "${profile.notesForAiCompanion.trim()}"');
+        buffer.writeln(
+          '• Personal Message to Companion: "${profile.notesForAiCompanion.trim()}"',
+        );
       }
 
       // Communication Preferences
@@ -269,16 +294,24 @@ Your purpose is to help them understand themselves more clearly and safely.
       buffer.writeln('  - Tone: ${profile.communicationTone}');
       buffer.writeln('  - Response Length: ${profile.responseLength}');
       if (profile.distressPreferences.isNotEmpty) {
-        buffer.writeln('  - When distressed, user prefers: ${profile.distressPreferences.join(", ")}');
+        buffer.writeln(
+          '  - When distressed, user prefers: ${profile.distressPreferences.join(", ")}',
+        );
       }
       if (profile.dislikedApproaches.isNotEmpty) {
-        buffer.writeln('  - Avoid / Disliked: ${profile.dislikedApproaches.join(", ")}');
+        buffer.writeln(
+          '  - Avoid / Disliked: ${profile.dislikedApproaches.join(", ")}',
+        );
       }
 
       if (profile.customAiDirectives.trim().isNotEmpty) {
-        buffer.writeln('\nUSER\'S CUSTOM COMPANION INSTRUCTIONS & BEHAVIORAL DIRECTIVES:');
+        buffer.writeln(
+          '\nUSER\'S CUSTOM COMPANION INSTRUCTIONS & BEHAVIORAL DIRECTIVES:',
+        );
         buffer.writeln('"${profile.customAiDirectives.trim()}"');
-        buffer.writeln('MANDATE: Strictly honor and align your tone, brevity, and focus with these user-defined instructions in every single response.');
+        buffer.writeln(
+          'MANDATE: Strictly honor and align your tone, brevity, and focus with these user-defined instructions in every single response.',
+        );
       }
 
       // Add condition-specific rules
@@ -289,7 +322,9 @@ Your purpose is to help them understand themselves more clearly and safely.
     // Journey Context (Current phase and recent activity)
     if (includeMemory && journey != null) {
       buffer.writeln('\nPSYCHOLOGICAL JOURNEY STATUS:');
-      buffer.writeln('• Current Active Phase: Phase ${journey.activePhase.phaseNumber} — ${journey.activePhase.defaultTitle()}');
+      buffer.writeln(
+        '• Current Active Phase: Phase ${journey.activePhase.phaseNumber} — ${journey.activePhase.defaultTitle()}',
+      );
 
       final completed = journey.activities.where((a) => a.isCompleted).toList();
       if (completed.isNotEmpty) {
@@ -306,4 +341,3 @@ Your purpose is to help them understand themselves more clearly and safely.
     return buffer.toString();
   }
 }
-

@@ -1,4 +1,4 @@
-/// The three core forensic labels used across Mind Forensics.
+/// The three core forensic labels used across Mindora.
 ///
 /// Section 2: "Every statement in a case carries one of three labels.
 /// Each label has a fixed color, an icon, and a letter, so it never depends
@@ -40,4 +40,3 @@ enum LabelType {
   final String definition;
   final String example;
 }
-

@@ -13,10 +13,7 @@ import '../domain/symptom_entry.dart';
 /// - 0 emojis, strict non-pathologizing guardrails (never diagnose)
 /// - Offline mock fallback with zero network calls on [kDevMockKey]
 class ObservatoryAiService {
-  ObservatoryAiService({
-    this.apiKey,
-    this.modelName = 'gemini-2.5-flash',
-  });
+  ObservatoryAiService({this.apiKey, this.modelName = 'gemini-2.5-flash'});
 
   static const String kDevMockKey = 'DEV_MOCK_GEMINI_KEY';
 
@@ -101,7 +98,8 @@ class ObservatoryAiService {
     required PsychologicalProfileModel? profile,
     required String languageCode,
   }) async {
-    final hasConsent = profile != null &&
+    final hasConsent =
+        profile != null &&
         profile.shareWithAiCompanion &&
         profile.allowAiPersonalization;
 
@@ -191,7 +189,8 @@ class ObservatoryAiService {
     return (analysis: analysisText, stabilizingStrategy: strategyText);
   }
 
-  Future<({String analysis, String stabilizingStrategy})?> _callGeminiSymptomAnalysis({
+  Future<({String analysis, String stabilizingStrategy})?>
+  _callGeminiSymptomAnalysis({
     required String apiKey,
     required List<SymptomEntry> selectedSymptoms,
     required int intensity,
@@ -214,7 +213,7 @@ class ObservatoryAiService {
       );
 
       final prompt =
-          'You are The Warm Investigator in Mind Forensics. '
+          'You are The Warm Investigator in Mindora. '
           'Strict rules: 0 emojis. Never diagnose. Never state hypotheses as medical facts. Distinguish observations from interpretations. '
           'Language: $languageCode. '
           'Reported Symptoms: $symptomList. Intensity: $intensity/10. Context: $contextTrigger. Somatic: $somaticLocation. Follow-up: $userAdaptiveAnswer. '
@@ -223,27 +222,31 @@ class ObservatoryAiService {
       final request = await client.postUrl(uri);
       request.headers.contentType = ContentType.json;
       request.headers.set('x-goog-api-key', apiKey.trim());
-      request.write(jsonEncode({
-        'contents': [
-          {
-            'parts': [
-              {'text': prompt}
-            ]
-          }
-        ],
-        'generationConfig': {
-          'temperature': 0.3,
-          'maxOutputTokens': 500,
-          'responseMimeType': 'application/json',
-        }
-      }));
+      request.write(
+        jsonEncode({
+          'contents': [
+            {
+              'parts': [
+                {'text': prompt},
+              ],
+            },
+          ],
+          'generationConfig': {
+            'temperature': 0.3,
+            'maxOutputTokens': 500,
+            'responseMimeType': 'application/json',
+          },
+        }),
+      );
 
       final response = await request.close();
       if (response.statusCode == 200) {
         await DailyUsageLimiter.recordRequest();
         final body = await response.transform(utf8.decoder).join();
         final json = jsonDecode(body) as Map<String, dynamic>;
-        final text = json['candidates']?[0]?['content']?['parts']?[0]?['text'] as String?;
+        final text =
+            json['candidates']?[0]?['content']?['parts']?[0]?['text']
+                as String?;
         if (text != null) {
           final parsed = jsonDecode(text) as Map<String, dynamic>;
           return (

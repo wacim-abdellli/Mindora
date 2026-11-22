@@ -14,25 +14,16 @@ import 'widgets/micro_action_card.dart';
 import 'widgets/perspective_exploration_card.dart';
 import 'widgets/routine_anchor_card.dart';
 
-enum SupportChoice {
-  settle,
-  grounding,
-  thoughts,
-  action,
-  routine,
-}
+enum SupportChoice { settle, grounding, thoughts, action, routine }
 
 /// Contextual Support: Shared Application Capability.
 ///
-/// Accessible from anywhere across Mind Forensics:
+/// Accessible from anywhere across Mindora:
 /// - Home, Investigator, Inner Observatory, AI Companion
 /// - Opens with: "What would help right now?"
 /// - 5 Curated choices, options-first, 0 emojis, immediate emergency exit
 class ContextualSupportSheet extends ConsumerStatefulWidget {
-  const ContextualSupportSheet({
-    super.key,
-    this.initialChoice,
-  });
+  const ContextualSupportSheet({super.key, this.initialChoice});
 
   final SupportChoice? initialChoice;
 
@@ -99,7 +90,9 @@ class _ContextualSupportSheetState
       ),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(tokens.sheetRadius)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(tokens.sheetRadius),
+        ),
         border: Border.all(color: borderColor, width: 1),
       ),
       child: SafeArea(
@@ -131,11 +124,16 @@ class _ContextualSupportSheetState
                       onTap: _backToMenu,
                       borderRadius: BorderRadius.circular(6),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 4,
+                        ),
                         child: Row(
                           children: [
                             Icon(
-                              isAr ? Icons.arrow_forward_ios_rounded : Icons.arrow_back_ios_rounded,
+                              isAr
+                                  ? Icons.arrow_forward_ios_rounded
+                                  : Icons.arrow_back_ios_rounded,
                               size: 14,
                               color: textSecondary,
                             ),
@@ -166,7 +164,11 @@ class _ContextualSupportSheetState
                     ),
                   IconButton(
                     tooltip: strings.closeBtn,
-                    icon: Icon(Icons.close_rounded, size: 20, color: textSecondary),
+                    icon: Icon(
+                      Icons.close_rounded,
+                      size: 20,
+                      color: textSecondary,
+                    ),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
@@ -178,9 +180,19 @@ class _ContextualSupportSheetState
             // Main Scrollable Content
             Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
                 child: _activeChoice == null
-                    ? _buildChoiceMenu(strings, isDark, textPrimary, textSecondary, surfaceColor, borderColor)
+                    ? _buildChoiceMenu(
+                        strings,
+                        isDark,
+                        textPrimary,
+                        textSecondary,
+                        surfaceColor,
+                        borderColor,
+                      )
                     : _buildActiveExercise(strings),
               ),
             ),
@@ -203,18 +215,22 @@ class _ContextualSupportSheetState
       ...?profile?.selectedGoals,
       if (profile?.personalGoals.isNotEmpty == true) profile!.personalGoals,
     ].join(' ').toLowerCase();
-    final allSymptoms =
-        (profile?.selectedSymptoms ?? []).join(' ').toLowerCase();
+    final allSymptoms = (profile?.selectedSymptoms ?? [])
+        .join(' ')
+        .toLowerCase();
 
-    final suggestSettle = allGoals.contains('anxiety') ||
+    final suggestSettle =
+        allGoals.contains('anxiety') ||
         allGoals.contains('somatic') ||
         allSymptoms.contains('apprehension') ||
         allSymptoms.contains('surge');
-    final suggestThoughts = allGoals.contains('thought') ||
+    final suggestThoughts =
+        allGoals.contains('thought') ||
         allGoals.contains('pattern') ||
         allSymptoms.contains('scatter') ||
         allSymptoms.contains('fog');
-    final suggestAction = allGoals.contains('focus') ||
+    final suggestAction =
+        allGoals.contains('focus') ||
         allGoals.contains('inertia') ||
         allSymptoms.contains('inertia') ||
         allSymptoms.contains('avoidance');
@@ -235,11 +251,7 @@ class _ContextualSupportSheetState
         const SizedBox(height: 4),
         Text(
           strings.whatWouldHelpSubtitle,
-          style: TextStyle(
-            fontSize: 12,
-            color: textSecondary,
-            height: 1.4,
-          ),
+          style: TextStyle(fontSize: 12, color: textSecondary, height: 1.4),
         ),
         const SizedBox(height: 18),
 
@@ -346,7 +358,10 @@ class _ContextualSupportSheetState
                     SupportModalSheet.show(ctx);
                   },
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                     child: Row(
                       children: [
                         Icon(
@@ -379,7 +394,9 @@ class _ContextualSupportSheetState
                           ),
                         ),
                         Icon(
-                          strings.isArabic ? Icons.arrow_back_ios_rounded : Icons.arrow_forward_ios_rounded,
+                          strings.isArabic
+                              ? Icons.arrow_back_ios_rounded
+                              : Icons.arrow_forward_ios_rounded,
                           size: 13,
                           color: sheetTokens.safety,
                         ),
@@ -430,7 +447,9 @@ class _ContextualSupportSheetState
                   decoration: BoxDecoration(
                     color: accentColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: accentColor.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: accentColor.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Icon(icon, size: 20, color: accentColor),
                 ),
@@ -454,7 +473,10 @@ class _ContextualSupportSheetState
                           if (isSuggested) ...[
                             const SizedBox(width: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1.5,
+                              ),
                               decoration: BoxDecoration(
                                 color: accentColor.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(3),
@@ -496,11 +518,13 @@ class _ContextualSupportSheetState
     switch (_activeChoice!) {
       case SupportChoice.settle:
         return BreathingExerciseCard(
-          onSwitchToGrounding: () => setState(() => _activeChoice = SupportChoice.grounding),
+          onSwitchToGrounding: () =>
+              setState(() => _activeChoice = SupportChoice.grounding),
         );
       case SupportChoice.grounding:
         return GroundingExerciseCard(
-          onSwitchToBreathing: () => setState(() => _activeChoice = SupportChoice.settle),
+          onSwitchToBreathing: () =>
+              setState(() => _activeChoice = SupportChoice.settle),
         );
       case SupportChoice.thoughts:
         return const PerspectiveExplorationCard();

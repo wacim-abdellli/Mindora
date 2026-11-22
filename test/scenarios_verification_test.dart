@@ -26,7 +26,7 @@ void main() {
     TestWidgetsFlutterBinding.ensureInitialized();
   });
 
-  group('Mind Forensics Critical Scenarios Verification Suite', () {
+  group('Mindora Critical Scenarios Verification Suite', () {
     test(
       'TEST A: Create mood entry, close app, reopen, verify record remains',
       () async {
@@ -216,7 +216,7 @@ void main() {
         final decoded =
             jsonDecode(backupResult.rawJson!) as Map<String, dynamic>;
         expect(decoded['schemaVersion'], equals('2.0.0'));
-        expect(decoded['app'], equals('Mind Forensics'));
+        expect(decoded['app'], equals('Mindora'));
         expect((decoded['traces'] as List).length, equals(1));
         expect((decoded['sessions'] as List).length, equals(1));
         expect(decoded['profile'], isNotNull);
@@ -470,7 +470,7 @@ void main() {
 
         // 1. Incompatible major schema version is rejected safely
         final incompatibleBackup = jsonEncode({
-          'app': 'Mind Forensics',
+          'app': 'Mindora',
           'schemaVersion': '9.0.0',
           'traces': [],
         });
@@ -486,7 +486,7 @@ void main() {
         // 2. Valid backup with duplicate trace and new trace from yesterday
         final yesterday = now.subtract(const Duration(days: 1));
         final validBackup = jsonEncode({
-          'app': 'Mind Forensics',
+          'app': 'Mindora',
           'schemaVersion': '2.0.0',
           'traces': [
             {
@@ -579,7 +579,7 @@ void main() {
         final backupService = containerBob.read(unifiedBackupServiceProvider);
         final importedDate = now.subtract(const Duration(days: 2));
         final bobBackup = jsonEncode({
-          'app': 'Mind Forensics',
+          'app': 'Mindora',
           'schemaVersion': '2.0.0',
           'traces': [
             {
@@ -734,7 +734,7 @@ void main() {
 
         final innerPayloadJson = jsonEncode({
           'schemaVersion': '2.0.0',
-          'app': 'Mind Forensics',
+          'app': 'Mindora',
           'timestamp': DateTime.now().toIso8601String(),
           'traces': [
             {
@@ -753,7 +753,7 @@ void main() {
         final ciphertext10k = await cipher10k.encryptString(innerPayloadJson);
 
         final legacyPayload = {
-          'app': 'Mind Forensics',
+          'app': 'Mindora',
           'encrypted': true,
           'schemaVersion': '2.0.0',
           'kdf': 'pbkdf2_sha256',

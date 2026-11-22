@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// House tactile pressable for Mind Forensics.
+/// House tactile pressable for Mindora.
 ///
 /// Replaces stock Material ink splash ripples with organic scale + subtle fade
 /// motion and optional light haptic tick. Honors reduced-motion accessibility.
@@ -38,8 +38,9 @@ class _MindPressableState extends State<MindPressable> {
   Widget build(BuildContext context) {
     final bool interactive = widget.enabled && widget.onPressed != null;
     final bool reduceMotion = MediaQuery.disableAnimationsOf(context);
-    final Duration duration =
-        reduceMotion ? Duration.zero : const Duration(milliseconds: 110);
+    final Duration duration = reduceMotion
+        ? Duration.zero
+        : const Duration(milliseconds: 110);
     final bool isPressed = _pressed && interactive;
 
     Widget result = AnimatedScale(
@@ -55,10 +56,7 @@ class _MindPressableState extends State<MindPressable> {
     );
 
     if (widget.borderRadius != null) {
-      result = ClipRRect(
-        borderRadius: widget.borderRadius!,
-        child: result,
-      );
+      result = ClipRRect(borderRadius: widget.borderRadius!, child: result);
     }
 
     result = GestureDetector(

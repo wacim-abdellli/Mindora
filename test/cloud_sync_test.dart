@@ -44,7 +44,10 @@ void main() {
 
       final lastSync = await syncService.getLastSyncTime();
       expect(lastSync, isNotNull);
-      expect(lastSync!.isBefore(DateTime.now().add(const Duration(seconds: 1))), isTrue);
+      expect(
+        lastSync!.isBefore(DateTime.now().add(const Duration(seconds: 1))),
+        isTrue,
+      );
     });
 
     test('Exports and imports portable session vault backup cleanly', () {
@@ -61,7 +64,7 @@ void main() {
       ];
 
       final jsonString = syncService.exportBackupJson(testCases);
-      expect(jsonString, contains('Mind Forensics'));
+      expect(jsonString, contains('Mindora'));
       expect(jsonString, contains('SESSION 01'));
 
       final decoded = jsonDecode(jsonString) as Map<String, dynamic>;

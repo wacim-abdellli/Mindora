@@ -1,6 +1,6 @@
-# Mind Forensics — Agent Instructions & Operational Standard
+# Mindora — Agent Instructions & Operational Standard
 
-Welcome to the **Mind Forensics** codebase. This file provides immediate operational rules and reference points for any AI agent pair programming on this repository.
+Welcome to the **Mindora** codebase. This file provides immediate operational rules and reference points for any AI agent pair programming on this repository.
 
 ---
 
@@ -8,7 +8,7 @@ Welcome to the **Mind Forensics** codebase. This file provides immediate operati
 - **Autonomous Agent Master Guide:** [`agent/PROJECT_GUIDE.md`](file:///c:/Users/HAJER/Desktop/mind%20forensics/agent/PROJECT_GUIDE.md)
 - **OpenSpec Configuration & Specs:** [`openspec/config.yaml`](file:///c:/Users/HAJER/Desktop/mind%20forensics/openspec/config.yaml), [`openspec/specs/`](file:///c:/Users/HAJER/Desktop/mind%20forensics/openspec/specs/)
 - **OpenSpec SDD Skill:** [`.agent/skills/openspec/SKILL.md`](file:///c:/Users/HAJER/Desktop/mind%20forensics/.agent/skills/openspec/SKILL.md)
-- **Mind Forensics Skill:** [`.agent/skills/mind-forensics/SKILL.md`](file:///c:/Users/HAJER/Desktop/mind%20forensics/.agent/skills/mind-forensics/SKILL.md)
+- **Mindora Skill:** [`.agent/skills/mind-forensics/SKILL.md`](file:///c:/Users/HAJER/Desktop/mind%20forensics/.agent/skills/mind-forensics/SKILL.md)
 - **Palette & Tokens:** [`lib/app/theme/lab_colors.dart`](file:///c:/Users/HAJER/Desktop/mind%20forensics/lib/app/theme/lab_colors.dart)
 - **Localization Dictionary:** [`lib/app/localization/app_strings.dart`](file:///c:/Users/HAJER/Desktop/mind%20forensics/lib/app/localization/app_strings.dart)
 - **Safety Interceptor:** [`lib/core/safety/safety_interceptor.dart`](file:///c:/Users/HAJER/Desktop/mind%20forensics/lib/core/safety/safety_interceptor.dart)
@@ -72,7 +72,7 @@ Welcome to the **Mind Forensics** codebase. This file provides immediate operati
     - Both commands must pass with zero issues.
 
 11. **GLOBAL LOW-COGNITIVE-LOAD & OPTIONS-FIRST PRINCIPLE:**
-    - **Philosophy:** Mind Forensics must never feel like another mental task. The product must be **OPTIONS-FIRST, not QUESTION-FIRST**.
+    - **Philosophy:** Mindora must never feel like another mental task. The product must be **OPTIONS-FIRST, not QUESTION-FIRST**.
     - **Options Before Open Questions:** Whenever an interaction can be represented through choices, present those first (e.g. emotion selection instead of compulsory essays, situation categories, suggested responses, simple visual scales).
     - **No Compulsory Blank Text Fields:** Never make a blank text field the default interaction for ordinary user journeys. Text input is always optional ("Something else", "Add your own", "I prefer to explain", "Skip for now").
     - **Limit Cognitive Effort:** 1 decision at a time, 3–6 relevant options, simple language, no repetitive questioning, easy pause/skip/exit, zero penalty for incomplete sessions.

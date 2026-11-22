@@ -4,7 +4,7 @@ import '../../app/theme/mind_tokens.dart';
 import 'crisis_keywords.dart';
 import 'support_button.dart';
 
-/// Two-Layer Safety Coordinator for Mind Forensics.
+/// Two-Layer Safety Coordinator for Mindora.
 ///
 /// Section 6 & Step 8.6:
 /// Layer 1: Offline local keyword scan (zero AI required).
@@ -57,14 +57,21 @@ class SafetyInterceptor {
                 color: tokens.safetySoft,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(Icons.shield_outlined,
-                  color: tokens.safety, size: 20),
+              child: Icon(
+                Icons.shield_outlined,
+                color: tokens.safety,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 strings.crisisPauseTitle,
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: textPrimary),
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: textPrimary,
+                ),
               ),
             ),
           ],
@@ -75,7 +82,11 @@ class SafetyInterceptor {
           children: [
             Text(
               strings.crisisPauseBody,
-              style: TextStyle(fontSize: 12.5, height: 1.45, color: textSecondary),
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.45,
+                color: textSecondary,
+              ),
             ),
             const SizedBox(height: 16),
             Container(
@@ -90,7 +101,11 @@ class SafetyInterceptor {
                 children: [
                   Text(
                     strings.greenLineTitle,
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: textPrimary),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                      color: textPrimary,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -111,14 +126,20 @@ class SafetyInterceptor {
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text(
               strings.returnToCaseBtn,
-              style: TextStyle(color: textSecondary, fontWeight: FontWeight.w600, fontSize: 12),
+              style: TextStyle(
+                color: textSecondary,
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
             ),
           ),
           FilledButton.icon(
             style: FilledButton.styleFrom(
               backgroundColor: tokens.safety,
               foregroundColor: tokens.bg,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
             icon: const Icon(Icons.shield_outlined, size: 15),
             label: Text(

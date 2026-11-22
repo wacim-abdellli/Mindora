@@ -12,14 +12,14 @@ void main() {
   });
 
   testWidgets(
-    'Mind Forensics App smoke test with 5 bottom tabs and options-first Daily Check-in',
+    'Mindora App smoke test with 5 bottom tabs and options-first Daily Check-in',
     (WidgetTester tester) async {
       // Build our app wrapped in ProviderScope
       await tester.pumpWidget(const ProviderScope(child: MindForensicsApp()));
       await tester.pumpAndSettle();
 
       // 1. Verify that the header renders
-      expect(find.text('Mind Forensics'), findsOneWidget);
+      expect(find.text('Mindora'), findsOneWidget);
 
       // 2. Verify all 5 persistent bottom navigation tabs (Flo-style standard navigation)
       expect(find.text('Home'), findsOneWidget);

@@ -1,4 +1,4 @@
-/// The 6 investigative stages of a Mind Forensics case.
+/// The 6 investigative stages of a Mindora case.
 ///
 /// Section 3: "A case moves through stages:
 /// 1. Incident -> 2. Evidence -> 3. Hypotheses ->
@@ -45,4 +45,3 @@ enum CaseStage {
   final String title;
   final String subtitle;
 }
-

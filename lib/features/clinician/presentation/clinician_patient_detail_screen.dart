@@ -12,7 +12,9 @@ import '../../../core/widgets/mind_card.dart';
 import '../../../core/widgets/mind_pill.dart';
 import '../../../core/widgets/mind_segmented.dart';
 import '../../../core/widgets/smooth_spline_chart.dart';
+import '../../insights/domain/forensic_loop_model.dart';
 import '../../insights/domain/personal_baseline_model.dart';
+import '../../insights/presentation/widgets/forensic_loop_map_card.dart';
 import '../../insights/presentation/widgets/observed_stabilizers_card.dart';
 import '../../mind_trace/domain/affect_taxonomy.dart';
 import '../../mind_trace/domain/daily_context_tags.dart';
@@ -779,6 +781,34 @@ class _ClinicianPatientDetailScreenState
             strings: strings,
           ),
         ],
+
+        // Observed Forensic Loop (privacy-respecting: non-private cases only)
+        if (scope.includeMoodMetrics)
+          Builder(
+            builder: (context) {
+              final loop = ForensicLoopLink.synthesize(
+                baseline: baseline,
+                cases: scope.includeSharedCases
+                    ? packet.sharedCases
+                    : const [],
+                strings: strings,
+                excludePrivateCases: true,
+                includeSomatic: scope.includeSleepEnergyAnxiety,
+              );
+              if (!loop.hasSufficientSignal) {
+                return const SizedBox.shrink();
+              }
+              return Column(
+                children: [
+                  const SizedBox(height: 16),
+                  ForensicLoopMapCard(
+                    loop: loop,
+                    strings: strings,
+                  ),
+                ],
+              );
+            },
+          ),
       ],
     );
   }

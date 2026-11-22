@@ -25,8 +25,10 @@ import '../../progress/data/progress_analytics_service.dart';
 import '../../progress/domain/progress_analytics_model.dart';
 import '../../track/presentation/widgets/track_mood_utils.dart';
 import '../data/pattern_awareness_service.dart';
+import '../domain/forensic_loop_model.dart';
 import '../domain/pattern_divergence_model.dart';
 import '../domain/personal_baseline_model.dart';
+import 'widgets/forensic_loop_map_card.dart';
 import 'widgets/observed_stabilizers_card.dart';
 
 /// Insights destination: Turns self-observation into personal understanding.
@@ -250,6 +252,31 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
               ),
               const SizedBox(height: 18),
             ],
+
+            // 2e. Observed Forensic Loop (Context -> Affect -> Thought -> Stabilizer)
+            Builder(
+              builder: (context) {
+                final loop = ForensicLoopLink.synthesize(
+                  baseline: baseline,
+                  cases: cases,
+                  strings: strings,
+                  excludePrivateCases: false,
+                  includeSomatic: true,
+                );
+                if (!loop.hasSufficientSignal) {
+                  return const SizedBox.shrink();
+                }
+                return Column(
+                  children: [
+                    ForensicLoopMapCard(
+                      loop: loop,
+                      strings: strings,
+                    ),
+                    const SizedBox(height: 18),
+                  ],
+                );
+              },
+            ),
 
             // 3. Your Patterns Section
             _buildYourPatternsSection(

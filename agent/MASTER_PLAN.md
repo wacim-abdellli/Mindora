@@ -1,7 +1,7 @@
-# Mind Forensics — Store-Mastery Product, UI/UX & Engineering Master Plan
+# Mindora — Store-Mastery Product, UI/UX & Engineering Master Plan
 
 > **How to Use This Plan (Especially in a Brand-New Conversation):**  
-> This document is the single complete source of truth for **Mind Forensics v1.0 -> Market Launch**. Every file path, widget class, visual flaw, color hex, typography rule, micro-interaction timing, safety check, and acceptance test below was verified directly against the repository and rendered visual QA screenshots (`01`–`08`).  
+> This document is the single complete source of truth for **Mindora v1.0 -> Market Launch**. Every file path, widget class, visual flaw, color hex, typography rule, micro-interaction timing, safety check, and acceptance test below was verified directly against the repository and rendered visual QA screenshots (`01`–`08`).  
 > Before writing code in any step, read:
 > 1. [`AGENTS.md`](../AGENTS.md)
 > 2. [`.agent/skills/mind-forensics/SKILL.md`](../.agent/skills/mind-forensics/SKILL.md)
@@ -13,7 +13,7 @@
 ## 1. Strategic Store Thesis & Psychological Differentiation
 
 ### 1.1 Why Most Mental Health Apps Fail After Day 3
-| Failure Mode in Store Competitors | How Mind Forensics Wins |
+| Failure Mode in Store Competitors | How Mindora Wins |
 | :--- | :--- |
 | **Static Diaries (Daylio / Apple Journal):** Require daily willpower to type notes; offer no calming intervention when distress spikes. | **Active 10-Second Loop:** Tap 1 mood -> slide intensity -> immediately see optional **Breathing Reset**, **Thought Reframe**, or **AI Guide** in 1 tap. |
 | **Paywalled / Scripted English Chatbots (Wysa / Woebot):** Repetitive bot templates, English-only bias, aggressive Day-2 paywalls. | **Natural Trilingual Empathy (`EN / FR / Tunisian AR`):** Built-in Tunisian dialect support, local crisis lines (`80 10 50 50`, `190`, `198`), offline-first encrypted vault, and Groq/Gemini text intelligence. |

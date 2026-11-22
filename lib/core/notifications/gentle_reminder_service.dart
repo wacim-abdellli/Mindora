@@ -17,7 +17,7 @@ final gentleReminderServiceProvider = Provider<GentleReminderService>((ref) {
 /// invasive exact-alarm permissions or cloud push servers.
 class GentleReminderService {
   GentleReminderService({FlutterLocalNotificationsPlugin? plugin})
-      : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+    : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
   final FlutterLocalNotificationsPlugin _plugin;
   bool _initialized = false;
@@ -62,14 +62,18 @@ class GentleReminderService {
     try {
       await _ensureInitialized();
       if (defaultTargetPlatform == TargetPlatform.android) {
-        final androidImpl = _plugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+        final androidImpl = _plugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
         final granted = await androidImpl?.requestNotificationsPermission();
         return granted ?? true;
       }
       if (defaultTargetPlatform == TargetPlatform.iOS) {
-        final iosImpl = _plugin.resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>();
+        final iosImpl = _plugin
+            .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin
+            >();
         final granted = await iosImpl?.requestPermissions(
           alert: true,
           badge: false,
@@ -115,15 +119,15 @@ class GentleReminderService {
       await _plugin.cancel(id: _reminderNotificationId);
 
       final title = strings.isArabic
-          ? 'تذكير لطيف — Mind Forensics'
+          ? 'تذكير لطيف — Mindora'
           : (strings.isFrench
-              ? 'Rappel doux — Mind Forensics'
-              : 'Gentle Check-In — Mind Forensics');
+                ? 'Rappel doux — Mindora'
+                : 'Gentle Check-In — Mindora');
       final body = strings.isArabic
           ? 'أثر ذهنك اليومي ينتظرك وقتما تكون مستعداً، بدون أي ضغط.'
           : (strings.isFrench
-              ? 'Votre empreinte du jour vous attend quand vous êtes prêt(e).'
-              : 'Your daily Mind Trace is waiting whenever you feel ready.');
+                ? 'Votre empreinte du jour vous attend quand vous êtes prêt(e).'
+                : 'Your daily Mind Trace is waiting whenever you feel ready.');
 
       const androidDetails = AndroidNotificationDetails(
         _channelId,
@@ -162,4 +166,3 @@ class GentleReminderService {
     } catch (_) {}
   }
 }
-

@@ -15,7 +15,10 @@ class EditGoalsSheet extends ConsumerStatefulWidget {
 
   final PsychologicalProfileModel profile;
 
-  static Future<void> show(BuildContext context, PsychologicalProfileModel profile) {
+  static Future<void> show(
+    BuildContext context,
+    PsychologicalProfileModel profile,
+  ) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -36,7 +39,9 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
   void initState() {
     super.initState();
     _selectedGoals = Set.from(widget.profile.selectedGoals);
-    _customGoalController = TextEditingController(text: widget.profile.customGoal);
+    _customGoalController = TextEditingController(
+      text: widget.profile.customGoal,
+    );
   }
 
   @override
@@ -47,10 +52,12 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
 
   Future<void> _save() async {
     HapticFeedback.mediumImpact();
-    await ref.read(profileControllerProvider.notifier).updateGoals(
-      selectedGoals: _selectedGoals.toList(),
-      customGoal: _customGoalController.text.trim(),
-    );
+    await ref
+        .read(profileControllerProvider.notifier)
+        .updateGoals(
+          selectedGoals: _selectedGoals.toList(),
+          customGoal: _customGoalController.text.trim(),
+        );
 
     if (mounted) {
       Navigator.pop(context);
@@ -68,7 +75,9 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
     final textSecondary = tokens.ink2;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         height: MediaQuery.of(context).size.height * 0.85,
         decoration: BoxDecoration(
@@ -105,8 +114,8 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
               const SizedBox(height: 4),
               Text(
                 strings.isArabic
-                    ? 'ما الذي ترغب في استيعابه أو تطويره من خلال Mind Forensics؟'
-                    : 'What would you like to understand or improve through Mind Forensics?',
+                    ? 'ما الذي ترغب في استيعابه أو تطويره من خلال Mindora؟'
+                    : 'What would you like to understand or improve through Mindora?',
                 style: TextStyle(fontSize: 11.5, color: textSecondary),
               ),
 
@@ -120,7 +129,8 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
                   children: [
                     ...ProfileGoalsCatalog.standardGoals.map((goal) {
                       final label = goal.localized(strings);
-                      final isSelected = _selectedGoals.contains(label) ||
+                      final isSelected =
+                          _selectedGoals.contains(label) ||
                           _selectedGoals.contains(goal.english) ||
                           _selectedGoals.contains(goal.french) ||
                           _selectedGoals.contains(goal.arabic);
@@ -144,7 +154,10 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
                           borderRadius: BorderRadius.circular(8),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 140),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
                             decoration: BoxDecoration(
                               color: isSelected
                                   ? context.tokens.cardTint
@@ -158,9 +171,13 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
                             child: Row(
                               children: [
                                 Icon(
-                                  isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                                  isSelected
+                                      ? Icons.check_circle_rounded
+                                      : Icons.radio_button_unchecked_rounded,
                                   size: 16,
-                                  color: isSelected ? context.tokens.ink : textSecondary,
+                                  color: isSelected
+                                      ? context.tokens.ink
+                                      : textSecondary,
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
@@ -168,7 +185,9 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
                                     label,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
                                       color: isSelected
                                           ? context.tokens.ink
                                           : textPrimary,
@@ -189,8 +208,8 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
                       (strings.isArabic
                               ? 'هدف شخصي مخصص'
                               : (strings.isFrench
-                                  ? 'OBJECTIF PERSONNEL PERSONNALISÉ'
-                                  : 'CUSTOM PERSONAL GOAL'))
+                                    ? 'OBJECTIF PERSONNEL PERSONNALISÉ'
+                                    : 'CUSTOM PERSONAL GOAL'))
                           .toUpperCase(),
                       style: TextStyle(
                         fontSize: 10,
@@ -207,15 +226,30 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
                         hintText: strings.isArabic
                             ? 'أضف هدفاً إضافياً خاصاً بك...'
                             : (strings.isFrench
-                                ? 'Saisissez tout autre objectif important pour vous...'
-                                : 'Enter any other goal meaningful to you...'),
-                        hintStyle: TextStyle(fontSize: 11.5, color: textSecondary.withValues(alpha: 0.6)),
+                                  ? 'Saisissez tout autre objectif important pour vous...'
+                                  : 'Enter any other goal meaningful to you...'),
+                        hintStyle: TextStyle(
+                          fontSize: 11.5,
+                          color: textSecondary.withValues(alpha: 0.6),
+                        ),
                         filled: true,
                         fillColor: context.tokens.surface2,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: border)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: border)),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: context.tokens.ink)),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: context.tokens.ink),
+                        ),
                       ),
                     ),
 
@@ -234,15 +268,17 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
                   height: 46,
                   decoration: BoxDecoration(
                     color: context.tokens.ink,
-                    borderRadius: BorderRadius.circular(context.tokens.buttonRadius),
+                    borderRadius: BorderRadius.circular(
+                      context.tokens.buttonRadius,
+                    ),
                   ),
                   alignment: Alignment.center,
                   child: Text(
                     (strings.isArabic
                             ? 'حفظ الأهداف'
                             : (strings.isFrench
-                                ? 'ENREGISTRER LES OBJECTIFS'
-                                : 'SAVE GOALS'))
+                                  ? 'ENREGISTRER LES OBJECTIFS'
+                                  : 'SAVE GOALS'))
                         .toUpperCase(),
                     style: TextStyle(
                       fontSize: 11.5,
@@ -260,4 +296,3 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
     );
   }
 }
-

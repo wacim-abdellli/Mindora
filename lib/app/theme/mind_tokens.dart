@@ -30,7 +30,7 @@ enum AppMood {
   }
 }
 
-/// Unified design tokens powering Mind Forensics across Light ("Dawn") and
+/// Unified design tokens powering Mindora across Light ("Dawn") and
 /// Dark ("Vercel") themes.
 ///
 /// Feature screens and shared widgets read colors, shapes, spacing, and dynamic

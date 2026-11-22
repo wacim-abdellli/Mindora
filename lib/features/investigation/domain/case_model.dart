@@ -4,7 +4,7 @@ import 'forensic_chain.dart';
 import 'hypothesis.dart';
 import 'statement.dart';
 
-/// The central entity of the Mind Forensics application: The Case / AI Companion Conversation.
+/// The central entity of the Mindora application: The Case / AI Companion Conversation.
 ///
 /// Section 3 & 7: "Everything revolves around a Case, one investigation
 /// of a thought, reaction, or recurring pattern."
@@ -131,34 +131,38 @@ class CaseModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'userId': userId,
-        'caseNumber': caseNumber,
-        'title': title,
-        'conversationMode': conversationMode.name,
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt.toIso8601String(),
-        'currentStage': currentStage.name,
-        'incidentDescription': incidentDescription,
-        'chain': chain?.toJson(),
-        'statements': statements.map((s) => s.toJson()).toList(),
-        'hypotheses': hypotheses.map((h) => h.toJson()).toList(),
-        'findingsSummary': findingsSummary,
-        'sessionSummary': sessionSummary,
-        'userConclusion': userConclusion,
-        'emotionTags': emotionTags,
-        'isCompleted': isCompleted,
-        'isPausedForSafety': isPausedForSafety,
-        'isPrivate': isPrivate,
-      };
+    'id': id,
+    'userId': userId,
+    'caseNumber': caseNumber,
+    'title': title,
+    'conversationMode': conversationMode.name,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+    'currentStage': currentStage.name,
+    'incidentDescription': incidentDescription,
+    'chain': chain?.toJson(),
+    'statements': statements.map((s) => s.toJson()).toList(),
+    'hypotheses': hypotheses.map((h) => h.toJson()).toList(),
+    'findingsSummary': findingsSummary,
+    'sessionSummary': sessionSummary,
+    'userConclusion': userConclusion,
+    'emotionTags': emotionTags,
+    'isCompleted': isCompleted,
+    'isPausedForSafety': isPausedForSafety,
+    'isPrivate': isPrivate,
+  };
 
   factory CaseModel.fromJson(Map<String, dynamic> json) {
     final rawNumber = json['caseNumber'] as String? ?? 'SESSION 01';
     final digitsMatch = RegExp(r'\d+').firstMatch(rawNumber);
-    final num = digitsMatch != null ? int.tryParse(digitsMatch.group(0) ?? '') : null;
+    final num = digitsMatch != null
+        ? int.tryParse(digitsMatch.group(0) ?? '')
+        : null;
     final normalizedNumber = num != null
         ? 'SESSION ${num.toString().padLeft(2, '0')}'
-        : (rawNumber.startsWith('CASE ') ? rawNumber.replaceFirst('CASE ', 'SESSION ') : rawNumber);
+        : (rawNumber.startsWith('CASE ')
+              ? rawNumber.replaceFirst('CASE ', 'SESSION ')
+              : rawNumber);
 
     ConversationMode parsedMode = ConversationMode.exploreThought;
     final rawMode = json['conversationMode'] as String?;
@@ -175,8 +179,12 @@ class CaseModel {
       caseNumber: normalizedNumber,
       title: json['title'] as String? ?? 'Untitled Session',
       conversationMode: parsedMode,
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
-      updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
+      updatedAt:
+          DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
+          DateTime.now(),
       currentStage: CaseStage.values.firstWhere(
         (s) => s.name == json['currentStage'],
         orElse: () => CaseStage.incident,
@@ -185,18 +193,23 @@ class CaseModel {
       chain: json['chain'] != null
           ? ForensicChain.fromJson(json['chain'] as Map<String, dynamic>)
           : null,
-      statements: (json['statements'] as List<dynamic>?)
+      statements:
+          (json['statements'] as List<dynamic>?)
               ?.map((e) => Statement.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
-      hypotheses: (json['hypotheses'] as List<dynamic>?)
+      hypotheses:
+          (json['hypotheses'] as List<dynamic>?)
               ?.map((e) => Hypothesis.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
       findingsSummary: json['findingsSummary'] as String?,
       sessionSummary: json['sessionSummary'] as String?,
       userConclusion: json['userConclusion'] as String?,
-      emotionTags: (json['emotionTags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+      emotionTags:
+          (json['emotionTags'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
           const [],
       isCompleted: json['isCompleted'] as bool? ?? false,
       isPausedForSafety: json['isPausedForSafety'] as bool? ?? false,
@@ -204,4 +217,3 @@ class CaseModel {
     );
   }
 }
-

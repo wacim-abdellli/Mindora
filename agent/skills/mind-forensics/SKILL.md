@@ -1,11 +1,11 @@
 ---
 name: mind-forensics
-description: Comprehensive architecture, clinical guidelines, Vercel dark styling, and development runbook for the Mind Forensics mobile application. Use whenever reading or modifying screens, cognitive workflows, translations (EN, FR, AR), or safety interceptors.
+description: Comprehensive architecture, clinical guidelines, Vercel dark styling, and development runbook for the Mindora mobile application. Use whenever reading or modifying screens, cognitive workflows, translations (EN, FR, AR), or safety interceptors.
 ---
 
-# Mind Forensics Agent Skill — Neuro-Cognitive Deconstruction
+# Mindora Agent Skill — Neuro-Cognitive Deconstruction
 
-This skill defines the technical and clinical architecture of the **Mind Forensics** application. Any autonomous agent working on this codebase MUST follow these operational guidelines.
+This skill defines the technical and clinical architecture of the **Mindora** application. Any autonomous agent working on this codebase MUST follow these operational guidelines.
 
 ---
 

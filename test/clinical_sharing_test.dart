@@ -175,7 +175,7 @@ void main() {
         strings: stringsAr,
       );
 
-      expect(briefAr, contains('MIND FORENSICS — ملخص الجلسات السريري'));
+      expect(briefAr, contains('Mindora — ملخص الجلسات السريري'));
       expect(briefAr, contains('مستوحاة من مبادئ العلاج السلوكي المعرفي (CBT)'));
       expect(briefAr, contains('الفرضيات المولدة بواسطة الذكاء الاصطناعي هي نماذج فكرية استكشافية'));
       expect(briefAr, contains('لا يتنبأ بالانتكاس النفسي'));

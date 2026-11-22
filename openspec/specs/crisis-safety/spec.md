@@ -1,7 +1,7 @@
 # Capability: Crisis Safety & Interception
 
 ## Overview
-Mind Forensics operates a dual-layer, offline-first safety system to detect crisis indicators and connect Tunisian users with immediate emergency services, while strictly enforcing clinical non-diagnostic boundaries.
+Mindora operates a dual-layer, offline-first safety system to detect crisis indicators and connect Tunisian users with immediate emergency services, while strictly enforcing clinical non-diagnostic boundaries.
 
 ## Requirements
 

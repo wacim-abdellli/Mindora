@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../app/localization/app_strings.dart';
 
-/// Categories of compressed journal memory in Mind Forensics.
+/// Categories of compressed journal memory in Mindora.
 enum JournalMemoryCategory {
   /// Information explicitly shared by the user (preferences, personal context, goals).
   userStatedContext,
@@ -38,6 +38,7 @@ enum JournalMemoryCategory {
         return 'Tentative Observation';
     }
   }
+
   String localized(AppStrings strings) {
     if (strings.isArabic) {
       switch (this) {
@@ -229,9 +230,12 @@ class JournalMemoryModel {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  bool get isConfirmed => confirmationStatus == MemoryConfirmationStatus.confirmed;
-  bool get isRejected => confirmationStatus == MemoryConfirmationStatus.rejected;
-  bool get isTentative => evidenceStatus == MemoryEvidenceStatus.tentativeHypothesis;
+  bool get isConfirmed =>
+      confirmationStatus == MemoryConfirmationStatus.confirmed;
+  bool get isRejected =>
+      confirmationStatus == MemoryConfirmationStatus.rejected;
+  bool get isTentative =>
+      evidenceStatus == MemoryEvidenceStatus.tentativeHypothesis;
   bool get isRecurring => observationCount >= 2;
 
   JournalMemoryModel copyWith({
@@ -293,7 +297,8 @@ class JournalMemoryModel {
         orElse: () => JournalMemoryCategory.userStatedContext,
       ),
       summary: json['summary'] as String,
-      sourceEntryIds: (json['sourceEntryIds'] as List<dynamic>?)
+      sourceEntryIds:
+          (json['sourceEntryIds'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           [],

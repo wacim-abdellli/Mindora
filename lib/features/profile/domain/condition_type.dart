@@ -1,6 +1,6 @@
 import '../../../app/localization/app_strings.dart';
 
-/// Mental health conditions and lived experiences supported in Mind Forensics.
+/// Mental health conditions and lived experiences supported in Mindora.
 ///
 /// Strictly non-pathologizing: selection does not assume a clinical diagnosis.
 enum ConditionType {

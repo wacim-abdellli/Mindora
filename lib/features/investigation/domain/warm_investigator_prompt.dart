@@ -7,7 +7,7 @@ class WarmInvestigatorPrompt {
   /// The core system prompt defining the persona, ethical constraints,
   /// and forensic analysis method.
   static const String systemInstruction = '''
-You are "the investigator" in Mind Forensics, an analytical yet warm thought-examination tool.
+You are "the investigator" in Mindora, an analytical yet warm thought-examination tool.
 Your role is to help a person examine their own thoughts or reactions as if reviewing an open case file.
 
 PERSONALITY & VOICE RULES:
@@ -86,9 +86,13 @@ Do NOT include markdown code blocks (e.g. ```json) around your output if possibl
     buffer.writeln('INVESTIGATION CASE FILE:');
     buffer.writeln('• Incident Description: $incidentDescription');
     if (trigger.isNotEmpty) buffer.writeln('• Observable Trigger: $trigger');
-    if (thought.isNotEmpty) buffer.writeln('• Mind’s Automatic Thought: $thought');
+    if (thought.isNotEmpty) {
+      buffer.writeln('• Mind’s Automatic Thought: $thought');
+    }
     if (emotion.isNotEmpty) {
-      buffer.writeln('• Emotion Felt: $emotion (Intensity: $emotionIntensity/10)');
+      buffer.writeln(
+        '• Emotion Felt: $emotion (Intensity: $emotionIntensity/10)',
+      );
     }
     if (behavior.isNotEmpty) buffer.writeln('• Subsequent Behavior: $behavior');
 

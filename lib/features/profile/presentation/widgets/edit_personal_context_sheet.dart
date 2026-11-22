@@ -14,7 +14,10 @@ class EditPersonalContextSheet extends ConsumerStatefulWidget {
 
   final PsychologicalProfileModel profile;
 
-  static Future<void> show(BuildContext context, PsychologicalProfileModel profile) {
+  static Future<void> show(
+    BuildContext context,
+    PsychologicalProfileModel profile,
+  ) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -50,9 +53,9 @@ class _EditPersonalContextSheetState
 
   Future<void> _save() async {
     HapticFeedback.mediumImpact();
-    await ref.read(profileControllerProvider.notifier).updatePersonalContext(
-      _contextController.text.trim(),
-    );
+    await ref
+        .read(profileControllerProvider.notifier)
+        .updatePersonalContext(_contextController.text.trim());
 
     if (mounted) {
       Navigator.pop(context);
@@ -70,7 +73,9 @@ class _EditPersonalContextSheetState
     final textSecondary = tokens.ink2;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         decoration: BoxDecoration(
           color: bg,
@@ -99,10 +104,10 @@ class _EditPersonalContextSheetState
 
                 Text(
                   strings.isArabic
-                      ? 'ما الذي ترغب أن يدركه Mind Forensics عنك؟'
+                      ? 'ما الذي ترغب أن يدركه Mindora عنك؟'
                       : (strings.isFrench
-                          ? 'Que souhaitez-vous que Mind Forensics comprenne de vous ?'
-                          : 'What would you like Mind Forensics to understand about you?'),
+                            ? 'Que souhaitez-vous que Mindora comprenne de vous ?'
+                            : 'What would you like Mindora to understand about you?'),
                   style: LabTheme.textStyle(
                     fontSize: 16,
                     height: 1.3,
@@ -115,9 +120,13 @@ class _EditPersonalContextSheetState
                   strings.isArabic
                       ? 'يمكنك مشاركة أي شيء يجعل تجربتك أكثر عمقاً وأماناً: تاريخك الشخصي، ما يمر بك، ما يساعدك، أو أي سياق تراه مهماً.'
                       : (strings.isFrench
-                          ? 'Partagez tout ce qui donne du sens à votre suivi : votre parcours, vos défis actuels, ce qui vous aide ou ce qui compte pour vous.'
-                          : 'You can share anything that might help make your experience more meaningful. Your personal history, current challenges, what helps you, or anything you feel is important.'),
-                  style: TextStyle(fontSize: 11.5, height: 1.4, color: textSecondary),
+                            ? 'Partagez tout ce qui donne du sens à votre suivi : votre parcours, vos défis actuels, ce qui vous aide ou ce qui compte pour vous.'
+                            : 'You can share anything that might help make your experience more meaningful. Your personal history, current challenges, what helps you, or anything you feel is important.'),
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    height: 1.4,
+                    color: textSecondary,
+                  ),
                 ),
 
                 const SizedBox(height: 18),
@@ -125,20 +134,36 @@ class _EditPersonalContextSheetState
                 TextField(
                   controller: _contextController,
                   maxLines: 8,
-                  style: TextStyle(fontSize: 13, height: 1.45, color: textPrimary),
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.45,
+                    color: textPrimary,
+                  ),
                   decoration: InputDecoration(
                     hintText: strings.isArabic
                         ? 'اكتب براحتك وسرية تامة... هذه المساحة آمنة وخاصة بجهازك.'
                         : (strings.isFrench
-                            ? 'Écrivez librement sans pression... cet espace reste privé et uniquement sur votre appareil.'
-                            : 'Share freely and without pressure... this space is private and stored only on your device.'),
-                    hintStyle: TextStyle(fontSize: 12, color: textSecondary.withValues(alpha: 0.6)),
+                              ? 'Écrivez librement sans pression... cet espace reste privé et uniquement sur votre appareil.'
+                              : 'Share freely and without pressure... this space is private and stored only on your device.'),
+                    hintStyle: TextStyle(
+                      fontSize: 12,
+                      color: textSecondary.withValues(alpha: 0.6),
+                    ),
                     filled: true,
                     fillColor: context.tokens.surface2,
                     contentPadding: const EdgeInsets.all(14),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: border)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: border)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: context.tokens.ink)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: border),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: border),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: context.tokens.ink),
+                    ),
                   ),
                 ),
 
@@ -151,15 +176,17 @@ class _EditPersonalContextSheetState
                     height: 46,
                     decoration: BoxDecoration(
                       color: context.tokens.ink,
-                      borderRadius: BorderRadius.circular(context.tokens.buttonRadius),
+                      borderRadius: BorderRadius.circular(
+                        context.tokens.buttonRadius,
+                      ),
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       (strings.isArabic
                               ? 'حفظ السياق الشخصي'
                               : (strings.isFrench
-                                  ? 'ENREGISTRER LE CONTEXTE'
-                                  : 'SAVE PERSONAL CONTEXT'))
+                                    ? 'ENREGISTRER LE CONTEXTE'
+                                    : 'SAVE PERSONAL CONTEXT'))
                           .toUpperCase(),
                       style: TextStyle(
                         fontSize: 11.5,
@@ -178,4 +205,3 @@ class _EditPersonalContextSheetState
     );
   }
 }
-

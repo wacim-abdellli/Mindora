@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../../../app/localization/app_strings.dart';
 import '../../../app/theme/lab_theme.dart';
 import '../../../core/widgets/mind_qr_code.dart';
+import '../../insights/domain/forensic_loop_model.dart';
 import '../../mind_trace/domain/affect_taxonomy.dart';
 import '../../mind_trace/domain/daily_context_tags.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
@@ -105,10 +106,10 @@ class ClinicalBriefPdfService {
 
     // Header
     final title = strings.isArabic
-        ? 'MIND FORENSICS — ملخص استشارة سريري'
+        ? 'Mindora — ملخص استشارة سريري'
         : (strings.isFrench
-              ? 'MIND FORENSICS — SYNTHÈSE DE CONSULTATION'
-              : 'MIND FORENSICS — CLINICAL CONSULTATION BRIEF');
+              ? 'Mindora — SYNTHÈSE DE CONSULTATION'
+              : 'Mindora — CLINICAL CONSULTATION BRIEF');
     y += drawText(
       title,
       x: margin,
@@ -231,13 +232,7 @@ class ClinicalBriefPdfService {
       ],
     ];
     for (final line in metricLines) {
-      y += drawText(
-        line,
-        x: margin,
-        top: y,
-        maxWidth: contentW,
-        fontSize: 17,
-      );
+      y += drawText(line, x: margin, top: y, maxWidth: contentW, fontSize: 17);
       y += 6;
     }
 
@@ -318,16 +313,19 @@ class ClinicalBriefPdfService {
       if (scope.includeSleepEnergyAnxiety &&
           baseline.contextTagCorrelations.isNotEmpty &&
           y < bodyMaxY - 50) {
-        final tagLines = baseline.contextTagCorrelations.take(4).map((c) {
-          final label = DailyContextTags.localizedLabel(c.tagKey, strings);
-          final mood = c.avgMoodIntensity != null
-              ? ', ${c.avgMoodIntensity!.toStringAsFixed(1)}/10'
-              : '';
-          final sleep = c.avgSleepHours != null
-              ? ', ${c.avgSleepHours!.toStringAsFixed(1)}h'
-              : '';
-          return '$label (${c.occurrences}x$mood$sleep)';
-        }).join(' | ');
+        final tagLines = baseline.contextTagCorrelations
+            .take(4)
+            .map((c) {
+              final label = DailyContextTags.localizedLabel(c.tagKey, strings);
+              final mood = c.avgMoodIntensity != null
+                  ? ', ${c.avgMoodIntensity!.toStringAsFixed(1)}/10'
+                  : '';
+              final sleep = c.avgSleepHours != null
+                  ? ', ${c.avgSleepHours!.toStringAsFixed(1)}h'
+                  : '';
+              return '$label (${c.occurrences}x$mood$sleep)';
+            })
+            .join(' | ');
         y += drawText(
           '${strings.dailyContextSectionTitle}: $tagLines',
           x: margin,
@@ -341,13 +339,16 @@ class ClinicalBriefPdfService {
       if (scope.includeMoodMetrics &&
           baseline.recoveryLedger.hasEvidence &&
           y < bodyMaxY - 50) {
-        final stabs = baseline.recoveryLedger.stabilizers.take(4).map((s) {
-          final label = s.localizedLabel(strings);
-          final shift = s.avgSameDayShift != null && s.avgSameDayShift! < 0
-              ? ' (${s.avgSameDayShift!.toStringAsFixed(1)}/10)'
-              : '';
-          return '$label (${s.totalOccurrences}x)$shift';
-        }).join(' | ');
+        final stabs = baseline.recoveryLedger.stabilizers
+            .take(4)
+            .map((s) {
+              final label = s.localizedLabel(strings);
+              final shift = s.avgSameDayShift != null && s.avgSameDayShift! < 0
+                  ? ' (${s.avgSameDayShift!.toStringAsFixed(1)}/10)'
+                  : '';
+              return '$label (${s.totalOccurrences}x)$shift';
+            })
+            .join(' | ');
         y += drawText(
           '${strings.observedStabilizersTitle}: $stabs',
           x: margin,
@@ -357,6 +358,27 @@ class ClinicalBriefPdfService {
           weight: FontWeight.w600,
         );
         y += 14;
+      }
+
+      if (scope.includeMoodMetrics && y < bodyMaxY - 55) {
+        final loop = ForensicLoopLink.synthesize(
+          baseline: baseline,
+          cases: scope.includeSharedCases ? packet.sharedCases : const [],
+          strings: strings,
+          excludePrivateCases: true,
+          includeSomatic: scope.includeSleepEnergyAnxiety,
+        );
+        if (loop.hasSufficientSignal) {
+          y += drawText(
+            '${strings.forensicLoopMapTitle}: ${loop.compactSummary(strings)}',
+            x: margin,
+            top: y,
+            maxWidth: contentW,
+            fontSize: 15,
+            color: ink2,
+          );
+          y += 12;
+        }
       }
     }
 
@@ -381,12 +403,7 @@ class ClinicalBriefPdfService {
     final footerTop = _pageH - margin - footerHeight + 16;
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(
-          margin,
-          footerTop,
-          contentW,
-          footerHeight - 24,
-        ),
+        Rect.fromLTWH(margin, footerTop, contentW, footerHeight - 24),
         const Radius.circular(12),
       ),
       Paint()..color = boxBg,
@@ -442,8 +459,9 @@ class ClinicalBriefPdfService {
     final image = await picture.toImage(_pageW.toInt(), _pageH.toInt());
     try {
       final pngData = await image.toByteData(format: ui.ImageByteFormat.png);
-      final rgbaData =
-          await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      final rgbaData = await image.toByteData(
+        format: ui.ImageByteFormat.rawRgba,
+      );
       if (pngData == null || rgbaData == null) {
         throw StateError('Failed to rasterize consultation brief page.');
       }

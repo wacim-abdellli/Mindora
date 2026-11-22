@@ -17,10 +17,7 @@ import '../domain/mind_trace_model.dart';
 /// - Trilingual support (authentic Tunisian Arabic, French, English).
 /// - 0 emojis.
 class MindTraceAiService {
-  MindTraceAiService({
-    this.apiKey,
-    this.modelName = 'gemini-2.5-flash',
-  });
+  MindTraceAiService({this.apiKey, this.modelName = 'gemini-2.5-flash'});
 
   static const String kDevMockKey = 'DEV_MOCK_GEMINI_KEY';
 
@@ -34,7 +31,8 @@ class MindTraceAiService {
     required String languageCode,
     List<JourneyActivity>? availableActivities,
   }) async {
-    final hasConsent = profile != null &&
+    final hasConsent =
+        profile != null &&
         profile.shareWithAiCompanion &&
         profile.allowAiPersonalization;
 
@@ -44,7 +42,8 @@ class MindTraceAiService {
     if (!hasConsent) {
       return _generateLocalReflection(
         currentTrace: currentTrace,
-        history: const [], // Strict privacy: do not access past history without consent
+        history:
+            const [], // Strict privacy: do not access past history without consent
         profile: profile,
         languageCode: languageCode,
       );
@@ -84,7 +83,8 @@ class MindTraceAiService {
     final cleanKey = apiKey.trim();
     if (cleanKey.isEmpty || cleanKey == kDevMockKey) return null;
     // Defense-in-depth consent check
-    final hasConsent = profile != null &&
+    final hasConsent =
+        profile != null &&
         profile.shareWithAiCompanion &&
         profile.allowAiPersonalization;
     if (!hasConsent) return null;
@@ -92,8 +92,9 @@ class MindTraceAiService {
     final canProceed = await DailyUsageLimiter.canMakeRequest();
     if (!canProceed) return null;
 
-    final systemInstruction = '''
-You are the Mind Forensics Psychological Companion providing a short, deeply compassionate, and scientifically informed Daily Mind Trace reflection.
+    final systemInstruction =
+        '''
+You are the Mindora Psychological Companion providing a short, deeply compassionate, and scientifically informed Daily Mind Trace reflection.
 
 CLINICAL GUIDELINES:
 1. ACKNOWLEDGE: Reflect the user's self-reported feelings, somatic state, and intensity in 1 gentle sentence.
@@ -121,27 +122,39 @@ ${languageCode == 'ar' ? '''
     promptBuffer.writeln('TODAY\'S CHECK-IN DATA:');
     promptBuffer.writeln('- Overall Mood: ${currentTrace.overallMood}');
     promptBuffer.writeln('- Intensity (1-10): ${currentTrace.moodIntensity}');
-    if (currentTrace.energyLevel != null && currentTrace.energyLevel! >= 1 && currentTrace.energyLevel! <= 10) {
-      promptBuffer.writeln('- Energy Level (1-10): ${currentTrace.energyLevel}');
+    if (currentTrace.energyLevel != null &&
+        currentTrace.energyLevel! >= 1 &&
+        currentTrace.energyLevel! <= 10) {
+      promptBuffer.writeln(
+        '- Energy Level (1-10): ${currentTrace.energyLevel}',
+      );
     }
     if (currentTrace.anxietyLevel != null) {
       promptBuffer.writeln('- Anxiety Level: ${currentTrace.anxietyLevel}');
     }
     if (currentTrace.selectedEmotions.isNotEmpty) {
-      promptBuffer.writeln('- Emotions: ${currentTrace.selectedEmotions.join(', ')}');
+      promptBuffer.writeln(
+        '- Emotions: ${currentTrace.selectedEmotions.join(', ')}',
+      );
     }
     if (currentTrace.sleepHours != null) {
       promptBuffer.writeln('- Sleep Hours: ${currentTrace.sleepHours}');
     }
     if (currentTrace.physicalTension != null) {
-      promptBuffer.writeln('- Physical Tension (1-10): ${currentTrace.physicalTension}');
+      promptBuffer.writeln(
+        '- Physical Tension (1-10): ${currentTrace.physicalTension}',
+      );
     }
     // Note: Raw journalText is strictly excluded across all AI prompt builders to protect personal diary privacy.
 
     if (history.isNotEmpty) {
-      promptBuffer.writeln('\nPREVIOUS CHECK-INS HISTORY (Past ${history.take(4).length} days):');
+      promptBuffer.writeln(
+        '\nPREVIOUS CHECK-INS HISTORY (Past ${history.take(4).length} days):',
+      );
       for (final h in history.take(4)) {
-        promptBuffer.writeln('• ${h.dateKey}: Mood=${h.overallMood}, Intensity=${h.moodIntensity}${h.energyLevel != null ? ', Energy=${h.energyLevel}' : ''}');
+        promptBuffer.writeln(
+          '• ${h.dateKey}: Mood=${h.overallMood}, Intensity=${h.moodIntensity}${h.energyLevel != null ? ', Energy=${h.energyLevel}' : ''}',
+        );
       }
     }
 
@@ -152,21 +165,18 @@ ${languageCode == 'ar' ? '''
     final payload = {
       'system_instruction': {
         'parts': [
-          {'text': systemInstruction}
-        ]
+          {'text': systemInstruction},
+        ],
       },
       'contents': [
         {
           'role': 'user',
           'parts': [
-            {'text': promptBuffer.toString()}
-          ]
-        }
+            {'text': promptBuffer.toString()},
+          ],
+        },
       ],
-      'generationConfig': {
-        'temperature': 0.6,
-        'maxOutputTokens': 200,
-      },
+      'generationConfig': {'temperature': 0.6, 'maxOutputTokens': 200},
     };
 
     HttpClient? client;
@@ -182,7 +192,8 @@ ${languageCode == 'ar' ? '''
 
       if (response.statusCode == 200) {
         await DailyUsageLimiter.recordRequest();
-        final Map<String, dynamic> decoded = jsonDecode(body) as Map<String, dynamic>;
+        final Map<String, dynamic> decoded =
+            jsonDecode(body) as Map<String, dynamic>;
         final candidates = decoded['candidates'] as List<dynamic>?;
         if (candidates != null && candidates.isNotEmpty) {
           final content = candidates.first['content'] as Map<String, dynamic>?;
@@ -214,10 +225,12 @@ ${languageCode == 'ar' ? '''
     final tension = currentTrace.physicalTension ?? 5;
 
     // Detect patterns across history
-    final hasHighTensionHistory = history.isNotEmpty &&
+    final hasHighTensionHistory =
+        history.isNotEmpty &&
         history.take(3).any((h) => (h.physicalTension ?? 0) >= 7);
 
-    final hasRepeatedOverwhelm = history.isNotEmpty &&
+    final hasRepeatedOverwhelm =
+        history.isNotEmpty &&
         history.take(3).where((h) => h.moodIntensity >= 7).length >= 2;
 
     if (isAr) {
@@ -249,4 +262,3 @@ ${languageCode == 'ar' ? '''
     }
   }
 }
-

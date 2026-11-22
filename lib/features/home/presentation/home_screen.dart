@@ -406,7 +406,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Mind Forensics',
+                        'Mindora',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -529,7 +529,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   ),
                                 ),
                                 alignment: Alignment.center,
-                                child: (preferredName != null &&
+                                child:
+                                    (preferredName != null &&
                                         preferredName.isNotEmpty &&
                                         preferredName != 'Friend')
                                     ? Text(
@@ -585,7 +586,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 20),
 
                 // 2b. BETWEEN-SESSION PSYCHIATRIST FOCUS CARD (Only when active)
-                if (activeFocusPlan != null && !activeFocusPlan.isDismissed) ...[
+                if (activeFocusPlan != null &&
+                    !activeFocusPlan.isDismissed) ...[
                   HomePostVisitFocusCard(
                     plan: activeFocusPlan,
                     onToggleItem: (itemId) => ref

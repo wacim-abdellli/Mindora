@@ -23,7 +23,7 @@ import '../../mind_trace/domain/mind_trace_model.dart';
 import '../../profile/controllers/profile_controller.dart';
 import '../../profile/domain/psychological_profile_model.dart';
 
-/// Fast 4-step, options-first onboarding for Mind Forensics.
+/// Fast 4-step, options-first onboarding for Mindora.
 ///
 /// Steps:
 /// 0: Welcome, live EN/FR/AR switcher, privacy promise & account restore link
@@ -52,7 +52,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   ];
 
   static const List<({String id, String canonicalGoal, IconData icon})>
-      _focusOptions = [
+  _focusOptions = [
     (
       id: 'stress',
       canonicalGoal: 'Ease stress & anxiety',
@@ -165,17 +165,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final draft =
         (currentProfile ?? PsychologicalProfileModel.empty(userId: userId))
             .copyWith(
-      ageRange: _selectedAgeRange,
-      selectedGoals: goalsList,
-      customGoal: customGoalText,
-      personalGoals: [
-        ...goalsList,
-        if (customGoalText.isNotEmpty) customGoalText,
-      ].join(', '),
-      professionalSupport: _selectedProfessionalSupport,
-      onboardingStep: _currentStep,
-      updatedAt: DateTime.now(),
-    );
+              ageRange: _selectedAgeRange,
+              selectedGoals: goalsList,
+              customGoal: customGoalText,
+              personalGoals: [
+                ...goalsList,
+                if (customGoalText.isNotEmpty) customGoalText,
+              ].join(', '),
+              professionalSupport: _selectedProfessionalSupport,
+              onboardingStep: _currentStep,
+              updatedAt: DateTime.now(),
+            );
     await ref.read(profileControllerProvider.notifier).saveFullProfile(draft);
   }
 
@@ -352,10 +352,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 layoutBuilder: (currentChild, previousChildren) {
                   return Stack(
                     alignment: Alignment.topCenter,
-                    children: [
-                      ...previousChildren,
-                      ?currentChild,
-                    ],
+                    children: [...previousChildren, ?currentChild],
                   );
                 },
                 child: _buildActiveStep(tokens, strings),
@@ -393,8 +390,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           .setLanguage(lang);
                     },
                     child: Container(
-                      constraints:
-                          const BoxConstraints(minWidth: 48, minHeight: 48),
+                      constraints: const BoxConstraints(
+                        minWidth: 48,
+                        minHeight: 48,
+                      ),
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       decoration: BoxDecoration(
                         color: selected
@@ -413,11 +412,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           lang.shortCode,
                           style: TextStyle(
                             fontSize: 12.5,
-                            fontWeight:
-                                selected ? FontWeight.w700 : FontWeight.w500,
-                            color: selected
-                                ? tokens.ink
-                                : tokens.ink2,
+                            fontWeight: selected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            color: selected ? tokens.ink : tokens.ink2,
                           ),
                         ),
                       ),
@@ -515,9 +513,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               decoration: BoxDecoration(
                 color: tokens.blobTintFor(tokens.m1),
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: tokens.m1.withValues(alpha: 0.25),
-                ),
+                border: Border.all(color: tokens.m1.withValues(alpha: 0.25)),
               ),
               alignment: Alignment.center,
               child: FingerprintThreadSignature(
@@ -541,11 +537,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const SizedBox(height: 12),
           Text(
             strings.onboardingWelcomeBody,
-            style: TextStyle(
-              fontSize: 14.5,
-              height: 1.55,
-              color: tokens.ink2,
-            ),
+            style: TextStyle(fontSize: 14.5, height: 1.55, color: tokens.ink2),
           ),
           const SizedBox(height: 24),
           MindCard(
@@ -579,8 +571,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               },
               child: Container(
                 constraints: const BoxConstraints(minHeight: 48),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 alignment: Alignment.center,
                 child: Wrap(
                   alignment: WrapAlignment.center,
@@ -591,10 +585,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     Text(
                       strings.alreadyHaveVaultPrompt,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: tokens.ink2,
-                      ),
+                      style: TextStyle(fontSize: 13, color: tokens.ink2),
                     ),
                     Text(
                       strings.signInPromptBtn,
@@ -637,11 +628,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const SizedBox(height: 8),
           Text(
             strings.onboardingFocusSubtitle,
-            style: TextStyle(
-              fontSize: 13.5,
-              height: 1.48,
-              color: tokens.ink2,
-            ),
+            style: TextStyle(fontSize: 13.5, height: 1.48, color: tokens.ink2),
           ),
           const SizedBox(height: 20),
           ..._focusOptions.map((option) {
@@ -663,8 +650,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 },
                 child: Container(
                   constraints: const BoxConstraints(minHeight: 54),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 13,
+                  ),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? tokens.selectedTintFor(tokens.m1)
@@ -680,8 +669,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       Icon(
                         option.icon,
                         size: 20,
-                        color:
-                            isSelected ? tokens.m1 : tokens.ink2,
+                        color: isSelected ? tokens.m1 : tokens.ink2,
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -689,8 +677,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           _focusLabel(option.id, strings),
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight:
-                                isSelected ? FontWeight.w600 : FontWeight.w500,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w500,
                             color: tokens.ink,
                           ),
                         ),
@@ -757,8 +746,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 hintStyle: TextStyle(color: tokens.ink3, fontSize: 13),
                 filled: true,
                 fillColor: tokens.surface2,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide(color: tokens.line),
@@ -820,11 +811,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const SizedBox(height: 8),
           Text(
             strings.onboardingComfortSubtitle,
-            style: TextStyle(
-              fontSize: 13.5,
-              height: 1.48,
-              color: tokens.ink2,
-            ),
+            style: TextStyle(fontSize: 13.5, height: 1.48, color: tokens.ink2),
           ),
           const SizedBox(height: 20),
           Text(
@@ -851,10 +838,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   _saveDraftProgress();
                 },
                 child: Container(
-                  constraints:
-                      const BoxConstraints(minWidth: 48, minHeight: 48),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  constraints: const BoxConstraints(
+                    minWidth: 48,
+                    minHeight: 48,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: selected
                         ? tokens.selectedTintFor(tokens.m1)
@@ -872,8 +863,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       display,
                       style: TextStyle(
                         fontSize: 13,
-                        fontWeight:
-                            selected ? FontWeight.w700 : FontWeight.w500,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                         color: selected ? tokens.ink : tokens.ink2,
                       ),
                     ),
@@ -948,8 +940,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 },
                 child: Container(
                   constraints: const BoxConstraints(minHeight: 50),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: selected
                         ? tokens.selectedTintFor(tokens.m1)
@@ -973,8 +967,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           opt.label,
                           style: TextStyle(
                             fontSize: 13.5,
-                            fontWeight:
-                                selected ? FontWeight.w600 : FontWeight.w500,
+                            fontWeight: selected
+                                ? FontWeight.w600
+                                : FontWeight.w500,
                             color: tokens.ink,
                           ),
                         ),
@@ -998,9 +993,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             decoration: BoxDecoration(
               color: tokens.safetySoft,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: tokens.safety.withValues(alpha: 0.3),
-              ),
+              border: Border.all(color: tokens.safety.withValues(alpha: 0.3)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1083,11 +1076,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const SizedBox(height: 8),
           Text(
             strings.onboardingFirstCheckInSubtitle,
-            style: TextStyle(
-              fontSize: 13.5,
-              height: 1.48,
-              color: tokens.ink2,
-            ),
+            style: TextStyle(fontSize: 13.5, height: 1.48, color: tokens.ink2),
           ),
           const SizedBox(height: 22),
           Text(
@@ -1113,8 +1102,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   setState(() => _selectedMood = mood.key);
                 },
                 child: Container(
-                  constraints:
-                      const BoxConstraints(minWidth: 96, minHeight: 48),
+                  constraints: const BoxConstraints(
+                    minWidth: 96,
+                    minHeight: 48,
+                  ),
                   padding: EdgeInsets.symmetric(
                     horizontal: selected ? 13.4 : 14.0,
                     vertical: selected ? 9.4 : 10.0,

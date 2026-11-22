@@ -1,7 +1,7 @@
 # Capability: Luxury Vercel Dark UI System
 
 ## Overview
-Mind Forensics adheres to a strict luxury dark design standard with precision hairline borders, high-contrast typography, and living secondary color accents.
+Mindora adheres to a strict luxury dark design standard with precision hairline borders, high-contrast typography, and living secondary color accents.
 
 ## Requirements
 

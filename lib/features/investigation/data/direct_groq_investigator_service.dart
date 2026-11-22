@@ -23,7 +23,7 @@ import 'mock_investigator_service.dart';
 ///
 /// Designed for zero-cost free-tier text reasoning via GroqCloud (`api.groq.com`)
 /// or an optional user-hosted proxy URL (`proxyUrl`), with:
-/// - Specialist Mind Forensics prompting (non-diagnostic, options-first, 0 emojis)
+/// - Specialist Mindora prompting (non-diagnostic, options-first, 0 emojis)
 /// - Strict privacy gates ([DirectGeminiInvestigatorService.canTransmitCaseData])
 /// - 50 queries/day limiter ([DailyUsageLimiter])
 /// - Automatic fallback to [MockInvestigatorService] when offline/limited,
@@ -52,7 +52,8 @@ class DirectGroqInvestigatorService implements InvestigatorService {
   final String modelName;
   final String proxyUrl;
   final HttpClient Function()? clientFactory;
-  final void Function(Uri url, Map<String, dynamic> payload)? onRequestAttempted;
+  final void Function(Uri url, Map<String, dynamic> payload)?
+  onRequestAttempted;
   final void Function(AiFallbackReason reason)? onFallback;
   final MockInvestigatorService _fallback = MockInvestigatorService();
 
@@ -61,7 +62,8 @@ class DirectGroqInvestigatorService implements InvestigatorService {
 
   bool get _hasProxy => proxyUrl.trim().isNotEmpty;
 
-  static bool isMockKey(String key) => DirectGeminiInvestigatorService.isMockKey(key);
+  static bool isMockKey(String key) =>
+      DirectGeminiInvestigatorService.isMockKey(key);
 
   Uri get _resolvedEndpoint {
     final trimmed = proxyUrl.trim();
@@ -280,7 +282,8 @@ class DirectGroqInvestigatorService implements InvestigatorService {
       compressedMemories: compressedMemories,
     );
 
-    final hasConsent = profile != null &&
+    final hasConsent =
+        profile != null &&
         profile.shareWithAiCompanion &&
         profile.allowAiPersonalization;
 
@@ -323,7 +326,8 @@ class DirectGroqInvestigatorService implements InvestigatorService {
     } else if (messages.last['role'] != 'user') {
       messages.add({
         'role': 'user',
-        'content': 'What stands out most here, and what single thread should we examine next?',
+        'content':
+            'What stands out most here, and what single thread should we examine next?',
       });
     }
 
@@ -334,7 +338,10 @@ class DirectGroqInvestigatorService implements InvestigatorService {
       }
 
       final mode = conversationMode ?? ConversationMode.exploreThought;
-      final validation = ConversationalPacingEnforcer.validateResponse(result, mode);
+      final validation = ConversationalPacingEnforcer.validateResponse(
+        result,
+        mode,
+      );
       if (validation.isValid) {
         return result;
       }
@@ -349,7 +356,9 @@ class DirectGroqInvestigatorService implements InvestigatorService {
           },
           ...messages.skip(1),
         ];
-        final retryResult = await _callChatCompletions(messages: conciseMessages);
+        final retryResult = await _callChatCompletions(
+          messages: conciseMessages,
+        );
         if (retryResult != null && retryResult.isNotEmpty) {
           return retryResult;
         }
@@ -393,7 +402,8 @@ class DirectGroqInvestigatorService implements InvestigatorService {
 
     final lang = languageCode ?? 'en';
     final chain = currentCase.chain;
-    final prompt = '''
+    final prompt =
+        '''
 Examine this cognitive case file:
 • Activating Incident: ${currentCase.incidentDescription}
 • Observable Trigger: ${chain?.trigger ?? 'Not provided'}
@@ -473,7 +483,8 @@ Provide exactly 3 distinct alternative hypotheses inside "hypotheses".
     }
 
     final lang = languageCode ?? 'en';
-    final prompt = '''
+    final prompt =
+        '''
 Target Hypothesis: "${hypothesis.title} — ${hypothesis.explanation}"
 Original Incident: "${currentCase.incidentDescription}"
 
@@ -531,7 +542,8 @@ Output strictly as JSON object: {"questions": ["question 1", "question 2", "ques
     }
 
     final lang = languageCode ?? 'en';
-    final prompt = '''
+    final prompt =
+        '''
 Synthesize findings for:
 • Incident: ${currentCase.incidentDescription}
 • Chain: Trigger: ${currentCase.chain?.trigger}, Thought: ${currentCase.chain?.thought}, Behavior: ${currentCase.chain?.behavior}
@@ -559,4 +571,3 @@ Write a 3-bullet structured cognitive summary separating observable facts from a
     );
   }
 }
-

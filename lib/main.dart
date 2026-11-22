@@ -42,7 +42,7 @@ class MindForensicsApp extends ConsumerWidget {
     final darkTokens = MindTokens.dark.withMood(activeMood);
 
     return MaterialApp.router(
-      title: 'Mind Forensics',
+      title: 'Mindora',
       debugShowCheckedModeBanner: false,
       theme: buildMindTheme(
         Brightness.light,

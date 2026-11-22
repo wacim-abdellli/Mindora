@@ -1,7 +1,7 @@
 # Capability: Clinical Session Briefs & Patient-Initiated Sharing
 
 ## Overview
-Mind Forensics implements Section 12 of the product concept: a patient-initiated, privacy-shielded clinical export system ("Session Brief") designed to assist users in preparing for consultations with licensed psychologists and healthcare professionals.
+Mindora implements Section 12 of the product concept: a patient-initiated, privacy-shielded clinical export system ("Session Brief") designed to assist users in preparing for consultations with licensed psychologists and healthcare professionals.
 
 ## Principles & Operational Constraints
 

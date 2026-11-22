@@ -1,7 +1,7 @@
 # Capability: Cognitive Deconstruction
 
 ## Overview
-Mind Forensics implements a structured 6-stage cognitive neuroscience deconstruction workflow designed to dismantle automatic cognitive distortions in under 60 seconds without essay journaling.
+Mindora implements a structured 6-stage cognitive neuroscience deconstruction workflow designed to dismantle automatic cognitive distortions in under 60 seconds without essay journaling.
 
 ## Requirements
 

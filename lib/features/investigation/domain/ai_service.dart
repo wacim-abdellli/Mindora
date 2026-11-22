@@ -5,7 +5,7 @@ import 'ai_case_analysis.dart';
 import 'case_model.dart';
 import 'hypothesis.dart';
 
-/// The single AI boundary interface for Mind Forensics.
+/// The single AI boundary interface for Mindora.
 ///
 /// COST AND DATA RULES:
 /// - Develop entirely on the free Firebase Spark plan, with billing NOT linked.
@@ -24,10 +24,7 @@ abstract class AiService {
   });
 
   /// Conducts a gentle follow-up turn.
-  Future<AiCaseAnalysis> askFollowUp(
-    CaseModel currentCase,
-    String userReply,
-  );
+  Future<AiCaseAnalysis> askFollowUp(CaseModel currentCase, String userReply);
 
   /// Produces a calm, structured findings summary for the final report.
   Future<String> summarizeCase(CaseModel currentCase);
@@ -65,7 +62,8 @@ class MockAiService implements AiService {
 
     // Check for distress cues
     int safety = 0;
-    if (incident.contains('hopeless') || incident.contains('can’t do this anymore')) {
+    if (incident.contains('hopeless') ||
+        incident.contains('can’t do this anymore')) {
       safety = 1;
     }
 
@@ -92,8 +90,10 @@ class MockAiService implements AiService {
           title: 'Situational Factor',
           explanation:
               'The other person may have simply been overwhelmed, busy, or distracted.',
-          whyItMightFit: 'Delays and brief replies are common when people are under stress.',
-          whatDoesNotFit: 'It doesn’t soothe the immediate feeling of being dismissed.',
+          whyItMightFit:
+              'Delays and brief replies are common when people are under stress.',
+          whatDoesNotFit:
+              'It doesn’t soothe the immediate feeling of being dismissed.',
         ),
       ],
       safetyLevel: safety,
@@ -122,7 +122,9 @@ class MockAiService implements AiService {
     await Future.delayed(const Duration(milliseconds: 500));
 
     final chain = currentCase.chain;
-    final emotion = chain != null && chain.emotion.isNotEmpty ? chain.emotion : 'distress';
+    final emotion = chain != null && chain.emotion.isNotEmpty
+        ? chain.emotion
+        : 'distress';
 
     return 'Cognitive Analysis Findings for ${currentCase.caseNumber}:\n\n'
         '• Observable Incident: The external situation occurred as described.\n'
@@ -137,4 +139,3 @@ class MockAiService implements AiService {
 final aiServiceProvider = Provider<AiService>((ref) {
   return MockAiService();
 });
-

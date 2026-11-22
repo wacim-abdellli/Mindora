@@ -12,7 +12,7 @@ final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService();
 });
 
-/// Offline-first Sovereign Authentication Service for Mind Forensics.
+/// Offline-first Sovereign Authentication Service for Mindora.
 ///
 /// Features:
 /// - Anonymous Sovereign Account generation (Zero-trace, offline storage)
@@ -60,7 +60,11 @@ class AuthService {
       final blockIndexBytes = ByteData(4)..setUint32(0, i, Endian.big);
       final initialData = Uint8List(salt.length + 4)
         ..setRange(0, salt.length, salt)
-        ..setRange(salt.length, salt.length + 4, blockIndexBytes.buffer.asUint8List());
+        ..setRange(
+          salt.length,
+          salt.length + 4,
+          blockIndexBytes.buffer.asUint8List(),
+        );
 
       var u = Uint8List.fromList(hmac.convert(initialData).bytes);
       final ti = Uint8List.fromList(u);
@@ -73,7 +77,11 @@ class AuthService {
       }
 
       final bytesToCopy = (i == l) ? r : hLen;
-      derivedKey.setRange(outOffset, outOffset + bytesToCopy, ti.sublist(0, bytesToCopy));
+      derivedKey.setRange(
+        outOffset,
+        outOffset + bytesToCopy,
+        ti.sublist(0, bytesToCopy),
+      );
       outOffset += bytesToCopy;
     }
 
@@ -92,7 +100,11 @@ class AuthService {
 
   /// Hashes a password using PBKDF2-HMAC-SHA256 with a cryptographically secure random salt.
   /// Formatted as: pbkdf2_sha256${iterations}${saltBase64}${derivedKeyBase64}
-  static String hashPassword(String password, {Uint8List? explicitSalt, int iterations = kPbkdf2Iterations}) {
+  static String hashPassword(
+    String password, {
+    Uint8List? explicitSalt,
+    int iterations = kPbkdf2Iterations,
+  }) {
     final salt = explicitSalt ?? generateSecureSalt(16);
     final derivedKey = _pbkdf2HmacSha256(
       password: utf8.encode(password),
@@ -110,7 +122,10 @@ class AuthService {
   /// - Format 2: Salted SHA-256 (Legacy Stage 2: salt:hash)
   /// - Format 1: Plaintext (Legacy Stage 1)
   /// Returns a record: (isValid: bool, needsRehash: bool)
-  static ({bool isValid, bool needsRehash}) verifyPasswordWithMigration(String password, String storedRecord) {
+  static ({bool isValid, bool needsRehash}) verifyPasswordWithMigration(
+    String password,
+    String storedRecord,
+  ) {
     if (storedRecord.isEmpty) {
       return (isValid: false, needsRehash: false);
     }
@@ -147,13 +162,21 @@ class AuthService {
       final colonIndex = storedRecord.indexOf(':');
       final salt = storedRecord.substring(0, colonIndex);
       final expectedHash = storedRecord.substring(colonIndex + 1);
-      final actualHash = sha256.convert(utf8.encode('$salt:$password')).toString();
-      final isValid = constantTimeEquals(utf8.encode(actualHash), utf8.encode(expectedHash));
+      final actualHash = sha256
+          .convert(utf8.encode('$salt:$password'))
+          .toString();
+      final isValid = constantTimeEquals(
+        utf8.encode(actualHash),
+        utf8.encode(expectedHash),
+      );
       return (isValid: isValid, needsRehash: true);
     }
 
     // Format 1: Legacy Stage 1 Plaintext
-    final isValid = constantTimeEquals(utf8.encode(password), utf8.encode(storedRecord));
+    final isValid = constantTimeEquals(
+      utf8.encode(password),
+      utf8.encode(storedRecord),
+    );
     return (isValid: isValid, needsRehash: true);
   }
 
@@ -291,9 +314,9 @@ class AuthService {
     }
 
     final userMap = Map<String, dynamic>.from(users[cleanEmail] as Map);
-    final user = AuthUser.fromMap(userMap).copyWith(
-      lastActiveAt: DateTime.now(),
-    );
+    final user = AuthUser.fromMap(
+      userMap,
+    ).copyWith(lastActiveAt: DateTime.now());
 
     await prefs.setString(_keyCurrentUser, user.toJson());
     return user;
@@ -328,21 +351,22 @@ class AuthService {
     credentials[cleanEmail] = hashPassword(cleanPassword);
     await prefs.setString(_keyUserCredentials, json.encode(credentials));
 
-    final updatedUser = (current ??
-            AuthUser(
-              id: _uuid.v4(),
-              codename: generateDefaultCodename(),
-              authType: AuthType.anonymous,
-              createdAt: DateTime.now(),
-            ))
-        .copyWith(
-      email: cleanEmail,
-      codename: codename?.trim().isNotEmpty == true
-          ? codename!.trim()
-          : (current?.codename ?? cleanEmail.split('@').first),
-      authType: AuthType.emailPassword,
-      lastActiveAt: DateTime.now(),
-    );
+    final updatedUser =
+        (current ??
+                AuthUser(
+                  id: _uuid.v4(),
+                  codename: generateDefaultCodename(),
+                  authType: AuthType.anonymous,
+                  createdAt: DateTime.now(),
+                ))
+            .copyWith(
+              email: cleanEmail,
+              codename: codename?.trim().isNotEmpty == true
+                  ? codename!.trim()
+                  : (current?.codename ?? cleanEmail.split('@').first),
+              authType: AuthType.emailPassword,
+              lastActiveAt: DateTime.now(),
+            );
 
     final usersRaw = prefs.getString(_keyRegisteredUsers) ?? '{}';
     final Map<String, dynamic> users = json.decode(usersRaw);
@@ -408,4 +432,3 @@ class AuthService {
     await prefs.remove(_keyOnboardingDone);
   }
 }
-

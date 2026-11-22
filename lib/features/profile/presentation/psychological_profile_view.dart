@@ -51,9 +51,8 @@ class PsychologicalProfileView extends ConsumerWidget {
     final textSecondary = tokens.ink2;
 
     return profileAsync.when(
-      loading: () => const Center(
-        child: CircularProgressIndicator(strokeWidth: 2),
-      ),
+      loading: () =>
+          const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       error: (err, _) => Center(child: Text('Error: $err')),
       data: (profile) {
         return SingleChildScrollView(
@@ -62,7 +61,15 @@ class PsychologicalProfileView extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Poetic Intro Banner
-              _buildIntroBanner(context, isDark, strings, surfaceColor, borderColor, textPrimary, textSecondary),
+              _buildIntroBanner(
+                context,
+                isDark,
+                strings,
+                surfaceColor,
+                borderColor,
+                textPrimary,
+                textSecondary,
+              ),
 
               const SizedBox(height: 18),
 
@@ -80,7 +87,14 @@ class PsychologicalProfileView extends ConsumerWidget {
                 textPrimary: textPrimary,
                 textSecondary: textSecondary,
                 onEdit: () => EditAboutMeSheet.show(context, profile),
-                content: _buildAboutMeSummary(context, profile, isDark, textPrimary, textSecondary, strings),
+                content: _buildAboutMeSummary(
+                  context,
+                  profile,
+                  isDark,
+                  textPrimary,
+                  textSecondary,
+                  strings,
+                ),
               ),
 
               const SizedBox(height: 14),
@@ -99,7 +113,15 @@ class PsychologicalProfileView extends ConsumerWidget {
                 textPrimary: textPrimary,
                 textSecondary: textSecondary,
                 onEdit: () => EditExperiencesSheet.show(context, profile),
-                content: _buildExperiencesSummary(context, profile, isDark, borderColor, textPrimary, textSecondary, strings),
+                content: _buildExperiencesSummary(
+                  context,
+                  profile,
+                  isDark,
+                  borderColor,
+                  textPrimary,
+                  textSecondary,
+                  strings,
+                ),
               ),
 
               const SizedBox(height: 14),
@@ -118,7 +140,15 @@ class PsychologicalProfileView extends ConsumerWidget {
                 textPrimary: textPrimary,
                 textSecondary: textSecondary,
                 onEdit: () => EditSymptomsSheet.show(context, profile),
-                content: _buildSymptomsSummary(context, profile, isDark, borderColor, textPrimary, textSecondary, strings),
+                content: _buildSymptomsSummary(
+                  context,
+                  profile,
+                  isDark,
+                  borderColor,
+                  textPrimary,
+                  textSecondary,
+                  strings,
+                ),
               ),
 
               const SizedBox(height: 14),
@@ -137,7 +167,15 @@ class PsychologicalProfileView extends ConsumerWidget {
                 textPrimary: textPrimary,
                 textSecondary: textSecondary,
                 onEdit: () => EditGoalsSheet.show(context, profile),
-                content: _buildGoalsSummary(context, profile, isDark, borderColor, textPrimary, textSecondary, strings),
+                content: _buildGoalsSummary(
+                  context,
+                  profile,
+                  isDark,
+                  borderColor,
+                  textPrimary,
+                  textSecondary,
+                  strings,
+                ),
               ),
 
               const SizedBox(height: 14),
@@ -156,7 +194,13 @@ class PsychologicalProfileView extends ConsumerWidget {
                 textPrimary: textPrimary,
                 textSecondary: textSecondary,
                 onEdit: () => EditPersonalContextSheet.show(context, profile),
-                content: _buildContextSummary(profile, isDark, textPrimary, textSecondary, strings),
+                content: _buildContextSummary(
+                  profile,
+                  isDark,
+                  textPrimary,
+                  textSecondary,
+                  strings,
+                ),
               ),
 
               const SizedBox(height: 14),
@@ -175,13 +219,31 @@ class PsychologicalProfileView extends ConsumerWidget {
                 textPrimary: textPrimary,
                 textSecondary: textSecondary,
                 onEdit: () => EditCommunicationSheet.show(context, profile),
-                content: _buildCommunicationSummary(context, profile, strings, isDark, borderColor, textPrimary, textSecondary),
+                content: _buildCommunicationSummary(
+                  context,
+                  profile,
+                  strings,
+                  isDark,
+                  borderColor,
+                  textPrimary,
+                  textSecondary,
+                ),
               ),
 
               const SizedBox(height: 14),
 
               // Section 7: Privacy and AI Personalization
-              _buildPrivacyCard(context, ref, profile, isDark, strings, surfaceColor, borderColor, textPrimary, textSecondary),
+              _buildPrivacyCard(
+                context,
+                ref,
+                profile,
+                isDark,
+                strings,
+                surfaceColor,
+                borderColor,
+                textPrimary,
+                textSecondary,
+              ),
 
               const SizedBox(height: 24),
 
@@ -194,10 +256,16 @@ class PsychologicalProfileView extends ConsumerWidget {
                       backgroundColor: tokens.surface,
                       content: Text(
                         strings.profileSavedSnackbar,
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: tokens.ink),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: tokens.ink,
+                        ),
                       ),
                       behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   );
                 },
@@ -259,8 +327,8 @@ class PsychologicalProfileView extends ConsumerWidget {
                 strings.isArabic
                     ? 'نظرة عامة على الملف'
                     : (strings.isFrench
-                        ? 'APERÇU DU PROFIL'
-                        : 'PROFILE OVERVIEW'),
+                          ? 'APERÇU DU PROFIL'
+                          : 'PROFILE OVERVIEW'),
                 style: TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w800,
@@ -270,16 +338,23 @@ class PsychologicalProfileView extends ConsumerWidget {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 7,
+                  vertical: 2.5,
+                ),
                 decoration: BoxDecoration(
                   color: context.tokens.cardTint,
-                  borderRadius: BorderRadius.circular(context.tokens.chipRadius),
+                  borderRadius: BorderRadius.circular(
+                    context.tokens.chipRadius,
+                  ),
                   border: Border.all(color: context.tokens.line),
                 ),
                 child: Text(
                   strings.isArabic
                       ? 'حساب محلي آمن'
-                      : (strings.isFrench ? 'COMPTE LOCAL SÉCURISÉ' : 'SECURE LOCAL ACCOUNT'),
+                      : (strings.isFrench
+                            ? 'COMPTE LOCAL SÉCURISÉ'
+                            : 'SECURE LOCAL ACCOUNT'),
                   style: TextStyle(
                     fontSize: 8.5,
                     fontWeight: FontWeight.w700,
@@ -302,11 +377,7 @@ class PsychologicalProfileView extends ConsumerWidget {
           const SizedBox(height: 6),
           Text(
             strings.profileSecondaryQuote,
-            style: TextStyle(
-              fontSize: 11,
-              height: 1.35,
-              color: textSecondary,
-            ),
+            style: TextStyle(fontSize: 11, height: 1.35, color: textSecondary),
           ),
         ],
       ),
@@ -364,14 +435,21 @@ class PsychologicalProfileView extends ConsumerWidget {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: isCompleted
                             ? context.tokens.cardTint
                             : context.tokens.surface2,
-                        borderRadius: BorderRadius.circular(context.tokens.chipRadius),
+                        borderRadius: BorderRadius.circular(
+                          context.tokens.chipRadius,
+                        ),
                         border: Border.all(
-                          color: isCompleted ? context.tokens.ink.withValues(alpha: 0.35) : borderColor,
+                          color: isCompleted
+                              ? context.tokens.ink.withValues(alpha: 0.35)
+                              : borderColor,
                           width: 0.8,
                         ),
                       ),
@@ -379,28 +457,44 @@ class PsychologicalProfileView extends ConsumerWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           if (isCompleted) ...[
-                            Icon(Icons.check, size: 10, color: context.tokens.ink),
+                            Icon(
+                              Icons.check,
+                              size: 10,
+                              color: context.tokens.ink,
+                            ),
                             const SizedBox(width: 4),
                           ],
                           Text(
-                            isCompleted ? strings.profileCompletedBadge : strings.profileNotCompletedBadge,
+                            isCompleted
+                                ? strings.profileCompletedBadge
+                                : strings.profileNotCompletedBadge,
                             style: TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w700,
-                              color: isCompleted ? context.tokens.ink : textSecondary,
+                              color: isCompleted
+                                  ? context.tokens.ink
+                                  : textSecondary,
                             ),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Icon(Icons.edit_outlined, size: 14, color: context.tokens.ink),
+                    Icon(
+                      Icons.edit_outlined,
+                      size: 14,
+                      color: context.tokens.ink,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 6),
                 Text(
                   subtitle,
-                  style: TextStyle(fontSize: 12, color: textSecondary, height: 1.3),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: textSecondary,
+                    height: 1.3,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Divider(color: borderColor, height: 1),
@@ -432,8 +526,8 @@ class PsychologicalProfileView extends ConsumerWidget {
         strings.isArabic
             ? 'انقر لتحديد اسمك المفضل، فئتك العمرية، ونبذة قصيرة عنك.'
             : (strings.isFrench
-                ? 'Touchez pour définir votre prénom, votre tranche d’âge et une courte présentation.'
-                : 'Tap to set your preferred name, age range, and brief self-introduction.'),
+                  ? 'Touchez pour définir votre prénom, votre tranche d’âge et une courte présentation.'
+                  : 'Tap to set your preferred name, age range, and brief self-introduction.'),
         style: TextStyle(fontSize: 11.5, color: textSecondary),
       );
     }
@@ -446,7 +540,11 @@ class PsychologicalProfileView extends ConsumerWidget {
             if (profile.preferredName.isNotEmpty) ...[
               Text(
                 profile.preferredName,
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: textPrimary),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: textPrimary,
+                ),
               ),
               const SizedBox(width: 8),
             ],
@@ -459,7 +557,11 @@ class PsychologicalProfileView extends ConsumerWidget {
                 ),
                 child: Text(
                   profile.ageRange,
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: textSecondary),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: textSecondary,
+                  ),
                 ),
               ),
           ],
@@ -470,7 +572,11 @@ class PsychologicalProfileView extends ConsumerWidget {
             '“${profile.personalIntroduction}”',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: LabTheme.textStyle(fontSize: 11.5, fontStyle: FontStyle.italic, color: textSecondary),
+            style: LabTheme.textStyle(
+              fontSize: 11.5,
+              fontStyle: FontStyle.italic,
+              color: textSecondary,
+            ),
           ),
         ],
       ],
@@ -522,8 +628,8 @@ class PsychologicalProfileView extends ConsumerWidget {
             strings.isArabic
                 ? 'انقر لإضافة وتخصيص تجاربك وحالاتك...'
                 : (strings.isFrench
-                    ? 'Touchez pour sélectionner et personnaliser vos expériences...'
-                    : 'Tap to select and customize your experiences...'),
+                      ? 'Touchez pour sélectionner et personnaliser vos expériences...'
+                      : 'Tap to select and customize your experiences...'),
             style: TextStyle(fontSize: 11, color: textSecondary),
           ),
         ],
@@ -587,8 +693,8 @@ class PsychologicalProfileView extends ConsumerWidget {
         strings.isArabic
             ? 'انقر لتدوين الصعوبات الشعورية أو الفكرية أو السلوكية الحالية.'
             : (strings.isFrench
-                ? 'Touchez pour noter vos difficultés émotionnelles, de pensée ou de comportement actuelles.'
-                : 'Tap to record current emotional, thought, or behavioral difficulties.'),
+                  ? 'Touchez pour noter vos difficultés émotionnelles, de pensée ou de comportement actuelles.'
+                  : 'Tap to record current emotional, thought, or behavioral difficulties.'),
         style: TextStyle(fontSize: 11.5, color: textSecondary),
       );
     }
@@ -596,8 +702,8 @@ class PsychologicalProfileView extends ConsumerWidget {
     final symptomsList = profile.selectedSymptoms.isNotEmpty
         ? profile.selectedSymptoms
         : (profile.symptomsAndExperiences.isNotEmpty
-            ? profile.symptomsAndExperiences.split(', ')
-            : <String>[]);
+              ? profile.symptomsAndExperiences.split(', ')
+              : <String>[]);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -616,18 +722,27 @@ class PsychologicalProfileView extends ConsumerWidget {
                 ),
                 child: Text(
                   sym,
-                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: textPrimary),
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: textPrimary,
+                  ),
                 ),
               );
             }).toList(),
           ),
-        if (profile.symptomNotes.isNotEmpty || profile.currentDifficulties.isNotEmpty) ...[
+        if (profile.symptomNotes.isNotEmpty ||
+            profile.currentDifficulties.isNotEmpty) ...[
           const SizedBox(height: 6),
           Text(
             '“${profile.symptomNotes.isNotEmpty ? profile.symptomNotes : profile.currentDifficulties}”',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: LabTheme.textStyle(fontSize: 11.5, fontStyle: FontStyle.italic, color: textSecondary),
+            style: LabTheme.textStyle(
+              fontSize: 11.5,
+              fontStyle: FontStyle.italic,
+              color: textSecondary,
+            ),
           ),
         ],
       ],
@@ -651,8 +766,8 @@ class PsychologicalProfileView extends ConsumerWidget {
         strings.isArabic
             ? 'انقر لاختيار الرؤى الشخصية والأنماط التي ترغب في استكشافها.'
             : (strings.isFrench
-                ? 'Touchez pour choisir les pistes personnelles et schémas à explorer.'
-                : 'Tap to select the personal insights and patterns you want to explore.'),
+                  ? 'Touchez pour choisir les pistes personnelles et schémas à explorer.'
+                  : 'Tap to select the personal insights and patterns you want to explore.'),
         style: TextStyle(fontSize: 11.5, color: textSecondary),
       );
     }
@@ -660,8 +775,8 @@ class PsychologicalProfileView extends ConsumerWidget {
     final goalsList = profile.selectedGoals.isNotEmpty
         ? profile.selectedGoals
         : (profile.personalGoals.isNotEmpty
-            ? profile.personalGoals.split(', ')
-            : <String>[]);
+              ? profile.personalGoals.split(', ')
+              : <String>[]);
 
     return Wrap(
       spacing: 5,
@@ -676,7 +791,11 @@ class PsychologicalProfileView extends ConsumerWidget {
           ),
           child: Text(
             goal,
-            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: textPrimary),
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              color: textPrimary,
+            ),
           ),
         );
       }).toList(),
@@ -700,10 +819,10 @@ class PsychologicalProfileView extends ConsumerWidget {
     if (contextText.isEmpty) {
       return Text(
         strings.isArabic
-            ? 'انقر لكتابة ما ترغب أن يفهمه Mind Forensics عن مسارك.'
+            ? 'انقر لكتابة ما ترغب أن يفهمه Mindora عن مسارك.'
             : (strings.isFrench
-                ? 'Touchez pour écrire ce que vous souhaitez partager sur votre parcours.'
-                : 'Tap to write what you would like Mind Forensics to understand about your journey.'),
+                  ? 'Touchez pour écrire ce que vous souhaitez partager sur votre parcours.'
+                  : 'Tap to write what you would like Mindora to understand about your journey.'),
         style: TextStyle(fontSize: 11.5, color: textSecondary),
       );
     }
@@ -712,7 +831,12 @@ class PsychologicalProfileView extends ConsumerWidget {
       '“$contextText”',
       maxLines: 3,
       overflow: TextOverflow.ellipsis,
-      style: LabTheme.textStyle(fontSize: 12, fontStyle: FontStyle.italic, height: 1.35, color: textPrimary),
+      style: LabTheme.textStyle(
+        fontSize: 12,
+        fontStyle: FontStyle.italic,
+        height: 1.35,
+        color: textPrimary,
+      ),
     );
   }
 
@@ -752,7 +876,11 @@ class PsychologicalProfileView extends ConsumerWidget {
           ),
           child: Text(
             toneLabel,
-            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: textPrimary),
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: textPrimary,
+            ),
           ),
         ),
         Container(
@@ -764,7 +892,11 @@ class PsychologicalProfileView extends ConsumerWidget {
           ),
           child: Text(
             lengthLabel,
-            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: textSecondary),
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: textSecondary,
+            ),
           ),
         ),
       ],
@@ -822,7 +954,11 @@ class PsychologicalProfileView extends ConsumerWidget {
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.tune_rounded, size: 16, color: context.tokens.ink),
+                icon: Icon(
+                  Icons.tune_rounded,
+                  size: 16,
+                  color: context.tokens.ink,
+                ),
                 tooltip: 'Privacy settings',
                 onPressed: () => PrivacyManagementSheet.show(context, profile),
               ),
@@ -843,7 +979,11 @@ class PsychologicalProfileView extends ConsumerWidget {
               Expanded(
                 child: Text(
                   strings.shareWithAiToggle,
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textPrimary),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: textPrimary,
+                  ),
                 ),
               ),
               Switch.adaptive(
@@ -851,7 +991,9 @@ class PsychologicalProfileView extends ConsumerWidget {
                 activeTrackColor: context.tokens.ink,
                 onChanged: (val) {
                   HapticFeedback.lightImpact();
-                  ref.read(profileControllerProvider.notifier).setAiPersonalization(val);
+                  ref
+                      .read(profileControllerProvider.notifier)
+                      .setAiPersonalization(val);
                 },
               ),
             ],

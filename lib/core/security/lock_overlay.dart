@@ -37,7 +37,8 @@ class _LockOverlayState extends ConsumerState<LockOverlay>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
       ref.read(appLockProvider.notifier).lockManually();
     }
   }
@@ -50,10 +51,7 @@ class _LockOverlayState extends ConsumerState<LockOverlay>
     final bg = tokens.bg;
 
     if (!lockState.isInitialized) {
-      return ColoredBox(
-        color: bg,
-        child: const SizedBox.expand(),
-      );
+      return ColoredBox(color: bg, child: const SizedBox.expand());
     }
 
     if (!lockState.isLocked) {
@@ -98,7 +96,10 @@ class _LockOverlayState extends ConsumerState<LockOverlay>
 
                   // Tag
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: tokens.surface2,
                       borderRadius: BorderRadius.circular(4),
@@ -118,7 +119,7 @@ class _LockOverlayState extends ConsumerState<LockOverlay>
                   const SizedBox(height: 12),
 
                   Text(
-                    'Mind Forensics',
+                    'Mindora',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
@@ -147,14 +148,19 @@ class _LockOverlayState extends ConsumerState<LockOverlay>
                     child: BouncingWidget(
                       onTap: () async {
                         HapticFeedback.mediumImpact();
-                        final success = await ref.read(appLockProvider.notifier).unlock();
+                        final success = await ref
+                            .read(appLockProvider.notifier)
+                            .unlock();
                         if (!success && context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               backgroundColor: tokens.surface,
                               content: Text(
                                 strings.biometricFailedSnackbar,
-                                style: TextStyle(color: tokens.ink, fontSize: 12.5),
+                                style: TextStyle(
+                                  color: tokens.ink,
+                                  fontSize: 12.5,
+                                ),
                               ),
                               duration: const Duration(seconds: 2),
                             ),
@@ -166,10 +172,7 @@ class _LockOverlayState extends ConsumerState<LockOverlay>
                         decoration: BoxDecoration(
                           color: tokens.ink,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: border,
-                            width: 1,
-                          ),
+                          border: Border.all(color: border, width: 1),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -203,4 +206,3 @@ class _LockOverlayState extends ConsumerState<LockOverlay>
     );
   }
 }
-
