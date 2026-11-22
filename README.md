@@ -2,13 +2,13 @@
 
 # Mindora
 
-**Intelligent Mental Health Companion & Cognitive Self-Awareness Platform**
+**Dual-Workspace Mental Health Sanctuary, Cognitive Deconstruction & Zero-Cloud Clinical Care Loop**
 
-*A privacy-first, low-cognitive-load psychological companion combining fluid somatic tracking, cognitive deconstruction, evidence-based baselines, and crisis safety interception.*
+*A privacy-first, options-first psychological platform uniting longitudinal self-observation, forensic cognitive clarity, offline crisis protection, and an encrypted zero-cloud clinician companion workspace.*
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.47+-02569B?style=flat-square&logo=flutter&logoColor=white)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-3.13+-0175C2?style=flat-square&logo=dart&logoColor=white)](https://dart.dev)
-[![Tests](https://img.shields.io/badge/Tests-415%20Passing-34D399?style=flat-square)](test/)
+[![Flutter](https://img.shields.io/badge/Flutter-3.38+-02569B?style=flat-square&logo=flutter&logoColor=white)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-3.10+-0175C2?style=flat-square&logo=dart&logoColor=white)](https://dart.dev)
+[![Tests](https://img.shields.io/badge/Tests-468%20Passing-34D399?style=flat-square)](test/)
 [![Analysis](https://img.shields.io/badge/Analysis-0%20Issues-000000?style=flat-square)](lib/)
 [![Design](https://img.shields.io/badge/Theme-Dawn%20Light%20%7C%20Vercel%20Dark-EDEDED?style=flat-square)]()
 [![Languages](https://img.shields.io/badge/Languages-EN%20%7C%20FR%20%7C%20AR%20(RTL)-3B82F6?style=flat-square)]()
@@ -22,206 +22,163 @@
 
 ---
 
-## 🌟 Overview
+## Executive Overview
 
-**Mindora** is an open-source, offline-first cognitive self-awareness and emotional tracking platform. It is engineered with a strict **Options-First, Low-Cognitive-Load** philosophy: users navigating stress, burnout, or emotional fatigue are never confronted with blank compulsory essays or overwhelming choices.
+**Mindora** bridges daily self-observation at home and collaborative psychiatric consultations in-clinic — without forcing either side onto a centralized cloud server.
 
-The application combines:
-- **Somatic Fluid Visuals:** Mathematical multi-harmonic mood orb with real-time continuous wave dynamics.
-- **Cognitive Deconstruction:** Epistemic separation of statements into objective *Facts*, internal *Assumptions*, and emotional *Interpretations*.
-- **Authentic Evidence Baselines:** Pure mathematical standard-deviation stability telemetry — never fabricated percentages or synthetic trends.
-- **Offline Crisis Interception:** Local regex engine that instantly intercepts acute distress keywords and provides one-tap access to emergency helplines without transmitting data over the network.
-- **Unified Design System:** Exact parity across **Dawn Light** (`#F5F6FA`) and **Vercel Dark** (`#000000`).
+Built around a strict **Options-First, Low-Cognitive-Load** UX standard, Mindora pairs a calm patient companion (**Patient Sanctuary**) with a dedicated **Psychiatrist Workspace** connected via encrypted, offline in-room QR codes, native printable 1-page A4 consultation briefs, and bidirectional focus plans.
 
----
-
-## 📸 Interface Showcase
-
-| **Dawn Light Theme** | **Vercel Dark Theme** |
-|:---:|:---:|
-| <img src="screenshots/vqa_phase2/01_home_screen_light.png" width="400" /> | <img src="screenshots/vqa_phase2/02_home_screen_dark.png" width="400" /> |
-| *Airy, soft porcelain background with hairline borders* | *Pitch-black `#000000`, 1px hairline depth, 0% ambient bleed* |
-
-| **Mood Tracking & Somatic Dial** | **Daily Check-in & Notes** |
-|:---:|:---:|
-| <img src="screenshots/vqa_phase2/04_mood_tracking.png" width="400" /> | <img src="screenshots/vqa_phase2/03_daily_checkin.png" width="400" /> |
-| *Continuous harmonic wave orb & tactile intensity (1–10)* | *Options-first emotion library with quick reflection note* |
-
-| **AI Companion & Dialogue** | **Insights & Weekly Rhythm** |
-|:---:|:---:|
-| <img src="screenshots/vqa_phase2/05_ai_companion.png" width="400" /> | <img src="screenshots/vqa_phase2/06_insights_progress.png" width="400" /> |
-| *Compassionate reflection with suggested replies* | *Mathematical stability index & Monday-Sunday rhythm* |
+- **Patient Sanctuary:** Multi-moment intra-day mood check-ins, nuanced 2-tier affect taxonomy, optional daily context tags, CBT-inspired cognitive deconstruction (`Fact` / `Assumption` / `Interpretation`), empirical self-stabilizer tracking, and personalized longitudinal pattern baselines.
+- **Psychiatrist Workspace:** Adaptive phone + tablet split-pane cohort console (`ClinicianShellScreen`), longitudinal **Since Last Visit** clinical diffs, **Observed Forensic Loop** synthesis, offline EHR clinical note generation, hardware camera QR import (`MF-CLINIC-V1:`), and 1-page monochrome A4 PDF export with native OS share sheet (`MF-CAREPLAN-V1:`).
+- **Offline-First & Zero-Cloud Handoff:** Consultation bundles compress (`gzip`), hash (`SHA-256`), and encrypt (`PBKDF2-SHA256` + `AES-256-GCM`) locally on-device using a spoken verbal room PIN.
 
 ---
 
-## 🎨 Design System: Dawn Light & Vercel Dark
+## Dual-Workspace & Zero-Cloud Architecture
 
-Mindora uses a custom **`MindTokens`** theme extension. The system enforces strict token hygiene across all screens with zero hardcoded colors.
+```text
++----------------------------------+         In-Room QR / Copy         +--------------------------------------+
+|        PATIENT SANCTUARY         |    MF-CLINIC-V1 (Gzip + AES-GCM)   |        PSYCHIATRIST WORKSPACE        |
+|                                  |  ===============================> |                                      |
+|  * Home + Post-Visit Focus Plan  |                                   |  * Responsive Roster + Split Dossier |
+|  * Nuanced Track + Context Tags  |    Bi-Directional Care Focus      |  * Visit-to-Visit Clinical Diff      |
+|  * Observed Stabilizers Ledger   |  <=============================== |  * Observed Forensic Loop Map        |
+|  * 2-Minute Pre-Visit Brief      |   MF-CAREPLAN-V1 (Gzip + AES-GCM) |  * 1-Page A4 Brief PDF + Share Sheet |
++----------------------------------+        Camera Scan / Paste        +--------------------------------------+
+```
 
-### Token Architecture
+### Core Clinical Differentiators (Phases 3–6)
+
+1. **Zero-Cloud Encrypted Care Loop (`MF-CLINIC-V1:` / `MF-CAREPLAN-V1:`):**
+   - Patients select exact `ClinicalConsentScope` permissions before generating an encrypted packet or in-room ISO/IEC 18004 QR code (`MindQrCodeEncoder`, Byte-mode Versions 1–40 EC-L).
+   - Clinicians scan directly via the in-app camera scanner (`MindQrScannerSheet` + `ClinicHandoffBridge`) or paste from clipboard, inspect longitudinal metrics, and send back structured `PostVisitFocusPlan` action items.
+   - `CaseModel.isPrivate == true` investigation records are structurally stripped across every serializer, UI card, EHR plain-text summary, and PDF brief.
+2. **2-Minute Pre-Visit Brief & Visit-to-Visit Clinical Diff:**
+   - Synthesizes mood/sleep averages, top observed stabilizers, focus plan feedback, and consultation topics (`PreVisitBriefSheet`) before appointment check-in.
+   - Automatically archives prior patient packets (`previousPackets`) so psychiatrists see **Since Last Visit** deltas across mood, sleep, energy, anxiety, and evening intensity.
+3. **Empirical Recovery Ledger (`ObservedStabilizersCard`):**
+   - Computes real within-day peak-to-later-entry calming shifts (`last - earlierPeak`) and co-occurring lower intensity days tied to user actions and protective routines.
+4. **Observed Forensic Loop Map (`ForensicLoopMapCard`):**
+   - Unifies four non-diagnostic stages into a calm connected vertical rail: **Recurring Context / Trigger -> Diurnal & Affect Pattern -> Observed Thought Chain (`[F]`/`[A]`/`[I]`) -> Observed Stabilizer** across Insights, Clinician Dossier, EHR text (`[3b]`), and A4 PDF output.
+5. **1-Page Printable A4 Brief PDF & Native Share Sheet:**
+   - Pure-Dart PDF 1.4 (`595x842 pt`, `1240x1754` high-DPI FlateDecode raster) embedding the encrypted QR block at footer right/RTL left, ready for instant local save or native OS print/share via `SharePlus.instance.share`.
+
+---
+
+## Visual Quality Assurance Showcase
+
+All screenshots below are rendered in headless Flutter tests using bundled **Inter**, **Noto Sans Arabic**, and **MaterialIcons** font assets across mobile (`412x915`), tablet (`1180x820`), and narrow stress viewports (`320px` + `1.35x` Arabic RTL).
+
+### Phase 5 — Differentiator & Launch Proof
+
+| **Patient Insights: Forensic Loop Map (Dark EN)** | **2-Minute Pre-Visit Brief Sheet (Dark EN)** | **Clinician Dossier Loop Map (Dawn Light EN)** |
+|:---:|:---:|:---:|
+| <img src="screenshots/vqa_phase5/01_patient_insights_recovery_loop_dark.png" width="260" /> | <img src="screenshots/vqa_phase5/02_pre_visit_brief_sheet_dark.png" width="260" /> | <img src="screenshots/vqa_phase5/03_clinician_dossier_diff_loop_light.png" width="260" /> |
+
+| **Printable A4 Clinical Brief + Embedded QR (Dark EN)** | **320px + 1.35x Arabic RTL Stress Test (Dark AR)** |
+|:---:|:---:|
+| <img src="screenshots/vqa_phase5/04_clinical_a4_brief_preview_dark.png" width="260" /> | <img src="screenshots/vqa_phase5/05_forensic_loop_320_ar_rtl_dark.png" width="260" /> |
+
+### Phase 4 — Dual-Workspace & Adaptive Matrix
+
+| **Home + Post-Visit Focus** | **Nuanced Track + Context Tags** | **Insights Context Correlations** | **Clinician Mobile Roster** |
+|:---:|:---:|:---:|:---:|
+| <img src="screenshots/vqa_phase4/01_patient_home_post_visit_dark.png" width="200" /> | <img src="screenshots/vqa_phase4/02_patient_track_nuanced_context_light.png" width="200" /> | <img src="screenshots/vqa_phase4/03_patient_insights_correlations_dark.png" width="200" /> | <img src="screenshots/vqa_phase4/04_clinician_roster_mobile_dark.png" width="200" /> |
+
+| **Clinician Mobile Dossier (Light)** | **Adaptive Tablet Split-Pane (1180x820)** | **320px + 1.35x Arabic RTL Dossier** |
+|:---:|:---:|:---:|
+| <img src="screenshots/vqa_phase4/05_clinician_dossier_mobile_light.png" width="240" /> | <img src="screenshots/vqa_phase4/06_clinician_tablet_split_dark.png" width="320" /> | <img src="screenshots/vqa_phase4/07_clinician_dossier_320_ar_rtl_dark.png" width="240" /> |
+
+---
+
+## Design System: Dawn Light & Vercel Dark
+
+Mindora enforces strict token discipline via **`MindTokens`** (`lib/app/theme/mind_tokens.dart`) with zero raw hex colors in feature UI:
 
 | Token | Light ("Dawn") | Dark ("Vercel") | Role |
 |:---|:---|:---|:---|
 | `bg` | `#F5F6FA` | `#000000` | Ground canvas |
 | `surface` | `#FFFFFF` | `#0A0A0A` | Elevated cards & sheets |
 | `surface2` | `#ECEFF5` | `#111111` | Wells, input fields & tracks |
-| `surface3` | `#FFFFFF` | `#1F1F1F` | Active pill & pressed states |
 | `line` | `rgba(23, 32, 51, 0.09)` | `rgba(255, 255, 255, 0.10)` | 1px hairline structural border |
-| `lineStrong`| `rgba(23, 32, 51, 0.18)` | `rgba(255, 255, 255, 0.20)` | Focused inputs & prominent dividers |
-| `ink` | `#172033` | `#EDEDED` | Primary high-contrast typography |
+| `ink` | `#172033` | `#EDEDED` | Primary typography |
 | `ink2` | `#4A5873` | `#A1A1A1` | Secondary descriptive text |
-| `ink3` | `#5C6982` | `#8F8F8F` | Helper annotations & timestamps |
-| `safety` | `#C0324E` | `#FF6166` | Crisis shield & emergency hotline buttons |
-
-### Dynamic Mood Palettes
-Mood accents (`m1` primary, `m2` highlight) drive subtle component highlights (selected borders, slider tracks, spline chart dots, dynamic pills) while maintaining WCAG AA contrast against text:
-
-- **Calm** (`#4FB896` / `#9BE0C6`) — Leaf accent (Default)
-- **Anxious** (`#5B9BEA` / `#A0C8FF`) — Flowing wave accent
-- **Frustrated** (`#F0805F` / `#FFB894`) — Energetic flame accent
-- **Heavy** (`#8A7BE0` / `#BEB0FF`) — Grounded cloud accent
-- **Restless** (`#EDB23E` / `#FFD98A`) — Dynamic wind accent
+| `safety` | `#C0324E` | `#FF6166` | Crisis shield & emergency hotlines |
 
 ---
 
-## ✨ Core Pillars & Features
+## Architecture & Repository Layout
 
-### 1. Organic Somatic Mood Orb
-- Continuously animated vector fluid canvas powered by pure trigonometric multi-harmonic equations.
-- Coupled directly to mood morphology and intensity (1–10).
-- Automatically reduces animation velocity and respects `MediaQuery.disableAnimationsOf(context)` for accessibility.
-
-### 2. Forensic Investigation & Epistemic Triage
-- Guided cognitive deconstruction workflow inspired by cognitive-behavioral techniques:
-  - **Facts:** Objective, observable, verifiable occurrences.
-  - **Assumptions:** Presumed intent or unverified anticipations.
-  - **Interpretations:** Internal evaluations, meanings, or personal filters.
-- Reconstructs cognitive chains: `Trigger` $\rightarrow$ `Automatic Thought` $\rightarrow$ `Emotion` $\rightarrow$ `Behavior`.
-
-### 3. Crisis Safety & Local Protection Interceptor
-- Offline regex keyword detection engine analyzes input in real-time on-device.
-- Zero network exposure for critical mental safety queries.
-- Instant access to emergency helplines:
-  - **Tunisia Ligne Verte:** `80 10 50 50`
-  - **SAMU (Medical Emergency):** `190`
-  - **Protection Civile:** `198`
-
-### 4. Zero-Friction Privacy & Local Vault
-- **Local-First Architecture:** Operates seamlessly without requiring account creation or cloud data sharing.
-- **Biometric Security (`local_auth`):** Fingerprint and Face ID support for app lock.
-- **GDPR-Compliant Clinical Export:** One-tap sanitized JSON export of case sessions or instant local vault purge.
-
-### 5. Trilingual Accessibility (AR / FR / EN)
-- **Authentic Tunisian Arabic (`ar`):** Natural colloquial expressions with comprehensive Right-to-Left (RTL) layout geometry and bundled **Noto Sans Arabic** typography.
-- **English (`en`) & French (`fr`):** Precise psychological terminology.
-- **Typography:** Fully offline bundled **Inter** & **Noto Sans Arabic** (Regular, SemiBold, Bold) fonts with zero Google Fonts runtime network fetching.
-
----
-
-## 🏗 Tech Stack & Architecture
-
-```
+```text
+docs/
+└── PRODUCTION_LAUNCH_CHECKLIST.md   # Pre-user billing/privacy gate & 60s clinic demo script
 lib/
 ├── app/
-│   ├── localization/      # Trilingual dictionary (EN, FR, AR) & RTL controller
-│   ├── router/            # GoRouter configuration & bottom tab navigation
-│   └── theme/             # MindTokens, ThemeController & custom ThemeData builders
+│   ├── localization/                # Trilingual dictionary (EN, FR, Tunisian AR) & RTL controller
+│   ├── router/                      # GoRouter tabs & workspace-aware routes
+│   └── theme/                       # MindTokens, lab_colors.dart & Dawn/Vercel ThemeData builders
 ├── core/
-│   ├── safety/            # Offline crisis keywords & emergency interceptor
-│   ├── security/          # Biometric lock overlay & encrypted vault
-│   └── widgets/           # MindCard, MindButton, OrganicMoodOrb, MindSegmented, etc.
+│   ├── notifications/               # Local daily gentle check-in scheduler
+│   ├── safety/                      # Offline crisis keywords regex engine & unblockable hotlines
+│   ├── security/                    # Biometric lock (local_auth), PBKDF2-SHA256 & AES-GCM cipher
+│   └── widgets/                     # MindCard, MindButton, MindQrCodeView, SmoothSplineChart, etc.
 └── features/
-    ├── auth/              # Local authentication & anonymous vault
-    ├── case_file/         # Case models & clinical JSON export
-    ├── home/              # Telemetry dashboard, daily check-in & vagal breathing
-    ├── investigation/     # Epistemic triage & forensic chains
-    ├── journal/           # Chronological mind traces & searchable logs
-    ├── observatory/       # Symptom assessment & perspective explorer
-    ├── profile/           # Psychological baseline & condition tracking
-    ├── settings/          # Theme toggle (Light/Dark/System), biometrics & language
-    └── track/             # Somatic dial, calendar matrix & spline chart
+    ├── auth/                        # Local vault onboarding & anonymous mode
+    ├── backup/                      # Password-encrypted offline export/restore
+    ├── case_file/                   # Investigation archives & sanitized session exports
+    ├── clinician/                   # Psychiatrist Workspace, QR bridge/scanner, A4 PDF, Visit Diff
+    ├── home/                        # Daily telemetry dashboard, check-in & post-visit focus card
+    ├── insights/                    # PersonalBaseline, Recovery Ledger, Forensic Loop Map, patterns
+    ├── investigation/               # Options-first cognitive deconstruction & case repository
+    ├── journal/                     # Searchable chronological timeline & reflection entries
+    ├── journey/                     # Structured reflective progression modules
+    ├── mind_trace/                  # Multi-moment daily mood, 2-tier affect taxonomy & context tags
+    ├── observatory/                 # Non-diagnostic symptom log & somatic clarity check-ins
+    ├── onboarding/                  # Workspace-first welcome & consent setup
+    ├── profile/                     # Personal baseline context & care goals
+    ├── settings/                    # Theme switch (Dawn/Vercel/System), language & security lock
+    ├── support/                     # Options-first calming & grounding flows
+    ├── tools/                       # Future Toolkit v2 placeholder
+    └── track/                       # Somatic dial, context chips & intraday timeline
 ```
 
-- **Framework:** Flutter 3.47+ / Dart 3.13+
-- **Architecture:** Feature-first layered architecture with clean domain separation
-- **State Management:** Riverpod 3.4+ (`NotifierProvider`, `ConsumerStatefulWidget`)
-- **Navigation:** `go_router` 18.1+
-- **Local Storage:** `shared_preferences` with in-memory fallback repositories
-- **Backend Infrastructure:** Fully decoupled; optional Firebase Spark plan compatible ($0.00 cost)
+- **Framework:** Flutter 3.38+ / Dart 3.10+
+- **State Management:** Riverpod 3.3+ (`NotifierProvider`, `AsyncNotifierProvider`)
+- **Navigation:** `go_router` 17.5+
+- **Hardware Handoff Plugins:** `mobile_scanner` 7.5+ (live QR camera reader), `share_plus` 13.3+ (native A4 PDF share sheet)
+- **Storage & Crypto:** `shared_preferences`, `flutter_secure_storage`, `cryptography`, `crypto`, `local_auth`
 
 ---
 
-## 🚀 Getting Started
+## Getting Started & Verification
 
-### Prerequisites
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) (`>= 3.22.0`)
-- Android Studio / VS Code / Xcode
-- Git
+```powershell
+# 1. Fetch dependencies
+flutter pub get
 
-### Installation & Run
+# 2. Static analysis (0 issues required)
+flutter analyze --no-pub
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/wacim-abdellli/Mindora.git
-   cd Mindora
-   ```
-
-2. **Fetch dependencies:**
-   ```bash
-   flutter pub get
-   ```
-
-3. **Verify static analysis:**
-   ```bash
-   flutter analyze --no-pub
-   ```
-
-4. **Run the full test suite (415 passing tests):**
-   ```bash
-   flutter test
-   ```
-
-5. **Launch the application:**
-   ```bash
-   flutter run
-   ```
-
----
-
-## 🧪 Testing & Verification Matrix
-
-Mindora maintains a comprehensive automated testing pipeline:
-
-| Test Suite | Scope | Status |
-|:---|:---|:---:|
-| `test/step6_visual_qa_matrix_test.dart` | 35-matrix responsive layout (320px, 360px, 1.35x font, RTL) | Pass |
-| `test/theme_tokens_contrast_test.dart` | WCAG AA contrast verification across all token pairs | Pass |
-| `test/step2_primitives_test.dart` | Design tokens, button feedback, cards & sheets | Pass |
-| `test/accessibility_guidelines_test.dart` | Screen-reader semantics, minimum 48dp touch targets | Pass |
-| `test/batch2_wiring_security_test.dart` | Crisis interceptor, biometric lock, local encryption | Pass |
-
-```bash
-# Run all tests
+# 3. Run full test suite (468 passing tests)
 flutter test
 
-# Verify zero raw colors across all feature code
-Get-ChildItem -Path "lib" -Recurse -Filter *.dart | Select-String -Pattern "Color\(0x|Colors\.(?!transparent)" | Where-Object { $_.Path -notmatch "mind_tokens\.dart" }
-# Output: 0 hits
+# 4. Build debug APK with native share & QR camera plugins
+flutter build apk --debug
 ```
 
 ---
 
-## ⚖️ Clinical & Ethical Guardrails
+## Pre-Launch Gate & Ethical Guardrails
 
-- **Educational & Self-Awareness Scope:** Mindora is inspired by cognitive-behavioral principles. It is **not** a licensed medical provider, diagnostic instrument, or a substitute for professional mental healthcare.
-- **Strict Anti-Stigma Standard:** The app never predicts relapse, assigns diagnostic labels, or provides weight/diet advice.
-- **Emotionally Dignified UI:** Strict zero-emoji policy across all clinical widgets, buttons, and system sheets to preserve dignity and clinical seriousness.
-- **Immediate Human Safety Net:** Acute crisis detection triggers an immediate, unblockable prompt to dial local emergency services.
+Before onboarding **any** real user or clinic account, teams MUST complete [`docs/PRODUCTION_LAUNCH_CHECKLIST.md`](docs/PRODUCTION_LAUNCH_CHECKLIST.md):
+
+- **AI Billing & Data Protection:** Development runs on the free Firebase Spark tier with `MockInvestigatorService` (`DEV_MOCK_GEMINI_KEY`) as default. Free-tier AI endpoints must NEVER receive real personal data; production launch requires moving to a paid tier with Cloud Billing spend caps and a server-side proxy (`AI_PROXY_URL`).
+- **Clinical & Ethical Scope:** Mindora is a reflective self-awareness tool **inspired by CBT** principles. It is not a medical device, never diagnoses, never predicts relapse, and never provides diet/weight/calorie advice.
+- **Crisis Safety Net:** Offline regex detection in [`crisis_keywords.dart`](lib/core/safety/crisis_keywords.dart) and [`safety_interceptor.dart`](lib/core/safety/safety_interceptor.dart) surfaces immediate callable emergency support (`80 10 50 50`, `190`, `198`).
+- **Clinically Dignified UI:** Strict zero-emoji policy across all application UI widgets, sheets, clinical PDFs, and EHR exports.
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
-
-Developed with care by [Wassim Abdelli](https://github.com/wacim-abdellli).
