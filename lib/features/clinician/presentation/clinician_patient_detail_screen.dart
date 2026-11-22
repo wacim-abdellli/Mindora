@@ -21,6 +21,7 @@ import '../../observatory/domain/default_symptom_library.dart';
 import '../../track/presentation/widgets/track_mood_utils.dart';
 import '../controllers/clinician_providers.dart';
 import '../domain/clinician_models.dart';
+import '../domain/visit_diff_model.dart';
 import 'widgets/compose_post_visit_focus_sheet.dart';
 
 enum _ChartMetric { mood, sleep, energy, anxiety }
@@ -475,6 +476,11 @@ class _ClinicianPatientDetailScreenState
           ),
         ),
 
+        if (record.visitDiff != null) ...[
+          const SizedBox(height: 16),
+          _buildVisitDiffCard(tokens, strings, record.visitDiff!, scope),
+        ],
+
         // Longitudinal Chart
         if (chartValues.length >= 2) ...[
           const SizedBox(height: 16),
@@ -855,6 +861,98 @@ class _ClinicianPatientDetailScreenState
           ),
         ],
       ],
+    );
+  }
+
+  Widget _buildVisitDiffCard(
+    MindTokens tokens,
+    AppStrings strings,
+    VisitComparisonDiff diff,
+    ClinicalConsentScope scope,
+  ) {
+    String signed(double v, [String suffix = '']) {
+      final sign = v >= 0 ? '+' : '';
+      return '$sign${v.toStringAsFixed(1)}$suffix';
+    }
+
+    final chips = <String>[
+      if (diff.moodDelta != null)
+        '${strings.metricMoodLabel}: ${signed(diff.moodDelta!)}',
+      if (scope.includeSleepEnergyAnxiety && diff.sleepDelta != null)
+        '${strings.metricSleepLabel}: ${signed(diff.sleepDelta!, 'h')}',
+      if (scope.includeSleepEnergyAnxiety && diff.energyDelta != null)
+        '${strings.metricEnergyLabel}: ${signed(diff.energyDelta!)}',
+      if (scope.includeSleepEnergyAnxiety && diff.anxietyDelta != null)
+        '${strings.metricAnxietyLabel}: ${signed(diff.anxietyDelta!)}',
+      if (diff.eveningIntensityDelta != null)
+        '${strings.eveningBucketLabel}: ${signed(diff.eveningIntensityDelta!)}',
+    ];
+
+    return MindCard(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.compare_arrows_rounded, size: 16, color: tokens.m1),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  strings.sinceLastVisitTitle,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: strings.isArabic ? 0 : 0.7,
+                    color: tokens.ink2,
+                  ),
+                ),
+              ),
+              MindBadge(label: strings.visitIntervalBadge(diff.daysBetween)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${_formatDate(diff.previousGeneratedAt)} -> ${_formatDate(diff.currentGeneratedAt)}',
+            style: TextStyle(
+              fontSize: 12,
+              color: tokens.ink3,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+          if (chips.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: chips.map((c) => MindBadge(label: c)).toList(),
+            ),
+          ],
+          if (scope.includeSleepEnergyAnxiety &&
+              diff.addedContextTags.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              '${strings.addedContextsLabel}: '
+              '${diff.addedContextTags.map((k) => DailyContextTags.localizedLabel(k, strings)).join(', ')}',
+              style: TextStyle(
+                fontSize: 12,
+                color: tokens.ink2,
+                height: 1.35,
+              ),
+            ),
+          ],
+          if (scope.includePreVisitAgenda &&
+              diff.focusPlanFeedback.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            MindBadge(
+              icon: Icons.event_available_outlined,
+              label:
+                  '${strings.focusFeedbackClinicianLabel}: ${diff.focusPlanFeedback}',
+              isSelected: true,
+            ),
+          ],
+        ],
+      ),
     );
   }
 

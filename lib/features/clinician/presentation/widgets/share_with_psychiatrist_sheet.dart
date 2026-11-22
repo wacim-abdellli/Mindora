@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/localization/app_strings.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/mind_tokens.dart';
+import '../../../../core/widgets/mind_badge.dart';
 import '../../../../core/widgets/mind_button.dart';
 import '../../../../core/widgets/mind_card.dart';
 import '../../../../core/widgets/mind_pill.dart';
@@ -17,6 +18,7 @@ import '../../../observatory/controllers/observatory_controllers.dart';
 import '../../../profile/controllers/profile_controller.dart';
 import '../../controllers/clinician_providers.dart';
 import '../../domain/clinician_models.dart';
+import 'pre_visit_brief_sheet.dart';
 
 /// Consent-scoped Care Handoff sheet on the Patient side.
 ///
@@ -24,14 +26,32 @@ import '../../domain/clinician_models.dart';
 /// into the on-device Psychiatrist Workspace while strictly excluding all
 /// `isPrivate == true` investigation cases.
 class ShareWithPsychiatristSheet extends ConsumerStatefulWidget {
-  const ShareWithPsychiatristSheet({super.key});
+  const ShareWithPsychiatristSheet({
+    super.key,
+    this.initialTopics = const [],
+    this.initialQuestion = '',
+    this.initialFocusFeedback = '',
+  });
 
-  static Future<void> show(BuildContext context) {
+  final List<String> initialTopics;
+  final String initialQuestion;
+  final String initialFocusFeedback;
+
+  static Future<void> show(
+    BuildContext context, {
+    List<String> initialTopics = const [],
+    String initialQuestion = '',
+    String initialFocusFeedback = '',
+  }) {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const ShareWithPsychiatristSheet(),
+      builder: (_) => ShareWithPsychiatristSheet(
+        initialTopics: initialTopics,
+        initialQuestion: initialQuestion,
+        initialFocusFeedback: initialFocusFeedback,
+      ),
     );
   }
 
@@ -43,15 +63,24 @@ class ShareWithPsychiatristSheet extends ConsumerStatefulWidget {
 class _ShareWithPsychiatristSheetState
     extends ConsumerState<ShareWithPsychiatristSheet> {
   ClinicalConsentScope _scope = const ClinicalConsentScope();
-  final Set<String> _selectedTopics = <String>{};
-  final TextEditingController _questionController = TextEditingController();
+  late final Set<String> _selectedTopics;
+  late final TextEditingController _questionController;
   final TextEditingController _helpedController = TextEditingController();
   final TextEditingController _passphraseController = TextEditingController();
+  late String _focusPlanFeedback;
 
   bool _isGeneratingCode = false;
   bool _isDeliveringLocal = false;
   String? _generatedCode;
   String? _errorText;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTopics = Set<String>.from(widget.initialTopics);
+    _questionController = TextEditingController(text: widget.initialQuestion);
+    _focusPlanFeedback = widget.initialFocusFeedback;
+  }
 
   @override
   void dispose() {
@@ -93,6 +122,7 @@ class _ShareWithPsychiatristSheetState
             selectedTopics: _selectedTopics.toList(growable: false),
             patientQuestion: _questionController.text.trim(),
             whatHelpedRecently: _helpedController.text.trim(),
+            focusPlanFeedback: _focusPlanFeedback.trim(),
             updatedAt: DateTime.now(),
           )
         : null;
@@ -470,16 +500,41 @@ class _ShareWithPsychiatristSheetState
 
                       if (_scope.includePreVisitAgenda) ...[
                         const SizedBox(height: 18),
-                        Text(
-                          strings.preVisitAgendaSectionTitle,
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: strings.isArabic ? 0 : 0.8,
-                            color: tokens.ink2,
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                strings.preVisitAgendaSectionTitle,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: strings.isArabic ? 0 : 0.8,
+                                  color: tokens.ink2,
+                                ),
+                              ),
+                            ),
+                            MindBadge(
+                              icon: Icons.assignment_outlined,
+                              label: strings.prepareForVisitBtn,
+                              onTap: () {
+                                final nav = Navigator.of(context);
+                                final rootCtx = nav.context;
+                                nav.pop();
+                                PreVisitBriefSheet.show(rootCtx);
+                              },
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 8),
+                        if (_focusPlanFeedback.isNotEmpty) ...[
+                          MindBadge(
+                            icon: Icons.event_available_outlined,
+                            label:
+                                '${strings.focusFeedbackClinicianLabel}: $_focusPlanFeedback',
+                            isSelected: true,
+                          ),
+                          const SizedBox(height: 8),
+                        ],
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,

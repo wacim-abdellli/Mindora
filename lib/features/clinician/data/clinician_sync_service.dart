@@ -543,6 +543,11 @@ class ClinicianSyncService {
       if (agenda.whatHelpedRecently.trim().isNotEmpty) {
         buf.writeln('What helped recently: ${agenda.whatHelpedRecently.trim()}');
       }
+      if (agenda.focusPlanFeedback.trim().isNotEmpty) {
+        buf.writeln(
+          'Between-session focus feedback: ${agenda.focusPlanFeedback.trim()}',
+        );
+      }
       buf.writeln();
     }
 
@@ -573,6 +578,43 @@ class ClinicianSyncService {
         );
       } else {
         buf.writeln('- Sleep / Energy / Anxiety: Excluded by patient consent.');
+      }
+      buf.writeln();
+    }
+
+    // 2b. Visit-to-Visit Comparison
+    final visitDiff = record.visitDiff;
+    if (visitDiff != null &&
+        (visitDiff.hasMetricDelta || visitDiff.focusPlanFeedback.isNotEmpty)) {
+      buf.writeln('[2b] SINCE LAST VISIT COMPARISON (${visitDiff.daysBetween}d apart)');
+      String signed(double v, [String suffix = '']) {
+        final s = v >= 0 ? '+' : '';
+        return '$s${v.toStringAsFixed(1)}$suffix';
+      }
+
+      if (visitDiff.moodDelta != null) {
+        buf.writeln('- Mood delta vs last visit: ${signed(visitDiff.moodDelta!, '/10')}');
+      }
+      if (scope.includeSleepEnergyAnxiety) {
+        if (visitDiff.sleepDelta != null) {
+          buf.writeln('- Sleep delta vs last visit: ${signed(visitDiff.sleepDelta!, 'h')}');
+        }
+        if (visitDiff.energyDelta != null) {
+          buf.writeln('- Energy delta vs last visit: ${signed(visitDiff.energyDelta!, '/10')}');
+        }
+        if (visitDiff.anxietyDelta != null) {
+          buf.writeln('- Anxiety delta vs last visit: ${signed(visitDiff.anxietyDelta!, '/10')}');
+        }
+      }
+      if (visitDiff.eveningIntensityDelta != null) {
+        buf.writeln(
+          '- Evening intensity delta vs last visit: ${signed(visitDiff.eveningIntensityDelta!, '/10')}',
+        );
+      }
+      if (visitDiff.focusPlanFeedback.isNotEmpty) {
+        buf.writeln(
+          '- Patient focus plan feedback: ${visitDiff.focusPlanFeedback}',
+        );
       }
       buf.writeln();
     }

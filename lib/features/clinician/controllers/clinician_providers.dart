@@ -123,6 +123,17 @@ class ClinicianRosterNotifier
         : packet.generatedAt;
 
     final sanitizedPacket = ClinicianSyncPacket.fromJson(packet.toJson());
+    final previousPackets = existingIdx >= 0
+        ? (existingImported[existingIdx].latestPacket.packetId !=
+                  sanitizedPacket.packetId
+              ? [
+                  ClinicianSyncPacket.fromJson(
+                    existingImported[existingIdx].latestPacket.toJson(),
+                  ),
+                  ...existingImported[existingIdx].previousPackets,
+                ].take(5).toList(growable: false)
+              : existingImported[existingIdx].previousPackets)
+        : const <ClinicianSyncPacket>[];
 
     final record = ClinicianPatientRecord(
       patientId: sanitizedPacket.patientAnonymousId,
@@ -131,6 +142,7 @@ class ClinicianRosterNotifier
       importedAt: importedAt,
       lastSyncedAt: sanitizedPacket.generatedAt,
       latestPacket: sanitizedPacket,
+      previousPackets: previousPackets,
       clinicianNotes: existingNotes,
       reviewedAt: null,
     );

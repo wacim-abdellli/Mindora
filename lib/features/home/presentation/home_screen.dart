@@ -23,6 +23,7 @@ import '../../../core/widgets/mind_card.dart';
 import '../../../core/widgets/mind_pressable.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../clinician/controllers/clinician_providers.dart';
+import '../../clinician/presentation/widgets/pre_visit_brief_sheet.dart';
 import '../../investigation/controllers/investigation_providers.dart';
 import '../../investigation/domain/case_model.dart';
 import '../../investigation/domain/case_stage.dart';
@@ -593,6 +594,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     onDismiss: () => ref
                         .read(postVisitFocusControllerProvider.notifier)
                         .dismissPlan(),
+                    onPrepareVisit: () => PreVisitBriefSheet.show(context),
                   ),
                   const SizedBox(height: 20),
                 ],

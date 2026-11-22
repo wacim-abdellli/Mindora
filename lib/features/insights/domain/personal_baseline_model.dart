@@ -196,10 +196,14 @@ class PersonalBaseline {
   );
 
   /// Computes a rolling baseline from historical traces (defaulting to past 30 days).
-  factory PersonalBaseline.fromTraces(List<MindTraceModel> traces, {int baselineDays = 30}) {
+  factory PersonalBaseline.fromTraces(
+    List<MindTraceModel> traces, {
+    int baselineDays = 30,
+    DateTime? referenceDate,
+  }) {
     if (traces.isEmpty) return PersonalBaseline.empty;
 
-    final now = DateTime.now();
+    final now = referenceDate ?? DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
     // Exact calendar-day window: includes today and exactly (baselineDays - 1) preceding days.
     // For baselineDays = 30, this spans from (today - 29 days) 00:00:00 up to tomorrow 00:00:00 exclusive

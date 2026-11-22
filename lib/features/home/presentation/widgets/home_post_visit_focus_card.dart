@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/localization/app_strings.dart';
 import '../../../../app/theme/mind_tokens.dart';
 import '../../../../core/widgets/mind_badge.dart';
+import '../../../../core/widgets/mind_button.dart';
 import '../../../../core/widgets/mind_card.dart';
 import '../../../../core/widgets/mind_pressable.dart';
 import '../../../clinician/domain/post_visit_focus_model.dart';
@@ -17,11 +18,13 @@ class HomePostVisitFocusCard extends ConsumerWidget {
     required this.plan,
     required this.onToggleItem,
     required this.onDismiss,
+    this.onPrepareVisit,
   });
 
   final PostVisitFocusPlan plan;
   final ValueChanged<String> onToggleItem;
   final VoidCallback onDismiss;
+  final VoidCallback? onPrepareVisit;
 
   String? _followUpLabel(AppStrings strings) {
     final followUp = plan.followUpDate;
@@ -200,6 +203,16 @@ class HomePostVisitFocusCard extends ConsumerWidget {
                   ),
                 ],
               ),
+            ),
+          ],
+          if (onPrepareVisit != null) ...[
+            const SizedBox(height: 12),
+            MindButton(
+              text: strings.prepareForVisitBtn,
+              leadingIcon: Icons.assignment_outlined,
+              variant: MindButtonVariant.soft,
+              isFullWidth: true,
+              onPressed: onPrepareVisit,
             ),
           ],
         ],

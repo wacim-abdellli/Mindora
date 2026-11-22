@@ -189,8 +189,69 @@ abstract final class DemoClinicalCohort {
         patientQuestion:
             'Why does my apprehension spike after 19:00 even when the daytime felt manageable?',
         whatHelpedRecently: '20-minute offline walk after leaving the desk',
+        focusPlanFeedback: 'Felt helpful',
         updatedAt: today,
       ),
+    );
+
+    final priorAnchor = now.subtract(const Duration(days: 14));
+    final priorToday =
+        DateTime(priorAnchor.year, priorAnchor.month, priorAnchor.day);
+    final nadiaPriorTraces = <MindTraceModel>[];
+    for (var d = 14; d >= 0; d--) {
+      final day = priorToday.subtract(Duration(days: d));
+      final morningTs = DateTime(day.year, day.month, day.day, 8, 45);
+      final eveningTs = DateTime(day.year, day.month, day.day, 20, 10);
+      nadiaPriorTraces.addAll([
+        MindTraceModel(
+          id: 'demo_nadia_v0_m_$d',
+          userId: 'demo_nadia_b',
+          date: morningTs,
+          overallMood: 'calm',
+          selectedEmotions: const ['calm', 'focused'],
+          moodIntensity: 4,
+          energyLevel: 7,
+          anxietyLevel: 3,
+          sleepHours: 7.5,
+          contextTags: const ['routine_kept', 'sleep_consistent'],
+          createdAt: morningTs,
+          updatedAt: morningTs,
+        ),
+        if (d <= 5)
+          MindTraceModel(
+            id: 'demo_nadia_v0_e_$d',
+            userId: 'demo_nadia_b',
+            date: eveningTs,
+            overallMood: 'calm',
+            selectedEmotions: const ['calm', 'content'],
+            moodIntensity: 5,
+            energyLevel: 6,
+            anxietyLevel: 3,
+            sleepHours: 7.5,
+            contextTags: const ['routine_kept'],
+            createdAt: eveningTs,
+            updatedAt: eveningTs,
+          ),
+      ]);
+    }
+    final nadiaPriorPacket = syncService.buildPatientPacket(
+      packetId: 'demo_pkt_nadia_v0',
+      referenceNow: priorAnchor,
+      patientDisplayName: 'Nadia B.',
+      patientAnonymousId: 'demo_nadia_b',
+      consentScope: const ClinicalConsentScope(
+        windowDays: 30,
+        includeMoodMetrics: true,
+        includeSleepEnergyAnxiety: true,
+        includePersonalNotes: false,
+        includeSharedCases: false,
+        includeSymptomReports: false,
+        includePsychologicalProfile: false,
+        includePreVisitAgenda: false,
+      ),
+      traces: nadiaPriorTraces,
+      cases: const [],
+      symptomReports: const [],
     );
 
     // -------------------------------------------------------------------------
@@ -357,6 +418,7 @@ abstract final class DemoClinicalCohort {
         importedAt: today.subtract(const Duration(days: 14)),
         lastSyncedAt: now.subtract(const Duration(hours: 2)),
         latestPacket: nadiaPacket,
+        previousPackets: [nadiaPriorPacket],
         clinicianNotes: [
           ClinicianSessionNote(
             id: 'demo_note_nadia_1',

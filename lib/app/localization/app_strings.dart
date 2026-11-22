@@ -2887,6 +2887,72 @@ class AppStrings {
     return 'avg mood $formatted/10';
   }
 
+  // ---------------------------------------------------------------------------
+  // Milestone 5.2: Visit-to-Visit Clinical Diff & 2-Min Pre-Visit Brief
+  // ---------------------------------------------------------------------------
+
+  String get preVisitBriefTitle => isArabic
+      ? 'ملخص تحضير الزيارة (دقيقتين)'
+      : (isFrench ? 'Préparation de visite (2 min)' : '2-Minute Visit Brief');
+
+  String get preVisitBriefSubtitle => isArabic
+      ? 'تجميع وصفي من تسجيلاتك باش تبدأ الجلسة بأهم المعطيات.'
+      : (isFrench
+            ? 'Synthèse automatique de vos observations pour démarrer votre consultation.'
+            : 'Auto-synthesized highlights from your logs to make every visit count.');
+
+  String get prepareForVisitBtn => isArabic
+      ? 'تحضير للزيارة'
+      : (isFrench ? 'Préparer la visite' : 'Prepare for Visit');
+
+  String get focusPlanProgressLabel => isArabic
+      ? 'خطة التركيز بين الجلسات'
+      : (isFrench ? 'SUIVI DU PLAN D’ENTRETIEN' : 'FOCUS PLAN PROGRESS');
+
+  String focusCompletedCountLabel(int done, int total) {
+    if (isArabic) return '$done من $total مكتمل';
+    if (isFrench) return '$done sur $total réalisé(s)';
+    return '$done of $total completed';
+  }
+
+  String get focusFeedbackHelpful => isArabic
+      ? 'عاوني برشا'
+      : (isFrench ? 'Utile' : 'Felt helpful');
+
+  String get focusFeedbackTooHeavy => isArabic
+      ? 'ثقيل شوية توّا'
+      : (isFrench ? 'Trop lourd actuellement' : 'Too heavy right now');
+
+  String get focusFeedbackAdjust => isArabic
+      ? 'نحبّ نعدّلو مع الطبيب'
+      : (isFrench ? 'À ajuster ensemble' : 'Want to adjust');
+
+  String get continueToShareBtn => isArabic
+      ? 'متابعة للمشاركة مع الطبيب'
+      : (isFrench ? 'Continuer vers le partage' : 'Continue to Share with Psychiatrist');
+
+  String get sinceLastVisitTitle => isArabic
+      ? 'مقارنة منذ آخر زيارة'
+      : (isFrench ? 'ÉVOLUTION DEPUIS LA DERNIÈRE VISITE' : 'SINCE LAST VISIT');
+
+  String visitIntervalBadge(int days) {
+    if (isArabic) return 'خلال $days ي';
+    if (isFrench) return '${days}j d’intervalle';
+    return '${days}d apart';
+  }
+
+  String get focusFeedbackClinicianLabel => isArabic
+      ? 'تقييم المريض لخطة التركيز'
+      : (isFrench ? 'Retour sur le plan' : 'Focus plan feedback');
+
+  String get addedContextsLabel => isArabic
+      ? 'عوامل جديدة ظهرت'
+      : (isFrench ? 'Nouveaux repères apparus' : 'Newly observed');
+
+  String get reducedContextsLabel => isArabic
+      ? 'عوامل تراجعت'
+      : (isFrench ? 'Repères en recul' : 'Less frequent');
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);

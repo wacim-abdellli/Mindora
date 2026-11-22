@@ -6,6 +6,7 @@ import '../../investigation/domain/case_model.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
 import '../../observatory/domain/symptom_report.dart';
 import '../../profile/domain/psychological_profile_model.dart';
+import 'visit_diff_model.dart';
 
 /// Active workspace mode for the two-sided Mind Forensics platform.
 enum AppWorkspaceRole {
@@ -174,29 +175,34 @@ class PreVisitAgenda {
     this.selectedTopics = const [],
     this.patientQuestion = '',
     this.whatHelpedRecently = '',
+    this.focusPlanFeedback = '',
     required this.updatedAt,
   });
 
   final List<String> selectedTopics;
   final String patientQuestion;
   final String whatHelpedRecently;
+  final String focusPlanFeedback;
   final DateTime updatedAt;
 
   bool get isEmpty =>
       selectedTopics.isEmpty &&
       patientQuestion.trim().isEmpty &&
-      whatHelpedRecently.trim().isEmpty;
+      whatHelpedRecently.trim().isEmpty &&
+      focusPlanFeedback.trim().isEmpty;
 
   PreVisitAgenda copyWith({
     List<String>? selectedTopics,
     String? patientQuestion,
     String? whatHelpedRecently,
+    String? focusPlanFeedback,
     DateTime? updatedAt,
   }) {
     return PreVisitAgenda(
       selectedTopics: selectedTopics ?? this.selectedTopics,
       patientQuestion: patientQuestion ?? this.patientQuestion,
       whatHelpedRecently: whatHelpedRecently ?? this.whatHelpedRecently,
+      focusPlanFeedback: focusPlanFeedback ?? this.focusPlanFeedback,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -205,6 +211,7 @@ class PreVisitAgenda {
         'selectedTopics': selectedTopics,
         'patientQuestion': patientQuestion,
         'whatHelpedRecently': whatHelpedRecently,
+        'focusPlanFeedback': focusPlanFeedback,
         'updatedAt': updatedAt.toIso8601String(),
       };
 
@@ -216,6 +223,7 @@ class PreVisitAgenda {
           const [],
       patientQuestion: json['patientQuestion'] as String? ?? '',
       whatHelpedRecently: json['whatHelpedRecently'] as String? ?? '',
+      focusPlanFeedback: json['focusPlanFeedback'] as String? ?? '',
       updatedAt: json['updatedAt'] != null
           ? DateTime.tryParse(json['updatedAt'] as String) ?? DateTime.now()
           : DateTime.now(),
@@ -525,6 +533,7 @@ class ClinicianPatientRecord {
     required this.importedAt,
     required this.lastSyncedAt,
     required this.latestPacket,
+    this.previousPackets = const [],
     this.clinicianNotes = const [],
     this.reviewedAt,
   });
@@ -535,11 +544,20 @@ class ClinicianPatientRecord {
   final DateTime importedAt;
   final DateTime lastSyncedAt;
   final ClinicianSyncPacket latestPacket;
+  final List<ClinicianSyncPacket> previousPackets;
   final List<ClinicianSessionNote> clinicianNotes;
   final DateTime? reviewedAt;
 
+  VisitComparisonDiff? get visitDiff => previousPackets.isEmpty
+      ? null
+      : VisitComparisonDiff.compute(previousPackets.first, latestPacket);
+
   PersonalBaseline get baseline =>
-      PersonalBaseline.fromTraces(latestPacket.traces);
+      PersonalBaseline.fromTraces(
+        latestPacket.traces,
+        baselineDays: latestPacket.consentScope.windowDays.clamp(1, 365),
+        referenceDate: latestPacket.generatedAt,
+      );
 
   PersonalBaseline get recentBaseline {
     if (latestPacket.traces.isEmpty) {
@@ -581,6 +599,7 @@ class ClinicianPatientRecord {
     DateTime? importedAt,
     DateTime? lastSyncedAt,
     ClinicianSyncPacket? latestPacket,
+    List<ClinicianSyncPacket>? previousPackets,
     List<ClinicianSessionNote>? clinicianNotes,
     DateTime? reviewedAt,
   }) {
@@ -591,6 +610,7 @@ class ClinicianPatientRecord {
       importedAt: importedAt ?? this.importedAt,
       lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
       latestPacket: latestPacket ?? this.latestPacket,
+      previousPackets: previousPackets ?? this.previousPackets,
       clinicianNotes: clinicianNotes ?? this.clinicianNotes,
       reviewedAt: reviewedAt ?? this.reviewedAt,
     );
@@ -603,6 +623,8 @@ class ClinicianPatientRecord {
         'importedAt': importedAt.toIso8601String(),
         'lastSyncedAt': lastSyncedAt.toIso8601String(),
         'latestPacket': latestPacket.toJson(),
+        'previousPackets':
+            previousPackets.map((p) => p.toJson()).toList(growable: false),
         'clinicianNotes':
             clinicianNotes.map((n) => n.toJson()).toList(growable: false),
         'reviewedAt': reviewedAt?.toIso8601String(),
@@ -624,6 +646,13 @@ class ClinicianPatientRecord {
           ? DateTime.tryParse(json['lastSyncedAt'] as String) ?? DateTime.now()
           : DateTime.now(),
       latestPacket: packet,
+      previousPackets: (json['previousPackets'] as List<dynamic>?)
+              ?.map(
+                (e) =>
+                    ClinicianSyncPacket.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(growable: false) ??
+          const [],
       clinicianNotes: (json['clinicianNotes'] as List<dynamic>?)
               ?.map(
                 (e) =>
