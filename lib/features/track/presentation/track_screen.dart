@@ -24,6 +24,9 @@ import '../../../core/widgets/organic_mood_orb.dart';
 import '../../../core/widgets/quick_note_sparks_bar.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../home/presentation/widgets/home_organic_exercise_art.dart';
+import '../../insights/domain/discovery_milestones_model.dart';
+import '../../insights/domain/recovery_ledger_model.dart';
+import '../../insights/presentation/widgets/discovery_milestones_card.dart';
 import '../../investigation/controllers/investigation_providers.dart';
 import '../../investigation/domain/case_model.dart';
 import '../../investigation/domain/conversation_mode.dart';
@@ -1965,6 +1968,18 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
               ),
               const SizedBox(height: 8),
               ...cases.take(4).map((c) => _buildCaseCard(c, tokens, strings)),
+            ],
+            if (traces.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              DiscoveryMilestonesCard(
+                traces: traces,
+                summary: DiscoveryMilestonesService.compute(
+                  traces: traces,
+                  ledger: RecoveryLedger.fromTraces(traces),
+                  strings: strings,
+                ),
+                strings: strings,
+              ),
             ],
           ],
         ],

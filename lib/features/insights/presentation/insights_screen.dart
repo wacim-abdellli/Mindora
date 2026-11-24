@@ -25,9 +25,11 @@ import '../../progress/data/progress_analytics_service.dart';
 import '../../progress/domain/progress_analytics_model.dart';
 import '../../track/presentation/widgets/track_mood_utils.dart';
 import '../data/pattern_awareness_service.dart';
+import '../domain/discovery_milestones_model.dart';
 import '../domain/forensic_loop_model.dart';
 import '../domain/pattern_divergence_model.dart';
 import '../domain/personal_baseline_model.dart';
+import 'widgets/discovery_milestones_card.dart';
 import 'widgets/forensic_loop_map_card.dart';
 import 'widgets/observed_stabilizers_card.dart';
 
@@ -277,6 +279,20 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                 );
               },
             ),
+
+            // 2f. Non-Punitive Discovery Milestones & Mood Aura
+            if (allTraces.isNotEmpty) ...[
+              DiscoveryMilestonesCard(
+                traces: allTraces,
+                summary: DiscoveryMilestonesService.compute(
+                  traces: allTraces,
+                  ledger: baseline.recoveryLedger,
+                  strings: strings,
+                ),
+                strings: strings,
+              ),
+              const SizedBox(height: 18),
+            ],
 
             // 3. Your Patterns Section
             _buildYourPatternsSection(

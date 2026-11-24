@@ -15,6 +15,12 @@ abstract class ClinicHandoffBridge {
     required String text,
   });
 
+  Future<void> sharePngFile({
+    required String filePath,
+    required String subject,
+    required String text,
+  }) async {}
+
   Future<String?> scanQrCode(
     BuildContext context, {
     required String expectedPrefix,
@@ -36,6 +42,21 @@ class DefaultClinicHandoffBridge extends ClinicHandoffBridge {
     await SharePlus.instance.share(
       ShareParams(
         files: [XFile(filePath, mimeType: 'application/pdf')],
+        subject: subject,
+        text: text,
+      ),
+    );
+  }
+
+  @override
+  Future<void> sharePngFile({
+    required String filePath,
+    required String subject,
+    required String text,
+  }) async {
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(filePath, mimeType: 'image/png')],
         subject: subject,
         text: text,
       ),

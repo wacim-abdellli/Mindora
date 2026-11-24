@@ -4892,6 +4892,126 @@ class AppStrings {
             ? 'Moment enregistré — chaque observation honnête éclaire votre rythme.'
             : 'Moment captured — honest check-ins gently build self-clarity.');
 
+  // ---------------------------------------------------------------------------
+  // Milestone 7.3: Non-Punitive Discovery Milestones & Generative Mood Aura
+  // ---------------------------------------------------------------------------
+
+  String get discoveryMilestonesTitle => isArabic
+      ? 'محطات الاكتشاف الشخصية'
+      : (isFrench ? 'REPÈRES DE DÉCOUVERTE' : 'DISCOVERY MILESTONES');
+
+  String get discoveryMilestonesSub => isArabic
+      ? 'تقدّم تراكمي لا يضيع أبداً حتى لو غبت أياماً.'
+      : (isFrench
+            ? 'Progrès cumulatif — aucune pause ne réinitialise votre parcours.'
+            : 'Cumulative self-clarity — missing days never resets what you learned.');
+
+  String discoveryBadgeCount(int unlocked, int total) => '$unlocked/$total';
+
+  String get milestoneFirstTitle => isArabic
+      ? 'أول بصمة'
+      : (isFrench ? 'Première empreinte' : 'First Footprint');
+
+  String get milestoneFirstSub => isArabic
+      ? 'أول تسجيل يومي'
+      : (isFrench ? 'Premier point noté' : 'First check-in saved');
+
+  String get milestoneNuanceTitle => isArabic
+      ? 'تسمية دقيقة'
+      : (isFrench ? 'Nuances fines' : 'Nuance Finder');
+
+  String get milestoneNuanceSub => isArabic
+      ? '3 مشاعر فرعية'
+      : (isFrench ? '3 vécus détaillés' : '3+ nuanced feelings');
+
+  String get milestoneIntradayTitle => isArabic
+      ? 'نبض اليوم'
+      : (isFrench ? 'Variation du jour' : 'Day-to-Night Shift');
+
+  String get milestoneIntradaySub => isArabic
+      ? 'لحظتان في نفس اليوم'
+      : (isFrench ? '2 moments un même jour' : 'Multi-moment check-in');
+
+  String get milestoneStabilizerTitle => isArabic
+      ? 'مرساة التهدئة'
+      : (isFrench ? 'Ancrage repéré' : 'Anchor Found');
+
+  String get milestoneStabilizerSub => isArabic
+      ? 'تحديد ما يهدّئك'
+      : (isFrench ? 'Stabilisateur observé' : 'Observed stabilizer');
+
+  String get milestoneSevenDaysTitle => isArabic
+      ? '7 أيام وعي'
+      : (isFrench ? '7 jours observés' : '7 Rhythm Days');
+
+  String get milestoneSevenDaysSub => isArabic
+      ? 'إجمالي أيام تراكمية'
+      : (isFrench ? 'Jours cumulés au total' : 'Cumulative logged days');
+
+  String get openMoodAuraBtn => isArabic
+      ? 'معاينة ومشاركة هالة المزاج'
+      : (isFrench ? 'Voir & partager mon Aura' : 'View & Share Mood Aura');
+
+  String get moodAuraTitle => isArabic
+      ? 'ملصق هالة المزاج'
+      : (isFrench ? 'Poster Aura personnelle' : 'Personal Mood Aura');
+
+  String get moodAuraSubtitle => isArabic
+      ? 'لوحة فنية لألوان إيقاعك بدون أي نصوص أو ملاحظات شخصية.'
+      : (isFrench
+            ? 'Œuvre générative de vos couleurs récentes — zéro note privée incluse.'
+            : 'Generative artwork of your mood colors — zero private notes or triggers.');
+
+  String get moodAuraHeader => isArabic
+      ? 'Mindora · إيقاع الوعي الشخصي'
+      : (isFrench
+            ? 'Mindora · Aura de rythme personnel'
+            : 'Mindora · Personal Rhythm Aura');
+
+  String get moodAuraPrivateNotice => isArabic
+      ? 'خاص بالكامل: يحتوي فقط على ألوان المزاج والأيام الملاحظة.'
+      : (isFrench
+            ? 'Confidentiel : affiche uniquement couleurs et rythme, jamais vos notes.'
+            : 'Privacy-safe keepsake: exports color harmonies and rhythm only.');
+
+  String moodAuraDaysLabel(int days) {
+    if (isArabic) return '$days أيام ملاحظة';
+    if (isFrench) return '$days j. observés';
+    return '$days observed days';
+  }
+
+  String moodAuraMilestonesLabel(int unlocked, int total) {
+    if (isArabic) return '$unlocked/$total محطات اكتشاف';
+    if (isFrench) return '$unlocked/$total repères';
+    return '$unlocked/$total milestones';
+  }
+
+  String get shareMoodAuraBtn => isArabic
+      ? 'مشاركة صورة الهالة'
+      : (isFrench ? 'Partager l’Aura PNG' : 'Share Mood Aura');
+
+  String get saveMoodAuraBtn => isArabic
+      ? 'حفظ الصورة محلياً'
+      : (isFrench ? 'Enregistrer l’image' : 'Save Image');
+
+  String moodAuraSavedSnackbar(String fileName) {
+    if (isArabic) return 'تم حفظ صورة الهالة: $fileName';
+    if (isFrench) return 'Image enregistrée : $fileName';
+    return 'Saved Mood Aura: $fileName';
+  }
+
+  String get moodAuraShareSubject => isArabic
+      ? 'Mindora — هالة إيقاعي الشخصي'
+      : (isFrench
+            ? 'Mindora — Mon Aura personnelle'
+            : 'Mindora — Personal Mood Aura');
+
+  String get moodAuraShareText => isArabic
+      ? 'هالة ألوان إيقاعي الشخصي في Mindora (بدون أي ملاحظات خاصة).'
+      : (isFrench
+            ? 'Mon poster d’aura généré localement avec Mindora.'
+            : 'My personal harmonic Mood Aura created locally in Mindora.');
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);
