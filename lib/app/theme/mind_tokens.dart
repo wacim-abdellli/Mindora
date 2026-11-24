@@ -596,6 +596,24 @@ class MindTokens extends ThemeExtension<MindTokens> {
     );
   }
 
+  /// Boosts structural border visibility and secondary/tertiary ink contrast
+  /// for older eyes, tired evenings, and high-glare environments while
+  /// preserving Dawn Light and Vercel Dark ground/surface palettes.
+  MindTokens withComfortBoost(bool enabled) {
+    if (!enabled) return this;
+    final isDark = brightness == Brightness.dark;
+    return copyWith(
+      line: isDark
+          ? const Color.fromRGBO(255, 255, 255, 0.22)
+          : const Color.fromRGBO(23, 32, 51, 0.18),
+      lineStrong: isDark
+          ? const Color.fromRGBO(255, 255, 255, 0.36)
+          : const Color.fromRGBO(23, 32, 51, 0.30),
+      ink2: isDark ? const Color(0xFFC7C7C7) : const Color(0xFF33415C),
+      ink3: isDark ? const Color(0xFFB3B3B3) : const Color(0xFF42506B),
+    );
+  }
+
   static double _lerpDouble(double a, double b, double t) => a + (b - a) * t;
 }
 

@@ -8,7 +8,7 @@
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.38+-02569B?style=flat-square&logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.10+-0175C2?style=flat-square&logo=dart&logoColor=white)](https://dart.dev)
-[![Tests](https://img.shields.io/badge/Tests-468%20Passing-34D399?style=flat-square)](test/)
+[![Tests](https://img.shields.io/badge/Tests-484%20Passing-34D399?style=flat-square)](test/)
 [![Analysis](https://img.shields.io/badge/Analysis-0%20Issues-000000?style=flat-square)](lib/)
 [![Design](https://img.shields.io/badge/Theme-Dawn%20Light%20%7C%20Vercel%20Dark-EDEDED?style=flat-square)]()
 [![Languages](https://img.shields.io/badge/Languages-EN%20%7C%20FR%20%7C%20AR%20(RTL)-3B82F6?style=flat-square)]()
@@ -63,11 +63,32 @@ Built around a strict **Options-First, Low-Cognitive-Load** UX standard, Mindora
 5. **1-Page Printable A4 Brief PDF & Native Share Sheet:**
    - Pure-Dart PDF 1.4 (`595x842 pt`, `1240x1754` high-DPI FlateDecode raster) embedding the encrypted QR block at footer right/RTL left, ready for instant local save or native OS print/share via `SharePlus.instance.share`.
 
+### Phase 7 — Effortless Joy & Cross-Generational Comfort (Ages 18 to 80)
+
+1. **2D Tactile `OrganicMoodOrb` Sculpting & `QuickNoteSparksBar`:**
+   - Full-LTR/RTL horizontal glide sculpting across intensity (`1–10`) with a 480ms harmonic resonance bloom ring upon logging, paired with 1-tap mood-tailored reflection chips so logging takes 3 seconds without forced typing.
+2. **Elder-Friendly Somatic Steppers, 1-Tap Sleep Presets & `CheckInMicroMirror`:**
+   - Dedicated `48x48` `-`/`+` precision steppers (`energy_dec`/`energy_inc`, `sleep_dec`/`sleep_inc`, `anxiety_dec`/`anxiety_inc`), 9px tactile slider thumbs, 1-tap sleep preset chips (`<6h`, `7h`, `8h`, `9h+`), and deterministic calm 1-line self-mirrors after logging.
+3. **Non-Punitive `DiscoveryMilestonesCard` & Privacy-Safe `MoodAuraPosterSheet`:**
+   - 5 strictly cumulative milestones (`First Footprint`, `Nuance Finder`, `Day-to-Night Shift`, `Anchor Found`, `7 Rhythm Days`) that never punish gaps or break "streaks", plus a `1080x1350` offscreen PNG harmonic Mood Aura poster exported without private notes or triggers.
+4. **Universal 1-Tap Comfort & Clarity Mode (`DisplayComfortController`):**
+   - Toggled from Welcome Step 0 or Settings Group 2 (`mf_display_comfort_v1`) to boost secondary/tertiary ink contrast (`> 7.0:1`), strengthen hairline borders, and gently scale text `+15%` (`1.12x–1.35x` clamped) across both Dawn Light and Vercel Dark.
+
 ---
 
 ## Visual Quality Assurance Showcase
 
-All screenshots below are rendered in headless Flutter tests using bundled **Inter**, **Noto Sans Arabic**, and **MaterialIcons** font assets across mobile (`412x915`), tablet (`1180x820`), and narrow stress viewports (`320px` + `1.35x` Arabic RTL).
+All screenshots below are rendered in headless Flutter tests using bundled **Inter**, **Noto Sans Arabic**, and **MaterialIcons** font assets across mobile (`412x915`), tablet (`1180x820`), and narrow stress viewports (`320px` + `1.35x` / Comfort `+15%` Arabic RTL).
+
+### Phase 7 — Effortless Joy & 18-to-80 Comfort Showcase
+
+| **Home Tactile Orb & Quick Sparks (Dark EN)** | **Track 48x48 Steppers & Sleep Presets (Light EN)** | **Discovery Milestones 5/5 Unlocked (Dark EN)** |
+|:---:|:---:|:---:|
+| <img src="screenshots/vqa_phase7/01_home_orb_sparks_dark.png" width="260" /> | <img src="screenshots/vqa_phase7/02_track_tactile_steppers_light.png" width="260" /> | <img src="screenshots/vqa_phase7/03_discovery_milestones_history_dark.png" width="260" /> |
+
+| **Generative 1080x1350 Mood Aura Poster (Dark EN)** | **Comfort Mode ON + 320px Arabic RTL (Light AR)** |
+|:---:|:---:|
+| <img src="screenshots/vqa_phase7/04_generative_mood_aura_poster_dark.png" width="260" /> | <img src="screenshots/vqa_phase7/05_comfort_mode_ar_rtl_320_light.png" width="260" /> |
 
 ### Phase 5 — Differentiator & Launch Proof
 
@@ -159,7 +180,7 @@ flutter pub get
 # 2. Static analysis (0 issues required)
 flutter analyze --no-pub
 
-# 3. Run full test suite (468 passing tests)
+# 3. Run full test suite (484 passing tests)
 flutter test
 
 # 4. Build debug APK with native share & QR camera plugins

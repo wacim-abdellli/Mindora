@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../app/localization/app_strings.dart';
 import '../../../app/localization/locale_controller.dart';
 import '../../../app/router/app_router.dart';
+import '../../../app/theme/display_comfort_controller.dart';
 import '../../../app/theme/mind_tokens.dart';
 import '../../../app/theme/theme_controller.dart';
 import '../../../core/notifications/gentle_reminder_service.dart';
@@ -739,7 +740,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     await prefs.remove(UnifiedBackupService.prefLastBackupTime);
     await prefs.remove(UnifiedBackupService.prefLastBackupJson);
     await prefs.remove(UnifiedBackupService.prefLastBackupCount);
+    await prefs.remove(kDisplayComfortPrefKey);
     ref.invalidate(aiConfigProvider);
+    ref.invalidate(displayComfortProvider);
 
     if (mounted) {
       setState(() {
@@ -1062,6 +1065,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final langIndex = currentLocale.languageCode == 'ar'
         ? 2
         : (currentLocale.languageCode == 'fr' ? 1 : 0);
+    final comfortMode = ref.watch(displayComfortProvider);
 
     return Scaffold(
       backgroundColor: tokens.bg,
@@ -1307,6 +1311,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                     ],
                   ),
+                ),
+                Divider(height: 1, thickness: 1, color: tokens.line),
+                _buildSwitchRow(
+                  tokens: tokens,
+                  icon: Icons.visibility_outlined,
+                  title: strings.comfortModeTitle,
+                  subtitle: strings.comfortModeSub,
+                  value: comfortMode,
+                  onChanged: (val) => ref
+                      .read(displayComfortProvider.notifier)
+                      .setComfortMode(val),
                 ),
                 Divider(height: 1, thickness: 1, color: tokens.line),
                 _buildSwitchRow(

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/localization/locale_controller.dart';
 import 'app/router/app_router.dart';
+import 'app/theme/display_comfort_controller.dart';
 import 'app/theme/lab_theme.dart';
 import 'app/theme/mind_tokens.dart';
 import 'app/theme/theme_controller.dart';
@@ -14,9 +15,13 @@ import 'features/mind_trace/domain/mind_trace_model.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final initialThemeMode = await ThemeController.loadInitialThemeMode();
+  final initialComfortMode = await DisplayComfortController.loadInitial();
   runApp(
     ProviderScope(
-      overrides: [initialThemeModeProvider.overrideWithValue(initialThemeMode)],
+      overrides: [
+        initialThemeModeProvider.overrideWithValue(initialThemeMode),
+        initialComfortModeProvider.overrideWithValue(initialComfortMode),
+      ],
       child: const MindForensicsApp(),
     ),
   );
@@ -30,6 +35,7 @@ class MindForensicsApp extends ConsumerWidget {
     final themeMode = ref.watch(themeControllerProvider);
     final locale = ref.watch(localeControllerProvider);
     final activeMood = ref.watch(activeMoodProvider);
+    final comfortMode = ref.watch(displayComfortProvider);
     final isArabic = locale.languageCode == 'ar';
 
     ref.listen<MindTraceModel?>(todayTraceProvider, (_, next) {
@@ -38,8 +44,12 @@ class MindForensicsApp extends ConsumerWidget {
       }
     });
 
-    final lightTokens = MindTokens.light.withMood(activeMood);
-    final darkTokens = MindTokens.dark.withMood(activeMood);
+    final lightTokens = MindTokens.light
+        .withMood(activeMood)
+        .withComfortBoost(comfortMode);
+    final darkTokens = MindTokens.dark
+        .withMood(activeMood)
+        .withComfortBoost(comfortMode);
 
     return MaterialApp.router(
       title: 'Mindora',
@@ -65,10 +75,24 @@ class MindForensicsApp extends ConsumerWidget {
       ],
       routerConfig: AppRouter.router,
       builder: (context, child) {
-        return _DynamicMindThemeHost(
-          activeMood: activeMood,
-          isArabic: isArabic,
-          child: LockOverlay(child: child ?? const SizedBox.shrink()),
+        final mq = MediaQuery.of(context);
+        final baseScale = mq.textScaler.scale(10.0) / 10.0;
+        final targetScale = comfortMode
+            ? (baseScale * 1.15).clamp(1.12, 1.35)
+            : baseScale.clamp(0.85, 1.35);
+
+        return MediaQuery(
+          data: mq.copyWith(textScaler: TextScaler.linear(targetScale)),
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+            child: _DynamicMindThemeHost(
+              activeMood: activeMood,
+              isArabic: isArabic,
+              comfortMode: comfortMode,
+              child: LockOverlay(child: child ?? const SizedBox.shrink()),
+            ),
+          ),
         );
       },
     );
@@ -81,11 +105,13 @@ class _DynamicMindThemeHost extends StatefulWidget {
   const _DynamicMindThemeHost({
     required this.activeMood,
     required this.isArabic,
+    required this.comfortMode,
     required this.child,
   });
 
   final AppMood activeMood;
   final bool isArabic;
+  final bool comfortMode;
   final Widget child;
 
   @override
@@ -133,7 +159,7 @@ class _DynamicMindThemeHostState extends State<_DynamicMindThemeHost> {
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     final tokens = MindTokens.forBrightness(
       brightness,
-    ).withMood(widget.activeMood);
+    ).withMood(widget.activeMood).withComfortBoost(widget.comfortMode);
     final themeData = buildMindTheme(
       brightness,
       tokensOverride: tokens,

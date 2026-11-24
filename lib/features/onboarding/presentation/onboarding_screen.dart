@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/localization/app_strings.dart';
 import '../../../app/localization/locale_controller.dart';
 import '../../../app/router/app_router.dart';
+import '../../../app/theme/display_comfort_controller.dart';
 import '../../../app/theme/mind_tokens.dart';
 import '../../../core/safety/crisis_keywords.dart';
 import '../../../core/safety/safety_interceptor.dart';
@@ -561,7 +562,74 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
+          Builder(
+            builder: (context) {
+              final comfortMode = ref.watch(displayComfortProvider);
+              return MindPressable(
+                key: const ValueKey('onboarding-comfort-mode-toggle'),
+                semanticLabel: strings.comfortModeTitle,
+                borderRadius: BorderRadius.circular(14),
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  ref.read(displayComfortProvider.notifier).toggle();
+                },
+                child: MindCard(
+                  variant: MindCardVariant.plain,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.visibility_outlined,
+                        size: 18,
+                        color: tokens.m1,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              strings.comfortModeTitle,
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
+                                color: tokens.ink,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              strings.comfortModeOnboardingHint,
+                              style: TextStyle(
+                                fontSize: 12,
+                                height: 1.35,
+                                color: tokens.ink2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IgnorePointer(
+                        child: SizedBox(
+                          height: 28,
+                          child: Switch.adaptive(
+                            value: comfortMode,
+                            activeTrackColor: tokens.m1,
+                            onChanged: (_) {},
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
           Center(
             child: MindPressable(
               semanticLabel: strings.signInPromptBtn,

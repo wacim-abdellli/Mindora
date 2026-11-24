@@ -5012,6 +5012,22 @@ class AppStrings {
             ? 'Mon poster d’aura généré localement avec Mindora.'
             : 'My personal harmonic Mood Aura created locally in Mindora.');
 
+  String get comfortModeTitle => isArabic
+      ? 'وضع الراحة والوضوح البصري'
+      : (isFrench ? 'Mode Confort & Clarté' : 'Comfort & Clarity Mode');
+
+  String get comfortModeSub => isArabic
+      ? 'خط أوضح وأكبر (+15%) وحدود أنقى لراحة العين في كل وقت'
+      : (isFrench
+            ? 'Texte agrandi (+15 %) et contours plus nets pour un confort de lecture optimal'
+            : 'Larger readable text (+15%) and crisper borders for tired eyes or brighter rooms');
+
+  String get comfortModeOnboardingHint => isArabic
+      ? 'تحب خط أكبر وتباين أوضح؟ تنجم تفعّلو بضغطة وحدة.'
+      : (isFrench
+            ? 'Préférez-vous un texte plus grand et plus net ? Activez-le en un geste.'
+            : 'Prefer larger text and crisper contrast? Toggle anytime in 1 tap.');
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);
