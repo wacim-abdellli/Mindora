@@ -4715,6 +4715,126 @@ class AppStrings {
       ? 'تشغيل أو إيقاف الإضاءة'
       : (isFrench ? 'Activer/couper la lampe' : 'Toggle torch');
 
+  // ---------------------------------------------------------------------------
+  // Milestone 7.1: Tactile 2D Orb Sculpting & 1-Tap Quick Note Sparks
+  // ---------------------------------------------------------------------------
+
+  String get orbTouchHint => isArabic
+      ? 'اسحب فوق الدائرة أو اختر من الأسفل'
+      : (isFrench
+            ? 'Glissez sur l’orbe pour ajuster ou choisissez ci-dessous'
+            : 'Glide on the orb to sculpt mood & intensity');
+
+  String get quickSparksLabel => isArabic
+      ? 'كلمات سريعة بضغطة وحدة (اختياري)'
+      : (isFrench
+            ? 'Notes rapides en un tap (optionnel)'
+            : '1-tap note sparks (optional)');
+
+  List<String> quickSparksForMood(String moodKey) {
+    final norm = moodKey.trim().toLowerCase();
+    if (isArabic) {
+      return switch (norm) {
+        'anxious' => const [
+          'أفكار متسارعة',
+          'ضغط خدمة',
+          'محتاج نفس عميق',
+          'حاسس بتوتر',
+        ],
+        'frustrated' => const [
+          'برشا مطالب اليوم',
+          'ما حسّيتش روحي مسموع',
+          'تعب أعصاب',
+          'محتاج شوية مساحة',
+        ],
+        'heavy' => const [
+          'طاقتي طايحة اليوم',
+          'ماشي بالشوية',
+          'محتاج راحة',
+          'نهار ثقيل شوية',
+        ],
+        'restless' => const [
+          'تركيز مشتّت',
+          'شاشات متأخرة',
+          'طاقة زايدة بلا هدوء',
+          'صعيب نرتاح توّة',
+        ],
+        _ => const [
+          'لحظة هادية',
+          'نوم مريح',
+          'تركيز ثابت',
+          'مرتاح اليوم',
+        ],
+      };
+    }
+    if (isFrench) {
+      return switch (norm) {
+        'anxious' => const [
+          'Pensées rapides',
+          'Pression du travail',
+          'Besoin de souffler',
+          'Tendu à l’avance',
+        ],
+        'frustrated' => const [
+          'Trop de demandes',
+          'Pas senti écouté',
+          'Limite dépassée',
+          'Besoin d’espace',
+        ],
+        'heavy' => const [
+          'Batterie basse',
+          'J’y vais doucement',
+          'Besoin de repos',
+          'Journée lourde',
+        ],
+        'restless' => const [
+          'Esprit dispersé',
+          'Écrans tardifs',
+          'Trop d’élan intérieur',
+          'Dur de poser',
+        ],
+        _ => const [
+          'Moment paisible',
+          'Bien dormi',
+          'Énergie stable',
+          'Reconnaissant',
+        ],
+      };
+    }
+    return switch (norm) {
+      'anxious' => const [
+        'Mind racing',
+        'Work pressure',
+        'Need a breather',
+        'Uncertain ahead',
+      ],
+      'frustrated' => const [
+        'Too many demands',
+        'Felt unheard',
+        'Boundary crossed',
+        'Need space',
+      ],
+      'heavy' => const [
+        'Low battery today',
+        'Taking it slow',
+        'Need rest',
+        'Quietly holding on',
+      ],
+      'restless' => const [
+        'Scattered focus',
+        'Late screens',
+        'High restless energy',
+        'Hard to settle',
+      ],
+      _ => const [
+        'Peaceful moment',
+        'Slept well',
+        'Steady energy',
+        'Grateful today',
+      ],
+    };
+  }
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);

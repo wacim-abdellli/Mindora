@@ -10,6 +10,7 @@ import '../../../../core/widgets/mind_intensity_picker.dart';
 import '../../../../core/widgets/mind_pressable.dart';
 import '../../../../core/widgets/mood_emblem.dart';
 import '../../../../core/widgets/organic_mood_orb.dart';
+import '../../../../core/widgets/quick_note_sparks_bar.dart';
 import '../../../mind_trace/domain/affect_taxonomy.dart';
 import '../../../mind_trace/domain/mind_trace_model.dart';
 import '../../../support/presentation/contextual_support_sheet.dart';
@@ -72,6 +73,7 @@ class HomeDailyCheckInCard extends StatefulWidget {
 
 class _HomeDailyCheckInCardState extends State<HomeDailyCheckInCard> {
   bool _isEditing = false;
+  int _saveBloomCount = 0;
 
   @override
   void didUpdateWidget(covariant HomeDailyCheckInCard oldWidget) {
@@ -618,14 +620,23 @@ class _HomeDailyCheckInCardState extends State<HomeDailyCheckInCard> {
           const SizedBox(height: 8),
         ],
 
-        // Living Organic Mood Orb (responds smoothly to state + intensity)
+        // Living Organic Mood Orb (responds smoothly to state + intensity + 2D touch)
         Center(
           child: OrganicMoodOrb(
             moodKey: activeMood,
             intensity: roundedIntensity,
             color: activeMoodColor,
-            size: 102,
+            size: 88,
+            celebrationRevision: _saveBloomCount,
             semanticLabel: widget.getMoodLabel(activeMood, strings),
+            onIntensityChanged: (next) =>
+                widget.onIntensityChanged(next.toDouble()),
+            onMoodStep: (delta) {
+              if (widget.moodOptions.length > 1) {
+                final len = widget.moodOptions.length;
+                widget.onMoodSelected(((safeIdx + delta) % len + len) % len);
+              }
+            },
             onTap: () {
               if (widget.moodOptions.length > 1) {
                 widget.onMoodSelected(
@@ -648,7 +659,21 @@ class _HomeDailyCheckInCardState extends State<HomeDailyCheckInCard> {
             ),
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 2),
+        Center(
+          child: Text(
+            strings.orbTouchHint,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 10.5,
+              color: tokens.ink3,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
 
         // 3 + 2 Tactile Emotion Tile Grid with invariant label geometry
         Row(
@@ -690,7 +715,7 @@ class _HomeDailyCheckInCardState extends State<HomeDailyCheckInCard> {
             ],
           ),
         ],
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
 
         // Intensity Header & Word Badge
         Row(
@@ -750,7 +775,7 @@ class _HomeDailyCheckInCardState extends State<HomeDailyCheckInCard> {
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
 
         // Unified 10-step graduated waveform + progress rail intensity picker
         MindIntensityPicker(
@@ -759,7 +784,7 @@ class _HomeDailyCheckInCardState extends State<HomeDailyCheckInCard> {
           strings: strings,
           onChanged: (next) => widget.onIntensityChanged(next.toDouble()),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
 
         // Optional Daily Note Input
         TextField(
@@ -782,7 +807,7 @@ class _HomeDailyCheckInCardState extends State<HomeDailyCheckInCard> {
             fillColor: tokens.surface2,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 14,
-              vertical: 12,
+              vertical: 10,
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
@@ -798,7 +823,13 @@ class _HomeDailyCheckInCardState extends State<HomeDailyCheckInCard> {
             ),
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 6),
+        QuickNoteSparksBar(
+          moodKey: activeMood,
+          controller: widget.todayNoteController,
+          strings: strings,
+        ),
+        const SizedBox(height: 10),
 
         // Primary Save / Update CTA (Single primary CTA in this viewport)
         MindButton(
@@ -810,6 +841,7 @@ class _HomeDailyCheckInCardState extends State<HomeDailyCheckInCard> {
               : Icons.check_circle_outline_rounded,
           variant: MindButtonVariant.primary,
           onPressed: () {
+            setState(() => _saveBloomCount++);
             widget.onSave();
             if (hasLoggedToday && mounted) {
               setState(() => _isEditing = false);
@@ -859,7 +891,7 @@ class _HomeDailyCheckInCardState extends State<HomeDailyCheckInCard> {
             children: [
               Padding(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 11),
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [

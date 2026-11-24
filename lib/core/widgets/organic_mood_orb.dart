@@ -27,6 +27,8 @@ class OrganicMoodOrb extends StatefulWidget {
     this.size = 104.0,
     this.onTap,
     this.onIntensityChanged,
+    this.onMoodStep,
+    this.celebrationRevision = 0,
     this.semanticLabel,
     this.idle = false,
     this.animateChanges = true,
@@ -38,6 +40,8 @@ class OrganicMoodOrb extends StatefulWidget {
   final double size;
   final VoidCallback? onTap;
   final ValueChanged<int>? onIntensityChanged;
+  final ValueChanged<int>? onMoodStep;
+  final int celebrationRevision;
   final String? semanticLabel;
   final bool idle;
   final bool animateChanges;
@@ -195,12 +199,14 @@ class _OrbShapeSpec {
 class _OrganicMoodOrbState extends State<OrganicMoodOrb>
     with TickerProviderStateMixin {
   AnimationController? _morphController;
+  AnimationController? _bloomController;
   ValueNotifier<double>? _flowPhaseNotifier;
   Listenable? _paintListenable;
   Ticker? _flowTicker;
   Duration _lastElapsed = Duration.zero;
   double _tapScale = 1.0;
   double _dragAccumDy = 0.0;
+  double _dragAccumDx = 0.0;
 
   _OrbShapeSpec? _fromSpec;
   _OrbShapeSpec? _toSpec;
@@ -217,8 +223,15 @@ class _OrganicMoodOrbState extends State<OrganicMoodOrb>
       vsync: this,
       duration: const Duration(milliseconds: 700),
     )..value = 1.0;
-    _paintListenable ??=
-        Listenable.merge([_morphController!, _flowPhaseNotifier!]);
+    _bloomController ??= AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 480),
+    );
+    _paintListenable ??= Listenable.merge([
+      _morphController!,
+      _flowPhaseNotifier!,
+      _bloomController!,
+    ]);
   }
 
   @override
@@ -303,6 +316,11 @@ class _OrganicMoodOrbState extends State<OrganicMoodOrb>
           ..forward();
       }
     }
+    if (widget.celebrationRevision != oldWidget.celebrationRevision) {
+      if (!MediaQuery.disableAnimationsOf(context)) {
+        _bloomController!.forward(from: 0.0);
+      }
+    }
     _syncContinuousTicker();
   }
 
@@ -311,6 +329,7 @@ class _OrganicMoodOrbState extends State<OrganicMoodOrb>
     _flowTicker?.dispose();
     _flowPhaseNotifier?.dispose();
     _morphController?.dispose();
+    _bloomController?.dispose();
     super.dispose();
   }
 
@@ -370,6 +389,9 @@ class _OrganicMoodOrbState extends State<OrganicMoodOrb>
               color: effectiveColor,
             );
 
+            final bloomProgress =
+                _bloomController!.isAnimating ? _bloomController!.value : 0.0;
+
             return CustomPaint(
               size: Size.square(widget.size),
               painter: _OrganicMoodOrbPainter(
@@ -377,6 +399,7 @@ class _OrganicMoodOrbState extends State<OrganicMoodOrb>
                 phase: effectivePhase,
                 orbGlowFactor: tokens.orbGlowFactor,
                 isDark: tokens.isDark,
+                bloomProgress: bloomProgress,
               ),
             );
           },
@@ -384,17 +407,35 @@ class _OrganicMoodOrbState extends State<OrganicMoodOrb>
       ),
     );
 
-    if (widget.onTap == null && widget.onIntensityChanged == null) {
+    if (widget.onTap == null &&
+        widget.onIntensityChanged == null &&
+        widget.onMoodStep == null) {
       return ExcludeSemantics(child: orb);
     }
 
     return Semantics(
-      button: widget.onTap != null,
+      button: widget.onTap != null || widget.onMoodStep != null,
       slider: widget.onIntensityChanged != null,
       label: widget.semanticLabel,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: widget.onTap != null ? _handleTap : null,
+        onHorizontalDragStart: widget.onMoodStep != null
+            ? (_) => _dragAccumDx = 0.0
+            : null,
+        onHorizontalDragUpdate: widget.onMoodStep != null
+            ? (details) {
+                _dragAccumDx += details.delta.dx;
+                if (_dragAccumDx.abs() >= 26.0) {
+                  final isRtl = Directionality.of(context) == TextDirection.rtl;
+                  final rawStep = _dragAccumDx > 0 ? 1 : -1;
+                  final step = isRtl ? -rawStep : rawStep;
+                  _dragAccumDx = 0.0;
+                  HapticFeedback.selectionClick();
+                  widget.onMoodStep!(step);
+                }
+              }
+            : null,
         onVerticalDragStart: widget.onIntensityChanged != null
             ? (_) => _dragAccumDy = 0.0
             : null,
@@ -442,12 +483,14 @@ class _OrganicMoodOrbPainter extends CustomPainter {
     required this.phase,
     required this.orbGlowFactor,
     required this.isDark,
+    this.bloomProgress = 0.0,
   });
 
   final _OrbShapeSpec spec;
   final double phase;
   final double orbGlowFactor;
   final bool isDark;
+  final double bloomProgress;
 
   Path _buildFluidPath(Size size, {double scaleMultiplier = 1.0}) {
     final cx = size.width / 2;
@@ -528,6 +571,17 @@ class _OrganicMoodOrbPainter extends CustomPainter {
       canvas.drawPath(echoPath, echoPaint);
     }
 
+    // 2b. Save resonance bloom ring.
+    if (bloomProgress > 0.0 && bloomProgress < 1.0) {
+      final eased = Curves.easeOutCubic.transform(bloomProgress);
+      final bloomRadius = outerRadius * (1.05 + 0.42 * eased);
+      final bloomPaint = Paint()
+        ..color = spec.color.withValues(alpha: (1.0 - bloomProgress) * 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0;
+      canvas.drawCircle(center, bloomRadius, bloomPaint);
+    }
+
     // 3. Sculpted 3D liquid mesh shading (highlight shifts subtly with fluid motion).
     final highlightColor = Color.lerp(
           spec.color,
@@ -591,6 +645,7 @@ class _OrganicMoodOrbPainter extends CustomPainter {
     return oldDelegate.phase != phase ||
         oldDelegate.orbGlowFactor != orbGlowFactor ||
         oldDelegate.isDark != isDark ||
+        oldDelegate.bloomProgress != bloomProgress ||
         oldDelegate.spec.harmonicA != spec.harmonicA ||
         oldDelegate.spec.ampA != spec.ampA ||
         oldDelegate.spec.ampB != spec.ampB ||

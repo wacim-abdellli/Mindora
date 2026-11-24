@@ -21,6 +21,7 @@ import '../../../core/widgets/mind_pressable.dart';
 import '../../../core/widgets/mind_segmented.dart';
 import '../../../core/widgets/mood_emblem.dart';
 import '../../../core/widgets/organic_mood_orb.dart';
+import '../../../core/widgets/quick_note_sparks_bar.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../home/presentation/widgets/home_organic_exercise_art.dart';
 import '../../investigation/controllers/investigation_providers.dart';
@@ -92,6 +93,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
   String? _editingTraceId;
   bool _isSaving = false;
   bool _savedConfirmed = false;
+  int _saveBloomCount = 0;
   String? _hydratedTraceSignature;
   bool _hasHydratedInitial = false;
   bool _allowOrbMorph = false;
@@ -497,6 +499,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
       if (mounted) {
         setState(() {
           _savedConfirmed = true;
+          _saveBloomCount++;
           _selectedDateKey = trace.dateKey;
         });
         HapticFeedback.mediumImpact();
@@ -817,10 +820,56 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                     intensity: _moodIntensity.round(),
                     color: activeMoodColor,
                     size: 84,
+                    celebrationRevision: _saveBloomCount,
                     animateChanges: _allowOrbMorph,
+                    semanticLabel: trackMoodLabel(_selectedMood, strings),
+                    onTap: () {
+                      final len = trackCoreMoods.length;
+                      final idx = trackCoreMoods.indexWhere(
+                        (m) => m.key == _selectedMood,
+                      );
+                      final nextIdx = ((idx == -1 ? 0 : idx) + 1) % len;
+                      setState(() {
+                        _allowOrbMorph = true;
+                        _selectedMood = trackCoreMoods[nextIdx].key;
+                        _savedConfirmed = false;
+                      });
+                    },
+                    onIntensityChanged: (next) {
+                      setState(() {
+                        _allowOrbMorph = true;
+                        _moodIntensity = next.toDouble();
+                        _savedConfirmed = false;
+                      });
+                    },
+                    onMoodStep: (delta) {
+                      final len = trackCoreMoods.length;
+                      final idx = trackCoreMoods.indexWhere(
+                        (m) => m.key == _selectedMood,
+                      );
+                      final base = idx == -1 ? 0 : idx;
+                      final nextIdx = ((base + delta) % len + len) % len;
+                      setState(() {
+                        _allowOrbMorph = true;
+                        _selectedMood = trackCoreMoods[nextIdx].key;
+                        _savedConfirmed = false;
+                      });
+                    },
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
+                Center(
+                  child: Text(
+                    strings.orbTouchHint,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 11,
+                      color: tokens.ink3,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
                 Center(
                   child: Text(
                     strings.todaysCoreState,
@@ -894,6 +943,13 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                       focusedBorder: InputBorder.none,
                     ),
                   ),
+                ),
+                const SizedBox(height: 10),
+                QuickNoteSparksBar(
+                  moodKey: _selectedMood,
+                  controller: _noteController,
+                  strings: strings,
+                  onChanged: () => setState(() => _savedConfirmed = false),
                 ),
                 const SizedBox(height: 14),
                 MindCard(
