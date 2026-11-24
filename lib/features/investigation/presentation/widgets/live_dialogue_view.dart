@@ -200,14 +200,12 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
     }
   }
 
-  Future<void> _cycleStatementLabel(Statement statement) async {
+  Future<void> _setStatementLabel(
+    Statement statement,
+    LabelType targetLabel,
+  ) async {
     HapticFeedback.selectionClick();
-    final nextLabel = switch (statement.label) {
-      null => LabelType.assumption,
-      LabelType.assumption => LabelType.fact,
-      LabelType.fact => LabelType.interpretation,
-      LabelType.interpretation => null,
-    };
+    final nextLabel = statement.label == targetLabel ? null : targetLabel;
 
     final currentCase = ref.read(activeCaseControllerProvider).value;
     if (currentCase == null) return;
@@ -1183,79 +1181,27 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                           if (isUser) ...[
                             const SizedBox(height: 10),
                             Wrap(
-                              spacing: 8,
+                              spacing: 6,
                               runSpacing: 6,
                               children: [
-                                MindPressable(
-                                  semanticLabel: statement.label != null
-                                      ? localizedStatementLabelName(
-                                          statement.label!,
-                                          strings,
-                                        )
-                                      : strings.tagFactGuessStoryHint,
-                                  borderRadius: BorderRadius.circular(tokens.chipRadius),
-                                  onPressed: () => _cycleStatementLabel(statement),
-                                  child: Container(
-                                    constraints: const BoxConstraints(
-                                      minWidth: 48,
-                                      minHeight: 48,
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: epistemicColor != null
-                                          ? tokens.selectedTintFor(epistemicColor)
-                                          : tokens.surface,
-                                      borderRadius: BorderRadius.circular(tokens.chipRadius),
-                                      border: Border.all(
-                                        color: epistemicColor ?? tokens.line,
-                                        width: epistemicColor != null ? 1.2 : 1.0,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          statement.label != null
-                                              ? iconForStatementLabel(statement.label!)
-                                              : Icons.label_outline_rounded,
-                                          size: 14,
-                                          color: epistemicColor ?? tokens.ink2,
-                                        ),
-                                        const SizedBox(width: 5),
-                                        Flexible(
-                                          child: Text(
-                                            statement.label != null
-                                                ? localizedStatementLabelName(
-                                                    statement.label!,
-                                                    strings,
-                                                  )
-                                                : strings.tagFactGuessStoryHint,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontSize: 11.5,
-                                              fontWeight: FontWeight.w700,
-                                              color: epistemicColor ?? tokens.ink2,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                for (final option in LabelType.values)
+                                  _buildDirectLabelPill(
+                                    statement: statement,
+                                    option: option,
+                                    tokens: tokens,
+                                    strings: strings,
                                   ),
-                                ),
                                 MindPressable(
                                   semanticLabel: statement.distortionTag ??
                                       strings.tagDistortionBtn,
-                                  borderRadius: BorderRadius.circular(tokens.chipRadius),
+                                  borderRadius:
+                                      BorderRadius.circular(tokens.chipRadius),
                                   onPressed: () =>
                                       _showCognitiveDistortionsSheet(statement),
                                   child: Container(
                                     constraints: const BoxConstraints(
                                       minWidth: 48,
-                                      minHeight: 48,
+                                      minHeight: 40,
                                     ),
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 10,
@@ -1265,7 +1211,9 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                                       color: statement.distortionTag != null
                                           ? tokens.cardTint
                                           : tokens.surface,
-                                      borderRadius: BorderRadius.circular(tokens.chipRadius),
+                                      borderRadius: BorderRadius.circular(
+                                        tokens.chipRadius,
+                                      ),
                                       border: Border.all(
                                         color: statement.distortionTag != null
                                             ? tokens.ink
@@ -1274,7 +1222,8 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                                       ),
                                     ),
                                     child: Text(
-                                      statement.distortionTag ?? strings.tagDistortionBtn,
+                                      statement.distortionTag ??
+                                          strings.tagDistortionBtn,
                                       style: TextStyle(
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w700,
@@ -1365,51 +1314,156 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
     );
   }
 
+  Widget _buildDirectLabelPill({
+    required Statement statement,
+    required LabelType option,
+    required MindTokens tokens,
+    required AppStrings strings,
+  }) {
+    final isSelected = statement.label == option;
+    final optionColor = switch (option) {
+      LabelType.fact => MindTokens.moodAnxious,
+      LabelType.assumption => MindTokens.moodRestless,
+      LabelType.interpretation => MindTokens.moodHeavy,
+    };
+    final labelText = localizedStatementLabelName(option, strings);
+
+    return MindPressable(
+      key: ValueKey('stmt-label-${statement.id}-${option.name}'),
+      semanticLabel: labelText,
+      borderRadius: BorderRadius.circular(tokens.chipRadius),
+      onPressed: () => _setStatementLabel(statement, option),
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 40),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? tokens.selectedTintFor(optionColor)
+              : tokens.surface,
+          borderRadius: BorderRadius.circular(tokens.chipRadius),
+          border: Border.all(
+            color: isSelected ? optionColor : tokens.line,
+            width: isSelected ? 1.4 : 1.0,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              iconForStatementLabel(option),
+              size: 13.5,
+              color: isSelected ? optionColor : tokens.ink2,
+            ),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                labelText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                  color: isSelected ? tokens.ink : tokens.ink2,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSuggestedRepliesBar({
     required MindTokens tokens,
     required AppStrings strings,
     required bool hasUserMessages,
   }) {
+    final activeCase =
+        ref.watch(activeCaseControllerProvider).value ?? widget.caseModel;
+    final hasFactTagged = activeCase.statements.any(
+      (s) => s.speaker == StatementSpeaker.user && s.label == LabelType.fact,
+    );
+
+    final chips = <Widget>[
+      if (hasUserMessages && !hasFactTagged)
+        _buildReplyChip(
+          key: const ValueKey('reply-spark-find-fact'),
+          tokens: tokens,
+          icon: Icons.verified_outlined,
+          label: strings.companionSparkFindFact,
+          highlighted: true,
+          onPressed: () => _sendMessage(strings.companionSparkFindFact),
+        ),
+      _buildReplyChip(
+        key: const ValueKey('reply-spark-facts-vs-guesses'),
+        tokens: tokens,
+        icon: Icons.fact_check_outlined,
+        label: strings.suggestedReplyFactsVsGuesses,
+        highlighted: false,
+        onPressed: () => _sendMessage(strings.suggestedReplyFactsVsGuesses),
+      ),
+      if (hasUserMessages) ...[
+        _buildReplyChip(
+          key: const ValueKey('reply-spark-other-angle'),
+          tokens: tokens,
+          icon: Icons.compare_arrows_rounded,
+          label: strings.companionSparkOtherAngle,
+          highlighted: false,
+          onPressed: () => _sendMessage(strings.companionSparkOtherAngle),
+        ),
+        _buildReplyChip(
+          key: const ValueKey('reply-spark-keep-brief'),
+          tokens: tokens,
+          icon: Icons.short_text_rounded,
+          label: strings.companionSparkKeepBrief,
+          highlighted: false,
+          onPressed: () => _sendMessage(strings.companionSparkKeepBrief),
+        ),
+      ],
+      _buildReplyChip(
+        key: const ValueKey('reply-spark-grounding'),
+        tokens: tokens,
+        icon: Icons.spa_outlined,
+        label: strings.suggestedReplyGroundingFirst,
+        highlighted: !hasUserMessages,
+        onPressed: () => ContextualSupportSheet.show(context),
+      ),
+      if (hasUserMessages)
+        _buildReplyChip(
+          key: const ValueKey('reply-spark-save-takeaway'),
+          tokens: tokens,
+          icon: Icons.bookmark_added_outlined,
+          label: strings.suggestedReplySaveTakeaway,
+          highlighted: false,
+          onPressed: _synthesizeCaseBrief,
+        ),
+    ];
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: tokens.bg,
         border: Border(top: BorderSide(color: tokens.line)),
       ),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          _buildReplyChip(
-            tokens: tokens,
-            icon: Icons.fact_check_outlined,
-            label: strings.suggestedReplyFactsVsGuesses,
-            highlighted: false,
-            onPressed: () =>
-                _sendMessage(strings.suggestedReplyFactsVsGuesses),
-          ),
-          _buildReplyChip(
-            tokens: tokens,
-            icon: Icons.spa_outlined,
-            label: strings.suggestedReplyGroundingFirst,
-            highlighted: true,
-            onPressed: () => ContextualSupportSheet.show(context),
-          ),
-          if (hasUserMessages)
-            _buildReplyChip(
-              tokens: tokens,
-              icon: Icons.bookmark_added_outlined,
-              label: strings.suggestedReplySaveTakeaway,
-              highlighted: false,
-              onPressed: _synthesizeCaseBrief,
-            ),
-        ],
+      child: SingleChildScrollView(
+        key: const ValueKey('companion-reply-sparks-bar'),
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        child: Row(
+          children: [
+            for (var i = 0; i < chips.length; i++) ...[
+              if (i > 0) const SizedBox(width: 8),
+              chips[i],
+            ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildReplyChip({
+    Key? key,
     required MindTokens tokens,
     required IconData icon,
     required String label,
@@ -1417,11 +1471,12 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
     required VoidCallback onPressed,
   }) {
     return MindPressable(
+      key: key,
       semanticLabel: label,
       borderRadius: BorderRadius.circular(14),
       onPressed: _isInvestigatorTyping ? null : onPressed,
       child: Container(
-        constraints: const BoxConstraints(minHeight: 38),
+        constraints: const BoxConstraints(minHeight: 40),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: highlighted ? tokens.cardTint : tokens.surface,
@@ -1441,14 +1496,14 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
               color: highlighted ? tokens.ink : tokens.ink2,
             ),
             const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: highlighted ? tokens.ink : tokens.ink,
-                ),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: tokens.ink,
               ),
             ),
           ],

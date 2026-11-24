@@ -5089,6 +5089,25 @@ class AppStrings {
     return 'I want to reflect on my care focus: "$goalTitle". What is one gentle, practical way to approach it today?';
   }
 
+  // Phase 8.2 — Zero-Typing Thought Sorter & Context-Aware Reply Sparks
+  String get companionSparkFindFact => isArabic
+      ? 'خلّينا نفرّقو بين الحقيقة والظنّ'
+      : (isFrench
+            ? 'Séparer le fait observable'
+            : 'Separate the observable fact');
+
+  String get companionSparkOtherAngle => isArabic
+      ? 'اعطيني زاوية ثانية هادية'
+      : (isFrench
+            ? 'Voir un autre angle calme'
+            : 'Show another calm angle');
+
+  String get companionSparkKeepBrief => isArabic
+      ? 'اختصرلي — تاعب شويّة اليوم'
+      : (isFrench
+            ? 'Fais court — je suis fatigué'
+            : 'Keep it brief — I’m tired');
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);
