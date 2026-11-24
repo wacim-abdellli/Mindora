@@ -8,7 +8,7 @@
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.38+-02569B?style=flat-square&logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.10+-0175C2?style=flat-square&logo=dart&logoColor=white)](https://dart.dev)
-[![Tests](https://img.shields.io/badge/Tests-484%20Passing-34D399?style=flat-square)](test/)
+[![Tests](https://img.shields.io/badge/Tests-496%20Passing-34D399?style=flat-square)](test/)
 [![Analysis](https://img.shields.io/badge/Analysis-0%20Issues-000000?style=flat-square)](lib/)
 [![Design](https://img.shields.io/badge/Theme-Dawn%20Light%20%7C%20Vercel%20Dark-EDEDED?style=flat-square)]()
 [![Languages](https://img.shields.io/badge/Languages-EN%20%7C%20FR%20%7C%20AR%20(RTL)-3B82F6?style=flat-square)]()
@@ -74,11 +74,28 @@ Built around a strict **Options-First, Low-Cognitive-Load** UX standard, Mindora
 4. **Universal 1-Tap Comfort & Clarity Mode (`DisplayComfortController`):**
    - Toggled from Welcome Step 0 or Settings Group 2 (`mf_display_comfort_v1`) to boost secondary/tertiary ink contrast (`> 7.0:1`), strengthen hairline borders, and gently scale text `+15%` (`1.12x–1.35x` clamped) across both Dawn Light and Vercel Dark.
 
+### Phase 8 — Effortless Clarity & Closed Relief Loop
+
+1. **Context-Aware Check-In & Care Focus Handoff (`CompanionContextBridgeCard`):**
+   - Surfaces today's logged mood, intensity, context tags, and active psychiatrist `PostVisitFocusPlan` right above the fold in `LiveDialogueView` with a 1-tap **"Unpack today's check-in"** CTA (and 2-minute settle shortcut when intensity `>= 7`).
+2. **Zero-Typing 3-Pill Thought Sorter & Adaptive Reply Sparks (`LiveDialogueView`):**
+   - Replaces blind label cycling with a direct 3-pill **`[Fact] · [Guess/Assumption] · [Story/Interpretation]`** tactile bar on user bubbles plus a horizontally scrollable, turn-aware 1-tap reply sparks bar (`Separate the observable fact`, `Show another calm angle`, `Keep it brief — I'm tired`).
+3. **Closed-Loop Relief Micro-Check -> Empirical Recovery Ledger (`ReliefMicroCheckCard`):**
+   - After pausing Box Breathing (4-4-4-4) or completing 5-4-3-2-1 Sensory Grounding, offers a zero-pressure 1-tap check (`Calmer now` / `A little` / `Not yet`) that logs verified calming shifts directly into `RecoveryLedger` (adding first-class canonical `'grounding'` & `'breathing'` stabilizers) without logging false positives on `Not yet`.
+4. **Pocket Clarity Anchor Cards (`ClarityAnchorModel` & `ClarityAnchorCard`):**
+   - Distills completed deconstructions into scannable 3-rail pocket cards (**Observed Fact -> Mind's Jump -> Grounded Perspective**) across `CaseReportScreen` and `AiCompanionHubView`, honoring `isPrivate` vault isolation.
+
 ---
 
 ## Visual Quality Assurance Showcase
 
 All screenshots below are rendered in headless Flutter tests using bundled **Inter**, **Noto Sans Arabic**, and **MaterialIcons** font assets across mobile (`412x915`), tablet (`1180x820`), and narrow stress viewports (`320px` + `1.35x` / Comfort `+15%` Arabic RTL).
+
+### Phase 8 — Zero-Typing Clarity & Closed Relief Loop Showcase
+
+| **Context-Aware Check-In Bridge (Dark EN)** | **3-Pill Thought Sorter & Reply Sparks (Dark EN)** | **Closed-Loop Relief Micro-Check (Light EN)** | **Pocket Clarity Anchor 320px AR RTL (Dark)** |
+|:---:|:---:|:---:|:---:|
+| <img src="screenshots/vqa_phase8/01_companion_context_bridge_dark.png" width="200" /> | <img src="screenshots/vqa_phase8/02_companion_thought_sorter_sparks_dark.png" width="200" /> | <img src="screenshots/vqa_phase8/03_support_relief_micro_check_light.png" width="200" /> | <img src="screenshots/vqa_phase8/04_clarity_anchor_card_ar_rtl_320_dark.png" width="200" /> |
 
 ### Phase 7 — Effortless Joy & 18-to-80 Comfort Showcase
 
@@ -180,7 +197,7 @@ flutter pub get
 # 2. Static analysis (0 issues required)
 flutter analyze --no-pub
 
-# 3. Run full test suite (484 passing tests)
+# 3. Run full test suite (496 passing tests)
 flutter test
 
 # 4. Build debug APK with native share & QR camera plugins

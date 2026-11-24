@@ -5145,6 +5145,33 @@ class AppStrings {
     return 'Try $alt';
   }
 
+  // Phase 8.4 — Pocket Clarity Anchor Cards
+  String get clarityAnchorTitle => isArabic
+      ? 'بطاقة التوازن والوضوح'
+      : (isFrench ? 'Carte d’ancrage de clarté' : 'Pocket Clarity Anchor');
+
+  String get clarityAnchorSub => isArabic
+      ? 'مرجعك الهادي وقت يرجعلك موقف يشبهلو.'
+      : (isFrench
+            ? 'Votre repère calme lorsqu’un moment similaire revient.'
+            : 'Your calm reference when a similar moment returns.');
+
+  String get clarityAnchorFactLabel => isArabic
+      ? 'اللي صار بالحق'
+      : (isFrench ? 'Fait observable' : 'Observed fact');
+
+  String get clarityAnchorJumpLabel => isArabic
+      ? 'الظنّ اللي طلع'
+      : (isFrench ? 'Saut de pensée' : 'Mind’s jump');
+
+  String get clarityAnchorGroundedLabel => isArabic
+      ? 'النظرة الهادية'
+      : (isFrench ? 'Perspective ancrée' : 'Grounded perspective');
+
+  String get pocketAnchorsSectionTitle => isArabic
+      ? 'بطاقات الوضوح متاعك'
+      : (isFrench ? 'Vos cartes de clarté' : 'Pocket Clarity Anchors');
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);

@@ -3,12 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/localization/app_strings.dart';
 import '../../../app/theme/lab_theme.dart';
 import '../../../app/theme/mind_tokens.dart';
 import '../../../core/widgets/fingerprint_thread_signature.dart';
 import '../../../core/widgets/mind_pressable.dart';
+import '../../case_file/domain/clarity_anchor_model.dart';
+import '../../case_file/presentation/widgets/clarity_anchor_card.dart';
 import '../controllers/investigation_providers.dart';
 import '../domain/case_model.dart';
 import '../domain/conversation_mode.dart';
@@ -535,6 +538,69 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
           ),
 
           const SizedBox(height: 26),
+
+          // 4b. Pocket Clarity Anchors (only when distilled sessions exist)
+          savedCasesAsync.maybeWhen(
+            data: (cases) {
+              final anchors = ClarityAnchorModel.fromCases(cases).take(4).toList();
+              if (anchors.isEmpty) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      strings.pocketAnchorsSectionTitle.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: strings.isArabic ? 0 : 0.8,
+                        color: tokens.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (var i = 0; i < anchors.length; i++) ...[
+                            if (i > 0) const SizedBox(width: 10),
+                            SizedBox(
+                              width: 280,
+                              child: ClarityAnchorCard(
+                                anchor: anchors[i],
+                                strings: strings,
+                                compact: true,
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  final router = GoRouter.maybeOf(context);
+                                  if (router != null) {
+                                    router.push('/case/${anchors[i].caseId}');
+                                  } else {
+                                    final target = cases.firstWhere(
+                                      (c) => c.id == anchors[i].caseId,
+                                    );
+                                    ref
+                                        .read(
+                                          activeCaseControllerProvider.notifier,
+                                        )
+                                        .resumeCase(target);
+                                    widget.onSessionSelected?.call();
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+            orElse: () => const SizedBox.shrink(),
+          ),
 
           // 5. Recent Conversations List
           Row(

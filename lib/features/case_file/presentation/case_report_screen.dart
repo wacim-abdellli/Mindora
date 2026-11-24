@@ -13,7 +13,9 @@ import '../../../core/widgets/label_badge.dart';
 import '../../investigation/controllers/investigation_providers.dart';
 import '../../investigation/domain/case_model.dart';
 import '../../investigation/domain/statement.dart';
+import '../domain/clarity_anchor_model.dart';
 import 'clinical_export_preview_sheet.dart';
+import 'widgets/clarity_anchor_card.dart';
 
 /// The official Case File in Report View: Vercel Luxury Dark & Minimalist Precision.
 ///
@@ -276,6 +278,7 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
 
     final c = _case!;
     final chain = c.chain;
+    final clarityAnchor = ClarityAnchorModel.fromCase(c);
 
     return Scaffold(
       backgroundColor: bg,
@@ -316,6 +319,7 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
             children: [
               // Case Header Card
               Container(
+                width: double.infinity,
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: surfaceColor,
@@ -325,81 +329,83 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 4,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: tokens.surface2,
-                                borderRadius: BorderRadius.circular(tokens.chipRadius),
-                              ),
-                              child: Text(
-                                strings.formatSessionNumber(c.caseNumber),
-                                style: TextStyle(
-                                  color: textPrimary,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: tokens.surface2,
+                            borderRadius: BorderRadius.circular(tokens.chipRadius),
+                          ),
+                          child: Text(
+                            strings.formatSessionNumber(c.caseNumber),
+                            style: TextStyle(
+                              color: textPrimary,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: strings.isArabic ? 0 : 0.5,
                             ),
-                            const SizedBox(width: 8),
-                            InkWell(
-                              onTap: () => _togglePrivacy(c),
-                              borderRadius: BorderRadius.circular(tokens.chipRadius),
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  minWidth: 48,
-                                  minHeight: 48,
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () => _togglePrivacy(c),
+                          borderRadius: BorderRadius.circular(tokens.chipRadius),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              minWidth: 48,
+                              minHeight: 48,
+                            ),
+                            child: Center(
+                              widthFactor: 1.0,
+                              heightFactor: 1.0,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: c.isPrivate
+                                      ? tokens.safetySoft
+                                      : tokens.surface2,
+                                  borderRadius: BorderRadius.circular(tokens.chipRadius),
+                                  border: Border.all(
+                                    color: c.isPrivate
+                                        ? tokens.safety.withValues(alpha: 0.35)
+                                        : borderColor,
+                                  ),
                                 ),
-                                child: Center(
-                                  widthFactor: 1.0,
-                                  heightFactor: 1.0,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                    decoration: BoxDecoration(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      c.isPrivate ? Icons.lock_rounded : Icons.lock_open_outlined,
+                                      size: 11,
                                       color: c.isPrivate
-                                          ? tokens.safetySoft
-                                          : tokens.surface2,
-                                      borderRadius: BorderRadius.circular(tokens.chipRadius),
-                                      border: Border.all(
-                                        color: c.isPrivate
-                                            ? tokens.safety.withValues(alpha: 0.35)
-                                            : borderColor,
-                                      ),
+                                          ? context.tokens.safety
+                                          : textSecondary,
                                     ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          c.isPrivate ? Icons.lock_rounded : Icons.lock_open_outlined,
-                                          size: 11,
+                                    const SizedBox(width: 4),
+                                    Flexible(
+                                      child: Text(
+                                        c.isPrivate ? strings.casePrivateBadge : strings.caseShareableBadge,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
                                           color: c.isPrivate
                                               ? context.tokens.safety
                                               : textSecondary,
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: strings.isArabic ? 0 : 0.3,
                                         ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          c.isPrivate ? strings.casePrivateBadge : strings.caseShareableBadge,
-                                          style: TextStyle(
-                                            color: c.isPrivate
-                                                ? context.tokens.safety
-                                                : textSecondary,
-                                            fontSize: 9.5,
-                                            fontWeight: FontWeight.w700,
-                                            letterSpacing: 0.3,
-                                          ),
-                                        ),
-                                      ],
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ),
                               ),
                             ),
-                          ],
+                          ),
                         ),
                         Text(
                           '${c.createdAt.day}/${c.createdAt.month}/${c.createdAt.year}',
@@ -442,6 +448,11 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
               ),
 
               const SizedBox(height: 18),
+
+              if (clarityAnchor != null) ...[
+                ClarityAnchorCard(anchor: clarityAnchor, strings: strings),
+                const SizedBox(height: 18),
+              ],
 
               // Section 1: The Incident
               _reportSectionHeader(strings.incidentNarrativeHeader, textSecondary),
@@ -645,20 +656,26 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            Icon(Icons.anchor_rounded, size: 14, color: tokens.m1),
-                            const SizedBox(width: 6),
-                            Text(
-                              strings.finalTakeawayUserHeader,
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.6,
-                                color: tokens.m1,
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Icon(Icons.anchor_rounded, size: 14, color: tokens.m1),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  strings.finalTakeawayUserHeader,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: strings.isArabic ? 0 : 0.6,
+                                    color: tokens.m1,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                         InkWell(
                           onTap: () => _editConclusionDialog(isDark, strings),
