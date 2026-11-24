@@ -5028,6 +5028,67 @@ class AppStrings {
             ? 'Préférez-vous un texte plus grand et plus net ? Activez-le en un geste.'
             : 'Prefer larger text and crisper contrast? Toggle anytime in 1 tap.');
 
+  // Phase 8.1 — Context-Aware Handoff Bridge (Check-In & Focus Plan -> Companion)
+  String get companionBridgeTitle => isArabic
+      ? 'مواصلة من تسجيلك اليوم'
+      : (isFrench ? 'Depuis votre point du jour' : 'From today’s check-in');
+
+  String get companionBridgeUnpackBtn => isArabic
+      ? 'نفكّك شعور اليوم مع بعضنا'
+      : (isFrench ? 'Explorer ce ressenti ensemble' : 'Unpack today’s check-in');
+
+  String get companionBridgeSettleFirstBtn => isArabic
+      ? 'تهدئة سريعة (دقيقتين)'
+      : (isFrench ? 'S’apaiser d’abord (2 min)' : 'Settle first (2 min)');
+
+  String companionBridgeFocusChip(String goalTitle) {
+    if (isArabic) return 'تأمل في هدف المتابعة: $goalTitle';
+    if (isFrench) return 'Explorer votre objectif : $goalTitle';
+    return 'Reflect on care focus: $goalTitle';
+  }
+
+  String companionBridgePrompt({
+    required String moodLabel,
+    required int intensity,
+    required List<String> tagLabels,
+    required String note,
+  }) {
+    final tagSuffix = tagLabels.isEmpty ? '' : ' (${tagLabels.join(', ')})';
+    final cleanNote = note.trim();
+    if (isArabic) {
+      final base =
+          'سجّلت اليوم شعور "$moodLabel" بحدّة $intensity/10$tagSuffix.';
+      if (cleanNote.isEmpty) {
+        return '$base نحب نفهم شنية اللي صار بهدوء خطوة بخطوة.';
+      }
+      return '$base وملاحظتي: "$cleanNote". نحب نفكّك الفكرة معاك بهدوء.';
+    }
+    if (isFrench) {
+      final base =
+          'J’ai noté aujourd’hui un état « $moodLabel » ($intensity/10)$tagSuffix.';
+      if (cleanNote.isEmpty) {
+        return '$base Aidons-nous à démêler ce moment calmement.';
+      }
+      return '$base Ma note : « $cleanNote ». Aidons-nous à clarifier ce qui se passe.';
+    }
+    final base =
+        'Today I logged feeling $moodLabel ($intensity/10)$tagSuffix.';
+    if (cleanNote.isEmpty) {
+      return '$base Help me untangle what is going on calmly, step by step.';
+    }
+    return '$base My note: "$cleanNote". Help me unpack this calmly.';
+  }
+
+  String companionBridgeFocusPrompt(String goalTitle) {
+    if (isArabic) {
+      return 'نحب نراجع خطوة المتابعة هاذي بهدوء: "$goalTitle". كيفاش نجم نطبّقها اليوم بأبسط طريقة؟';
+    }
+    if (isFrench) {
+      return 'J’aimerais réfléchir à cet objectif de suivi : « $goalTitle ». Quelle serait une première étape simple aujourd’hui ?';
+    }
+    return 'I want to reflect on my care focus: "$goalTitle". What is one gentle, practical way to approach it today?';
+  }
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);

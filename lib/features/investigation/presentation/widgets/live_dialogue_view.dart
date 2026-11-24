@@ -12,6 +12,7 @@ import '../../../../app/theme/mind_tokens.dart';
 import '../../../../core/safety/crisis_keywords.dart';
 import '../../../../core/safety/safety_interceptor.dart';
 import '../../../../core/widgets/mind_pressable.dart';
+import '../../../clinician/controllers/clinician_providers.dart';
 import '../../../journal/controllers/journal_memory_controller.dart';
 import '../../../journey/controllers/journey_controller.dart';
 import '../../../mind_trace/controllers/mind_trace_controller.dart';
@@ -26,6 +27,7 @@ import '../../domain/label_type.dart';
 import '../../domain/session_memory_window.dart';
 import '../../domain/statement.dart';
 import 'ai_engine_config_sheet.dart';
+import 'companion_context_bridge_card.dart';
 import 'custom_ai_instructions_sheet.dart';
 import 'mode_chooser_sheet.dart';
 
@@ -859,6 +861,13 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
     required bool profileConsented,
   }) {
     final starters = strings.localizedStartersForMode(_currentMode.name);
+    final todayTrace = ref.watch(todayTraceProvider);
+    final focusPlan = ref.watch(postVisitFocusControllerProvider).value;
+    final hasBridge = todayTrace != null ||
+        (focusPlan != null &&
+            !focusPlan.isDismissed &&
+            (focusPlan.focusItems.any((i) => !i.isCompleted) ||
+                focusPlan.observationCue.trim().isNotEmpty));
     final privacyTag = widget.caseModel.isPrivate
         ? strings.privacyPrivateSessionTag
         : (isLive && profileConsented
@@ -866,10 +875,23 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
             : strings.privacyLocalTag);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (hasBridge) ...[
+            CompanionContextBridgeCard(
+              todayTrace: todayTrace,
+              focusPlan: focusPlan,
+              strings: strings,
+              onStartPrompt: (prompt) => _sendMessage(prompt),
+              onOpenSettleSupport: () => ContextualSupportSheet.show(
+                context,
+                initialChoice: SupportChoice.settle,
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
