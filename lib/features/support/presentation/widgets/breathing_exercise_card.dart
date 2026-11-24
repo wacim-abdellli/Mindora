@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/localization/app_strings.dart';
 import '../../../../app/theme/mind_tokens.dart';
 import '../../../investigation/presentation/widgets/vagal_breathing_visualizer.dart';
+import 'relief_micro_check_card.dart';
 
 /// Authoritative Box Breathing Pacer card:
 /// - 4-4-4-4 vagal regulation rhythm
@@ -27,6 +28,7 @@ class BreathingExerciseCard extends ConsumerStatefulWidget {
 
 class _BreathingExerciseCardState extends ConsumerState<BreathingExerciseCard> {
   bool _isActive = false;
+  bool _hasCompletedAttempt = false;
   int _secondsLeft = 4;
   int _phase = 0; // 0: Inhale (4s), 1: Hold (4s), 2: Exhale (4s), 3: Hold (4s)
   Timer? _timer;
@@ -49,6 +51,7 @@ class _BreathingExerciseCardState extends ConsumerState<BreathingExerciseCard> {
   void _startBreathing() {
     setState(() {
       _isActive = true;
+      _hasCompletedAttempt = true;
       _secondsLeft = 4;
       _phase = 0;
     });
@@ -234,6 +237,14 @@ class _BreathingExerciseCardState extends ConsumerState<BreathingExerciseCard> {
               ),
             ),
           ),
+          if (_hasCompletedAttempt && !_isActive) ...[
+            const SizedBox(height: 14),
+            ReliefMicroCheckCard(
+              exerciseActionKey: 'Breathing',
+              alternativeLabel: strings.sensoryGroundingTitle,
+              onTryAlternative: widget.onSwitchToGrounding,
+            ),
+          ],
         ],
       ),
     );

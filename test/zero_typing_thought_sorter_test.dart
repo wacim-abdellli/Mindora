@@ -116,6 +116,8 @@ void main() {
         // Tap 1-tap continuation reply spark ("Show another calm angle") without typing
         final angleSpark = find.byKey(const ValueKey('reply-spark-other-angle'));
         expect(angleSpark, findsOneWidget);
+        await tester.ensureVisible(angleSpark);
+        await tester.pumpAndSettle();
         await tester.tap(angleSpark);
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 500));
@@ -123,6 +125,9 @@ void main() {
 
         const enStrings = AppStrings('en');
         expect(find.text(enStrings.companionSparkOtherAngle), findsWidgets);
+        final afterSend =
+            await container.read(caseRepositoryProvider).getCaseById(seededCase.id);
+        expect(afterSend?.statements.length, greaterThan(2));
         expect(tester.takeException(), isNull);
       },
     );

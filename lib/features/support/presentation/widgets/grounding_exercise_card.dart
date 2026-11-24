@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/localization/app_strings.dart';
 import '../../../../app/theme/mind_tokens.dart';
+import 'relief_micro_check_card.dart';
 
 /// 5-4-3-2-1 Sensory Grounding Card:
 /// - Reorients cognitive attention to immediate environment
@@ -115,27 +116,36 @@ class _GroundingExerciseCardState extends ConsumerState<GroundingExerciseCard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                strings.sensoryGroundingTitle.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
-                  color: textSecondary,
+              Expanded(
+                child: Text(
+                  strings.sensoryGroundingTitle.toUpperCase(),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                    color: textSecondary,
+                  ),
                 ),
               ),
-              TextButton(
-                onPressed: widget.onSwitchToBreathing,
-                style: TextButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  foregroundColor: tokens.m1,
-                  padding: EdgeInsets.zero,
-                ),
-                child: Text(
-                  strings.breathingTitle,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
+              const SizedBox(width: 8),
+              Flexible(
+                child: TextButton(
+                  onPressed: widget.onSwitchToBreathing,
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    foregroundColor: tokens.m1,
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: Text(
+                    strings.breathingTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
@@ -192,6 +202,12 @@ class _GroundingExerciseCardState extends ConsumerState<GroundingExerciseCard> {
                 ),
               ),
             ),
+            ReliefMicroCheckCard(
+              exerciseActionKey: 'Grounding',
+              alternativeLabel: strings.breathingTitle,
+              onTryAlternative: widget.onSwitchToBreathing,
+            ),
+            const SizedBox(height: 14),
           ] else ...[
             Row(
               children: List.generate(5, (index) {

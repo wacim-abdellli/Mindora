@@ -5108,6 +5108,43 @@ class AppStrings {
             ? 'Fais court — je suis fatigué'
             : 'Keep it brief — I’m tired');
 
+  // Phase 8.3 — Closed-Loop Relief Micro-Check -> Observed Stabilizers
+  String get reliefCheckQuestion => isArabic
+      ? 'حسّيت بالتوتّر خفّ شويّة؟'
+      : (isFrench
+            ? 'La tension a-t-elle un peu baissé ?'
+            : 'Did the tension soften?');
+
+  String get reliefCheckCalmer => isArabic
+      ? 'أهدى توّة'
+      : (isFrench ? 'Plus calme' : 'Calmer now');
+
+  String get reliefCheckSlightly => isArabic
+      ? 'شويّة'
+      : (isFrench ? 'Un peu' : 'A little');
+
+  String get reliefCheckNotYet => isArabic
+      ? 'مازال شويّة'
+      : (isFrench ? 'Pas encore' : 'Not yet');
+
+  String get reliefLoggedConfirm => isArabic
+      ? 'تسجّل في قائمتك للمُهدّئات اللي تنفعك'
+      : (isFrench
+            ? 'Ajouté à vos stabilisateurs observés'
+            : 'Added to your Observed Stabilizers');
+
+  String get reliefNotYetAck => isArabic
+      ? 'عادي برشا، تنجّم تجرّب تمرين ثاني هادي وقت ما تحب.'
+      : (isFrench
+            ? 'C’est tout à fait normal. Vous pouvez essayer une autre option douce si vous le souhaitez.'
+            : 'That is completely okay. You can try another calm option whenever you want.');
+
+  String reliefTryAlternativeBtn(String alt) {
+    if (isArabic) return 'جرّب: $alt';
+    if (isFrench) return 'Essayer : $alt';
+    return 'Try $alt';
+  }
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);

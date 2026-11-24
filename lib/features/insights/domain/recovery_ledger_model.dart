@@ -44,6 +44,7 @@ class ObservedStabilizer {
       'walk' => Icons.directions_walk_rounded,
       'quiet_time' => Icons.self_improvement_rounded,
       'breathing' => Icons.air_rounded,
+      'grounding' => Icons.spa_outlined,
       'talked' => Icons.forum_outlined,
       'rest' => Icons.bedtime_outlined,
       _ => Icons.check_circle_outline_rounded,
@@ -58,6 +59,7 @@ class ObservedStabilizer {
       'walk' => strings.trackHelpedDisplay('Walk'),
       'quiet_time' => strings.trackHelpedDisplay('Quiet time'),
       'breathing' => strings.trackHelpedDisplay('Breathing'),
+      'grounding' => strings.sensoryGroundingTitle,
       'talked' => strings.trackHelpedDisplay('Talked'),
       'rest' => strings.trackHelpedDisplay('Rest'),
       _ => _capitalize(key),
@@ -300,6 +302,12 @@ class RecoveryLedger {
       'walk' || 'marche' || 'مشي' || 'مشي هادئ' => 'walk',
       'quiet time' || 'moment calme' || 'وقت هادئ' => 'quiet_time',
       'breathing' || 'respiration' || 'تنفس' || 'تنفّس' => 'breathing',
+      'grounding' ||
+          '5-4-3-2-1 grounding' ||
+          'sensory grounding' ||
+          'ancrage' ||
+          'ancrage sensoriel' ||
+          'التثبيت الحسي' => 'grounding',
       'talked' || 'échange' || 'echange' || 'فضفضة' || 'فضفضة مع قريب' =>
         'talked',
       'rest' || 'repos' || 'راحة' => 'rest',
