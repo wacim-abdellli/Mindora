@@ -29,6 +29,7 @@ import '../../investigation/domain/case_model.dart';
 import '../../investigation/domain/conversation_mode.dart';
 import '../../mind_trace/controllers/mind_trace_controller.dart';
 import '../../mind_trace/domain/affect_taxonomy.dart';
+import '../../mind_trace/domain/check_in_micro_mirror.dart';
 import '../../mind_trace/domain/daily_context_tags.dart';
 import '../../mind_trace/domain/emotion_descriptors.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
@@ -691,6 +692,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                           strings,
                           todayTrace,
                           todayTraces,
+                          traceAsync.value ?? const [],
                         ),
                   _buildHistoryAndCalendarTab(tokens, strings),
                 ],
@@ -784,6 +786,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
     AppStrings strings,
     MindTraceModel? todayTrace,
     List<MindTraceModel> todayTraces,
+    List<MindTraceModel> allTraces,
   ) {
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     final activeMoodColor = MindTokens.moodColor(
@@ -1062,7 +1065,14 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
             ),
           ),
         ),
-        _buildPinnedSaveFooter(tokens, strings, todayTrace, reduceMotion),
+        _buildPinnedSaveFooter(
+          tokens,
+          strings,
+          todayTrace,
+          todayTraces,
+          allTraces,
+          reduceMotion,
+        ),
       ],
     );
   }
@@ -1071,6 +1081,8 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
     MindTokens tokens,
     AppStrings strings,
     MindTraceModel? todayTrace,
+    List<MindTraceModel> todayTraces,
+    List<MindTraceModel> allTraces,
     bool reduceMotion,
   ) {
     return Container(
@@ -1117,6 +1129,27 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                               ),
                             ],
                           ),
+                          if (todayTrace != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              CheckInMicroMirror.build(
+                                latestToday: todayTrace,
+                                todayTraces: todayTraces.isNotEmpty
+                                    ? todayTraces
+                                    : [todayTrace],
+                                allTraces: allTraces,
+                                strings: strings,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 11.5,
+                                color: tokens.ink2,
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 4),
                           MindPressable(
                             onPressed: () {
@@ -1586,7 +1619,10 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                   min: 4,
                   max: 11,
                   divisions: 14,
+                  step: 0.5,
                   unit: 'h',
+                  keyPrefix: 'sleep',
+                  strings: strings,
                   tokens: tokens,
                   onChanged: (v) {
                     setState(() {
@@ -1595,6 +1631,35 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                     });
                   },
                 ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    for (final preset in [
+                      (key: '5_5', hours: 5.5, label: strings.sleepPresetShortLabel),
+                      (key: '7', hours: 7.0, label: strings.sleepPreset7hLabel),
+                      (key: '8', hours: 8.0, label: strings.sleepPreset8hLabel),
+                      (key: '9', hours: 9.0, label: strings.sleepPreset9hLabel),
+                    ])
+                      MindPill(
+                        key: ValueKey<String>('sleep-preset-${preset.key}'),
+                        label: preset.label,
+                        fontSize: 11.5,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 11,
+                          vertical: 5,
+                        ),
+                        isSelected: (_sleepHours - preset.hours).abs() < 0.05,
+                        onTap: () {
+                          setState(() {
+                            _sleepHours = preset.hours;
+                            _savedConfirmed = false;
+                          });
+                        },
+                      ),
+                  ],
+                ),
                 const Divider(height: 20, thickness: 0.5),
                 _buildSliderRow(
                   label: strings.energyTrackingLabel,
@@ -1602,7 +1667,10 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                   min: 1,
                   max: 10,
                   divisions: 9,
+                  step: 1.0,
                   unit: '/10',
+                  keyPrefix: 'energy',
+                  strings: strings,
                   tokens: tokens,
                   onChanged: (v) {
                     setState(() {
@@ -1618,7 +1686,10 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
                   min: 0,
                   max: 10,
                   divisions: 10,
+                  step: 1.0,
                   unit: '/10',
+                  keyPrefix: 'anxiety',
+                  strings: strings,
                   tokens: tokens,
                   onChanged: (v) {
                     setState(() {
@@ -1641,13 +1712,19 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
     required double min,
     required double max,
     required int divisions,
+    required double step,
     required String unit,
+    required String keyPrefix,
+    required AppStrings strings,
     required MindTokens tokens,
     required ValueChanged<double> onChanged,
   }) {
     final formatted = value.toStringAsFixed(
       value.truncateToDouble() == value ? 0 : 1,
     );
+    final canDecrease = value > min + 0.001;
+    final canIncrease = value < max - 0.001;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1680,25 +1757,88 @@ class _TrackScreenState extends ConsumerState<TrackScreen>
             ),
           ],
         ),
-        SliderTheme(
-          data: SliderTheme.of(context).copyWith(
-            activeTrackColor: tokens.ink,
-            inactiveTrackColor: tokens.line,
-            thumbColor: tokens.ink,
-            overlayColor: tokens.ink.withValues(alpha: 0.12),
-            trackHeight: 3,
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
-          ),
-          child: Slider(
-            value: value.clamp(min, max),
-            min: min,
-            max: max,
-            divisions: divisions,
-            onChanged: (v) {
-              HapticFeedback.selectionClick();
-              onChanged(v);
-            },
-          ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            MindPressable(
+              key: ValueKey<String>('${keyPrefix}_dec'),
+              enabled: canDecrease,
+              semanticLabel: strings.sliderDecreaseLabel(label),
+              borderRadius: BorderRadius.circular(14),
+              onPressed: canDecrease
+                  ? () {
+                      HapticFeedback.selectionClick();
+                      onChanged((value - step).clamp(min, max).toDouble());
+                    }
+                  : null,
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: tokens.surface2,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: tokens.line),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.remove_rounded,
+                  size: 18,
+                  color: canDecrease ? tokens.ink : tokens.ink3,
+                ),
+              ),
+            ),
+            Expanded(
+              child: SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  activeTrackColor: tokens.ink,
+                  inactiveTrackColor: tokens.line,
+                  thumbColor: tokens.ink,
+                  overlayColor: tokens.ink.withValues(alpha: 0.12),
+                  trackHeight: 4,
+                  thumbShape: const RoundSliderThumbShape(
+                    enabledThumbRadius: 9,
+                  ),
+                ),
+                child: Slider(
+                  value: value.clamp(min, max),
+                  min: min,
+                  max: max,
+                  divisions: divisions,
+                  onChanged: (v) {
+                    HapticFeedback.selectionClick();
+                    onChanged(v);
+                  },
+                ),
+              ),
+            ),
+            MindPressable(
+              key: ValueKey<String>('${keyPrefix}_inc'),
+              enabled: canIncrease,
+              semanticLabel: strings.sliderIncreaseLabel(label),
+              borderRadius: BorderRadius.circular(14),
+              onPressed: canIncrease
+                  ? () {
+                      HapticFeedback.selectionClick();
+                      onChanged((value + step).clamp(min, max).toDouble());
+                    }
+                  : null,
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: tokens.surface2,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: tokens.line),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.add_rounded,
+                  size: 18,
+                  color: canIncrease ? tokens.ink : tokens.ink3,
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );

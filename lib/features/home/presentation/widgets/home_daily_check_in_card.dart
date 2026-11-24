@@ -12,6 +12,7 @@ import '../../../../core/widgets/mood_emblem.dart';
 import '../../../../core/widgets/organic_mood_orb.dart';
 import '../../../../core/widgets/quick_note_sparks_bar.dart';
 import '../../../mind_trace/domain/affect_taxonomy.dart';
+import '../../../mind_trace/domain/check_in_micro_mirror.dart';
 import '../../../mind_trace/domain/mind_trace_model.dart';
 import '../../../support/presentation/contextual_support_sheet.dart';
 
@@ -338,6 +339,46 @@ class _HomeDailyCheckInCardState extends State<HomeDailyCheckInCard> {
             ),
           ),
         ],
+        const SizedBox(height: 10),
+        Builder(
+          builder: (context) {
+            final mirror = CheckInMicroMirror.build(
+              latestToday: todayTrace,
+              todayTraces: widget.todayTraces.isNotEmpty
+                  ? widget.todayTraces
+                  : [todayTrace],
+              allTraces: widget.traces,
+              strings: strings,
+            );
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: tokens.cardTint,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: tokens.line),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.spa_outlined, size: 14, color: moodColor),
+                  const SizedBox(width: 7),
+                  Expanded(
+                    child: Text(
+                      mirror,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        height: 1.35,
+                        color: tokens.ink2,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
         const SizedBox(height: 14),
         Divider(height: 1, color: tokens.line),
         const SizedBox(height: 12),
@@ -423,17 +464,19 @@ class _HomeDailyCheckInCardState extends State<HomeDailyCheckInCard> {
                       color: tokens.ink2,
                     ),
                     const SizedBox(width: 6),
-                    Text(
-                      strings.updateCheckInButton,
-                      maxLines: 1,
-                      softWrap: false,
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: tokens.ink,
-                        decoration: TextDecoration.underline,
-                        decorationColor: moodColor,
+                    Flexible(
+                      child: Text(
+                        strings.updateCheckInButton,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: tokens.ink,
+                          decoration: TextDecoration.underline,
+                          decorationColor: moodColor,
+                        ),
                       ),
                     ),
                   ],
@@ -457,15 +500,17 @@ class _HomeDailyCheckInCardState extends State<HomeDailyCheckInCard> {
                       color: moodColor,
                     ),
                     const SizedBox(width: 5),
-                    Text(
-                      strings.logMomentShortBtn,
-                      maxLines: 1,
-                      softWrap: false,
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: tokens.ink,
+                    Flexible(
+                      child: Text(
+                        strings.logMomentShortBtn,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: tokens.ink,
+                        ),
                       ),
                     ),
                   ],

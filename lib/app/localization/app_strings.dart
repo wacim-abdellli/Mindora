@@ -4835,6 +4835,63 @@ class AppStrings {
     };
   }
 
+  // ---------------------------------------------------------------------------
+  // Milestone 7.2: Elder-Friendly Somatic Steppers, Presets & Micro-Mirror
+  // ---------------------------------------------------------------------------
+
+  String get sleepPresetShortLabel =>
+      isArabic ? 'أقل من 6س' : (isFrench ? '<6h' : '<6h');
+
+  String get sleepPreset7hLabel => isArabic ? '7س' : '7h';
+
+  String get sleepPreset8hLabel => isArabic ? '8س' : '8h';
+
+  String get sleepPreset9hLabel => isArabic ? '9س+' : '9h+';
+
+  String sliderDecreaseLabel(String metricName) => isArabic
+      ? 'إنقاص $metricName'
+      : (isFrench ? 'Diminuer $metricName' : 'Decrease $metricName');
+
+  String sliderIncreaseLabel(String metricName) => isArabic
+      ? 'زيادة $metricName'
+      : (isFrench ? 'Augmenter $metricName' : 'Increase $metricName');
+
+  String microMirrorCalmerShift(int dropPoints) {
+    if (isArabic) {
+      return 'تم تسجيل هدوء ملحوظ (-$dropPoints نقاط) مقارنة ببداية اليوم.';
+    }
+    if (isFrench) {
+      return 'Apaisement observé (-$dropPoints pts) par rapport à plus tôt aujourd’hui.';
+    }
+    return 'Calmer shift observed (-$dropPoints pts) compared to earlier today.';
+  }
+
+  String microMirrorMomentCount(int count) {
+    if (isArabic) {
+      return 'تم توثيق اللحظة رقم $count اليوم — متابعة لطيفة لتغيّر يومك.';
+    }
+    if (isFrench) {
+      return 'Moment n°$count noté aujourd’hui — vous observez l’évolution de votre journée.';
+    }
+    return 'Moment #$count logged today — gently mapping how your day unfolds.';
+  }
+
+  String microMirrorWeeklyRhythm(int daysCount) {
+    if (isArabic) {
+      return '$daysCount أيام مسجّلة هذا الأسبوع — إيقاعك الشخصي بدأ يتوضّح.';
+    }
+    if (isFrench) {
+      return '$daysCount jours observés cette semaine — votre rythme personnel se dessine.';
+    }
+    return '$daysCount days observed this week — your personal rhythm is taking shape.';
+  }
+
+  String get microMirrorFirstMoment => isArabic
+      ? 'تم حفظ اللحظة — الملاحظة الصادقة تبني الوضوح خطوة بخطوة.'
+      : (isFrench
+            ? 'Moment enregistré — chaque observation honnête éclaire votre rythme.'
+            : 'Moment captured — honest check-ins gently build self-clarity.');
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);
