@@ -71,6 +71,12 @@ class PsychologicalProfileModel {
     // Professional Care
     this.professionalSupport = '',
 
+    // Onboarding Decision Engine Fields
+    this.userRole = 'patient',
+    this.careContext = '',
+    this.focusAreas = const [],
+    this.preferredRhythm = '',
+
     // Onboarding Progress Tracking
     this.onboardingStep = 0,
 
@@ -124,6 +130,10 @@ class PsychologicalProfileModel {
   // Lived Background & Support
   final String mentalHealthBackground;
   final String professionalSupport;
+  final String userRole; // 'patient' or 'clinician'
+  final String careContext; // 'regular_doctor', 'occasional_doctor', 'self_care'
+  final List<String> focusAreas;
+  final String preferredRhythm;
   final int onboardingStep;
 
   bool get isMinor {
@@ -250,6 +260,10 @@ class PsychologicalProfileModel {
     String? additionalContext,
     String? mentalHealthBackground,
     String? professionalSupport,
+    String? userRole,
+    String? careContext,
+    List<String>? focusAreas,
+    String? preferredRhythm,
     int? onboardingStep,
     List<UserConditionEntry>? conditions,
     List<String>? selectedSymptoms,
@@ -290,6 +304,10 @@ class PsychologicalProfileModel {
       additionalContext: additionalContext ?? this.additionalContext,
       mentalHealthBackground: mentalHealthBackground ?? this.mentalHealthBackground,
       professionalSupport: professionalSupport ?? this.professionalSupport,
+      userRole: userRole ?? this.userRole,
+      careContext: careContext ?? this.careContext,
+      focusAreas: focusAreas ?? this.focusAreas,
+      preferredRhythm: preferredRhythm ?? this.preferredRhythm,
       onboardingStep: onboardingStep ?? this.onboardingStep,
       conditions: conditions ?? this.conditions,
       selectedSymptoms: selectedSymptoms ?? this.selectedSymptoms,
@@ -329,6 +347,10 @@ class PsychologicalProfileModel {
         'additionalContext': additionalContext,
         'mentalHealthBackground': mentalHealthBackground,
         'professionalSupport': professionalSupport,
+        'userRole': userRole,
+        'careContext': careContext,
+        'focusAreas': focusAreas,
+        'preferredRhythm': preferredRhythm,
         'onboardingStep': onboardingStep,
         'conditions': conditions.map((c) => c.toJson()).toList(),
         'selectedSymptoms': selectedSymptoms,
@@ -379,6 +401,13 @@ class PsychologicalProfileModel {
       additionalContext: json['additionalContext'] as String? ?? '',
       mentalHealthBackground: json['mentalHealthBackground'] as String? ?? '',
       professionalSupport: json['professionalSupport'] as String? ?? '',
+      userRole: json['userRole'] as String? ?? 'patient',
+      careContext: json['careContext'] as String? ?? '',
+      focusAreas: (json['focusAreas'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
+      preferredRhythm: json['preferredRhythm'] as String? ?? '',
       onboardingStep: (json['onboardingStep'] as num?)?.toInt() ?? 0,
       conditions: (json['conditions'] as List<dynamic>?)
               ?.map((e) => UserConditionEntry.fromJson(e as Map<String, dynamic>))

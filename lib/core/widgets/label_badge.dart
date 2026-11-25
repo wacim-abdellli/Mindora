@@ -61,7 +61,7 @@ class LabelBadge extends ConsumerWidget {
             style: TextStyle(
               fontFamily: LabTheme.fontFamily,
               fontFamilyFallback: LabTheme.fontFallback,
-              fontSize: compact ? 10.5 : 11.5,
+              fontSize: compact ? 12.0 : 12.5,
               fontWeight: FontWeight.w800,
               color: tokens.ink,
             ),
@@ -73,7 +73,7 @@ class LabelBadge extends ConsumerWidget {
               style: TextStyle(
                 fontFamily: LabTheme.fontFamily,
                 fontFamilyFallback: LabTheme.fontFallback,
-                fontSize: compact ? 10.5 : 11.5,
+                fontSize: compact ? 12.0 : 12.5,
                 fontWeight: FontWeight.w600,
                 color: tokens.ink,
               ),

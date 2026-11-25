@@ -8,8 +8,8 @@ import 'package:mind_forensics/app/theme/lab_theme.dart';
 import 'package:mind_forensics/app/theme/mind_tokens.dart';
 import 'package:mind_forensics/core/widgets/organic_mood_orb.dart';
 import 'package:mind_forensics/core/widgets/quick_note_sparks_bar.dart';
-import 'package:mind_forensics/features/home/presentation/widgets/home_daily_check_in_card.dart';
-import 'package:mind_forensics/features/track/presentation/track_screen.dart';
+import 'package:mind_forensics/features/mind_trace/domain/mind_trace_model.dart';
+import 'package:mind_forensics/features/track/presentation/widgets/progressive_details_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -109,44 +109,43 @@ void main() {
     );
 
     testWidgets(
-      'QuickNoteSparksBar appends/removes mood-specific phrases in HomeDailyCheckInCard and TrackScreen with zero typing',
+      'QuickNoteSparksBar appends/removes mood-specific phrases in ProgressiveDetailsSheet including 320px AR RTL',
       (tester) async {
         final noteController = TextEditingController();
         addTearDown(noteController.dispose);
-        int moodIndex = 0;
-        const moodOptions = [
-          (key: 'calm', icon: Icons.spa_outlined),
-          (key: 'anxious', icon: Icons.bolt_outlined),
-          (key: 'frustrated', icon: Icons.local_fire_department_outlined),
-        ];
+        String activeMood = 'calm';
 
         await tester.pumpWidget(
           MaterialApp(
             theme: buildMindTheme(Brightness.dark),
             home: Scaffold(
               body: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
                 child: StatefulBuilder(
                   builder: (context, setState) {
-                    return HomeDailyCheckInCard(
-                      tokens: MindTokens.dark,
-                      strings: const AppStrings('en'),
-                      isDark: true,
-                      todayTrace: null,
-                      traces: const [],
-                      selectedMoodIndex: moodIndex,
-                      moodIntensity: 5,
-                      todayNoteController: noteController,
-                      moodOptions: moodOptions,
-                      onMoodSelected: (idx) => setState(() => moodIndex = idx),
-                      onIntensityChanged: (_) {},
-                      onSave: () {},
-                      getMoodLabel: (k, s) => switch (k) {
-                        'calm' => s.moodCalm,
-                        'anxious' => s.moodAnxious,
-                        'frustrated' => s.moodFrustrated,
-                        _ => k,
-                      },
-                      getMoodColor: (_) => MindTokens.moodCalm,
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            TextButton(
+                              onPressed: () =>
+                                  setState(() => activeMood = 'calm'),
+                              child: const Text('Calm'),
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  setState(() => activeMood = 'anxious'),
+                              child: const Text('Anxious'),
+                            ),
+                          ],
+                        ),
+                        QuickNoteSparksBar(
+                          moodKey: activeMood,
+                          controller: noteController,
+                          strings: const AppStrings('en'),
+                        ),
+                      ],
                     );
                   },
                 ),
@@ -169,7 +168,6 @@ void main() {
         expect(noteController.text, equals('Peaceful moment'));
 
         // Switch mood -> sparks swap to anxious sparks; tapping second spark appends
-        await tester.ensureVisible(find.text('Anxious'));
         await tester.tap(find.text('Anxious'));
         await tester.pumpAndSettle();
         final sparkRacing = find.descendant(
@@ -188,7 +186,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(noteController.text, equals('Peaceful moment'));
 
-        // TrackScreen integrates orb swipe & quick sparks seamlessly down to 320px AR RTL
+        // ProgressiveDetailsSheet Card 4 integrates QuickNoteSparksBar cleanly at 320px AR RTL
         tester.view.physicalSize = const Size(320, 640);
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.reset);
@@ -200,6 +198,16 @@ void main() {
             .setLanguage(AppLanguage.arabic);
 
         const arStrings = AppStrings('ar');
+        final now = DateTime.now();
+        final sampleTrace = MindTraceModel(
+          id: 'sparks_ar_1',
+          date: now,
+          overallMood: 'calm',
+          moodIntensity: 4,
+          createdAt: now,
+          updatedAt: now,
+        );
+
         await tester.pumpWidget(
           UncontrolledProviderScope(
             container: container,
@@ -212,9 +220,14 @@ void main() {
                   data: MediaQuery.of(context).copyWith(
                     textScaler: const TextScaler.linear(1.35),
                   ),
-                  child: const Directionality(
+                  child: Directionality(
                     textDirection: TextDirection.rtl,
-                    child: TrackScreen(),
+                    child: Scaffold(
+                      body: SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: ProgressiveDetailsSheet(trace: sampleTrace),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -222,6 +235,13 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
+
+        // Advance from Card 1 -> 2 -> 3 -> 4
+        for (var step = 0; step < 3; step++) {
+          await tester.ensureVisible(find.text(arStrings.skipBtn));
+          await tester.tap(find.text(arStrings.skipBtn));
+          await tester.pumpAndSettle();
+        }
 
         await tester.ensureVisible(find.text(arStrings.quickSparksForMood('calm').first));
         await tester.tap(find.text(arStrings.quickSparksForMood('calm').first));

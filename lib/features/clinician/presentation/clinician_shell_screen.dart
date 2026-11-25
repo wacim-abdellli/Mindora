@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../app/localization/app_strings.dart';
 import '../../../app/router/app_router.dart';
@@ -51,6 +52,9 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
         ref
             .read(workspaceRoleProvider.notifier)
             .setRole(AppWorkspaceRole.clinician);
+        SharedPreferences.getInstance().then((prefs) {
+          prefs.setString('mf_preferred_workspace', 'clinician');
+        });
       }
     });
   }
@@ -111,30 +115,21 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
   void _switchToPatientWorkspace(BuildContext context) {
     HapticFeedback.selectionClick();
     ref.read(workspaceRoleProvider.notifier).setRole(AppWorkspaceRole.patient);
-    final router = GoRouter.maybeOf(context);
-    if (router != null) {
-      router.go(AppRouter.home);
-    } else {
-      Navigator.of(context).maybePop();
-    }
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString('mf_preferred_workspace', 'patient');
+      if (context.mounted) {
+        final router = GoRouter.maybeOf(context);
+        if (router != null) {
+          router.go(AppRouter.home);
+        } else {
+          Navigator.of(context).maybePop();
+        }
+      }
+    });
   }
 
   String _relativeSyncLabel(DateTime dt, AppStrings strings) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 60) {
-      final mins = diff.inMinutes.clamp(1, 59);
-      return strings.isArabic
-          ? 'منذ $mins د'
-          : (strings.isFrench ? 'Il y a ${mins}min' : '${mins}m ago');
-    }
-    if (diff.inHours < 24) {
-      return strings.isArabic
-          ? 'منذ ${diff.inHours} س'
-          : (strings.isFrench ? 'Il y a ${diff.inHours}h' : '${diff.inHours}h ago');
-    }
-    return strings.isArabic
-        ? 'منذ ${diff.inDays} ي'
-        : (strings.isFrench ? 'Il y a ${diff.inDays}j' : '${diff.inDays}d ago');
+    return strings.formatRelativeTimeAgo(DateTime.now().difference(dt));
   }
 
   @override
@@ -449,7 +444,7 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                   style: TextStyle(
                     fontFamily: LabTheme.fontFamily,
                     fontFamilyFallback: LabTheme.fontFallback,
-                    fontSize: 11,
+                    fontSize: 12.0,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     color: isSelected ? tokens.ink : tokens.ink3,
                     letterSpacing: strings.isArabic ? 0 : -0.1,
@@ -593,7 +588,7 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                     style: TextStyle(
                       fontFamily: LabTheme.fontFamily,
                       fontFamilyFallback: LabTheme.fontFallback,
-                      fontSize: 11,
+                      fontSize: 12.0,
                       fontWeight:
                           isSelected ? FontWeight.w700 : FontWeight.w500,
                       color: isSelected ? tokens.ink : tokens.ink3,
@@ -691,12 +686,16 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                               color: tokens.ink,
                             ),
                             const SizedBox(width: 6),
-                            Text(
-                              strings.patientViewChipLabel,
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w600,
-                                color: tokens.ink,
+                            Flexible(
+                              child: Text(
+                                strings.patientViewChipLabel,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: tokens.ink,
+                                ),
                               ),
                             ),
                           ],
@@ -735,12 +734,16 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                               color: tokens.bg,
                             ),
                             const SizedBox(width: 6),
-                            Text(
-                              strings.importPacketBtn,
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w700,
-                                color: tokens.bg,
+                            Flexible(
+                              child: Text(
+                                strings.importPacketBtn,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: tokens.bg,
+                                ),
                               ),
                             ),
                           ],
@@ -911,7 +914,7 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 11.5,
+              fontSize: 12.0,
               color: tokens.ink2,
               height: 1.2,
             ),
@@ -1006,6 +1009,13 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
             ),
           ),
           const SizedBox(height: 10),
+          _SevenDaySleepMoodStrip(
+            record: record,
+            sleepStr: sleepStr,
+            strings: strings,
+            tokens: tokens,
+          ),
+          const SizedBox(height: 10),
           Wrap(
             spacing: 6,
             runSpacing: 6,
@@ -1020,6 +1030,14 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                 borderColor: shifts.isNotEmpty ? tokens.safety : tokens.line,
                 textColor: shifts.isNotEmpty ? tokens.safety : tokens.ink2,
               ),
+              if (recent.averageSleepHours != null &&
+                  recent.averageSleepHours! < 5.5)
+                MindBadge(
+                  icon: Icons.bedtime_outlined,
+                  label: strings.lowSleepFlagBadge,
+                  borderColor: tokens.safety,
+                  textColor: tokens.safety,
+                ),
               if (baseline.averageIntraDaySwing != null &&
                   baseline.averageIntraDaySwing! > 0)
                 MindBadge(
@@ -1675,6 +1693,94 @@ class _EditClinicianProfileSheetState
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SevenDaySleepMoodStrip extends StatelessWidget {
+  const _SevenDaySleepMoodStrip({
+    required this.record,
+    required this.sleepStr,
+    required this.strings,
+    required this.tokens,
+  });
+
+  final ClinicianPatientRecord record;
+  final String sleepStr;
+  final AppStrings strings;
+  final MindTokens tokens;
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final byDay = <String, ({String mood, double? sleep})>{};
+    for (final t in record.latestPacket.traces) {
+      byDay[t.dateKey] = (mood: t.overallMood, sleep: t.sleepHours);
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: tokens.surface2,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: tokens.line),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: List.generate(7, (idx) {
+                final day = today.subtract(Duration(days: 6 - idx));
+                final key =
+                    '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+                final item = byDay[key];
+                final dotColor = item != null
+                    ? MindTokens.moodColorByKey(item.mood)
+                    : tokens.lineStrong;
+                final barHeight = item?.sleep != null
+                    ? (item!.sleep! * 1.8).clamp(4.0, 18.0)
+                    : 4.0;
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: barHeight,
+                      decoration: BoxDecoration(
+                        color: item?.sleep != null
+                            ? dotColor.withValues(alpha: 0.72)
+                            : tokens.line,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: dotColor,
+                      ),
+                    ),
+                  ],
+                );
+              }),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            strings.sleep7dShortLabel(sleepStr),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: tokens.ink,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
       ),
     );
   }

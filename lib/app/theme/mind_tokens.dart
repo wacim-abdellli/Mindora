@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../../features/investigation/domain/label_type.dart';
 
-/// The five somatic mood states sharing identical semantic colors across
-/// Light ("Dawn") and Dark ("Vercel") themes.
+/// The six expressive mood states sharing identical vivid colors across
+/// Sunrise (Default Warm Light) and Twilight (Optional Deep Indigo Night) themes.
 ///
-/// Always paired with an icon and text label — never represented by color alone.
+/// Always paired with a drawn vector [MoodFace] or icon and plain text label —
+/// never represented by color alone and never using Unicode emojis.
 enum AppMood {
+  good(key: 'good', icon: Icons.wb_sunny_outlined),
   calm(key: 'calm', icon: Icons.eco_outlined),
   anxious(key: 'anxious', icon: Icons.waves_rounded),
   frustrated(key: 'frustrated', icon: Icons.local_fire_department_rounded),
@@ -21,6 +23,9 @@ enum AppMood {
   /// Resolves a mood enum from its string storage/controller key.
   static AppMood fromKey(String? raw) {
     final normalized = raw?.trim().toLowerCase();
+    if (normalized == 'happy' || normalized == 'joyful') {
+      return AppMood.good;
+    }
     for (final value in AppMood.values) {
       if (value.key == normalized) {
         return value;
@@ -30,8 +35,8 @@ enum AppMood {
   }
 }
 
-/// Unified design tokens powering Mindora across Light ("Dawn") and
-/// Dark ("Vercel") themes.
+/// Unified design tokens powering Mindora across Sunrise (Warm Daylight) and
+/// Twilight (Deep Indigo Night) themes.
 ///
 /// Feature screens and shared widgets read colors, shapes, spacing, and dynamic
 /// mood tints exclusively from `context.tokens` (never raw `Color(0x...)` or
@@ -49,6 +54,9 @@ class MindTokens extends ThemeExtension<MindTokens> {
     required this.ink,
     required this.ink2,
     required this.ink3,
+    required this.primary,
+    required this.onPrimary,
+    required this.primaryDeep,
     required this.onMood,
     required this.safety,
     required this.safetySoft,
@@ -67,14 +75,14 @@ class MindTokens extends ThemeExtension<MindTokens> {
     required this.dayStepTint,
     required this.navActiveTint,
     required this.switchOnTrackTint,
-    this.cardRadius = 28.0,
-    this.tileRadius = 26.0,
-    this.rowRadius = 24.0,
-    this.buttonRadius = 19.0,
+    this.cardRadius = 24.0,
+    this.tileRadius = 22.0,
+    this.rowRadius = 20.0,
+    this.buttonRadius = 20.0,
     this.chipRadius = 99.0,
-    this.inputRadius = 18.0,
+    this.inputRadius = 16.0,
     this.iconButtonRadius = 16.0,
-    this.sheetRadius = 32.0,
+    this.sheetRadius = 28.0,
     this.screenPadding = 16.0,
     this.blockGap = 16.0,
   });
@@ -91,9 +99,14 @@ class MindTokens extends ThemeExtension<MindTokens> {
   final Color ink;
   final Color ink2;
   final Color ink3;
+
+  // Alive primary action palette (Violet in Sunrise / Luminous Lilac in Twilight)
+  final Color primary;
+  final Color onPrimary;
+  final Color primaryDeep;
   final Color onMood;
 
-  // Safety / Crisis surfaces ONLY
+  // Safety / Crisis & destructive surfaces ONLY
   final Color safety;
   final Color safetySoft;
 
@@ -133,85 +146,94 @@ class MindTokens extends ThemeExtension<MindTokens> {
   bool get isDark => brightness == Brightness.dark;
 
   // ---------------------------------------------------------------------------
-  // Canonical Mood Palette (identical in Dawn Light & Vercel Dark)
+  // Canonical Vivid Mood Palette (WCAG AA+ >= 7:1 with Carbon Ink, Zero Purple)
   // ---------------------------------------------------------------------------
-  static const Color moodCalm = Color(0xFF4FB896);
-  static const Color moodCalmHighlight = Color(0xFF9BE0C6);
+  static const Color moodGood = Color(0xFFFFC93C);
+  static const Color moodGoodHighlight = Color(0xFFFFE58F);
 
-  static const Color moodAnxious = Color(0xFF5B9BEA);
-  static const Color moodAnxiousHighlight = Color(0xFFA0C8FF);
+  static const Color moodCalm = Color(0xFF2DD4BF);
+  static const Color moodCalmHighlight = Color(0xFF99F6E4);
 
-  static const Color moodFrustrated = Color(0xFFF0805F);
-  static const Color moodFrustratedHighlight = Color(0xFFFFB894);
+  static const Color moodAnxious = Color(0xFF38BDF8);
+  static const Color moodAnxiousHighlight = Color(0xFFBAE6FD);
 
-  static const Color moodHeavy = Color(0xFF8A7BE0);
-  static const Color moodHeavyHighlight = Color(0xFFBEB0FF);
+  static const Color moodFrustrated = Color(0xFFFF7A59);
+  static const Color moodFrustratedHighlight = Color(0xFFFFB49E);
 
-  static const Color moodRestless = Color(0xFFEDB23E);
-  static const Color moodRestlessHighlight = Color(0xFFFFD98A);
+  static const Color moodHeavy = Color(0xFF94A3B8);
+  static const Color moodHeavyHighlight = Color(0xFFCBD5E1);
 
-  static const Color onMoodConstant = Color(0xFF0E1626);
+  static const Color moodRestless = Color(0xFFFBBF24);
+  static const Color moodRestlessHighlight = Color(0xFFFDE68A);
+
+  static const Color onMoodConstant = Color(0xFF111114);
   static const Color pureWhiteConstant = Color(0xFFFFFFFF);
-  static const Color pureBlackConstant = Color(0xFF000000);
+  static const Color pureBlackConstant = Color(0xFF09090B);
 
-  // Decorative wave/wireframe artwork constants (referenced by art primitives)
-  static const Color waveSkyTop = Color(0xFFF0E8D9);
-  static const Color waveSkyBottom = Color(0xFFE2D6C3);
+  // Decorative wave/wireframe artwork constants (zero purple)
+  static const Color waveSkyTop = Color(0xFFFAF9F6);
+  static const Color waveSkyBottom = Color(0xFFF3F1EC);
   static const Color waveSunHighlight = Color(0xFFFFFDF5);
-  static const Color waveSunGlow = Color(0xFFFFF0D0);
+  static const Color waveSunGlow = Color(0xFFFFEAC0);
   static const Color waveSunCore = Color(0xFFFFF9E6);
-  static const Color waveRidgeLightTop = Color(0xFF9EAA8E);
-  static const Color waveRidgeLightBottom = Color(0xFF7E8C6F);
-  static const Color waveRidgeMidTop = Color(0xFF5E6C50);
-  static const Color waveRidgeMidBottom = Color(0xFF4A583E);
-  static const Color waveRidgeDeepBottom = Color(0xFF222B1C);
+  static const Color waveRidgeLightTop = Color(0xFF5EEAD4);
+  static const Color waveRidgeLightBottom = Color(0xFF2DD4BF);
+  static const Color waveRidgeMidTop = Color(0xFF0D9488);
+  static const Color waveRidgeMidBottom = Color(0xFF0F766E);
+  static const Color waveRidgeDeepBottom = Color(0xFF111114);
 
-  static const Color wireframeGlowInner = Color(0xFFD9D4A7);
-  static const Color wireframeGlowOuter = Color(0xFF92977D);
-  static const Color wireframeRingOuter = Color(0xFFC7CDAD);
-  static const Color wireframeRingInner = Color(0xFFE2E7CB);
-  static const Color wireframeFold = Color(0xFFE8ECD4);
-  static const Color wireframeSulcus = Color(0xFFB4BC9B);
-  static const Color wireframeNode = Color(0xFFFBFEE6);
-  static const Color orbWarmHighlight = Color(0xFFFFF8EE);
+  static const Color wireframeGlowInner = Color(0xFFFFE58F);
+  static const Color wireframeGlowOuter = Color(0xFF99F6E4);
+  static const Color wireframeRingOuter = Color(0xFF94A3B8);
+  static const Color wireframeRingInner = Color(0xFFCBD5E1);
+  static const Color wireframeFold = Color(0xFFF1F5F9);
+  static const Color wireframeSulcus = Color(0xFF38BDF8);
+  static const Color wireframeNode = Color(0xFFFFFDF5);
+  static const Color orbWarmHighlight = Color(0xFFFAF9F6);
 
   // ---------------------------------------------------------------------------
-  // Exact Light ("Dawn") constants (referenced by buildMindTheme / Step 5 bridge)
+  // Warm Alabaster Daylight (Default Light) constants — Zero Purple, WCAG AAA
   // ---------------------------------------------------------------------------
-  static const Color lightBg = Color(0xFFF5F6FA);
+  static const Color lightBg = Color(0xFFFAF9F6);
   static const Color lightSurface = Color(0xFFFFFFFF);
-  static const Color lightSurface2 = Color(0xFFECEFF5);
-  static const Color lightSurface3 = Color(0xFFFFFFFF);
-  static const Color lightLine = Color.fromRGBO(23, 32, 51, 0.09);
-  static const Color lightLineStrong = Color.fromRGBO(23, 32, 51, 0.18);
-  static const Color lightInk = Color(0xFF172033);
-  static const Color lightInk2 = Color(0xFF4A5873);
-  static const Color lightInk3 = Color(0xFF5C6982);
-  static const Color lightSafety = Color(0xFFC0324E);
-  static const Color lightSafetySoft = Color(0xFFFBE9ED);
-  static const Color lightNavGlass = Color.fromRGBO(255, 255, 255, 0.80);
-  static const Color lightScrim = Color.fromRGBO(8, 12, 24, 0.50);
-  static const Color lightFocusRingDefault = Color(0xFF397B6E);
+  static const Color lightSurface2 = Color(0xFFF3F1EC);
+  static const Color lightSurface3 = Color(0xFFEBE8E1);
+  static const Color lightLine = Color.fromRGBO(17, 17, 20, 0.09);
+  static const Color lightLineStrong = Color.fromRGBO(17, 17, 20, 0.18);
+  static const Color lightInk = Color(0xFF111114);
+  static const Color lightInk2 = Color(0xFF52525B);
+  static const Color lightInk3 = Color(0xFF5E5E68);
+  static const Color lightPrimary = Color(0xFF111114);
+  static const Color lightOnPrimary = Color(0xFFFFFFFF);
+  static const Color lightPrimaryDeep = Color(0xFF27272A);
+  static const Color lightSafety = Color(0xFFBE123C);
+  static const Color lightSafetySoft = Color(0xFFFFF1F2);
+  static const Color lightNavGlass = Color.fromRGBO(250, 249, 246, 0.92);
+  static const Color lightScrim = Color.fromRGBO(9, 9, 11, 0.45);
+  static const Color lightFocusRingDefault = Color(0xFF0D9488);
 
   // ---------------------------------------------------------------------------
-  // Exact Dark ("Vercel") constants
+  // Clean Vercel Obsidian-Zinc Dark constants — Zero Purple, Zero #000000
   // ---------------------------------------------------------------------------
-  static const Color darkBg = Color(0xFF000000);
-  static const Color darkSurface = Color(0xFF0A0A0A);
-  static const Color darkSurface2 = Color(0xFF111111);
-  static const Color darkSurface3 = Color(0xFF1F1F1F);
-  static const Color darkLine = Color.fromRGBO(255, 255, 255, 0.10);
-  static const Color darkLineStrong = Color.fromRGBO(255, 255, 255, 0.20);
-  static const Color darkInk = Color(0xFFEDEDED);
-  static const Color darkInk2 = Color(0xFFA1A1A1);
-  static const Color darkInk3 = Color(0xFF8F8F8F);
-  static const Color darkSafety = Color(0xFFFF6166);
-  static const Color darkSafetySoft = Color(0xFF2A0E10);
-  static const Color darkNavGlass = Color.fromRGBO(10, 10, 10, 0.80);
-  static const Color darkScrim = Color.fromRGBO(0, 0, 0, 0.70);
-  static const Color darkFocusRing = Color.fromRGBO(255, 255, 255, 0.90);
+  static const Color darkBg = Color(0xFF09090B);
+  static const Color darkSurface = Color(0xFF111114);
+  static const Color darkSurface2 = Color(0xFF18181C);
+  static const Color darkSurface3 = Color(0xFF222228);
+  static const Color darkLine = Color.fromRGBO(255, 255, 255, 0.09);
+  static const Color darkLineStrong = Color.fromRGBO(255, 255, 255, 0.18);
+  static const Color darkInk = Color(0xFFFAFAFA);
+  static const Color darkInk2 = Color(0xFFA1A1AA);
+  static const Color darkInk3 = Color(0xFF8B8B96);
+  static const Color darkPrimary = Color(0xFFFAFAFA);
+  static const Color darkOnPrimary = Color(0xFF09090B);
+  static const Color darkPrimaryDeep = Color(0xFFE4E4E7);
+  static const Color darkSafety = Color(0xFFFB7185);
+  static const Color darkSafetySoft = Color(0xFF2C1219);
+  static const Color darkNavGlass = Color.fromRGBO(17, 17, 20, 0.92);
+  static const Color darkScrim = Color.fromRGBO(4, 4, 6, 0.70);
+  static const Color darkFocusRing = Color(0xFF2DD4BF);
 
-  /// Light ("Dawn") token preset from prototype-v2.
+  /// Warm Alabaster Daylight token preset.
   static const MindTokens light = MindTokens(
     brightness: Brightness.light,
     bg: lightBg,
@@ -223,20 +245,23 @@ class MindTokens extends ThemeExtension<MindTokens> {
     ink: lightInk,
     ink2: lightInk2,
     ink3: lightInk3,
+    primary: lightPrimary,
+    onPrimary: lightOnPrimary,
+    primaryDeep: lightPrimaryDeep,
     onMood: onMoodConstant,
     safety: lightSafety,
     safetySoft: lightSafetySoft,
-    glow: 0.30,
+    glow: 0.20,
     orbGlowFactor: 1.0,
     shadows: [
       BoxShadow(
-        color: Color.fromRGBO(23, 32, 51, 0.04),
-        blurRadius: 2,
+        color: Color.fromRGBO(17, 17, 20, 0.04),
+        blurRadius: 3,
         offset: Offset(0, 1),
       ),
       BoxShadow(
-        color: Color.fromRGBO(23, 32, 51, 0.10),
-        blurRadius: 28,
+        color: Color.fromRGBO(17, 17, 20, 0.08),
+        blurRadius: 24,
         spreadRadius: -8,
         offset: Offset(0, 10),
       ),
@@ -246,16 +271,16 @@ class MindTokens extends ThemeExtension<MindTokens> {
     focusRing: lightFocusRingDefault,
     m1: moodCalm,
     m2: moodCalmHighlight,
-    tintCard: 0.13,
-    tintSelected: 0.20,
-    tintBlob: 0.38,
+    tintCard: 0.14,
+    tintSelected: 0.22,
+    tintBlob: 0.36,
     dayBaseTint: 0.26,
     dayStepTint: 0.05,
-    navActiveTint: 0.22,
+    navActiveTint: 0.16,
     switchOnTrackTint: 0.55,
   );
 
-  /// Dark ("Vercel") token preset — pure #000000 void, #0A0A0A cards, 1px hairline depth.
+  /// Clean Vercel Obsidian-Zinc Dark token preset — zero purple, zero #000000.
   static const MindTokens dark = MindTokens(
     brightness: Brightness.dark,
     bg: darkBg,
@@ -267,23 +292,26 @@ class MindTokens extends ThemeExtension<MindTokens> {
     ink: darkInk,
     ink2: darkInk2,
     ink3: darkInk3,
+    primary: darkPrimary,
+    onPrimary: darkOnPrimary,
+    primaryDeep: darkPrimaryDeep,
     onMood: onMoodConstant,
     safety: darkSafety,
     safetySoft: darkSafetySoft,
-    glow: 0.0,
-    orbGlowFactor: 0.35,
+    glow: 0.14,
+    orbGlowFactor: 0.72,
     shadows: [],
     navGlass: darkNavGlass,
     scrim: darkScrim,
     focusRing: darkFocusRing,
     m1: moodCalm,
     m2: moodCalmHighlight,
-    tintCard: 0.07,
-    tintSelected: 0.14,
-    tintBlob: 0.24,
-    dayBaseTint: 0.18,
+    tintCard: 0.10,
+    tintSelected: 0.18,
+    tintBlob: 0.28,
+    dayBaseTint: 0.20,
     dayStepTint: 0.04,
-    navActiveTint: 0.14,
+    navActiveTint: 0.18,
     switchOnTrackTint: 0.55,
   );
 
@@ -291,9 +319,10 @@ class MindTokens extends ThemeExtension<MindTokens> {
   static MindTokens forBrightness(Brightness brightness) =>
       brightness == Brightness.dark ? dark : light;
 
-  /// Canonical mood color `c1` for [mood].
+  /// Canonical vivid mood color `c1` for [mood].
   static Color moodColor(AppMood mood) {
     return switch (mood) {
+      AppMood.good => moodGood,
       AppMood.calm => moodCalm,
       AppMood.anxious => moodAnxious,
       AppMood.frustrated => moodFrustrated,
@@ -302,9 +331,10 @@ class MindTokens extends ThemeExtension<MindTokens> {
     };
   }
 
-  /// Canonical mood highlight `c2` for [mood].
+  /// Canonical vivid mood highlight `c2` for [mood].
   static Color moodHighlight(AppMood mood) {
     return switch (mood) {
+      AppMood.good => moodGoodHighlight,
       AppMood.calm => moodCalmHighlight,
       AppMood.anxious => moodAnxiousHighlight,
       AppMood.frustrated => moodFrustratedHighlight,
@@ -316,7 +346,7 @@ class MindTokens extends ThemeExtension<MindTokens> {
   /// Canonical mood icon (always paired with mood color & label).
   static IconData moodIcon(AppMood mood) => mood.icon;
 
-  /// Convenience lookup by string mood key (`'calm'`, `'anxious'`, ...).
+  /// Convenience lookup by string mood key (`'good'`, `'calm'`, `'anxious'`, ...).
   static Color moodColorByKey(String? key) => moodColor(AppMood.fromKey(key));
 
   /// Convenience highlight lookup by string mood key.
@@ -329,10 +359,10 @@ class MindTokens extends ThemeExtension<MindTokens> {
     surface,
   );
 
-  /// Active mood card tint (13% Light / 7% Dark).
+  /// Active mood card tint (14% Sunrise / 10% Twilight).
   Color get cardTint => tint(m1, tintCard);
 
-  /// Active mood selected chip/tile tint (20% Light / 14% Dark).
+  /// Active mood selected chip/tile tint (22% Sunrise / 18% Twilight).
   Color get selectedTint => tint(m1, tintSelected);
 
   /// Computes selected chip/tile background for an arbitrary [accent] color.
@@ -341,55 +371,55 @@ class MindTokens extends ThemeExtension<MindTokens> {
   /// Computes card tint background for an arbitrary [accent] color.
   Color cardTintFor(Color accent) => tint(accent, tintCard);
 
-  /// Active mood icon blob tint (38% Light / 24% Dark).
+  /// Active mood icon blob tint (36% Sunrise / 28% Twilight).
   Color get blobTint => tint(m1, tintBlob);
 
   /// Computes icon blob background for an arbitrary [accent] color.
   Color blobTintFor(Color accent) => tint(accent, tintBlob);
 
-  /// Computes mood day calendar fill (`26% + 5%*intensity` Light / `18% + 4%*intensity` Dark).
+  /// Soft primary tint for violet highlights & active pill fills.
+  Color get primarySoft => tint(primary, isDark ? 0.18 : 0.12);
+
+  /// Computes mood day calendar fill (`26% + 5%*intensity` Sunrise / `20% + 4%*intensity` Twilight).
   Color moodDayColor(Color moodColorValue, int intensity) {
     final clamped = intensity.clamp(0, 10);
     final opacity = (dayBaseTint + dayStepTint * clamped).clamp(0.0, 1.0);
     return tint(moodColorValue, opacity);
   }
 
-  /// Returns a copy driven by [mood] with updated `m1`, `m2`, and Dawn `focusRing`.
+  /// Returns a copy driven by [mood] with updated `m1` and `m2`.
   MindTokens withMood(AppMood mood) {
     final nextM1 = moodColor(mood);
     final nextM2 = moodHighlight(mood);
-    final nextFocusRing = isDark
-        ? darkFocusRing
-        : (Color.lerp(ink, nextM1, 0.60) ?? lightFocusRingDefault);
-    return copyWith(m1: nextM1, m2: nextM2, focusRing: nextFocusRing);
+    return copyWith(m1: nextM1, m2: nextM2);
   }
 
   // ---------------------------------------------------------------------------
-  // Token-Driven Component Helpers (Single Theme Branch Inside MindTokens Only)
+  // Token-Driven Component Helpers
   // ---------------------------------------------------------------------------
 
-  /// Soft ambient shadow under primary CTAs in Light Dawn; flat in Dark Vercel.
-  List<BoxShadow> get primaryButtonShadows => glow > 0
+  /// Soft colored elevation shadow under primary CTAs in Sunrise; clean flat in Twilight.
+  List<BoxShadow> get primaryButtonShadows => !isDark
       ? [
           BoxShadow(
-            color: m1.withValues(alpha: 0.35),
-            blurRadius: 20,
-            spreadRadius: -6,
-            offset: const Offset(0, 10),
+            color: primary.withValues(alpha: 0.24),
+            blurRadius: 16,
+            spreadRadius: -4,
+            offset: const Offset(0, 6),
           ),
         ]
       : const [];
 
-  /// Soft button surface: 17% mood tint in Dawn Light, `surface2` in Vercel Dark.
-  Color get softButtonBg => isDark ? surface2 : tint(m1, 0.17);
+  /// Soft button surface: warm peach well in Sunrise, soft violet well in Twilight.
+  Color get softButtonBg => surface2;
 
-  /// Soft button hairline border: `line` in Vercel Dark, borderless in Dawn Light.
-  Color get softButtonBorder => isDark ? line : Colors.transparent;
+  /// Soft button border: subtle strong hairline for instant tappability affordance.
+  Color get softButtonBorder => lineStrong;
 
-  /// Border color for active segments: `lineStrong` in Dark Vercel, `line` in Dawn Light.
+  /// Border color for active segments.
   Color get segmentedActiveBorder => isDark ? lineStrong : line;
 
-  /// Elevation under selected segments in Dawn Light; none in Dark Vercel.
+  /// Elevation under selected segments in Sunrise; clean border in Twilight.
   List<BoxShadow> get segmentedActiveShadows => shadows.isEmpty
       ? const []
       : [
@@ -403,10 +433,10 @@ class MindTokens extends ThemeExtension<MindTokens> {
   /// Hairline safety border (`safety` at 30%).
   Color get dangerBorder => safety.withValues(alpha: 0.30);
 
-  /// Switch off track: `#1F1F1F` (`surface3`) in Dark Vercel, `#ECEFF5` (`surface2`) in Dawn Light.
+  /// Switch off track.
   Color get switchOffTrack => isDark ? surface3 : surface2;
 
-  /// Switch on track: `m1` blended at 55% over `surface`.
+  /// Switch on track: active calm teal blended smoothly over `surface`.
   Color get switchOnTrack => tint(m1, switchOnTrackTint);
 
   /// Thumb color when switch is enabled.
@@ -416,34 +446,34 @@ class MindTokens extends ThemeExtension<MindTokens> {
   Color get controlThumbBorder =>
       isDark ? pureWhiteConstant.withValues(alpha: 0.85) : pureWhiteConstant;
 
-  /// Outer elevation under the floating nav pill (Dawn Light only; hairline in Dark Vercel).
+  /// Outer elevation under the floating nav pill (Sunrise only; hairline in Twilight).
   List<BoxShadow> get navPillShadows => shadows.isEmpty
       ? const []
       : [
           BoxShadow(
-            color: ink.withValues(alpha: 0.16),
-            blurRadius: 28,
+            color: ink.withValues(alpha: 0.14),
+            blurRadius: 24,
             spreadRadius: -10,
-            offset: const Offset(0, 14),
+            offset: const Offset(0, 12),
           ),
         ];
 
-  /// Center AI hero ring glow (Dawn Light only; crisp flat `#000` ring in Dark Vercel).
-  List<BoxShadow> get navCenterShadows => glow > 0
+  /// Center action ring shadow (Sunrise only).
+  List<BoxShadow> get navCenterShadows => !isDark
       ? [
           BoxShadow(
-            color: m1.withValues(alpha: 0.45),
-            blurRadius: 18,
+            color: primary.withValues(alpha: 0.32),
+            blurRadius: 16,
             spreadRadius: -4,
-            offset: const Offset(0, 8),
+            offset: const Offset(0, 6),
           ),
         ]
       : const [];
 
-  /// Active capsule fill behind the selected bottom-nav item (`m1` at `navActiveTint`).
-  Color get navCapsuleFill => tint(m1, navActiveTint);
+  /// Active capsule fill behind the selected bottom-nav item.
+  Color get navCapsuleFill => tint(primary, navActiveTint);
 
-  /// Semantic foreground color for Fact / Assumption / Interpretation badges.
+  /// Semantic foreground color for Fact / Guess / Story badges.
   Color labelColor(LabelType label) {
     return switch (label) {
       LabelType.fact => moodAnxious,
@@ -472,6 +502,9 @@ class MindTokens extends ThemeExtension<MindTokens> {
     Color? ink,
     Color? ink2,
     Color? ink3,
+    Color? primary,
+    Color? onPrimary,
+    Color? primaryDeep,
     Color? onMood,
     Color? safety,
     Color? safetySoft,
@@ -512,6 +545,9 @@ class MindTokens extends ThemeExtension<MindTokens> {
       ink: ink ?? this.ink,
       ink2: ink2 ?? this.ink2,
       ink3: ink3 ?? this.ink3,
+      primary: primary ?? this.primary,
+      onPrimary: onPrimary ?? this.onPrimary,
+      primaryDeep: primaryDeep ?? this.primaryDeep,
       onMood: onMood ?? this.onMood,
       safety: safety ?? this.safety,
       safetySoft: safetySoft ?? this.safetySoft,
@@ -557,6 +593,9 @@ class MindTokens extends ThemeExtension<MindTokens> {
       ink: Color.lerp(ink, other.ink, t)!,
       ink2: Color.lerp(ink2, other.ink2, t)!,
       ink3: Color.lerp(ink3, other.ink3, t)!,
+      primary: Color.lerp(primary, other.primary, t)!,
+      onPrimary: Color.lerp(onPrimary, other.onPrimary, t)!,
+      primaryDeep: Color.lerp(primaryDeep, other.primaryDeep, t)!,
       onMood: Color.lerp(onMood, other.onMood, t)!,
       safety: Color.lerp(safety, other.safety, t)!,
       safetySoft: Color.lerp(safetySoft, other.safetySoft, t)!,
@@ -598,19 +637,19 @@ class MindTokens extends ThemeExtension<MindTokens> {
 
   /// Boosts structural border visibility and secondary/tertiary ink contrast
   /// for older eyes, tired evenings, and high-glare environments while
-  /// preserving Dawn Light and Vercel Dark ground/surface palettes.
+  /// preserving Daylight and Vercel Obsidian Night ground/surface palettes.
   MindTokens withComfortBoost(bool enabled) {
     if (!enabled) return this;
     final isDark = brightness == Brightness.dark;
     return copyWith(
       line: isDark
           ? const Color.fromRGBO(255, 255, 255, 0.22)
-          : const Color.fromRGBO(23, 32, 51, 0.18),
+          : const Color.fromRGBO(17, 17, 20, 0.20),
       lineStrong: isDark
           ? const Color.fromRGBO(255, 255, 255, 0.36)
-          : const Color.fromRGBO(23, 32, 51, 0.30),
-      ink2: isDark ? const Color(0xFFC7C7C7) : const Color(0xFF33415C),
-      ink3: isDark ? const Color(0xFFB3B3B3) : const Color(0xFF42506B),
+          : const Color.fromRGBO(17, 17, 20, 0.34),
+      ink2: isDark ? const Color(0xFFD4D4D8) : const Color(0xFF3F3F46),
+      ink3: isDark ? const Color(0xFFB4B4BD) : const Color(0xFF4B4B55),
     );
   }
 

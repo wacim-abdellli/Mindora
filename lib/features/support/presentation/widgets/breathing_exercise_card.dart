@@ -4,7 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/localization/app_strings.dart';
+import '../../../../app/theme/lab_theme.dart';
 import '../../../../app/theme/mind_tokens.dart';
+import '../../../../core/widgets/mind_button.dart';
 import '../../../investigation/presentation/widgets/vagal_breathing_visualizer.dart';
 import 'relief_micro_check_card.dart';
 
@@ -88,25 +90,12 @@ class _BreathingExerciseCardState extends ConsumerState<BreathingExerciseCard> {
   }
 
   String _getPhaseText(int phase, AppStrings strings) {
-    switch (phase) {
-      case 0:
-        return strings.isArabic
-            ? 'شهيق عميق من الأنف...'
-            : (strings.isFrench ? 'Inspiration lente...' : 'Slow Inhalation...');
-      case 1:
-        return strings.isArabic
-            ? 'احبس النفس بلطف...'
-            : (strings.isFrench ? 'Rétention paisible...' : 'Gentle Hold...');
-      case 2:
-        return strings.isArabic
-            ? 'زفير ممتد من الفم...'
-            : (strings.isFrench ? 'Expiration prolongée...' : 'Extended Exhalation...');
-      case 3:
-      default:
-        return strings.isArabic
-            ? 'سكون واستقرار...'
-            : (strings.isFrench ? 'Repos au calme...' : 'Resting Stillness...');
-    }
+    return switch (phase) {
+      0 => strings.breatheInCue,
+      1 => strings.holdCue,
+      2 => strings.breatheOutCue,
+      _ => strings.restCue,
+    };
   }
 
   @override
@@ -136,27 +125,37 @@ class _BreathingExerciseCardState extends ConsumerState<BreathingExerciseCard> {
             children: [
               Expanded(
                 child: Text(
-                  strings.breathingTitle.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 11,
+                  strings.breathingTitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: LabTheme.textStyle(
+                    fontSize: 16,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
-                    color: textSecondary,
+                    color: textPrimary,
                   ),
                 ),
               ),
-              TextButton(
-                onPressed: widget.onSwitchToGrounding,
-                style: TextButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  foregroundColor: tokens.m1,
-                  padding: EdgeInsets.zero,
-                ),
-                child: Text(
-                  strings.sensoryGroundingTitle,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
+              const SizedBox(width: 8),
+              Flexible(
+                child: Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: TextButton(
+                    onPressed: widget.onSwitchToGrounding,
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                      foregroundColor: tokens.primary,
+                    ),
+                    child: Text(
+                      strings.sensoryGroundingTitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.end,
+                      style: LabTheme.textStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.primary,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -206,36 +205,14 @@ class _BreathingExerciseCardState extends ConsumerState<BreathingExerciseCard> {
               ),
             ),
           ],
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            height: 44,
-            child: ElevatedButton(
-              onPressed: _toggleBreathing,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _isActive ? surfaceColor : textPrimary,
-                foregroundColor: _isActive ? textPrimary : tokens.bg,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: _isActive ? BorderSide(color: borderColor) : BorderSide.none,
-                ),
-              ),
-              child: Text(
-                _isActive
-                    ? (strings.isArabic
-                        ? 'إيقاف التنفس'
-                        : (strings.isFrench
-                            ? 'Mettre en pause'
-                            : 'Pause Exercise'))
-                    : (strings.isArabic
-                        ? 'بدء تنفس 4-4-4-4'
-                        : (strings.isFrench
-                            ? 'Commencer la respiration 4-4-4-4'
-                            : 'Begin 4-4-4-4 Breathing')),
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-              ),
-            ),
+          const SizedBox(height: 10),
+          MindButton(
+            text: _isActive ? strings.stopBtn : strings.breatheQuickBtn,
+            variant: _isActive
+                ? MindButtonVariant.secondary
+                : MindButtonVariant.primary,
+            isFullWidth: true,
+            onPressed: _toggleBreathing,
           ),
           if (_hasCompletedAttempt && !_isActive) ...[
             const SizedBox(height: 14),

@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:mind_forensics/app/localization/app_strings.dart';
 import 'package:mind_forensics/app/router/app_router.dart';
 import 'package:mind_forensics/app/theme/lab_theme.dart';
 import 'package:mind_forensics/features/home/presentation/home_screen.dart';
@@ -195,7 +196,7 @@ void main() {
 
         expect(errors.map((e) => e.exceptionAsString()).toList(), isEmpty);
         expect(tester.takeException(), isNull);
-        expect(find.text('الرئيسية'), findsOneWidget);
+        expect(find.text(const AppStrings('ar').navToday), findsOneWidget);
       } finally {
         FlutterError.onError = prevOnError;
         AppRouter.enableFirstLaunchGating = true;
@@ -219,7 +220,7 @@ void main() {
       );
       expect(
         find.text(
-          'Exemple : « Votre empreinte du jour vous attend quand vous êtes prêt(e). »',
+          '${const AppStrings('fr').reminderSamplePrefix} "${const AppStrings('fr').gentleReminderBodies.first}"',
         ),
         findsOneWidget,
       );
@@ -237,7 +238,7 @@ void main() {
         isDark: false,
         extraPrefs: const {'mf_gentle_notifications': true},
       );
-      expect(find.text('يوم بيوم'), findsOneWidget);
+      expect(find.text(const AppStrings('ar').everyTwoDaysChip), findsOneWidget);
     });
 
     testWidgets(

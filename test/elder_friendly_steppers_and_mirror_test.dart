@@ -10,7 +10,7 @@ import 'package:mind_forensics/features/home/presentation/widgets/home_daily_che
 import 'package:mind_forensics/features/mind_trace/controllers/mind_trace_controller.dart';
 import 'package:mind_forensics/features/mind_trace/domain/check_in_micro_mirror.dart';
 import 'package:mind_forensics/features/mind_trace/domain/mind_trace_model.dart';
-import 'package:mind_forensics/features/track/presentation/track_screen.dart';
+import 'package:mind_forensics/features/track/presentation/widgets/progressive_details_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -107,66 +107,57 @@ void main() {
     });
 
     testWidgets(
-      'TrackScreen 1-tap sleep presets and +/- steppers update saved telemetry without dragging',
+      'ProgressiveDetailsSheet 1-tap sleep and energy presets update saved telemetry cleanly',
       (tester) async {
         final container = ProviderContainer();
         addTearDown(container.dispose);
+
+        final now = DateTime.now();
+        final initialTrace = MindTraceModel(
+          id: 'elder_trace_1',
+          date: now,
+          overallMood: 'calm',
+          moodIntensity: 4,
+          createdAt: now,
+          updatedAt: now,
+        );
+        await container
+            .read(mindTraceControllerProvider.notifier)
+            .recordCheckIn(initialTrace, generateAi: false);
 
         await tester.pumpWidget(
           UncontrolledProviderScope(
             container: container,
             child: MaterialApp(
               theme: buildMindTheme(Brightness.light),
-              home: const TrackScreen(),
+              home: Scaffold(
+                body: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: ProgressiveDetailsSheet(trace: initialTrace),
+                ),
+              ),
             ),
           ),
         );
         await tester.pumpAndSettle();
 
-        // Expand optional context
-        await tester.ensureVisible(find.text('Add context (optional)'));
-        await tester.tap(find.text('Add context (optional)'));
+        const en = AppStrings('en');
+        // Card 1 (Nuance) -> Continue -> Card 2 (Sleep & Energy)
+        await tester.tap(find.text(en.continueBtn));
         await tester.pumpAndSettle();
 
-        // Tap 8h preset then +0.5 step -> 8.5h sleep
-        final sleepPreset8 = find.byKey(const ValueKey<String>('sleep-preset-8'));
-        await tester.ensureVisible(sleepPreset8);
-        await tester.tap(sleepPreset8);
+        await tester.tap(find.text(en.sleepAbout8));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(en.energyFullLabel));
         await tester.pumpAndSettle();
 
-        final sleepInc = find.byKey(const ValueKey<String>('sleep_inc'));
-        await tester.ensureVisible(sleepInc);
-        await tester.tap(sleepInc);
-        await tester.pumpAndSettle();
-
-        // Energy 5 -> +1 = 6; Anxiety 3 -> -1 = 2
-        final energyInc = find.byKey(const ValueKey<String>('energy_inc'));
-        await tester.ensureVisible(energyInc);
-        await tester.tap(energyInc);
-        await tester.pumpAndSettle();
-
-        final anxietyDec = find.byKey(const ValueKey<String>('anxiety_dec'));
-        await tester.ensureVisible(anxietyDec);
-        await tester.tap(anxietyDec);
-        await tester.pumpAndSettle();
-
-        expect(find.text('8.5h'), findsOneWidget);
-        expect(find.text('6/10'), findsOneWidget);
-        expect(find.text('2/10'), findsOneWidget);
-
-        await tester.ensureVisible(find.text('Save Check-In'));
-        await tester.tap(find.text('Save Check-In'));
+        await tester.tap(find.text(en.doneBtn));
         await tester.pumpAndSettle();
 
         final saved = container.read(todayTraceProvider);
         expect(saved, isNotNull);
-        expect(saved!.sleepHours, closeTo(8.5, 0.01));
-        expect(saved.energyLevel, equals(6));
-        expect(saved.anxietyLevel, equals(2));
-        expect(
-          find.text(const AppStrings('en').microMirrorFirstMoment),
-          findsOneWidget,
-        );
+        expect(saved!.sleepHours, closeTo(8.0, 0.01));
+        expect(saved.energyLevel, equals(8));
       },
     );
 

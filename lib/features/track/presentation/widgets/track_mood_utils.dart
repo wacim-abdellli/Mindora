@@ -19,6 +19,11 @@ class TrackMoodOption {
 
 const List<TrackMoodOption> trackCoreMoods = [
   TrackMoodOption(
+    key: 'good',
+    icon: Icons.wb_sunny_outlined,
+    color: MindTokens.moodGood,
+  ),
+  TrackMoodOption(
     key: 'calm',
     icon: Icons.water_drop_outlined,
     color: MindTokens.moodCalm,
@@ -53,25 +58,20 @@ TrackMoodOption trackMoodOptionFor(String key) {
   return TrackMoodOption(
     key: canonical,
     icon: EmotionDescriptor.iconForLabel(key),
-    color: MindTokens.moodCalm,
+    color: MindTokens.moodColorByKey(key),
   );
 }
 
 String trackMoodLabel(String key, AppStrings strings) {
   final canonical = EmotionDescriptor.canonicalKey(key).toLowerCase();
-  switch (canonical) {
-    case 'calm':
-      return strings.moodCalm;
-    case 'anxious':
-      return strings.moodAnxious;
-    case 'frustrated':
-      return strings.moodFrustrated;
-    case 'heavy':
-      return strings.moodHeavy;
-    case 'restless':
-      return strings.moodRestless;
-    default:
-      return EmotionDescriptor.localizedLabel(key, strings);
-  }
+  return switch (canonical) {
+    'good' || 'happy' => strings.moodGood,
+    'calm' => strings.moodCalmPlain,
+    'anxious' => strings.moodWorriedPlain,
+    'frustrated' => strings.moodAnnoyedPlain,
+    'heavy' => strings.moodLowPlain,
+    'restless' => strings.moodRestlessPlain,
+    _ => EmotionDescriptor.localizedLabel(key, strings),
+  };
 }
 

@@ -275,7 +275,7 @@ void main() {
   });
 
   group('AuthScreen & Onboarding Widget Tests', () {
-    testWidgets('AuthScreen renders tabs, anonymous vault card, and input fields', (tester) async {
+    testWidgets('AuthScreen renders private local hero card, segmented tabs, and input fields', (tester) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -285,19 +285,19 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Verify title and subtitle
+      // Verify title and local private hero card
       expect(find.text('Access Your Account'), findsOneWidget);
-
-      // Verify tabs & submit button
-      expect(find.text('SIGN IN'), findsNWidgets(2));
-      expect(find.text('CREATE ACCOUNT'), findsOneWidget);
-
-      // Verify Anonymous card
       expect(find.text('Private Local Space'), findsOneWidget);
-      expect(find.text('MAXIMUM PRIVACY'), findsOneWidget);
+      expect(find.text('Continue privately on this phone'), findsOneWidget);
 
-      // Verify new investigator link
-      expect(find.text('Start Exploration'), findsOneWidget);
+      // Verify segmented tabs & submit button (sentence case)
+      expect(find.text('Sign In'), findsOneWidget);
+      expect(find.text('Create Account'), findsOneWidget);
+      expect(find.byType(TextFormField), findsNWidgets(2));
+
+      // Verify onboarding shortcut
+      expect(find.text('Set up my space'), findsOneWidget);
+      expect(find.text('Psychiatrist / Clinician Portal'), findsOneWidget);
     });
 
     testWidgets('OnboardingScreen Step 1 renders Welcome and discrete Sign In link', (tester) async {
@@ -310,8 +310,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Every thought leaves a trace.'), findsOneWidget);
-      expect(find.text('Already have an account?'), findsOneWidget);
+      expect(find.text('Mindora'), findsOneWidget);
+      expect(find.text('Start'), findsOneWidget);
       expect(find.text('Sign In'), findsOneWidget);
     });
   });

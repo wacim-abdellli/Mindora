@@ -5,7 +5,7 @@ import '../../../../app/localization/app_strings.dart';
 import '../../../../app/theme/mind_tokens.dart';
 import '../../../../core/widgets/mind_card.dart';
 import '../../../../core/widgets/mind_pressable.dart';
-import '../../../../core/widgets/mood_emblem.dart';
+import '../../../../core/widgets/mood_face.dart';
 import '../../../mind_trace/domain/mind_trace_model.dart';
 
 /// Non-punitive 7-day observation continuity strip rendered on [HomeScreen].
@@ -87,16 +87,14 @@ class HomeWeeklyRhythmCard extends StatelessWidget {
                   border: Border.all(color: tokens.line),
                 ),
                 child: Text(
-                  strings.observedDaysCount(observedCount),
+                  strings.daysThisWeekCount(observedCount),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontFamily: 'Inter',
-                    fontSize: 11.5,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w700,
-                    color: observedCount > 0
-                        ? tokens.ink
-                        : tokens.ink2,
+                    color: observedCount > 0 ? tokens.ink : tokens.ink2,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
@@ -162,18 +160,17 @@ class HomeWeeklyRhythmCard extends StatelessWidget {
                             ),
                             alignment: Alignment.center,
                             child: trace != null
-                                ? MoodEmblem(
-                                    moodKey: trace.overallMood,
-                                    size: 16,
-                                    color: MindTokens.moodColor(AppMood.fromKey(trace.overallMood)),
+                                ? MoodFace(
+                                    mood: AppMood.fromKey(trace.overallMood),
+                                    size: 28,
                                   )
                                 : Container(
-                                    width: 4,
-                                    height: 4,
+                                    width: 6,
+                                    height: 6,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       color: isToday
-                                          ? tokens.m1
+                                          ? tokens.primary
                                           : tokens.ink3.withValues(alpha: 0.45),
                                     ),
                                   ),
@@ -184,12 +181,10 @@ class HomeWeeklyRhythmCard extends StatelessWidget {
                             maxLines: 1,
                             style: TextStyle(
                               fontFamily: 'Inter',
-                              fontSize: 11,
+                              fontSize: 12.5,
                               fontWeight:
-                                  isToday ? FontWeight.w700 : FontWeight.w500,
-                              color: isToday
-                                  ? tokens.ink
-                                  : tokens.ink3,
+                                  isToday ? FontWeight.w700 : FontWeight.w600,
+                              color: isToday ? tokens.ink : tokens.ink2,
                             ),
                           ),
                         ],

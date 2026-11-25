@@ -1,10 +1,15 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/localization/app_strings.dart';
+import '../../app/theme/lab_theme.dart';
+import '../../app/theme/mind_tokens.dart';
+import '../widgets/mind_button.dart';
+import '../widgets/mind_sheet.dart';
 
 final gentleReminderServiceProvider = Provider<GentleReminderService>((ref) {
   return GentleReminderService();
@@ -12,9 +17,8 @@ final gentleReminderServiceProvider = Provider<GentleReminderService>((ref) {
 
 /// Real on-device notification scheduler for opt-in Gentle Reminders.
 ///
-/// Uses `flutter_local_notifications` with inexact battery-friendly intervals
-/// so users receive calm, non-punitive check-in prompts without requiring
-/// invasive exact-alarm permissions or cloud push servers.
+/// Uses localized zero-guilt rotating messages from [AppStrings] and provides
+/// a calm pre-permission bottom sheet before prompting the OS dialog.
 class GentleReminderService {
   GentleReminderService({FlutterLocalNotificationsPlugin? plugin})
     : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
@@ -38,6 +42,60 @@ class GentleReminderService {
     }
   }
 
+  /// Displays a calm 1-card explanation before triggering the OS permission prompt.
+  static Future<bool> showPrePermissionSheet(
+    BuildContext context,
+    AppStrings strings,
+  ) async {
+    final result = await showMindSheet<bool>(
+      context: context,
+      showCloseButton: true,
+      title: strings.reminderPermissionTitle,
+      builder: (ctx) {
+        final tokens = ctx.tokens;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              strings.reminderPermissionBody,
+              style: LabTheme.textStyle(
+                fontSize: 15.5,
+                height: 1.5,
+                color: tokens.ink2,
+              ),
+            ),
+            const SizedBox(height: 20),
+            MindButton(
+              text: strings.enableReminderBtn,
+              isFullWidth: true,
+              onPressed: () => Navigator.of(ctx).pop(true),
+            ),
+            const SizedBox(height: 8),
+            Center(
+              child: TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(48, 48),
+                  foregroundColor: tokens.ink2,
+                ),
+                child: Text(
+                  strings.notNowBtn,
+                  style: LabTheme.textStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w600,
+                    color: tokens.ink2,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
+  }
+
   Future<void> _ensureInitialized() async {
     if (_initialized || _isTestOrUnsupported) return;
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -55,8 +113,6 @@ class GentleReminderService {
     _initialized = true;
   }
 
-  /// Requests OS notification permission when the user opts into reminders.
-  /// Returns true if permission is granted (or not needed by the OS version).
   Future<bool> requestPermission() async {
     if (_isTestOrUnsupported) return true;
     try {
@@ -99,7 +155,6 @@ class GentleReminderService {
     }
   }
 
-  /// Schedules or cancels the gentle reminder loop based on user preferences.
   Future<bool> syncSchedule({
     required bool enabled,
     required String frequency,
@@ -118,16 +173,8 @@ class GentleReminderService {
       await _ensureInitialized();
       await _plugin.cancel(id: _reminderNotificationId);
 
-      final title = strings.isArabic
-          ? 'تذكير لطيف — Mindora'
-          : (strings.isFrench
-                ? 'Rappel doux — Mindora'
-                : 'Gentle Check-In — Mindora');
-      final body = strings.isArabic
-          ? 'أثر ذهنك اليومي ينتظرك وقتما تكون مستعداً، بدون أي ضغط.'
-          : (strings.isFrench
-                ? 'Votre empreinte du jour vous attend quand vous êtes prêt(e).'
-                : 'Your daily Mind Trace is waiting whenever you feel ready.');
+      final bodies = strings.gentleReminderBodies;
+      final body = bodies[DateTime.now().day % bodies.length];
 
       const androidDetails = AndroidNotificationDetails(
         _channelId,
@@ -148,7 +195,7 @@ class GentleReminderService {
         repeatDurationInterval: _intervalForFrequency(frequency),
         notificationDetails: details,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        title: title,
+        title: strings.reminderPermissionTitle,
         body: body,
       );
       return true;
@@ -157,7 +204,6 @@ class GentleReminderService {
     }
   }
 
-  /// Cancels any active gentle reminder schedule.
   Future<void> cancelReminders() async {
     if (_isTestOrUnsupported) return;
     try {

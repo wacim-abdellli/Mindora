@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/localization/app_strings.dart';
 import '../../../app/theme/mind_tokens.dart';
+import '../../../core/widgets/mind_undo_banner.dart';
 import '../../../core/safety/support_button.dart';
 import '../../../core/widgets/mind_pressable.dart';
 import '../../journey/controllers/journey_controller.dart';
@@ -586,65 +587,24 @@ class _InnerObservatoryScreenState extends ConsumerState<InnerObservatoryScreen>
                 label: 'Delete discovery',
                 child: InkWell(
                   onTap: () async {
-                    final confirmed = await showDialog<bool>(
-                      context: context,
-                      builder: (dialogCtx) {
-                        return AlertDialog(
-                          backgroundColor: context.tokens.surface,
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(context.tokens.cardRadius),
-                            side: BorderSide(color: borderColor),
-                          ),
-                          title: Text(
-                            strings.deleteTraceConfirmTitle,
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w700,
-                              color: textPrimary,
-                            ),
-                          ),
-                          content: Text(
-                            strings.isArabic
-                                ? 'هل تريد حذف هذه الملاحظة المحفوظة من سجلك؟'
-                                : (strings.isFrench
-                                    ? 'Voulez-vous vraiment supprimer cette note enregistrée ?'
-                                    : 'Remove this saved reflection note from your record?'),
-                            style: TextStyle(
-                              fontSize: 13.5,
-                              height: 1.45,
-                              color: textSecondary,
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () =>
-                                  Navigator.of(dialogCtx).pop(false),
-                              child: Text(
-                                strings.cancelActionLabel,
-                                style: TextStyle(color: textSecondary),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () =>
-                                  Navigator.of(dialogCtx).pop(true),
-                              child: Text(
-                                strings.deleteEntryBtn,
-                                style: TextStyle(
-                                  color: context.tokens.safety,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ],
+                    HapticFeedback.mediumImpact();
+                    final notifier = ref.read(journeyControllerProvider.notifier);
+                    await notifier.deleteDiscovery(activity.id);
+                    if (!mounted) return;
+                    showMindUndoBanner(
+                      context,
+                      message: strings.itemRemovedUndo,
+                      undoLabel: strings.undoBtn,
+                      onUndo: () {
+                        notifier.addCustomDiscovery(
+                          title: activity.title,
+                          notes: activity.personalNotes.isNotEmpty
+                              ? activity.personalNotes
+                              : activity.shortExplanation,
+                          category: activity.purpose,
                         );
                       },
                     );
-                    if (confirmed == true) {
-                      ref
-                          .read(journeyControllerProvider.notifier)
-                          .deleteDiscovery(activity.id);
-                    }
                   },
                   borderRadius: BorderRadius.circular(12),
                   child: ConstrainedBox(

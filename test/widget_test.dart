@@ -21,20 +21,17 @@ void main() {
       // 1. Verify that the header renders
       expect(find.text('Mindora'), findsOneWidget);
 
-      // 2. Verify all 5 persistent bottom navigation tabs (Flo-style standard navigation)
-      expect(find.text('Home'), findsOneWidget);
-      expect(find.text('Track'), findsOneWidget);
-      expect(find.text('AI Guide'), findsAtLeastNWidgets(1));
-      expect(find.text('Insights'), findsOneWidget);
-      expect(find.text('Profile'), findsOneWidget);
+      // 2. Verify all 5 persistent single-job bottom navigation tabs
+      expect(find.text('Today'), findsOneWidget);
+      expect(find.text('My days'), findsOneWidget);
+      expect(find.text('Talk'), findsOneWidget);
+      expect(find.text('Patterns'), findsOneWidget);
+      expect(find.text('Me'), findsOneWidget);
       expect(find.text('Observatory'), findsNothing);
 
-      // 3. Verify streamlined daily sanctuary components on Home
-      expect(find.text('Exercises for you'), findsOneWidget);
-      expect(find.text('Relieve stress'), findsOneWidget);
-
-      // 4. Verify options-first Daily check-in elements on Home screen (no compulsory note)
-      expect(find.text('Log Daily Check-in'), findsOneWidget);
+      // 3. Verify single-job Today screen components (2-tap check-in + 1 breather card)
+      expect(find.text('How are you right now?'), findsOneWidget);
+      expect(find.text('Take a 1-minute breather'), findsOneWidget);
     },
   );
 }

@@ -10,6 +10,7 @@ import '../../../app/theme/lab_theme.dart';
 import '../../../app/theme/mind_tokens.dart';
 import '../../../core/widgets/fingerprint_thread_signature.dart';
 import '../../../core/widgets/mind_pressable.dart';
+import '../../../core/widgets/mind_undo_banner.dart';
 import '../../case_file/domain/clarity_anchor_model.dart';
 import '../../case_file/presentation/widgets/clarity_anchor_card.dart';
 import '../controllers/investigation_providers.dart';
@@ -63,7 +64,7 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
             controller: controller,
             autofocus: true,
             decoration: InputDecoration(
-              hintText: 'Enter title...',
+              hintText: strings.renameConversationTitle,
               filled: true,
               fillColor: dialogTokens.surface2,
               border: OutlineInputBorder(
@@ -109,61 +110,21 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
     );
   }
 
-  void _showDeleteDialog(BuildContext context, CaseModel caseModel) {
+  Future<void> _showDeleteDialog(BuildContext context, CaseModel caseModel) async {
     final strings = ref.read(appStringsProvider);
-
-    showDialog<void>(
-      context: context,
-      builder: (dialogCtx) {
-        final dialogTokens = dialogCtx.tokens;
-        return AlertDialog(
-          backgroundColor: dialogTokens.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(dialogTokens.cardRadius),
-            side: BorderSide(color: dialogTokens.line),
-          ),
-          title: Text(
-            strings.deleteConversationTitle,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: dialogTokens.ink,
-            ),
-          ),
-          content: Text(
-            strings.deleteConversationConfirm,
-            style: TextStyle(
-              fontSize: 13,
-              height: 1.45,
-              color: dialogTokens.ink2,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(),
-              child: Text(
-                strings.cancelBtn,
-                style: TextStyle(color: dialogTokens.ink2),
-              ),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: dialogTokens.safety,
-                foregroundColor: dialogTokens.bg,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(dialogTokens.buttonRadius),
-                ),
-              ),
-              onPressed: () async {
-                await ref
-                    .read(activeCaseControllerProvider.notifier)
-                    .deleteCase(caseModel.id);
-                if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
-              },
-              child: Text(strings.deletePermanentlyBtn),
-            ),
-          ],
-        );
+    final repo = ref.read(caseRepositoryProvider);
+    HapticFeedback.mediumImpact();
+    await ref
+        .read(activeCaseControllerProvider.notifier)
+        .deleteCase(caseModel.id);
+    if (!context.mounted) return;
+    showMindUndoBanner(
+      context,
+      message: strings.talkDeletedUndo,
+      undoLabel: strings.undoBtn,
+      onUndo: () async {
+        await repo.saveCase(caseModel);
+        ref.invalidate(savedCasesProvider);
       },
     );
   }
@@ -281,16 +242,20 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
           // 2. Mode Selection Section
           Row(
             children: [
-              Text(
-                strings.selectConversationMode.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
-                  color: context.tokens.ink,
+              Expanded(
+                child: Text(
+                  strings.selectConversationMode.toUpperCase(),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                    color: context.tokens.ink,
+                  ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -523,13 +488,17 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
                     color: tokens.bg,
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    strings.newConversationBtn.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.6,
-                      color: tokens.bg,
+                  Flexible(
+                    child: Text(
+                      strings.newConversationBtn.toUpperCase(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.6,
+                        color: tokens.bg,
+                      ),
                     ),
                   ),
                 ],
@@ -605,29 +574,33 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
           // 5. Recent Conversations List
           Row(
             children: [
-              Text(
-                strings.recentConversationsTitle.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
-                  color: tokens.ink,
+              Expanded(
+                child: Text(
+                  strings.recentConversationsTitle.toUpperCase(),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                    color: tokens.ink,
+                  ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               savedCasesAsync.maybeWhen(
                 data: (cases) => cases.isNotEmpty
                     ? TextButton(
                         onPressed: () => _showClearAllDialog(context),
                         style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          minimumSize: const Size(48, 36),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                         child: Text(
                           strings.clearAllConversationsBtn,
                           style: TextStyle(
-                            fontSize: 11.5,
+                            fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: tokens.safety,
                           ),
@@ -751,23 +724,20 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
                         ),
                         subtitle: Padding(
                           padding: const EdgeInsets.only(top: 4),
-                          child: Row(
+                          child: Wrap(
+                            spacing: 6,
+                            runSpacing: 2,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              Flexible(
-                                child: Text(
-                                  localizedModeName(c.conversationMode, strings),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w600,
-                                    color: tokens.ink,
-                                  ),
+                              Text(
+                                localizedModeName(c.conversationMode, strings),
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: tokens.ink,
                                 ),
                               ),
-                              const SizedBox(width: 6),
                               Text('•', style: TextStyle(fontSize: 11.5, color: textSecondary)),
-                              const SizedBox(width: 6),
                               Text(
                                 '${c.statements.length} exchanges',
                                 style: TextStyle(fontSize: 11.5, color: textSecondary),
@@ -842,20 +812,32 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              const FingerprintThreadSignature(size: 20, animated: false),
-              const SizedBox(width: 8),
-              Text(
-                strings.aiCompanionTitle.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
-                  color: tokens.ink,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const FingerprintThreadSignature(size: 20, animated: false),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      strings.aiCompanionTitle.toUpperCase(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.8,
+                        color: tokens.ink,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(

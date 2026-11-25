@@ -9,20 +9,21 @@ import '../../../app/theme/lab_theme.dart';
 import '../../../app/theme/mind_tokens.dart';
 import '../../../core/safety/support_button.dart';
 import '../../../core/security/app_lock_provider.dart';
-import '../../../core/widgets/bouncing_widget.dart';
-import '../../../core/widgets/fingerprint_thread_signature.dart';
+import '../../../core/widgets/ambient_scaffold.dart';
+import '../../../core/widgets/mind_button.dart';
+import '../../../core/widgets/mind_card.dart';
+import '../../../core/widgets/mind_segmented.dart';
+import '../../../core/widgets/mind_toast.dart';
+import '../../../core/widgets/mood_face.dart';
 import '../../clinician/presentation/clinician_shell_screen.dart';
 import '../controllers/auth_controller.dart';
 import '../domain/auth_state.dart';
 
-/// The Sovereign Authentication & Vault Unlock Screen for Mindora.
+/// Calm, plain-language entry screen for Mindora.
 ///
-/// Features:
-/// - Unlock existing cloud vault (Email & Password)
-/// - Create new cloud vault (Email, Password, Codename)
-/// - Instant Anonymous Sovereign Vault (Zero personal data, complete privacy)
-/// - Quick Biometric Unlock for previously authorized devices
-/// - Direct bridge to the 6-Step Onboarding Journey
+/// Leads with the private local-phone option ("Continue privately on this phone")
+/// while offering optional email sign-in / account creation and Psychiatrist
+/// Workspace entry below, with zero jargon or ALL-CAPS labels.
 class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key});
 
@@ -57,16 +58,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final password = _passwordController.text.trim();
     final codename = _codenameController.text.trim();
 
-    bool success = false;
-    if (_isSignUp) {
-      success = await authCtrl.signUpWithEmail(
-        email,
-        password,
-        codename: codename.isNotEmpty ? codename : null,
-      );
-    } else {
-      success = await authCtrl.signInWithEmail(email, password);
-    }
+    final success = _isSignUp
+        ? await authCtrl.signUpWithEmail(
+            email,
+            password,
+            codename: codename.isNotEmpty ? codename : null,
+          )
+        : await authCtrl.signInWithEmail(email, password);
 
     if (success && mounted) {
       final authState = ref.read(authControllerProvider);
@@ -98,7 +96,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     HapticFeedback.selectionClick();
     final lockNotifier = ref.read(appLockProvider.notifier);
     final unlocked = await lockNotifier.unlock(
-      reason: 'Authenticate to access Mindora',
+      reason: 'Unlock Mindora',
     );
     if (unlocked && mounted) {
       final authState = ref.read(authControllerProvider);
@@ -110,17 +108,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         }
       } else {
         final strings = ref.read(appStringsProvider);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              strings.isArabic
-                  ? 'الرجاء تسجيل الدخول أو فتح الخزينة للمتابعة.'
-                  : (strings.isFrench
-                        ? 'Veuillez vous connecter ou ouvrir un espace privé pour continuer.'
-                        : 'Sign in or continue to a vault session to enter.'),
-            ),
-          ),
-        );
+        showMindToast(context, strings.signInRequiredToast);
       }
     }
   }
@@ -132,574 +120,318 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final authState = ref.watch(authControllerProvider);
     final lockState = ref.watch(appLockProvider);
 
-    final bg = tokens.bg;
-    final surfaceColor = tokens.surface;
-    final borderColor = tokens.line;
-    final textPrimary = tokens.ink;
-    final textSecondary = tokens.ink2;
-    final sageAccent = tokens.ink;
-
-    return Scaffold(
-      backgroundColor: bg,
+    return AmbientScaffold(
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
         title: Text(
           'Mindora',
           style: LabTheme.textStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-            color: textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: tokens.ink,
           ),
         ),
         actions: const [SupportButton(), SizedBox(width: 8)],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
           physics: const BouncingScrollPhysics(),
           child: Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 8),
-                const FingerprintThreadSignature(size: 72),
-                const SizedBox(height: 20),
-
-                // Editorial Title
+                const Center(
+                  child: MoodFace(
+                    mood: AppMood.calm,
+                    size: 72,
+                    isSelected: true,
+                  ),
+                ),
+                const SizedBox(height: 16),
                 Text(
                   strings.authTitle,
                   textAlign: TextAlign.center,
                   style: LabTheme.textStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.3,
-                    color: textPrimary,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: tokens.ink,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   strings.authSubtitle,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    height: 1.4,
-                    color: textSecondary,
+                  style: LabTheme.textStyle(
+                    fontSize: 15,
+                    height: 1.45,
+                    color: tokens.ink2,
                   ),
                 ),
+                const SizedBox(height: 22),
 
-                const SizedBox(height: 28),
-
-                // Mode Switcher (Sign In vs Create Vault)
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: tokens.surface2,
-                    borderRadius: BorderRadius.circular(tokens.buttonRadius),
-                    border: Border.all(color: borderColor, width: 1),
-                  ),
-                  child: Row(
+                // Hero Card 1: Private on this phone (Recommended)
+                MindCard(
+                  variant: MindCardVariant.tint,
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Expanded(
-                        child: BouncingWidget(
-                          onTap: () {
-                            if (_isSignUp) {
-                              HapticFeedback.lightImpact();
-                              setState(() => _isSignUp = false);
-                              ref
-                                  .read(authControllerProvider.notifier)
-                                  .clearError();
-                            }
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            constraints: const BoxConstraints(minHeight: 40),
-                            alignment: Alignment.center,
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(
-                              color: !_isSignUp
-                                  ? tokens.ink
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(
-                                tokens.buttonRadius - 2,
-                              ),
-                            ),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.shield_outlined,
+                            size: 22,
+                            color: tokens.primary,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
                             child: Text(
-                              strings.signInTab.toUpperCase(),
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 11,
+                              strings.anonymousOptionTitle,
+                              style: LabTheme.textStyle(
                                 fontWeight: FontWeight.w800,
-                                letterSpacing: 0.5,
-                                color: !_isSignUp ? tokens.bg : textSecondary,
+                                fontSize: 16.5,
+                                color: tokens.ink,
                               ),
                             ),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        strings.anonymousOptionSubtitle,
+                        style: LabTheme.textStyle(
+                          fontSize: 14.0,
+                          height: 1.45,
+                          color: tokens.ink2,
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: BouncingWidget(
-                          onTap: () {
-                            if (!_isSignUp) {
-                              HapticFeedback.lightImpact();
-                              setState(() => _isSignUp = true);
-                              ref
-                                  .read(authControllerProvider.notifier)
-                                  .clearError();
-                            }
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            constraints: const BoxConstraints(minHeight: 40),
-                            alignment: Alignment.center,
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(
-                              color: _isSignUp
-                                  ? tokens.ink
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(
-                                tokens.buttonRadius - 2,
-                              ),
-                            ),
-                            child: Text(
-                              strings.signUpTab.toUpperCase(),
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.5,
-                                color: _isSignUp ? tokens.bg : textSecondary,
-                              ),
-                            ),
-                          ),
-                        ),
+                      const SizedBox(height: 14),
+                      MindButton(
+                        text: strings.onboardingContinuePrivatelyBtn,
+                        isFullWidth: true,
+                        onPressed: _continueAnonymously,
                       ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 22),
 
-                // Error Banner
-                if (authState.errorMessage != null) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: tokens.safetySoft,
-                      borderRadius: BorderRadius.circular(tokens.chipRadius),
-                      border: Border.all(
-                        color: tokens.safety.withValues(alpha: 0.45),
+                // Card 2: Optional Email Sign-In / New Account
+                MindCard(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      MindSegmented(
+                        index: _isSignUp ? 1 : 0,
+                        labels: [strings.signInTab, strings.signUpTab],
+                        onChanged: (idx) {
+                          setState(() => _isSignUp = idx == 1);
+                          ref
+                              .read(authControllerProvider.notifier)
+                              .clearError();
+                        },
                       ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.error_outline_rounded,
-                          size: 16,
-                          color: tokens.safety,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            strings.localizeAuthError(authState.errorMessage!),
-                            style: TextStyle(
-                              color: tokens.safety,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
+                      const SizedBox(height: 16),
+
+                      if (authState.errorMessage != null) ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(bottom: 14),
+                          decoration: BoxDecoration(
+                            color: tokens.safetySoft,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: tokens.safety.withValues(alpha: 0.4),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-
-                // Input Fields
-                if (_isSignUp) ...[
-                  _buildInputLabel(strings.codenameFieldLabel, textSecondary),
-                  const SizedBox(height: 6),
-                  TextFormField(
-                    controller: _codenameController,
-                    style: TextStyle(color: textPrimary, fontSize: 13),
-                    decoration: _inputDecoration(
-                      strings.codenameFieldHint,
-                      Icons.badge_outlined,
-                      surfaceColor,
-                      borderColor,
-                      textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-
-                _buildInputLabel(strings.emailFieldLabel, textSecondary),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  style: TextStyle(color: textPrimary, fontSize: 13),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) {
-                      return 'Email is required';
-                    }
-                    if (!v.contains('@')) {
-                      return 'Enter a valid email address';
-                    }
-                    return null;
-                  },
-                  decoration: _inputDecoration(
-                    strings.emailFieldHint,
-                    Icons.alternate_email_rounded,
-                    surfaceColor,
-                    borderColor,
-                    textSecondary,
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                _buildInputLabel(strings.passwordFieldLabel, textSecondary),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  style: TextStyle(color: textPrimary, fontSize: 13),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) {
-                      return 'Password is required';
-                    }
-                    if (v.trim().length < 6) {
-                      return 'Password must be at least 6 characters';
-                    }
-                    return null;
-                  },
-                  decoration: _inputDecoration(
-                    strings.passwordFieldHint,
-                    Icons.lock_outline_rounded,
-                    surfaceColor,
-                    borderColor,
-                    textSecondary,
-                    suffixIcon: IconButton(
-                      tooltip: strings.toggleVisibilityTooltip,
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                        size: 16,
-                        color: textSecondary,
-                      ),
-                      onPressed: () {
-                        setState(() => _obscurePassword = !_obscurePassword);
-                      },
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Submit Button
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: tokens.ink,
-                      foregroundColor: tokens.bg,
-                      minimumSize: const Size.fromHeight(48),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          tokens.buttonRadius,
-                        ),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    onPressed: authState.status == AuthStatus.loading
-                        ? null
-                        : _submitEmailAuth,
-                    child: authState.status == AuthStatus.loading
-                        ? SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: tokens.bg,
-                            ),
-                          )
-                        : Text(
-                            _isSignUp
-                                ? strings.createVaultBtn.toUpperCase()
-                                : strings.unlockVaultBtn.toUpperCase(),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 12.5,
-                              letterSpacing: 0.6,
-                            ),
-                          ),
-                  ),
-                ),
-
-                // Biometrics Quick Unlock Option (when enabled & a vault session exists)
-                if (lockState.isEnabled && authState.user != null) ...[
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: sageAccent,
-                        minimumSize: const Size.fromHeight(48),
-                        side: BorderSide(color: borderColor, width: 1),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            tokens.buttonRadius,
-                          ),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      icon: const Icon(Icons.fingerprint_rounded, size: 18),
-                      label: Text(
-                        strings.biometricUnlockBtn.toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      onPressed: _quickBiometricUnlock,
-                    ),
-                  ),
-                ],
-
-                const SizedBox(height: 28),
-
-                // Minimalist Divider with "OR"
-                Row(
-                  children: [
-                    Expanded(child: Divider(color: borderColor, height: 1)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      child: Text(
-                        'OR',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: textSecondary.withValues(alpha: 0.6),
-                          letterSpacing: 1.0,
-                        ),
-                      ),
-                    ),
-                    Expanded(child: Divider(color: borderColor, height: 1)),
-                  ],
-                ),
-
-                const SizedBox(height: 24),
-
-                // Anonymous Sovereign Vault Card
-                BouncingWidget(
-                  onTap: _continueAnonymously,
-                  child: Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: surfaceColor,
-                      borderRadius: BorderRadius.circular(tokens.cardRadius),
-                      border: Border.all(color: borderColor, width: 1),
-                      boxShadow: tokens.shadows,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: sageAccent.withValues(alpha: 0.14),
-                                borderRadius: BorderRadius.circular(
-                                  tokens.chipRadius,
-                                ),
-                              ),
-                              child: Icon(
-                                Icons.shield_outlined,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.error_outline_rounded,
                                 size: 18,
-                                color: sageAccent,
+                                color: tokens.safety,
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          strings.anonymousOptionTitle,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 13,
-                                            color: textPrimary,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: sageAccent.withValues(
-                                            alpha: 0.15,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            4,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          'PRIVATE',
-                                          style: TextStyle(
-                                            fontSize: 8.5,
-                                            fontWeight: FontWeight.w800,
-                                            letterSpacing: 0.4,
-                                            color: sageAccent,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  strings.localizeAuthError(
+                                    authState.errorMessage!,
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    strings.anonymousChoiceBadge,
-                                    style: TextStyle(
-                                      fontSize: 9.5,
-                                      fontWeight: FontWeight.w700,
-                                      color: sageAccent,
-                                      letterSpacing: 0.4,
-                                    ),
+                                  style: LabTheme.textStyle(
+                                    color: tokens.safety,
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                ],
-                              ),
-                            ),
-                            Icon(
-                              Icons.arrow_forward_rounded,
-                              size: 16,
-                              color: sageAccent,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          strings.anonymousOptionSubtitle,
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            color: textSecondary,
-                            height: 1.35,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // Link to Onboarding Journey
-                InkWell(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    context.go(AppRouter.onboarding);
-                  },
-                  borderRadius: BorderRadius.circular(tokens.chipRadius),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 10,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          strings.newInvestigatorPrompt,
-                          style: TextStyle(fontSize: 12, color: textSecondary),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          strings.startExplorationBtn,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: tokens.ink,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                // Direct Entry to Psychiatrist / Clinician Portal
-                Semantics(
-                  button: true,
-                  label: strings.clinicianPortalBtnLabel,
-                  child: InkWell(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      final router = GoRouter.maybeOf(context);
-                      if (router != null) {
-                        router.go(AppRouter.clinician);
-                      } else {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const ClinicianShellScreen(),
-                          ),
-                        );
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(
-                      context.tokens.chipRadius,
-                    ),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(minHeight: 48),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.medical_services_outlined,
-                              size: 15,
-                              color: textSecondary,
-                            ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                strings.clinicianPortalBtnLabel,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: textSecondary,
-                                  decoration: TextDecoration.underline,
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
+                      ],
+
+                      if (_isSignUp) ...[
+                        _fieldLabel(strings.codenameFieldLabel, tokens),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          controller: _codenameController,
+                          style: LabTheme.textStyle(
+                            color: tokens.ink,
+                            fontSize: 15.5,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: strings.codenameFieldHint,
+                            prefixIcon: Icon(
+                              Icons.badge_outlined,
+                              size: 20,
+                              color: tokens.ink2,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                      ],
+
+                      _fieldLabel(strings.emailFieldLabel, tokens),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        style: LabTheme.textStyle(
+                          color: tokens.ink,
+                          fontSize: 15.5,
+                        ),
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty || !v.contains('@')) {
+                            return strings.emailFieldHint;
+                          }
+                          return null;
+                        },
+                        decoration: InputDecoration(
+                          hintText: strings.emailFieldHint,
+                          prefixIcon: Icon(
+                            Icons.alternate_email_rounded,
+                            size: 20,
+                            color: tokens.ink2,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      _fieldLabel(strings.passwordFieldLabel, tokens),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        style: LabTheme.textStyle(
+                          color: tokens.ink,
+                          fontSize: 15.5,
+                        ),
+                        validator: (v) {
+                          if (v == null || v.trim().length < 6) {
+                            return strings.passwordFieldHint;
+                          }
+                          return null;
+                        },
+                        decoration: InputDecoration(
+                          hintText: strings.passwordFieldHint,
+                          prefixIcon: Icon(
+                            Icons.lock_outline_rounded,
+                            size: 20,
+                            color: tokens.ink2,
+                          ),
+                          suffixIcon: IconButton(
+                            tooltip: strings.toggleVisibilityTooltip,
+                            constraints: const BoxConstraints(
+                              minWidth: 48,
+                              minHeight: 48,
+                            ),
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                              size: 20,
+                              color: tokens.ink2,
+                            ),
+                            onPressed: () {
+                              setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+
+                      MindButton(
+                        text: _isSignUp
+                            ? strings.createVaultBtn
+                            : strings.unlockVaultBtn,
+                        variant: MindButtonVariant.secondary,
+                        isFullWidth: true,
+                        isLoading: authState.status == AuthStatus.loading,
+                        onPressed: _submitEmailAuth,
+                      ),
+
+                      if (lockState.isEnabled && authState.user != null) ...[
+                        const SizedBox(height: 10),
+                        MindButton(
+                          text: strings.biometricUnlockBtn,
+                          leadingIcon: Icons.fingerprint_rounded,
+                          variant: MindButtonVariant.soft,
+                          isFullWidth: true,
+                          onPressed: _quickBiometricUnlock,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+
+                // Onboarding shortcut
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      context.go(AppRouter.onboarding);
+                    },
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                    ),
+                    child: Text(
+                      strings.startExplorationBtn,
+                      style: LabTheme.textStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.primary,
                       ),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                // Psychiatrist / Doctor Portal entry
+                MindButton(
+                  text: strings.clinicianPortalBtnLabel,
+                  leadingIcon: Icons.medical_services_outlined,
+                  variant: MindButtonVariant.soft,
+                  isFullWidth: true,
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    final router = GoRouter.maybeOf(context);
+                    if (router != null) {
+                      router.go(AppRouter.clinician);
+                    } else {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const ClinicianShellScreen(),
+                        ),
+                      );
+                    }
+                  },
+                ),
               ],
             ),
           ),
@@ -708,51 +440,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     );
   }
 
-  Widget _buildInputLabel(String label, Color textSecondary) {
-    return Align(
-      alignment: AlignmentDirectional.centerStart,
-      child: Text(
-        label.toUpperCase(),
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.8,
-          color: textSecondary,
-        ),
-      ),
-    );
-  }
-
-  InputDecoration _inputDecoration(
-    String hint,
-    IconData prefixIcon,
-    Color surfaceColor,
-    Color borderColor,
-    Color textSecondary, {
-    Widget? suffixIcon,
-  }) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: TextStyle(
-        fontSize: 12,
-        color: textSecondary.withValues(alpha: 0.6),
-      ),
-      prefixIcon: Icon(prefixIcon, size: 16, color: textSecondary),
-      suffixIcon: suffixIcon,
-      filled: true,
-      fillColor: surfaceColor,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(context.tokens.buttonRadius),
-        borderSide: BorderSide(color: borderColor, width: 1),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(context.tokens.buttonRadius),
-        borderSide: BorderSide(color: borderColor, width: 1),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(context.tokens.buttonRadius),
-        borderSide: BorderSide(color: context.tokens.ink, width: 1.2),
+  Widget _fieldLabel(String label, MindTokens tokens) {
+    return Text(
+      label,
+      style: LabTheme.textStyle(
+        fontSize: 13.5,
+        fontWeight: FontWeight.w700,
+        color: tokens.ink,
       ),
     );
   }

@@ -191,6 +191,7 @@ CORE CONVERSATIONAL REASONING PRINCIPLES:
     List<ConditionType> conditions = const [],
     String? contextualUserPrompt,
     String? sessionSummary,
+    String? customDirectives,
   }) {
     final buffer = StringBuffer();
     buffer.writeln(coreIdentityPrompt);
@@ -200,6 +201,15 @@ CORE CONVERSATIONAL REASONING PRINCIPLES:
       buffer.writeln(buildConditionGuidelines(conditions));
     }
     buffer.writeln(buildLanguageDirective(languageCode));
+    final trimmedCustom = customDirectives?.trim();
+    if (trimmedCustom != null &&
+        trimmedCustom.isNotEmpty &&
+        !(contextualUserPrompt?.contains(trimmedCustom) ?? false)) {
+      buffer.writeln('\nUSER COMMUNICATION & TONE PREFERENCES:');
+      buffer.writeln(
+        'Honor these non-clinical style preferences unless safety requires direct clarity: "$trimmedCustom"',
+      );
+    }
     if (contextualUserPrompt != null &&
         contextualUserPrompt.trim().isNotEmpty) {
       buffer.writeln('\nPERSONALIZED CONTEXT (CONFIDENTIAL & USER-CONSENTED):');

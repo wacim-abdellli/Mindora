@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mind_forensics/app/localization/app_strings.dart';
 import 'package:mind_forensics/features/investigation/data/local_case_repository.dart';
 import 'package:mind_forensics/features/investigation/domain/ai_companion_context_selector.dart';
 import 'package:mind_forensics/features/investigation/domain/ai_companion_system_prompt.dart';
@@ -333,18 +334,18 @@ void main() {
         await tester.pumpAndSettle();
 
         // Initially active conversation dialogue & warm welcome state are open
-        expect(find.text('AI Guide'), findsAtLeastNWidgets(1));
+        expect(find.text('Talk'), findsAtLeastNWidgets(1));
         expect(find.text("What's on your mind?"), findsOneWidget);
         expect(find.text('Local On-Device'), findsOneWidget);
         expect(find.text('Talk with your companion...'), findsOneWidget);
 
-        // Tap grid icon in AppBar to toggle Hub view
-        await tester.tap(find.byIcon(Icons.grid_view_rounded));
+        // Tap Saved pill in AppBar to toggle Hub view
+        await tester.tap(find.text('Saved (1)'));
         await tester.pumpAndSettle();
 
         // Verify Hub view is now presented
-        expect(find.text('AI HUB'), findsOneWidget);
-        expect(find.text('6 MODES'), findsOneWidget);
+        expect(find.byType(AiCompanionHubView), findsOneWidget);
+        expect(find.text('AI COMPANION'), findsOneWidget);
         expect(find.text('Explore a Thought'), findsAtLeastNWidgets(1));
 
         // Tap back button in AppBar to return to chat
@@ -357,7 +358,7 @@ void main() {
     );
 
     testWidgets(
-      'FlashCaseScreen header exposes tappable Mode Switcher & Engine Badge and sends welcome starter cleanly',
+      'FlashCaseScreen header exposes More sheet (Engine + Mode Switcher) and sends welcome starter cleanly',
       (WidgetTester tester) async {
         tester.view.physicalSize = const Size(800, 1600);
         tester.view.devicePixelRatio = 1.0;
@@ -369,9 +370,10 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // Engine badge (Local) opens AiEngineConfigSheet directly
-        expect(find.text('Local'), findsOneWidget);
-        await tester.tap(find.text('Local'));
+        // More button opens calm options sheet exposing Engine & Mode Switcher
+        await tester.tap(find.byIcon(Icons.more_horiz_rounded));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(const AppStrings('en').aiEngineTooltip));
         await tester.pumpAndSettle();
         expect(find.byType(AiEngineConfigSheet), findsOneWidget);
 
@@ -406,7 +408,7 @@ void main() {
           find.text('Guide me through a 5-4-3-2-1 sensory grounding.'),
           findsOneWidget,
         );
-        expect(find.text('Save Takeaway Report'), findsOneWidget);
+        expect(find.text('Save key takeaway'), findsOneWidget);
       },
     );
   });

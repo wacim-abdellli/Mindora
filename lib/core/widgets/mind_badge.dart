@@ -62,7 +62,7 @@ class MindBadge extends StatelessWidget {
                   fontFamily: LabTheme.fontFamily,
                   fontFamilyFallback: LabTheme.fontFallback,
                   color: defaultFg,
-                  fontSize: 11.5,
+                  fontSize: 12.5,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                   letterSpacing: -0.1,
                 ),

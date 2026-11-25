@@ -20,6 +20,7 @@ import 'package:mind_forensics/features/insights/presentation/insights_screen.da
 import 'package:mind_forensics/features/mind_trace/controllers/mind_trace_controller.dart';
 import 'package:mind_forensics/features/mind_trace/domain/mind_trace_model.dart';
 import 'package:mind_forensics/features/track/presentation/track_screen.dart';
+import 'package:mind_forensics/features/track/presentation/widgets/progressive_details_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -181,23 +182,22 @@ void main() {
         addTearDown(container.dispose);
 
         final now = DateTime.now();
-        final repo = container.read(mindTraceRepositoryProvider);
-        await repo.saveTrace(
-          MindTraceModel(
-            id: 'vqa_track_today',
-            userId: 'vqa_user',
-            date: now,
-            overallMood: 'heavy',
-            selectedEmotions: const ['heavy', 'exhausted'],
-            moodIntensity: 6,
-            energyLevel: 5,
-            anxietyLevel: 5,
-            sleepHours: 7.0,
-            contextTags: const ['sleep_consistent', 'physical_movement'],
-            createdAt: now,
-            updatedAt: now,
-          ),
+        final todayTrace = MindTraceModel(
+          id: 'vqa_track_today',
+          userId: 'vqa_user',
+          date: now,
+          overallMood: 'heavy',
+          selectedEmotions: const ['heavy', 'exhausted'],
+          moodIntensity: 6,
+          energyLevel: 5,
+          anxietyLevel: 5,
+          sleepHours: 7.0,
+          contextTags: const ['sleep_consistent', 'physical_movement'],
+          createdAt: now,
+          updatedAt: now,
         );
+        final repo = container.read(mindTraceRepositoryProvider);
+        await repo.saveTrace(todayTrace);
         await container.read(mindTraceControllerProvider.future);
 
         final repaintKey = GlobalKey();
@@ -215,13 +215,25 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        await tester.ensureVisible(find.text('Add context (optional)'));
-        await tester.tap(find.text('Add context (optional)'));
+        const enStrings = AppStrings('en');
+        // Open today's entry detail -> Edit -> Card 3 Context Tags
+        await tester.ensureVisible(find.text(enStrings.plainMoodLabel('heavy')));
+        await tester.tap(find.text(enStrings.plainMoodLabel('heavy')));
+        await tester.pumpAndSettle();
+
+        await tester.ensureVisible(find.text(enStrings.editEntryBtn));
+        await tester.tap(find.text(enStrings.editEntryBtn));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text(enStrings.skipBtn));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(enStrings.skipBtn));
         await tester.pumpAndSettle();
 
         await tester.ensureVisible(find.text('Physical movement'));
         await tester.pumpAndSettle();
 
+        expect(find.byType(ProgressiveDetailsSheet), findsOneWidget);
         expect(tester.takeException(), isNull);
         await capturePng(
           tester,
@@ -348,6 +360,13 @@ void main() {
             ),
           ),
         );
+        await tester.pumpAndSettle();
+
+        final moreBtn = find.byKey(
+          const ValueKey<String>('patterns-more-details-btn'),
+        );
+        await tester.ensureVisible(moreBtn);
+        await tester.tap(moreBtn);
         await tester.pumpAndSettle();
 
         await tester.scrollUntilVisible(

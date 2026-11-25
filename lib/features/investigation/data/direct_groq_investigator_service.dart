@@ -299,6 +299,7 @@ class DirectGroqInvestigatorService implements InvestigatorService {
       conditions: conditions,
       contextualUserPrompt: contextualPrompt,
       sessionSummary: activeSummary,
+      customDirectives: profile?.customAiDirectives,
     );
 
     final messages = <Map<String, String>>[

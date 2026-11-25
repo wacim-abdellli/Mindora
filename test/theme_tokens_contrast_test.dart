@@ -23,85 +23,91 @@ double _contrastRatio(Color foreground, Color background) {
 }
 
 void main() {
-  group('Step 1 — Unified Dawn (Light) & Vercel (Dark) Tokens', () {
-    test('exact hex & alpha tokens match Section 1 specification', () {
+  group('Phase A — Unified Warm Daylight & Vercel Obsidian Dark Tokens', () {
+    test('exact hex & alpha tokens match Vercel Zero-Purple specification', () {
       const light = MindTokens.light;
       const dark = MindTokens.dark;
 
-      // Light "Dawn"
-      expect(light.bg, const Color(0xFFF5F6FA));
+      // Warm Alabaster Daylight (Default Light — zero purple)
+      expect(light.bg, const Color(0xFFFAF9F6));
       expect(light.surface, const Color(0xFFFFFFFF));
-      expect(light.surface2, const Color(0xFFECEFF5));
-      expect(light.surface3, const Color(0xFFFFFFFF));
-      expect(light.line, const Color.fromRGBO(23, 32, 51, 0.09));
-      expect(light.lineStrong, const Color.fromRGBO(23, 32, 51, 0.18));
-      expect(light.ink, const Color(0xFF172033));
-      expect(light.ink2, const Color(0xFF4A5873));
-      expect(light.ink3, const Color(0xFF5C6982));
-      expect(light.onMood, const Color(0xFF0E1626));
-      expect(light.safety, const Color(0xFFC0324E));
-      expect(light.safetySoft, const Color(0xFFFBE9ED));
-      expect(light.glow, 0.30);
+      expect(light.surface2, const Color(0xFFF3F1EC));
+      expect(light.surface3, const Color(0xFFEBE8E1));
+      expect(light.line, const Color.fromRGBO(17, 17, 20, 0.09));
+      expect(light.lineStrong, const Color.fromRGBO(17, 17, 20, 0.18));
+      expect(light.ink, const Color(0xFF111114));
+      expect(light.ink2, const Color(0xFF52525B));
+      expect(light.ink3, const Color(0xFF5E5E68));
+      expect(light.primary, const Color(0xFF111114));
+      expect(light.onPrimary, const Color(0xFFFFFFFF));
+      expect(light.onMood, const Color(0xFF111114));
+      expect(light.safety, const Color(0xFFBE123C));
+      expect(light.safetySoft, const Color(0xFFFFF1F2));
+      expect(light.glow, 0.20);
       expect(light.orbGlowFactor, 1.0);
       expect(light.shadows.length, 2);
-      expect(light.navGlass, const Color.fromRGBO(255, 255, 255, 0.80));
-      expect(light.scrim, const Color.fromRGBO(8, 12, 24, 0.50));
+      expect(light.navGlass, const Color.fromRGBO(250, 249, 246, 0.92));
+      expect(light.scrim, const Color.fromRGBO(9, 9, 11, 0.45));
 
-      // Dark "Vercel"
-      expect(dark.bg, const Color(0xFF000000));
-      expect(dark.surface, const Color(0xFF0A0A0A));
-      expect(dark.surface2, const Color(0xFF111111));
-      expect(dark.surface3, const Color(0xFF1F1F1F));
-      expect(dark.line, const Color.fromRGBO(255, 255, 255, 0.10));
-      expect(dark.lineStrong, const Color.fromRGBO(255, 255, 255, 0.20));
-      expect(dark.ink, const Color(0xFFEDEDED));
-      expect(dark.ink2, const Color(0xFFA1A1A1));
-      expect(dark.ink3, const Color(0xFF8F8F8F));
-      expect(dark.onMood, const Color(0xFF0E1626));
-      expect(dark.safety, const Color(0xFFFF6166));
-      expect(dark.safetySoft, const Color(0xFF2A0E10));
-      expect(dark.glow, 0.0);
-      expect(dark.orbGlowFactor, 0.35);
+      // Clean Vercel Obsidian-Zinc Dark (zero purple, zero #000000)
+      expect(dark.bg, const Color(0xFF09090B));
+      expect(dark.surface, const Color(0xFF111114));
+      expect(dark.surface2, const Color(0xFF18181C));
+      expect(dark.surface3, const Color(0xFF222228));
+      expect(dark.line, const Color.fromRGBO(255, 255, 255, 0.09));
+      expect(dark.lineStrong, const Color.fromRGBO(255, 255, 255, 0.18));
+      expect(dark.ink, const Color(0xFFFAFAFA));
+      expect(dark.ink2, const Color(0xFFA1A1AA));
+      expect(dark.ink3, const Color(0xFF8B8B96));
+      expect(dark.primary, const Color(0xFFFAFAFA));
+      expect(dark.onPrimary, const Color(0xFF09090B));
+      expect(dark.onMood, const Color(0xFF111114));
+      expect(dark.safety, const Color(0xFFFB7185));
+      expect(dark.safetySoft, const Color(0xFF2C1219));
+      expect(dark.glow, 0.14);
+      expect(dark.orbGlowFactor, 0.72);
       expect(dark.shadows, isEmpty);
-      expect(dark.navGlass, const Color.fromRGBO(10, 10, 10, 0.80));
-      expect(dark.scrim, const Color.fromRGBO(0, 0, 0, 0.70));
-      expect(dark.focusRing, const Color.fromRGBO(255, 255, 255, 0.90));
+      expect(dark.navGlass, const Color.fromRGBO(17, 17, 20, 0.92));
+      expect(dark.scrim, const Color.fromRGBO(4, 4, 6, 0.70));
+      expect(dark.focusRing, const Color(0xFF2DD4BF));
 
-      // Canonical mood palette
-      expect(MindTokens.moodColor(AppMood.calm), const Color(0xFF4FB896));
-      expect(MindTokens.moodHighlight(AppMood.calm), const Color(0xFF9BE0C6));
-      expect(MindTokens.moodColor(AppMood.anxious), const Color(0xFF5B9BEA));
+      // Canonical 6 vivid moods (zero purple)
+      expect(MindTokens.moodColor(AppMood.good), const Color(0xFFFFC93C));
+      expect(MindTokens.moodHighlight(AppMood.good), const Color(0xFFFFE58F));
+      expect(MindTokens.moodColor(AppMood.calm), const Color(0xFF2DD4BF));
+      expect(MindTokens.moodHighlight(AppMood.calm), const Color(0xFF99F6E4));
+      expect(MindTokens.moodColor(AppMood.anxious), const Color(0xFF38BDF8));
       expect(
         MindTokens.moodHighlight(AppMood.anxious),
-        const Color(0xFFA0C8FF),
+        const Color(0xFFBAE6FD),
       );
       expect(
         MindTokens.moodColor(AppMood.frustrated),
-        const Color(0xFFF0805F),
+        const Color(0xFFFF7A59),
       );
       expect(
         MindTokens.moodHighlight(AppMood.frustrated),
-        const Color(0xFFFFB894),
+        const Color(0xFFFFB49E),
       );
-      expect(MindTokens.moodColor(AppMood.heavy), const Color(0xFF8A7BE0));
-      expect(MindTokens.moodHighlight(AppMood.heavy), const Color(0xFFBEB0FF));
-      expect(MindTokens.moodColor(AppMood.restless), const Color(0xFFEDB23E));
+      expect(MindTokens.moodColor(AppMood.heavy), const Color(0xFF94A3B8));
+      expect(MindTokens.moodHighlight(AppMood.heavy), const Color(0xFFCBD5E1));
+      expect(MindTokens.moodColor(AppMood.restless), const Color(0xFFFBBF24));
       expect(
         MindTokens.moodHighlight(AppMood.restless),
-        const Color(0xFFFFD98A),
+        const Color(0xFFFDE68A),
       );
     });
 
-    test('shared shapes & spacing match Section 3 specification', () {
+    test('shared shapes & spacing match Spec 01 specification', () {
       for (final t in const [MindTokens.light, MindTokens.dark]) {
-        expect(t.cardRadius, 28.0);
-        expect(t.tileRadius, 26.0);
-        expect(t.rowRadius, 24.0);
-        expect(t.buttonRadius, 19.0);
+        expect(t.cardRadius, 24.0);
+        expect(t.tileRadius, 22.0);
+        expect(t.rowRadius, 20.0);
+        expect(t.buttonRadius, 20.0);
         expect(t.chipRadius, 99.0);
-        expect(t.inputRadius, 18.0);
+        expect(t.inputRadius, 16.0);
         expect(t.iconButtonRadius, 16.0);
-        expect(t.sheetRadius, 32.0);
+        expect(t.sheetRadius, 28.0);
         expect(t.screenPadding, 16.0);
         expect(t.blockGap, 16.0);
       }
@@ -114,42 +120,42 @@ void main() {
       expect(
         light.cardTint,
         Color.alphaBlend(
-          light.m1.withValues(alpha: 0.13),
+          light.m1.withValues(alpha: 0.14),
           light.surface,
         ),
       );
       expect(
         dark.cardTint,
         Color.alphaBlend(
-          dark.m1.withValues(alpha: 0.07),
+          dark.m1.withValues(alpha: 0.10),
           dark.surface,
         ),
       );
       expect(
         light.selectedTint,
         Color.alphaBlend(
-          light.m1.withValues(alpha: 0.20),
+          light.m1.withValues(alpha: 0.22),
           light.surface,
         ),
       );
       expect(
         dark.selectedTint,
         Color.alphaBlend(
-          dark.m1.withValues(alpha: 0.14),
+          dark.m1.withValues(alpha: 0.18),
           dark.surface,
         ),
       );
       expect(
         light.blobTint,
         Color.alphaBlend(
-          light.m1.withValues(alpha: 0.38),
+          light.m1.withValues(alpha: 0.36),
           light.surface,
         ),
       );
       expect(
         dark.blobTint,
         Color.alphaBlend(
-          dark.m1.withValues(alpha: 0.24),
+          dark.m1.withValues(alpha: 0.28),
           dark.surface,
         ),
       );
@@ -164,7 +170,7 @@ void main() {
       expect(
         dark.moodDayColor(MindTokens.moodAnxious, 6),
         Color.alphaBlend(
-          MindTokens.moodAnxious.withValues(alpha: 0.18 + 0.04 * 6),
+          MindTokens.moodAnxious.withValues(alpha: 0.20 + 0.04 * 6),
           dark.surface,
         ),
       );
@@ -196,9 +202,9 @@ void main() {
             }
           }
 
-          // Primary CTA: ink fill + bg text
+          // Primary CTA: primary fill + onPrimary text
           expect(
-            _contrastRatio(t.bg, t.ink),
+            _contrastRatio(t.onPrimary, t.primary),
             greaterThanOrEqualTo(4.5),
             reason: '$themeName primary CTA contrast',
           );
@@ -279,16 +285,16 @@ void main() {
   });
 
   group('ThemeMode Default, Preload & Persistence', () {
-    test('defaults to ThemeMode.system and preloads saved preference cleanly', () async {
+    test('defaults to ThemeMode.light (Sunrise) and preloads saved preference cleanly', () async {
       SharedPreferences.setMockInitialValues({});
       expect(
         await ThemeController.loadInitialThemeMode(),
-        ThemeMode.system,
+        ThemeMode.light,
       );
 
       final container = ProviderContainer();
       addTearDown(container.dispose);
-      expect(container.read(themeControllerProvider), ThemeMode.system);
+      expect(container.read(themeControllerProvider), ThemeMode.light);
 
       await container
           .read(themeControllerProvider.notifier)
@@ -337,7 +343,7 @@ void main() {
         expect(animatedTheme.data.brightness, Brightness.dark);
         expect(
           animatedTheme.data.extension<MindTokens>()?.bg,
-          const Color(0xFF000000),
+          const Color(0xFF09090B),
         );
         expect(animatedTheme.duration, const Duration(milliseconds: 200));
 
@@ -348,11 +354,11 @@ void main() {
         expect(moodAnimatedTheme.duration, const Duration(milliseconds: 700));
         expect(
           moodAnimatedTheme.data.extension<MindTokens>()?.m1,
-          const Color(0xFF5B9BEA),
+          const Color(0xFF38BDF8),
         );
         expect(
           moodAnimatedTheme.data.extension<MindTokens>()?.m2,
-          const Color(0xFFA0C8FF),
+          const Color(0xFFBAE6FD),
         );
 
         // Collapses to Duration.zero when disableAnimations is enabled.
@@ -379,7 +385,7 @@ void main() {
         expect(reducedAnimatedTheme.data.brightness, Brightness.light);
         expect(
           reducedAnimatedTheme.data.extension<MindTokens>()?.bg,
-          const Color(0xFFF5F6FA),
+          const Color(0xFFFAF9F6),
         );
       },
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mind_forensics/app/localization/app_strings.dart';
 import 'package:mind_forensics/features/investigation/controllers/investigation_providers.dart';
 import 'package:mind_forensics/features/investigation/data/local_case_repository.dart';
 import 'package:mind_forensics/features/investigation/domain/case_model.dart';
@@ -36,8 +37,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // Dialogue is smoothly active
-      expect(find.text('AI Guide'), findsAtLeastNWidgets(1));
-      expect(find.text('Talk with your companion...'), findsOneWidget);
+      const en = AppStrings('en');
+      expect(find.text(en.navTalk), findsAtLeastNWidgets(1));
+      expect(find.text(en.typeMessageHint), findsOneWidget);
       expect(find.text('AI HUB'), findsNothing);
     });
 
@@ -66,10 +68,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(caughtError, isNull, reason: 'Expected zero layout overflows in AI Guide header');
-      expect(find.text('AI Guide'), findsAtLeastNWidgets(1));
-      expect(find.text('Local'), findsOneWidget);
-      expect(find.text('Explore a Thought'), findsOneWidget);
+      const en = AppStrings('en');
+      expect(caughtError, isNull, reason: 'Expected zero layout overflows in Talk header');
+      expect(find.text(en.navTalk), findsAtLeastNWidgets(1));
+      expect(find.textContaining('Saved ('), findsOneWidget);
     });
 
     testWidgets('3. Repeated navigation preserves active investigation without duplicate sessions',
@@ -106,7 +108,7 @@ void main() {
       expect(allCases.length, equals(1));
     });
 
-    testWidgets('4. Hub view is explicitly toggled by user and returns to active session',
+    testWidgets('4. Mode switcher sheet is explicitly toggled from More without breaking active session',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         const ProviderScope(
@@ -117,19 +119,22 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Talk with your companion...'), findsOneWidget);
+      const en = AppStrings('en');
+      expect(find.text(en.typeMessageHint), findsOneWidget);
       expect(find.text('AI HUB'), findsNothing);
 
-      await tester.tap(find.byIcon(Icons.grid_view_rounded));
+      await tester.tap(find.byIcon(Icons.more_horiz_rounded));
       await tester.pumpAndSettle();
 
-      expect(find.text('AI HUB'), findsOneWidget);
-      expect(find.text('6 MODES'), findsOneWidget);
-
-      await tester.tap(find.byIcon(Icons.arrow_back_rounded));
+      expect(find.text(en.modesAndHistoryTooltip), findsOneWidget);
+      await tester.tap(find.text(en.modesAndHistoryTooltip));
       await tester.pumpAndSettle();
 
-      expect(find.text('Talk with your companion...'), findsOneWidget);
+      expect(find.byType(BottomSheet), findsOneWidget);
+      Navigator.of(tester.element(find.byType(FlashCaseScreen))).pop();
+      await tester.pumpAndSettle();
+
+      expect(find.text(en.typeMessageHint), findsOneWidget);
       expect(find.text('AI HUB'), findsNothing);
     });
 

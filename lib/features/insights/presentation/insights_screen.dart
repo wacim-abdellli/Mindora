@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/localization/app_strings.dart';
 import '../../../app/router/app_router.dart';
+import '../../../app/theme/lab_theme.dart';
 import '../../../app/theme/mind_tokens.dart';
 import '../../../core/safety/support_button.dart';
 import '../../../core/widgets/mind_badge.dart';
@@ -12,7 +13,9 @@ import '../../../core/widgets/mind_button.dart';
 import '../../../core/widgets/mind_card.dart';
 import '../../../core/widgets/mind_pressable.dart';
 import '../../../core/widgets/mind_segmented.dart';
+import '../../../core/widgets/mood_face.dart';
 import '../../../core/widgets/smooth_spline_chart.dart';
+import 'widgets/mood_aura_poster_sheet.dart';
 import '../../case_file/presentation/clinical_export_preview_sheet.dart';
 import '../../clinician/presentation/widgets/share_with_psychiatrist_sheet.dart';
 import '../../investigation/controllers/investigation_providers.dart';
@@ -47,6 +50,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
   static const _rangeLabels = ['1W', '1M', '3M', '6M'];
   String _selectedRange = '1M';
   int? _selectedPointIndex;
+  bool _showMoreDetails = false;
 
   List<MindTraceModel> _filterTracesByRange(List<MindTraceModel> traces) {
     final now = DateTime.now();
@@ -106,12 +110,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                strings.isArabic
-                    ? '${filteredTraces.length} ملاحظات في هذه الفترة المحددة.'
-                    : (strings.isFrench
-                        ? '${filteredTraces.length} observations sur la période sélectionnée.'
-                        : '${filteredTraces.length} observations recorded in this $_selectedRange window.'),
-                style: TextStyle(fontSize: 13, color: tokens.ink2),
+                strings.daysThisWeekCount(filteredTraces.length),
+                style: TextStyle(fontSize: 14, color: tokens.ink2),
               ),
               const SizedBox(height: 16),
               MindButton(
@@ -149,11 +149,10 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
-          strings.navInsights,
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
+          strings.navPatterns,
+          style: LabTheme.textStyle(
+            fontSize: 23,
+            fontWeight: FontWeight.w800,
             color: tokens.ink,
           ),
         ),
@@ -185,159 +184,313 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 1. Time Horizon Filter + Quick Self-Care Tools Shortcut
-            MindSegmented(
-              index: _rangeLabels.indexOf(_selectedRange).clamp(0, _rangeLabels.length - 1),
-              labels: _rangeLabels,
-              onChanged: (idx) {
-                HapticFeedback.selectionClick();
-                setState(() {
-                  _selectedRange = _rangeLabels[idx];
-                  _selectedPointIndex = null;
-                });
-              },
-            ),
-            const SizedBox(height: 12),
-            _buildLiveCadenceAndToolsRow(
-              context: context,
-              tokens: tokens,
-              traces: allTraces,
-              strings: strings,
-            ),
-            const SizedBox(height: 18),
-
-            // 2. Mood Trends Section
-            Text(
-              strings.moodTrendsHeader,
-              style: TextStyle(
-                color: tokens.ink,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.2,
+            // === TOP FOLD (3 Plain Human Cards, <= 38 words) ===
+            // Card 1: Your week in one glance + MoodFaces (or gentle empty prompt)
+            MindCard(
+              variant: MindCardVariant.tint,
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    strings.yourWeekHeader,
+                    style: LabTheme.textStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: tokens.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  if (allTraces.isEmpty) ...[
+                    Text(
+                      strings.baselineNeedsMoreData,
+                      style: LabTheme.textStyle(
+                        fontSize: 15,
+                        height: 1.45,
+                        color: tokens.ink2,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    MindButton(
+                      text: strings.navToday,
+                      isFullWidth: true,
+                      onPressed: () =>
+                          GoRouter.maybeOf(context)?.go(AppRouter.home),
+                    ),
+                  ] else ...[
+                    Text(
+                      allTraces.length < 3
+                          ? strings.baselineNeedsMoreData
+                          : strings.daysThisWeekCount(
+                              allTraces.take(7).length,
+                            ),
+                      style: LabTheme.textStyle(
+                        fontSize: 15,
+                        height: 1.45,
+                        color: tokens.ink2,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final t in allTraces.take(7))
+                          MoodFace(
+                            mood: AppMood.fromKey(t.overallMood),
+                            size: 36,
+                            semanticLabel: strings.plainMoodLabel(
+                              t.overallMood,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ],
               ),
             ),
-            const SizedBox(height: 10),
-            _buildMoodTrendsCard(context, tokens, traces, strings),
-            const SizedBox(height: 18),
+            const SizedBox(height: 14),
 
-            // 2b. Affect Spectrum & Diurnal Rhythm
-            if (baseline.emotionFrequencyMap.isNotEmpty ||
-                baseline.diurnalIntensityAverages.length >= 2 ||
-                baseline.multiEntryDaysCount > 0) ...[
-              _buildAffectSpectrumAndDiurnalCard(
-                tokens,
-                baseline,
-                strings,
-              ),
-              const SizedBox(height: 18),
-            ],
-
-            // 2c. Daily Routine & Context Correlations
-            if (baseline.contextTagCorrelations.isNotEmpty) ...[
-              _buildDailyContextCorrelationsCard(
-                tokens,
-                baseline,
-                strings,
-              ),
-              const SizedBox(height: 18),
-            ],
-
-            // 2d. Empirical Recovery Ledger (Observed Stabilizers)
+            // Card 2: What helps you feel better (Observed Stabilizers)
             if (baseline.recoveryLedger.hasEvidence) ...[
               ObservedStabilizersCard(
                 ledger: baseline.recoveryLedger,
                 strings: strings,
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
             ],
 
-            // 2e. Observed Forensic Loop (Context -> Affect -> Thought -> Stabilizer)
-            Builder(
-              builder: (context) {
-                final loop = ForensicLoopLink.synthesize(
-                  baseline: baseline,
-                  cases: cases,
-                  strings: strings,
-                  excludePrivateCases: false,
-                  includeSomatic: true,
-                );
-                if (!loop.hasSufficientSignal) {
-                  return const SizedBox.shrink();
-                }
-                return Column(
-                  children: [
-                    ForensicLoopMapCard(
-                      loop: loop,
+            // Card 3: Your Mood Colors Poster (Vivid Sunrise / Twilight Keepsake)
+            if (allTraces.isNotEmpty) ...[
+              MindCard(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  MoodAuraPosterSheet.show(
+                    context,
+                    traces: allTraces,
+                    summary: DiscoveryMilestonesService.compute(
+                      traces: allTraces,
+                      ledger: baseline.recoveryLedger,
                       strings: strings,
                     ),
-                    const SizedBox(height: 18),
+                  );
+                },
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    MoodFace(
+                      mood: AppMood.fromKey(allTraces.first.overallMood),
+                      size: 46,
+                      isSelected: true,
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            strings.moodColorsPosterTitle,
+                            style: LabTheme.textStyle(
+                              fontSize: 16.5,
+                              fontWeight: FontWeight.w800,
+                              color: tokens.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            strings.moodColorsPosterSub,
+                            style: LabTheme.textStyle(
+                              fontSize: 13.5,
+                              color: tokens.ink2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 16,
+                      color: tokens.primary,
+                    ),
                   ],
-                );
+                ),
+              ),
+              const SizedBox(height: 14),
+            ],
+
+            // Progressive Disclosure Toggle -> Deep Charts & Patterns
+            MindButton(
+              key: const ValueKey<String>('patterns-more-details-btn'),
+              text: _showMoreDetails
+                  ? strings.hideDetailsBtn
+                  : strings.seeMoreDetailsBtn,
+              trailingIcon: _showMoreDetails
+                  ? Icons.expand_less_rounded
+                  : Icons.expand_more_rounded,
+              variant: MindButtonVariant.soft,
+              isFullWidth: true,
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                setState(() => _showMoreDetails = !_showMoreDetails);
               },
             ),
+            const SizedBox(height: 16),
 
-            // 2f. Non-Punitive Discovery Milestones & Mood Aura
-            if (allTraces.isNotEmpty) ...[
-              DiscoveryMilestonesCard(
+            if (_showMoreDetails) ...[
+              // 1. Time Horizon Filter + Quick Self-Care Tools Shortcut
+              MindSegmented(
+                index: _rangeLabels
+                    .indexOf(_selectedRange)
+                    .clamp(0, _rangeLabels.length - 1),
+                labels: _rangeLabels,
+                onChanged: (idx) {
+                  HapticFeedback.selectionClick();
+                  setState(() {
+                    _selectedRange = _rangeLabels[idx];
+                    _selectedPointIndex = null;
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
+              _buildLiveCadenceAndToolsRow(
+                context: context,
+                tokens: tokens,
                 traces: allTraces,
-                summary: DiscoveryMilestonesService.compute(
-                  traces: allTraces,
-                  ledger: baseline.recoveryLedger,
-                  strings: strings,
-                ),
                 strings: strings,
               ),
               const SizedBox(height: 18),
-            ],
 
-            // 3. Your Patterns Section
-            _buildYourPatternsSection(
-              context,
-              tokens,
-              analytics,
-              baseline,
-              allTraces,
-              strings,
-            ),
-            const SizedBox(height: 18),
-
-            // 4. Context & Mood Links (Shown only when triggers or helpers exist to keep UI calm)
-            if (traces.any((t) =>
-                (t.situation?.trim().isNotEmpty ?? false) ||
-                (t.behavioralResponse?.trim().isNotEmpty ?? false))) ...[
-              _buildContextMoodLinksCard(context, traces, tokens, strings),
-              const SizedBox(height: 18),
-            ],
-
-            // 5. Personal Baseline Card (Preserved Core)
-            _buildBaselineCard(context, baseline, tokens, strings),
-            const SizedBox(height: 18),
-
-            // 6. Pattern Awareness Divergences (if any detected)
-            if (divergences.isNotEmpty) ...[
+              // 2. Mood Trends Section
               Text(
-                strings.patternAwarenessTitle.toUpperCase(),
+                strings.moodTrendsHeader,
                 style: TextStyle(
-                  color: tokens.ink2,
-                  fontSize: 11.5,
+                  color: tokens.ink,
+                  fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: 1.1,
+                  letterSpacing: -0.2,
                 ),
               ),
               const SizedBox(height: 10),
-              ...divergences.map((d) => _buildDivergenceCard(context, d, tokens, strings)),
+              _buildMoodTrendsCard(context, tokens, traces, strings),
               const SizedBox(height: 18),
+
+              // 2b. Affect Spectrum & Diurnal Rhythm
+              if (baseline.emotionFrequencyMap.isNotEmpty ||
+                  baseline.diurnalIntensityAverages.length >= 2 ||
+                  baseline.multiEntryDaysCount > 0) ...[
+                _buildAffectSpectrumAndDiurnalCard(
+                  tokens,
+                  baseline,
+                  strings,
+                ),
+                const SizedBox(height: 18),
+              ],
+
+              // 2c. Daily Routine & Context Correlations
+              if (baseline.contextTagCorrelations.isNotEmpty) ...[
+                _buildDailyContextCorrelationsCard(
+                  tokens,
+                  baseline,
+                  strings,
+                ),
+                const SizedBox(height: 18),
+              ],
+
+              // 2e. How a tough moment unfolds (Observed Loop)
+              Builder(
+                builder: (context) {
+                  final loop = ForensicLoopLink.synthesize(
+                    baseline: baseline,
+                    cases: cases,
+                    strings: strings,
+                    excludePrivateCases: false,
+                    includeSomatic: true,
+                  );
+                  if (!loop.hasSufficientSignal) {
+                    return const SizedBox.shrink();
+                  }
+                  return Column(
+                    children: [
+                      ForensicLoopMapCard(
+                        loop: loop,
+                        strings: strings,
+                      ),
+                      const SizedBox(height: 18),
+                    ],
+                  );
+                },
+              ),
+
+              // 2f. Non-Punitive Discovery Milestones
+              if (allTraces.isNotEmpty) ...[
+                DiscoveryMilestonesCard(
+                  traces: allTraces,
+                  summary: DiscoveryMilestonesService.compute(
+                    traces: allTraces,
+                    ledger: baseline.recoveryLedger,
+                    strings: strings,
+                  ),
+                  strings: strings,
+                ),
+                const SizedBox(height: 18),
+              ],
+
+              // 3. Your Patterns Section
+              _buildYourPatternsSection(
+                context,
+                tokens,
+                analytics,
+                baseline,
+                allTraces,
+                strings,
+              ),
+              const SizedBox(height: 18),
+
+              // 4. Context & Mood Links
+              if (traces.any((t) =>
+                  (t.situation?.trim().isNotEmpty ?? false) ||
+                  (t.behavioralResponse?.trim().isNotEmpty ?? false))) ...[
+                _buildContextMoodLinksCard(context, traces, tokens, strings),
+                const SizedBox(height: 18),
+              ],
+
+              // 5. Your Usual Rhythm Card
+              _buildBaselineCard(context, baseline, tokens, strings),
+              const SizedBox(height: 18),
+
+              // 6. Pattern Awareness Divergences
+              if (divergences.isNotEmpty) ...[
+                Text(
+                  strings.patternAwarenessTitle,
+                  style: LabTheme.textStyle(
+                    color: tokens.ink,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                ...divergences.map(
+                  (d) => _buildDivergenceCard(context, d, tokens, strings),
+                ),
+                const SizedBox(height: 18),
+              ],
+
+              // 7. Weekly Summary & Doctor Handoff
+              _buildWeeklyTherapistSummaryCard(
+                context,
+                weeklySummary,
+                cases,
+                tokens,
+                strings,
+              ),
+              const SizedBox(height: 12),
             ],
 
-            // 7. Weekly Therapist Summary Card (Preserved Core)
-            _buildWeeklyTherapistSummaryCard(context, weeklySummary, cases, tokens, strings),
-            const SizedBox(height: 12),
-
-            // 7b. Consent-Scoped Care Handoff to Psychiatrist
+            // Consent-Scoped Care Handoff to Psychiatrist
             MindCard(
               padding: const EdgeInsets.all(16),
               onTap: () => ShareWithPsychiatristSheet.show(context),

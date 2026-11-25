@@ -9,6 +9,8 @@ import '../../../../core/safety/safety_interceptor.dart';
 import '../../../../core/safety/support_button.dart';
 import '../../../../core/widgets/mind_button.dart';
 import '../../../../core/widgets/mind_pressable.dart';
+import '../../../../core/widgets/mind_undo_banner.dart';
+import '../../../../core/widgets/mood_face.dart';
 import '../../../mind_trace/controllers/mind_trace_controller.dart';
 import '../../../mind_trace/domain/affect_taxonomy.dart';
 import '../../../mind_trace/domain/mind_trace_model.dart';
@@ -57,58 +59,24 @@ class TrackEntryDetailSheet extends ConsumerWidget {
     AppStrings strings,
     MindTokens tokens,
   ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogCtx) {
-        return AlertDialog(
-          backgroundColor: tokens.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(tokens.cardRadius),
-            side: BorderSide(color: tokens.line),
-          ),
-          title: Text(
-            strings.deleteTraceConfirmTitle,
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: tokens.ink,
-            ),
-          ),
-          content: Text(
-            strings.deleteTraceConfirmBody,
-            style: TextStyle(fontSize: 13.5, height: 1.45, color: tokens.ink2),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(false),
-              child: Text(
-                strings.cancelActionLabel,
-                style: TextStyle(color: tokens.ink2),
-              ),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(true),
-              child: Text(
-                strings.deleteEntryBtn,
-                style: TextStyle(
-                  color: tokens.safety,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmed != true || !context.mounted) return;
     HapticFeedback.mediumImpact();
-    await ref
-        .read(mindTraceControllerProvider.notifier)
-        .deleteCheckIn(trace.id);
+    final deletedTrace = trace;
+    final notifier = ref.read(mindTraceControllerProvider.notifier);
+    final rootContext = Navigator.of(context, rootNavigator: true).context;
+    await notifier.deleteCheckIn(deletedTrace.id);
     if (context.mounted) {
       Navigator.of(context).pop();
       onDeleted?.call();
+    }
+    if (rootContext.mounted) {
+      showMindUndoBanner(
+        rootContext,
+        message: strings.checkInRemovedUndo,
+        undoLabel: strings.undoBtn,
+        onUndo: () {
+          notifier.recordCheckIn(deletedTrace, generateAi: false);
+        },
+      );
     }
   }
 
@@ -188,16 +156,15 @@ class TrackEntryDetailSheet extends ConsumerWidget {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
-                                    moodStyle.icon,
-                                    size: 16,
-                                    color: moodStyle.color,
+                                  MoodFace(
+                                    mood: AppMood.fromKey(trace.overallMood),
+                                    size: 24,
                                   ),
-                                  const SizedBox(width: 6),
+                                  const SizedBox(width: 8),
                                   Text(
                                     moodText,
                                     style: TextStyle(
-                                      fontSize: 13.5,
+                                      fontSize: 14.5,
                                       fontWeight: FontWeight.w700,
                                       color: tokens.ink,
                                     ),
@@ -207,7 +174,7 @@ class TrackEntryDetailSheet extends ConsumerWidget {
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
+                                horizontal: 12,
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
@@ -215,9 +182,11 @@ class TrackEntryDetailSheet extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               child: Text(
-                                '${strings.moodIntensityLabel}: ${trace.moodIntensity}/10',
+                                strings.strengthWordForIntensity(
+                                  trace.moodIntensity,
+                                ),
                                 style: TextStyle(
-                                  fontSize: 12.5,
+                                  fontSize: 13.0,
                                   fontWeight: FontWeight.w600,
                                   color: tokens.ink,
                                   fontFeatures: const [

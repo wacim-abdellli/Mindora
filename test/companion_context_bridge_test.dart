@@ -81,7 +81,7 @@ void main() {
           find.byKey(const ValueKey('companion-checkin-bridge-card')),
           findsOneWidget,
         );
-        expect(find.textContaining('Anxious · 8/10'), findsOneWidget);
+        expect(find.textContaining('Worried · 8/10'), findsOneWidget);
         expect(
           find.byKey(const ValueKey('companion-bridge-settle-btn')),
           findsOneWidget,
@@ -105,7 +105,7 @@ void main() {
           find.byKey(const ValueKey('companion-checkin-bridge-card')),
           findsNothing,
         );
-        expect(find.text('Save Takeaway Report'), findsOneWidget);
+        expect(find.text('Save key takeaway'), findsOneWidget);
         expect(
           find.textContaining('Tight chest before tomorrow presentation'),
           findsOneWidget,

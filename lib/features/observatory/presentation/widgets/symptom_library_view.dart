@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/localization/app_strings.dart';
 import '../../../../app/theme/mind_tokens.dart';
+import '../../../../core/widgets/mind_undo_banner.dart';
 import '../../../profile/controllers/profile_controller.dart';
 import '../../controllers/observatory_controllers.dart';
 import '../../domain/symptom_entry.dart';
@@ -27,71 +28,18 @@ class _SymptomLibraryViewState extends ConsumerState<SymptomLibraryView> {
     AppStrings strings,
     MindTokens tokens,
   ) async {
-    final isAr = strings.isArabic;
-    final dialogBg = tokens.surface;
-    final borderColor = tokens.line;
-    final textPrimary = tokens.ink;
-    final textSecondary = tokens.ink2;
-    final deleteColor = tokens.safety;
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: dialogBg,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(tokens.cardRadius),
-          side: BorderSide(color: borderColor),
-        ),
-        title: Text(
-          isAr
-              ? 'حذف سجل العرض؟'
-              : (strings.isFrench
-                  ? 'Supprimer ce bilan ?'
-                  : 'Delete symptom log?'),
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: textPrimary,
-          ),
-        ),
-        content: Text(
-          isAr
-              ? 'سيتم حذف هذا التقييم من سجلك المحلي بشكل نهائي.'
-              : (strings.isFrench
-                  ? 'Ce rapport sera supprimé définitivement de votre historique local.'
-                  : 'This logged symptom check will be permanently removed from local history.'),
-          style: TextStyle(
-            fontSize: 13,
-            height: 1.45,
-            color: textSecondary,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(
-              strings.cancelBtn,
-              style: TextStyle(color: textSecondary),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(
-              strings.deleteEntryBtn,
-              style: TextStyle(
-                color: deleteColor,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
+    HapticFeedback.mediumImpact();
+    final notifier = ref.read(symptomReportsControllerProvider.notifier);
+    await notifier.deleteReport(report.id);
+    if (!context.mounted) return;
+    showMindUndoBanner(
+      context,
+      message: strings.itemRemovedUndo,
+      undoLabel: strings.undoBtn,
+      onUndo: () {
+        notifier.recordReport(report);
+      },
     );
-    if (confirmed == true) {
-      await ref
-          .read(symptomReportsControllerProvider.notifier)
-          .deleteReport(report.id);
-    }
   }
 
   @override

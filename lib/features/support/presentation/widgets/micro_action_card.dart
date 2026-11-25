@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/localization/app_strings.dart';
 import '../../../../app/theme/mind_tokens.dart';
+import '../../../../core/widgets/mind_toast.dart';
 import '../../../journey/controllers/journey_controller.dart';
 
 /// Micro-Action Behavioral Activation Card:
@@ -357,19 +358,7 @@ class _MicroActionCardState extends ConsumerState<MicroActionCard> {
                           category: 'Behavioral Strategy',
                         );
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            isAr
-                                ? 'تم حفظ التجربة في اكتشافاتك'
-                                : (isFr
-                                    ? 'Stratégie enregistrée dans vos découvertes'
-                                    : 'Strategy saved to Discoveries'),
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
+                      showMindToast(context, strings.savedToHelpfulToast);
                     }
                   },
                   icon: const Icon(Icons.bookmark_add_outlined, size: 14),

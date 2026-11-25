@@ -5,11 +5,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'mind_tokens.dart';
 
 /// Preloaded [ThemeMode] override populated before `runApp` to prevent startup flash.
-final initialThemeModeProvider = Provider<ThemeMode>((ref) => ThemeMode.system);
+/// Fresh installs default to [ThemeMode.light] ("Sunrise" Warm Daylight).
+final initialThemeModeProvider = Provider<ThemeMode>((ref) => ThemeMode.light);
 
-/// Notifier controlling dynamic Light ("Dawn"), Dark ("Vercel"), and System theme modes.
+/// Notifier controlling dynamic Sunrise (Light), Twilight (Night), and Auto theme modes.
 ///
-/// Defaults to [ThemeMode.system] and persists selection in [SharedPreferences].
+/// Defaults to [ThemeMode.light] and persists selection in [SharedPreferences].
 class ThemeController extends Notifier<ThemeMode> {
   static const String keyTheme = 'mind_forensics_theme_mode';
   bool _hasExplicitSelection = false;
@@ -26,7 +27,7 @@ class ThemeController extends Notifier<ThemeMode> {
       'light' => ThemeMode.light,
       'dark' => ThemeMode.dark,
       'system' => ThemeMode.system,
-      _ => ThemeMode.system,
+      _ => ThemeMode.light,
     };
   }
 

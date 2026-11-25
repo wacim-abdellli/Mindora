@@ -432,16 +432,15 @@ void main() {
       expect(find.text('Observatory Insight'), findsOneWidget);
       expect(find.text('Testing insight delete action'), findsOneWidget);
 
-      // Delete the discovery and confirm in dialog
+      // Delete the discovery (now uses instant reversible Undo banner)
       final deleteBtn = find.bySemanticsLabel('Delete discovery');
       expect(deleteBtn, findsOneWidget);
       await tester.tap(deleteBtn);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Delete'));
-      await tester.pumpAndSettle();
 
-      // Verify discovery is removed from UI
+      // Verify discovery is removed immediately and Undo banner is shown
       expect(find.text('Observatory Insight'), findsNothing);
+      expect(find.text('Undo'), findsOneWidget);
     });
 
     testWidgets('MicroActionCard allows completing action and saving as discovery', (tester) async {

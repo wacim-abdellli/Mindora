@@ -125,9 +125,9 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Should display locked screen
-      expect(find.text('SESSION LOCKED'), findsOneWidget);
-      expect(find.text('UNLOCK'), findsOneWidget);
+      // Should display warm locked screen
+      expect(find.text('Welcome back'), findsOneWidget);
+      expect(find.byIcon(Icons.lock_open_rounded), findsOneWidget);
       expect(find.text('Protected Session Content'), findsNothing);
     });
   });

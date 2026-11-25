@@ -1557,6 +1557,49 @@ class _AddClinicianNoteSheetState extends ConsumerState<_AddClinicianNoteSheet> 
                   }).toList(),
                 ),
                 const SizedBox(height: 12),
+                Text(
+                  strings.soapTemplateLabel,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: tokens.ink2,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    MindPill(
+                      key: const ValueKey('soap-template-checkin'),
+                      label: strings.soapCheckInBtn,
+                      isSelected: false,
+                      onTap: () => setState(
+                        () => _bodyCtrl.text = strings.soapTemplateBody('soap'),
+                      ),
+                    ),
+                    MindPill(
+                      key: const ValueKey('soap-template-sleep'),
+                      label: strings.soapSleepBtn,
+                      isSelected: false,
+                      onTap: () => setState(
+                        () =>
+                            _bodyCtrl.text = strings.soapTemplateBody('sleep'),
+                      ),
+                    ),
+                    MindPill(
+                      key: const ValueKey('soap-template-followup'),
+                      label: strings.soapFollowUpBtn,
+                      isSelected: false,
+                      onTap: () => setState(
+                        () => _bodyCtrl.text = strings.soapTemplateBody(
+                          'followup',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
                 TextField(
                   controller: _bodyCtrl,
                   maxLines: 4,

@@ -276,7 +276,7 @@ void main() {
         await tester.tap(find.text('Open Share'));
         await tester.pumpAndSettle();
 
-        expect(find.textContaining('1 private session(s) excluded'), findsOneWidget);
+        expect(find.textContaining('1 private talk(s) left out'), findsOneWidget);
 
         await tester.ensureVisible(find.text('Sleep shifts'));
         await tester.tap(find.text('Sleep shifts'));
@@ -357,11 +357,15 @@ void main() {
         expect(find.text('Lina S.'), findsOneWidget);
 
         // Filter to Shifts Noted: Lina S. (steady baseline) is filtered out
+        await tester.ensureVisible(find.text('Shifts Noted'));
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Shifts Noted'));
         await tester.pumpAndSettle();
         expect(find.text('Nadia B.'), findsOneWidget);
         expect(find.text('Lina S.'), findsNothing);
 
+        await tester.ensureVisible(find.text('All'));
+        await tester.pumpAndSettle();
         await tester.tap(find.text('All'));
         await tester.pumpAndSettle();
         await tester.scrollUntilVisible(
@@ -374,7 +378,13 @@ void main() {
         // Overview tab
         await tester.tap(find.text('Overview'));
         await tester.pumpAndSettle();
-        expect(find.text('COHORT BASELINE OBSERVATIONS'), findsOneWidget);
+        final obsFinder = find.text(const AppStrings('en').cohortObservationsTitle);
+        await tester.scrollUntilVisible(
+          obsFinder,
+          150,
+          scrollable: find.byType(Scrollable).last,
+        );
+        expect(obsFinder, findsOneWidget);
 
         // Practice tab & toggle Demo Cohort off/on
         await tester.tap(find.text('Practice'));
@@ -548,6 +558,10 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byType(MindSegmented), findsNWidgets(2));
+        final advAccordion = find.byKey(const ValueKey('me-advanced-accordion'));
+        await tester.ensureVisible(advAccordion);
+        await tester.tap(advAccordion);
+        await tester.pumpAndSettle();
         expect(find.text('Psychiatrist Workspace'), findsOneWidget);
         await tester.scrollUntilVisible(
           find.text('Share with Psychiatrist'),
@@ -567,6 +581,10 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        final moreDetailsBtn = find.text('See more details');
+        await tester.ensureVisible(moreDetailsBtn);
+        await tester.tap(moreDetailsBtn);
+        await tester.pumpAndSettle();
         expect(find.byType(MindSegmented), findsOneWidget);
         await tester.scrollUntilVisible(
           find.text('Share with Psychiatrist'),

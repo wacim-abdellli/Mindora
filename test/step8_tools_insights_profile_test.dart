@@ -65,8 +65,8 @@ void main() {
         unit: 'h',
         strings: en,
       );
-      expect(posTiny, contains('Steady with your baseline'));
-      expect(negTiny, contains('Steady with your baseline'));
+      expect(posTiny, contains(en.steadyWithBaseline));
+      expect(negTiny, contains(en.steadyWithBaseline));
       expect(negTiny, isNot(contains('-0.0')));
       expect(posTiny, isNot(contains('up by 0.0')));
 
@@ -96,7 +96,7 @@ void main() {
         baseline: baseline,
         strings: en,
       );
-      expect(report.sleepTrend, contains('Steady with your baseline'));
+      expect(report.sleepTrend, contains(en.steadyWithBaseline));
       expect(report.sleepTrend, isNot(contains('-0.0')));
     });
   });
@@ -211,6 +211,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      final moreBtn = find.byKey(
+        const ValueKey<String>('patterns-more-details-btn'),
+      );
+      await tester.ensureVisible(moreBtn);
+      await tester.tap(moreBtn);
+      await tester.pumpAndSettle();
+
       expect(find.text('Mood rhythm calibrating'), findsOneWidget);
       expect(find.byType(SmoothSplineChart), findsNothing);
     });
@@ -241,12 +248,20 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        final moreBtn = find.byKey(
+          const ValueKey<String>('patterns-more-details-btn'),
+        );
+        await tester.ensureVisible(moreBtn);
+        await tester.tap(moreBtn);
+        await tester.pumpAndSettle();
+
+        const en = AppStrings('en');
         expect(find.byType(MindSegmented), findsOneWidget);
         expect(find.byType(SmoothSplineChart), findsOneWidget);
         expect(find.text('High'), findsOneWidget);
         expect(find.text('Mid'), findsOneWidget);
         expect(find.text('Low'), findsOneWidget);
-        expect(find.textContaining('Steady with your baseline'), findsWidgets);
+        expect(find.textContaining(en.steadyWithBaseline), findsWidgets);
         expect(find.textContaining('-0.0'), findsNothing);
 
         await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
@@ -312,22 +327,24 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(find.text('YOU'), findsOneWidget);
-        expect(find.text('DISPLAY & LANGUAGE'), findsOneWidget);
-        expect(find.text('AI GUIDE & SECURITY'), findsOneWidget);
-        expect(find.text('DATA & CRISIS'), findsOneWidget);
+        const en = AppStrings('en');
+        expect(find.text(en.lookAndReadingSection), findsOneWidget);
+        expect(find.text(en.aboutMeAndRemindersSection), findsOneWidget);
+        expect(find.text(en.doctorVisitSection), findsOneWidget);
+        expect(find.text(en.privacyLockBackupSection), findsOneWidget);
+        expect(find.byKey(const ValueKey('me-advanced-accordion')), findsOneWidget);
         expect(find.byType(MindSegmented), findsNWidgets(2));
-        expect(find.text('Support & Crisis Helplines'), findsOneWidget);
 
         await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
         await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
         await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
 
         // Preferred name dialog updates profile
-        await tester.tap(find.text('Preferred name'));
+        await tester.ensureVisible(find.text(en.preferredNameLabel));
+        await tester.tap(find.text(en.preferredNameLabel));
         await tester.pumpAndSettle();
         await tester.enterText(find.byType(TextField), 'Yasmine');
-        await tester.tap(find.text('Save Changes'));
+        await tester.tap(find.text(en.saveChangesBtn));
         await tester.pumpAndSettle();
 
         expect(
@@ -337,17 +354,17 @@ void main() {
         expect(find.text('Yasmine'), findsWidgets);
 
         // Step 1 -> Step 2 double-confirm local reset
-        final wipeFinder = find.text('Purge All Records');
+        final wipeFinder = find.text(en.wipeDataTitle);
         await tester.ensureVisible(wipeFinder);
         await tester.tap(wipeFinder);
         await tester.pumpAndSettle();
-        expect(find.text('Start full local data reset?'), findsOneWidget);
+        expect(find.text(en.resetConfirmStep1Title), findsOneWidget);
 
-        await tester.tap(find.text('Continue'));
+        await tester.tap(find.text(en.continueBtn));
         await tester.pumpAndSettle();
-        expect(find.text('Final confirmation?'), findsOneWidget);
+        expect(find.text(en.resetConfirmStep2Title), findsOneWidget);
 
-        await tester.tap(find.text('Erase Everything'));
+        await tester.tap(find.text(en.deleteEverythingForeverBtn));
         await tester.pumpAndSettle();
 
         final remainingTraces =

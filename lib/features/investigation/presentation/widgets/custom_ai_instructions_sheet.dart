@@ -5,20 +5,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/localization/app_strings.dart';
 import '../../../../app/theme/lab_theme.dart';
 import '../../../../app/theme/mind_tokens.dart';
-import '../../../../core/widgets/bouncing_widget.dart';
+import '../../../../core/widgets/mind_button.dart';
+import '../../../../core/widgets/mind_chip.dart';
+import '../../../../core/widgets/mind_sheet.dart';
+import '../../../../core/widgets/mind_toast.dart';
 import '../../../profile/controllers/profile_controller.dart';
 import '../../../profile/domain/psychological_profile_model.dart';
 
-/// Modal bottom sheet allowing users to define custom directives and instructions
-/// for their AI Psychological Companion.
+/// Modal bottom sheet letting users choose how Mindora listens & replies.
 class CustomAiInstructionsSheet extends ConsumerStatefulWidget {
   const CustomAiInstructionsSheet({super.key});
 
   static Future<void> show(BuildContext context) {
-    return showModalBottomSheet(
+    return showMindSheet<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      showCloseButton: true,
       builder: (_) => const CustomAiInstructionsSheet(),
     );
   }
@@ -33,26 +34,26 @@ class _CustomAiInstructionsSheetState
   late final TextEditingController _instructionsController;
   bool _isSaving = false;
 
-  final List<({String label, String directive})> _presets = const [
+  static const List<({String label, String directive})> _presets = [
     (
-      label: 'Concise & Grounding',
+      label: 'Short & calm',
       directive:
-          'Keep replies under 3 sentences. Focus on physical sensations, slow breathing, and tangible present-moment observations.',
+          'Keep replies under 3 sentences. Focus on breathing and simple present-moment steps.',
     ),
     (
-      label: 'Socratic & Analytical',
+      label: 'Gentle & warm',
       directive:
-          'Use probing Socratic questions to examine evidence, unpack assumptions, and challenge cognitive leaps without lecturing.',
+          'Respond with warmth and patience before suggesting another way to look at things.',
     ),
     (
-      label: 'Gentle & Validating',
+      label: 'Step-by-step clarity',
       directive:
-          'Respond with patient, compassionate validation of feelings before exploring alternative perspectives. Take it slow.',
+          'Ask one gentle question at a time to help separate facts from worry stories.',
     ),
     (
-      label: 'Direct & Pragmatic',
+      label: 'Direct & practical',
       directive:
-          'Be straightforward, clear, and action-oriented. Point out cognitive distortions directly with zero fluff.',
+          'Be clear, friendly, and practical with one small action I can try right now.',
     ),
   ];
 
@@ -76,7 +77,8 @@ class _CustomAiInstructionsSheetState
     setState(() => _isSaving = true);
 
     final current =
-        ref.read(profileControllerProvider).value ?? PsychologicalProfileModel.empty();
+        ref.read(profileControllerProvider).value ??
+        PsychologicalProfileModel.empty();
     final updated = current.copyWith(
       customAiDirectives: _instructionsController.text.trim(),
       updatedAt: DateTime.now(),
@@ -85,14 +87,10 @@ class _CustomAiInstructionsSheetState
     await ref.read(profileControllerProvider.notifier).saveFullProfile(updated);
 
     if (mounted) {
+      final strings = ref.read(appStringsProvider);
       setState(() => _isSaving = false);
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('AI Companion instructions updated successfully.'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      showMindToast(context, strings.customInstructionsSavedToast);
     }
   }
 
@@ -101,217 +99,67 @@ class _CustomAiInstructionsSheetState
     final tokens = context.tokens;
     final strings = ref.watch(appStringsProvider);
 
-    final bg = tokens.surface;
-    final surfaceColor = tokens.surface2;
-    final borderColor = tokens.line;
-    final textPrimary = tokens.ink;
-    final textSecondary = tokens.ink2;
-
-    return Container(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-      ),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(tokens.cardRadius),
-        ),
-        border: Border(
-          top: BorderSide(
-            color: tokens.line,
-            width: 1,
-          ),
-        ),
-      ),
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: tokens.cardTint,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.tune_rounded,
-                  size: 16,
-                  color: tokens.ink,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      strings.isArabic
-                          ? 'تعليمات المساعد المخصصة'
-                          : (strings.isFrench
-                              ? 'Instructions personnalisées'
-                              : 'Custom AI Instructions'),
-                      style: LabTheme.textStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      strings.isArabic
-                          ? 'حدد كيف ترغب أن يتحاور معك رفيقك النفسي الذكي'
-                          : (strings.isFrench
-                              ? 'Définissez comment votre compagnon échange avec vous'
-                              : 'Define how your AI companion should communicate with you'),
-                      style: TextStyle(fontSize: 11.5, color: textSecondary),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                tooltip: strings.closeBtn,
-                icon: Icon(Icons.close_rounded, size: 18, color: textSecondary),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Preset Chips
           Text(
-            strings.isArabic
-                ? 'نماذج جاهزة سريعة'
-                : (strings.isFrench
-                    ? 'MODÈLES RAPIDES'
-                    : 'QUICK DIRECTIVE PRESETS'),
-            style: TextStyle(
-              fontSize: 10,
+            strings.listeningPrefsLabel,
+            style: LabTheme.textStyle(
+              fontSize: 20,
               fontWeight: FontWeight.w800,
-              letterSpacing: 0.6,
-              color: tokens.ink,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: _presets.map((preset) {
-              return BouncingWidget(
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  _instructionsController.text = preset.directive;
-                },
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: surfaceColor,
-                    borderRadius: BorderRadius.circular(tokens.chipRadius),
-                    border: Border.all(color: borderColor, width: 1),
-                  ),
-                  child: Text(
-                    preset.label,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: textPrimary,
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Custom Input Box
-          Text(
-            strings.isArabic
-                ? 'تعليماتك الخاصة'
-                : (strings.isFrench
-                    ? 'VOS INSTRUCTIONS PERSONNELLES'
-                    : 'YOUR CUSTOM INSTRUCTIONS'),
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.6,
               color: tokens.ink,
             ),
           ),
           const SizedBox(height: 6),
-          TextFormField(
-            controller: _instructionsController,
-            maxLines: 4,
-            style: TextStyle(color: textPrimary, fontSize: 12.5, height: 1.4),
-            decoration: InputDecoration(
-              hintText: strings.isArabic
-                  ? 'مثال: تحدث باقتضاب، ولا تطرح أكثر من سؤال واحد في كل مرة. ركز على تقنيات التنفس والتأريض الحسي...'
-                  : 'e.g. Keep responses concise, never give unsolicited lectures, and ask only one question at a time. Emphasize somatic grounding...',
-              hintStyle: TextStyle(
-                fontSize: 11.5,
-                color: textSecondary.withValues(alpha: 0.65),
-              ),
-              filled: true,
-              fillColor: surfaceColor,
-              contentPadding: const EdgeInsets.all(14),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(tokens.buttonRadius),
-                borderSide: BorderSide(color: borderColor),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(tokens.buttonRadius),
-                borderSide: BorderSide(color: borderColor),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(tokens.buttonRadius),
-                borderSide: BorderSide(color: tokens.ink, width: 1.4),
-              ),
+          Text(
+            strings.shareWithAiDesc,
+            style: LabTheme.textStyle(
+              fontSize: 14.5,
+              height: 1.45,
+              color: tokens.ink2,
             ),
           ),
-
-          const SizedBox(height: 20),
-
-          // Save Button
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: tokens.ink,
-                foregroundColor: tokens.bg,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(tokens.buttonRadius),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final preset in _presets)
+                MindChip(
+                  label: preset.label,
+                  selected:
+                      _instructionsController.text.trim() == preset.directive,
+                  onTap: () => setState(
+                    () => _instructionsController.text = preset.directive,
+                  ),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              onPressed: _isSaving ? null : _save,
-              child: _isSaving
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(
-                      strings.isArabic
-                          ? 'حفظ التعليمات'
-                          : (strings.isFrench
-                              ? 'ENREGISTRER LES INSTRUCTIONS'
-                              : 'SAVE INSTRUCTIONS'),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 11.5,
-                        letterSpacing: 0.6,
-                      ),
-                    ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _instructionsController,
+            maxLines: 3,
+            style: LabTheme.textStyle(
+              color: tokens.ink,
+              fontSize: 15,
+              height: 1.45,
             ),
+            decoration: InputDecoration(
+              hintText: strings.quickNoteQuestion,
+            ),
+          ),
+          const SizedBox(height: 18),
+          MindButton(
+            text: strings.saveDetailsBtn,
+            isFullWidth: true,
+            isLoading: _isSaving,
+            onPressed: _save,
           ),
         ],
       ),
     );
   }
 }
-

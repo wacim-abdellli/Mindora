@@ -48,6 +48,7 @@ class _MindQrScannerSheetState extends ConsumerState<MindQrScannerSheet> {
   MobileScannerController? _controller;
   bool _hasScanned = false;
   bool _torchOn = false;
+  bool _cameraApproved = false;
   String? _statusMessage;
 
   bool get _isCameraSupported =>
@@ -56,14 +57,13 @@ class _MindQrScannerSheetState extends ConsumerState<MindQrScannerSheet> {
       defaultTargetPlatform == TargetPlatform.iOS ||
       defaultTargetPlatform == TargetPlatform.macOS;
 
-  @override
-  void initState() {
-    super.initState();
-    if (_isCameraSupported) {
+  void _startCamera() {
+    if (_controller == null && _isCameraSupported) {
       _controller = MobileScannerController(
         formats: const [BarcodeFormat.qrCode],
       );
     }
+    setState(() => _cameraApproved = true);
   }
 
   @override
@@ -203,7 +203,7 @@ class _MindQrScannerSheetState extends ConsumerState<MindQrScannerSheet> {
                 ],
               ),
               const SizedBox(height: 16),
-              if (!_isCameraSupported || _controller == null) ...[
+              if (!_isCameraSupported) ...[
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -223,7 +223,7 @@ class _MindQrScannerSheetState extends ConsumerState<MindQrScannerSheet> {
                         strings.qrScannerUnsupportedNote,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 13.5,
                           color: tokens.ink2,
                           height: 1.45,
                         ),
@@ -235,6 +235,65 @@ class _MindQrScannerSheetState extends ConsumerState<MindQrScannerSheet> {
                 MindButton(
                   text: MaterialLocalizations.of(context).closeButtonTooltip,
                   variant: MindButtonVariant.secondary,
+                  isFullWidth: true,
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ] else if (!_cameraApproved || _controller == null) ...[
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: tokens.surface2,
+                    borderRadius: BorderRadius.circular(tokens.inputRadius),
+                    border: Border.all(color: tokens.line),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: tokens.primarySoft,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.camera_alt_outlined,
+                          size: 28,
+                          color: tokens.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        strings.cameraPermissionTitle,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16.5,
+                          fontWeight: FontWeight.w700,
+                          color: tokens.ink,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        strings.cameraPermissionBody,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: tokens.ink2,
+                          height: 1.45,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                MindButton(
+                  text: strings.allowCameraBtn,
+                  isFullWidth: true,
+                  onPressed: _startCamera,
+                ),
+                const SizedBox(height: 8),
+                MindButton(
+                  text: strings.pasteTextCodeBtn,
+                  variant: MindButtonVariant.ghost,
                   isFullWidth: true,
                   onPressed: () => Navigator.of(context).pop(),
                 ),

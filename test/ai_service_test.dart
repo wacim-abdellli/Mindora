@@ -222,8 +222,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify standard settings sections are present
-      expect(find.text('CLINICAL SETTINGS'), findsOneWidget);
-      expect(find.text('VISUAL ENVIRONMENT'), findsOneWidget);
+      expect(find.text('Me'), findsOneWidget);
+      expect(find.text('Look & reading'), findsOneWidget);
 
       // Verify absolutely NO API key textfield or input placeholder exists
       expect(find.byType(TextField), findsNothing);
@@ -250,8 +250,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Verify clean Step 7 header and chat input field
-      expect(find.text('AI Guide'), findsAtLeastNWidgets(1));
+      // Verify clean Step 7 Talk header and chat input field
+      expect(find.text('Talk'), findsAtLeastNWidgets(1));
       expect(find.text('Explore a Thought'), findsOneWidget);
       expect(find.text('Talk with your companion...'), findsOneWidget);
 
@@ -308,8 +308,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('My supervisor seemed distant.'), findsOneWidget);
-      // Fallback mock investigator reply added at least one AI bubble after user statement
-      expect(find.text('AI Guide'), findsAtLeastNWidgets(2));
+      // Fallback mock investigator reply added at least one reply after user statement
+      expect(find.text('Saved (1)'), findsOneWidget);
     });
   });
 

@@ -393,9 +393,9 @@ void main() {
       AppRouter.router.go(AppRouter.progress);
       await tester.pumpAndSettle();
 
-      // Verify Track screen Tab 1 (History & Calendar) is active
-      expect(find.text('History & Calendar'), findsOneWidget);
-      expect(find.text('Track'), findsNWidgets(2));
+      // Verify single-job My days (TrackScreen) renders its month calendar cleanly
+      expect(find.text(const AppStrings('en').navMyDays), findsAtLeastNWidgets(1));
+      expect(find.byTooltip('Previous month'), findsOneWidget);
     });
   });
 }

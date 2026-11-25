@@ -21,11 +21,14 @@ import '../../../core/widgets/mind_button.dart';
 import '../../../core/widgets/mind_card.dart';
 import '../../../core/widgets/mind_pressable.dart';
 import '../../../core/widgets/mind_segmented.dart';
+import '../../../core/widgets/mind_sheet.dart';
+import '../../../core/widgets/mind_toast.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../backup/data/unified_backup_service.dart';
 import '../../case_file/presentation/clinical_export_preview_sheet.dart';
 import '../../clinician/presentation/clinician_shell_screen.dart';
 import '../../clinician/presentation/widgets/import_care_focus_sheet.dart';
+import '../../clinician/presentation/widgets/pre_visit_brief_sheet.dart';
 import '../../clinician/presentation/widgets/share_with_psychiatrist_sheet.dart';
 import '../../investigation/controllers/investigation_providers.dart';
 import '../../investigation/presentation/widgets/ai_engine_config_sheet.dart';
@@ -35,15 +38,18 @@ import '../../journey/controllers/journey_controller.dart';
 import '../../mind_trace/controllers/mind_trace_controller.dart';
 import '../../observatory/controllers/observatory_controllers.dart';
 import '../../observatory/data/local_symptom_repository.dart';
+import '../../observatory/presentation/inner_observatory_screen.dart';
 import '../../profile/controllers/profile_controller.dart';
 import '../../profile/presentation/psychological_profile_screen.dart';
 import 'clinical_sharing_history_sheet.dart';
 
-/// Profile & Clinical Preferences Screen.
+/// Me & Preferences Screen.
 ///
-/// Organized into 4 grouped cards (You, Display & Language, AI Guide & Security,
-/// Data & Crisis) built with MindTokens, >= 48dp interactive targets, >= 11.5px
-/// typography, and a double-confirm local reset.
+/// Organized into 5 calm grouped cards (Look & reading, About me & reminders,
+/// Doctor visit, Privacy, lock & backup, and collapsed For clinicians &
+/// advanced) built with MindTokens, >= 48dp interactive targets, >= 12.5px
+/// typography, reminder pre-permission, dry-run restore preview, and a
+/// double-confirm local reset.
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -58,6 +64,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   bool _aiHistoryAccess = true;
   bool _gentleNotifications = false;
+  bool _showAdvanced = false;
   String _notificationFrequency = 'daily';
 
   @override
@@ -83,6 +90,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _setGentleNotifications(bool val) async {
     HapticFeedback.lightImpact();
     final strings = ref.read(appStringsProvider);
+    if (val) {
+      final approved = await GentleReminderService.showPrePermissionSheet(
+        context,
+        strings,
+      );
+      if (!approved || !mounted) return;
+    }
     final scheduled = await ref.read(gentleReminderServiceProvider).syncSchedule(
           enabled: val,
           frequency: _notificationFrequency,
@@ -95,18 +109,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_prefGentleNotif, effectiveEnabled);
     if (val && !scheduled && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text(
-            strings.isArabic
-                ? 'تعذر تفعيل التنبيهات لأن إذن الإشعارات غير ممنوح.'
-                : (strings.isFrench
-                    ? 'Autorisation de notification refusée ; les rappels restent désactivés.'
-                    : 'Notification permission was denied; gentle reminders remain off.'),
-          ),
-        ),
-      );
+      showMindToast(context, strings.reminderPermissionDeniedToast);
     }
   }
 
@@ -147,14 +150,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         builder: (dialogCtx, setDialogState) => AlertDialog(
           backgroundColor: tokens.surface,
           title: Text(
-            strings.isArabic
-                ? 'تصدير خزينة مشفرة بكلمة سر'
-                : (strings.isFrench
-                    ? 'Exporter un coffre chiffré'
-                    : 'Export Encrypted Vault'),
+            strings.exportEncryptedVaultTitle,
             style: TextStyle(
               color: tokens.ink,
-              fontSize: 16,
+              fontSize: 16.5,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -164,22 +163,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  strings.isArabic
-                      ? 'أدخل كلمة سر لحماية النسخة المصدرة (6 أحرف على الأقل). بدونها لا يمكن فك التشفير.'
-                      : (strings.isFrench
-                          ? 'Choisissez un mot de passe pour chiffrer votre sauvegarde (6 caractères minimum).'
-                          : 'Enter a passphrase to encrypt your backup (min 6 characters). Required later to restore.'),
-                  style: TextStyle(color: tokens.ink2, fontSize: 12.5),
+                  strings.exportEncryptedVaultDesc,
+                  style: TextStyle(color: tokens.ink2, fontSize: 13.5),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: passCtrl,
                   obscureText: true,
-                  style: TextStyle(color: tokens.ink, fontSize: 13.5),
+                  style: TextStyle(color: tokens.ink, fontSize: 14),
                   decoration: InputDecoration(
-                    labelText: strings.isArabic
-                        ? 'كلمة السر'
-                        : (strings.isFrench ? 'Mot de passe' : 'Passphrase'),
+                    labelText: strings.passphraseFieldLabel,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(tokens.buttonRadius),
                     ),
@@ -189,11 +182,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 TextField(
                   controller: confirmCtrl,
                   obscureText: true,
-                  style: TextStyle(color: tokens.ink, fontSize: 13.5),
+                  style: TextStyle(color: tokens.ink, fontSize: 14),
                   decoration: InputDecoration(
-                    labelText: strings.isArabic
-                        ? 'تأكيد كلمة السر'
-                        : (strings.isFrench ? 'Confirmer' : 'Confirm password'),
+                    labelText: strings.confirmPassphraseLabel,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(tokens.buttonRadius),
                     ),
@@ -205,7 +196,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     errorMsg!,
                     style: TextStyle(
                       color: tokens.safety,
-                      fontSize: 12,
+                      fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -224,21 +215,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 final p2 = confirmCtrl.text;
                 if (p1.length < 6) {
                   setDialogState(() {
-                    errorMsg = strings.isArabic
-                        ? 'يجب أن تكون كلمة السر 6 أحرف على الأقل.'
-                        : (strings.isFrench
-                            ? 'Le mot de passe doit contenir au moins 6 caractères.'
-                            : 'Passphrase must be at least 6 characters.');
+                    errorMsg = strings.passphraseTooShortError;
                   });
                   return;
                 }
                 if (p1 != p2) {
                   setDialogState(() {
-                    errorMsg = strings.isArabic
-                        ? 'كلمتا السر غير متطابقتين.'
-                        : (strings.isFrench
-                            ? 'Les mots de passe ne correspondent pas.'
-                            : 'Passphrases do not match.');
+                    errorMsg = strings.passphraseMismatchError;
                   });
                   return;
                 }
@@ -260,30 +243,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         .createPasswordEncryptedBackup(password);
     if (!result.success || result.rawJson == null) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            content: Text(result.message),
-          ),
-        );
+        showMindToast(context, result.message);
       }
       return;
     }
 
     await Clipboard.setData(ClipboardData(text: result.rawJson!));
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text(
-            strings.isArabic
-                ? 'تم نسخ الخزينة المشفرة إلى الحافظة بأمان.'
-                : (strings.isFrench
-                    ? 'Coffre chiffré copié dans le presse-papiers.'
-                    : 'Password-encrypted vault backup copied to clipboard.'),
-          ),
-        ),
-      );
+      showMindToast(context, strings.vaultCopiedToast);
     }
   }
 
@@ -302,14 +269,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         builder: (dialogCtx, setDialogState) => AlertDialog(
           backgroundColor: tokens.surface,
           title: Text(
-            strings.isArabic
-                ? 'استعادة خزينة مشفرة'
-                : (strings.isFrench
-                    ? 'Restaurer un coffre chiffré'
-                    : 'Restore Encrypted Vault'),
+            strings.restoreBackupBtn,
             style: TextStyle(
               color: tokens.ink,
-              fontSize: 16,
+              fontSize: 16.5,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -319,25 +282,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  strings.isArabic
-                      ? 'ألصق نص النسخة الاحتياطية المشفرة وأدخل كلمة السر لاستعادة السجلات دون فقدان البيانات الحالية.'
-                      : (strings.isFrench
-                          ? 'Collez la sauvegarde chiffrée et saisissez le mot de passe associé.'
-                          : 'Paste your exported vault backup JSON and enter the passphrase used to lock it.'),
-                  style: TextStyle(color: tokens.ink2, fontSize: 12.5),
+                  strings.restoreEncryptedVaultDesc,
+                  style: TextStyle(color: tokens.ink2, fontSize: 13.5),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: jsonCtrl,
                   minLines: 3,
                   maxLines: 5,
-                  style: TextStyle(color: tokens.ink, fontSize: 12),
+                  style: TextStyle(color: tokens.ink, fontSize: 13),
                   decoration: InputDecoration(
-                    labelText: strings.isArabic
-                        ? 'محتوى النسخة الاحتياطية (JSON)'
-                        : (strings.isFrench
-                            ? 'Contenu de sauvegarde (JSON)'
-                            : 'Encrypted Backup JSON'),
+                    labelText: strings.backupJsonLabel,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(tokens.buttonRadius),
                     ),
@@ -347,11 +302,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 TextField(
                   controller: passCtrl,
                   obscureText: true,
-                  style: TextStyle(color: tokens.ink, fontSize: 13.5),
+                  style: TextStyle(color: tokens.ink, fontSize: 14),
                   decoration: InputDecoration(
-                    labelText: strings.isArabic
-                        ? 'كلمة السر'
-                        : (strings.isFrench ? 'Mot de passe' : 'Passphrase'),
+                    labelText: strings.passphraseFieldLabel,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(tokens.buttonRadius),
                     ),
@@ -363,7 +316,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     errorMsg!,
                     style: TextStyle(
                       color: tokens.safety,
-                      fontSize: 12,
+                      fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -382,21 +335,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 final pwd = passCtrl.text;
                 if (raw.isEmpty) {
                   setDialogState(() {
-                    errorMsg = strings.isArabic
-                        ? 'الرجاء لصق نص النسخة الاحتياطية أولاً.'
-                        : (strings.isFrench
-                            ? 'Veuillez coller la sauvegarde.'
-                            : 'Please paste your backup payload first.');
+                    errorMsg = strings.pasteBackupFirstError;
                   });
                   return;
                 }
                 Navigator.of(dialogCtx).pop((json: raw, password: pwd));
               },
-              child: Text(
-                strings.isArabic
-                    ? 'استعادة'
-                    : (strings.isFrench ? 'Restaurer' : 'Restore'),
-              ),
+              child: Text(strings.continueBtn),
             ),
           ],
         ),
@@ -406,10 +351,56 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     passCtrl.dispose();
 
     if (payload == null || !mounted) return;
+
+    final backupSvc = ref.read(unifiedBackupServiceProvider);
+    final preview = await backupSvc.previewPasswordEncryptedBackup(
+      payload.json,
+      payload.password,
+    );
+    if (!context.mounted) return;
+    if (!preview.success || preview.rawJson == null) {
+      showMindToast(context, preview.message);
+      return;
+    }
+
+    final confirmed = await showMindSheet<bool>(
+      context: context,
+      title: strings.restoreBackupPreviewTitle,
+      builder: (sheetCtx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            strings.restorePreviewSummary(
+              preview.tracesCount,
+              preview.sessionsCount,
+            ),
+            style: TextStyle(
+              fontSize: 14.5,
+              color: tokens.ink2,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 18),
+          MindButton(
+            text: strings.restoreBackupBtn,
+            isFullWidth: true,
+            onPressed: () => Navigator.of(sheetCtx).pop(true),
+          ),
+          const SizedBox(height: 8),
+          MindButton(
+            text: strings.cancelBtn,
+            variant: MindButtonVariant.ghost,
+            isFullWidth: true,
+            onPressed: () => Navigator.of(sheetCtx).pop(false),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
     HapticFeedback.mediumImpact();
-    final result = await ref
-        .read(unifiedBackupServiceProvider)
-        .restoreFromPasswordEncryptedBackup(payload.json, payload.password);
+    final result = await backupSvc.restoreFromBackupJson(preview.rawJson!);
     if (result.success) {
       ref.invalidate(savedCasesProvider);
       ref.invalidate(activeCaseControllerProvider);
@@ -421,12 +412,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ref.invalidate(journeyControllerProvider);
     }
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text(result.message),
-        ),
-      );
+      showMindToast(context, result.message);
     }
   }
 
@@ -576,18 +562,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 if (ctx.mounted) {
                   Navigator.of(ctx).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        success
-                            ? strings.vaultStatusCloud
-                            : strings.localizeAuthError(
-                                ref.read(authControllerProvider).errorMessage ?? '',
-                              ),
-                      ),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
+                  if (mounted) {
+                    showMindToast(
+                      context,
+                      success
+                          ? strings.vaultStatusCloud
+                          : strings.localizeAuthError(
+                              ref.read(authControllerProvider).errorMessage ?? '',
+                            ),
+                    );
+                  }
                 }
               },
             ),
@@ -611,28 +595,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           strings.resetConfirmStep1Title,
           style: TextStyle(
             color: tokens.ink,
-            fontSize: 16,
+            fontSize: 16.5,
             fontWeight: FontWeight.w700,
           ),
         ),
         content: Text(
           strings.resetConfirmStep1Body,
-          style: TextStyle(color: tokens.ink2, fontSize: 13, height: 1.4),
+          style: TextStyle(color: tokens.ink2, fontSize: 14, height: 1.45),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(step1Ctx).pop(),
             style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
             child: Text(
-              strings.cancelBtn,
-              style: TextStyle(color: tokens.ink2, fontSize: 13),
+              strings.keepMyDataBtn,
+              style: TextStyle(
+                color: tokens.ink,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               minimumSize: const Size(48, 48),
               backgroundColor: tokens.safety,
-              foregroundColor: tokens.bg,
+              foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(tokens.buttonRadius),
               ),
@@ -642,8 +630,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _showFinalResetDialog(strings, tokens);
             },
             child: Text(
-              strings.continueActionBtn,
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+              strings.continueBtn,
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
             ),
           ),
         ],
@@ -667,28 +655,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           strings.resetConfirmStep2Title,
           style: TextStyle(
             color: tokens.safety,
-            fontSize: 16,
+            fontSize: 16.5,
             fontWeight: FontWeight.w700,
           ),
         ),
         content: Text(
           strings.resetConfirmStep2Body,
-          style: TextStyle(color: tokens.ink2, fontSize: 13, height: 1.4),
+          style: TextStyle(color: tokens.ink2, fontSize: 14, height: 1.45),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(step2Ctx).pop(),
             style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
             child: Text(
-              strings.cancelBtn,
-              style: TextStyle(color: tokens.ink2, fontSize: 13),
+              strings.keepMyDataBtn,
+              style: TextStyle(
+                color: tokens.ink,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               minimumSize: const Size(48, 48),
               backgroundColor: tokens.safety,
-              foregroundColor: tokens.bg,
+              foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(tokens.buttonRadius),
               ),
@@ -697,17 +689,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Navigator.of(step2Ctx).pop();
               await _performFullLocalReset();
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(strings.allDataWipedSnackbar),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
+                showMindToast(context, strings.allDataWipedSnackbar);
               }
             },
             child: Text(
-              strings.confirmResetBtn,
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+              strings.deleteEverythingForeverBtn,
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
             ),
           ),
         ],
@@ -841,13 +828,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              strings.isArabic
-                                  ? 'تم استبعاد $privateCount جلسات خاصة تلقائياً.'
-                                  : (strings.isFrench
-                                      ? '$privateCount sessions privées exclues automatiquement.'
-                                      : '$privateCount private sessions automatically excluded.'),
+                              strings.privateCasesExcludedBanner(privateCount),
                               style: TextStyle(
-                                fontSize: 11.5,
+                                fontSize: 12.5,
                                 color: tokens.ink2,
                               ),
                             ),
@@ -861,14 +844,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 20),
                       child: Text(
-                        strings.isArabic
-                            ? 'لا توجد جلسات غير خاصة جاهزة للمشاركة بعد.'
-                            : (strings.isFrench
-                                ? 'Aucune session partageable disponible pour le moment.'
-                                : 'No non-private reflections available to include yet.'),
+                        strings.noShareableTalksYet,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 13.5,
                           color: tokens.ink2,
                         ),
                       ),
@@ -908,14 +887,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                     : tokens.surface2,
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: checked ? tokens.ink : tokens.line,
+                                  color: checked ? tokens.primary : tokens.line,
                                 ),
                               ),
                               child: Row(
                                 children: [
                                   Checkbox(
                                     value: checked,
-                                    activeColor: tokens.ink,
+                                    activeColor: tokens.primary,
                                     onChanged: (_) => setSheetState(() {
                                       if (checked) {
                                         selectedIds.remove(item.id);
@@ -930,7 +909,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
-                                        fontSize: 13,
+                                        fontSize: 13.5,
                                         fontWeight: checked
                                             ? FontWeight.w600
                                             : FontWeight.w500,
@@ -947,41 +926,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                   if (shareableCases.isNotEmpty) ...[
                     const SizedBox(height: 16),
-                    SizedBox(
-                      height: 48,
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: tokens.ink,
-                          foregroundColor: tokens.bg,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              tokens.buttonRadius,
-                            ),
-                          ),
-                        ),
-                        onPressed: selectedCases.isEmpty
-                            ? null
-                            : () {
-                                Navigator.of(ctx).pop();
-                                ClinicalExportPreviewSheet.show(
-                                  context,
-                                  selectedCases,
-                                );
-                              },
-                        icon: const Icon(Icons.visibility_outlined, size: 18),
-                        label: Text(
-                          strings.isArabic
-                              ? 'معاينة الحزمة (${selectedCases.length})'
-                              : (strings.isFrench
-                                  ? 'Aperçu du dossier (${selectedCases.length})'
-                                  : 'Preview Share Packet (${selectedCases.length})'),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
+                    MindButton(
+                      text: strings.previewSharePacketBtn(selectedCases.length),
+                      leadingIcon: Icons.visibility_outlined,
+                      isFullWidth: true,
+                      onPressed: selectedCases.isEmpty
+                          ? null
+                          : () {
+                              Navigator.of(ctx).pop();
+                              ClinicalExportPreviewSheet.show(
+                                context,
+                                selectedCases,
+                              );
+                            },
                     ),
                   ],
                 ],
@@ -1074,11 +1031,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
-          strings.settingsTitle.toUpperCase(),
+          strings.navMe,
           style: TextStyle(
             fontWeight: FontWeight.w800,
-            fontSize: 13.5,
-            letterSpacing: 1.0,
+            fontSize: 20,
             color: tokens.ink,
           ),
         ),
@@ -1092,504 +1048,441 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-          // Header Card
-          MindCard(
-            padding: const EdgeInsets.all(18),
-            child: Row(
-              children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: tokens.cardTint,
-                    border: Border.all(
-                      color: tokens.ink.withValues(alpha: 0.32),
+            // Warm Personal Header Card
+            MindCard(
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: tokens.primarySoft,
+                      border: Border.all(
+                        color: tokens.primary.withValues(alpha: 0.25),
+                      ),
                     ),
+                    alignment: Alignment.center,
+                    child: const BotanicalEmblem(size: 36),
                   ),
-                  alignment: Alignment.center,
-                  child: const BotanicalEmblem(size: 36),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        preferredName.isNotEmpty
-                            ? preferredName
-                            : strings.authTitle,
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          color: tokens.ink,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        strings.profileSubtitle,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          color: tokens.ink2,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      MindBadge(
-                        label: isCloudLinked
-                            ? strings.vaultStatusCloud
-                            : strings.vaultStatusAnonymous,
-                        icon: isCloudLinked
-                            ? Icons.cloud_done_outlined
-                            : Icons.phonelink_lock_outlined,
-                        backgroundColor:
-                            isCloudLinked ? tokens.cardTint : tokens.selectedTint,
-                        textColor: tokens.ink,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 22),
-
-          // Group 1: You
-          _sectionLabel(strings.profileGroupYou, tokens),
-          MindCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                _buildNavRow(
-                  tokens: tokens,
-                  icon: Icons.badge_outlined,
-                  title: strings.preferredNameLabel,
-                  trailingText: preferredName.isNotEmpty
-                      ? preferredName
-                      : strings.notSetLabel,
-                  onTap: () => _showEditPreferredNameDialog(
-                    context,
-                    strings,
-                    tokens,
-                    preferredName,
-                  ),
-                ),
-                Divider(height: 1, thickness: 1, color: tokens.line),
-                _buildNavRow(
-                  tokens: tokens,
-                  icon: Icons.psychology_outlined,
-                  title: strings.myPsychologicalProfileTitle,
-                  subtitle: strings.myAccountSub,
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const PsychologicalProfileScreen(),
-                    ),
-                  ),
-                ),
-                Divider(height: 1, thickness: 1, color: tokens.line),
-                _buildNavRow(
-                  tokens: tokens,
-                  icon: isCloudLinked
-                      ? Icons.logout_rounded
-                      : Icons.cloud_upload_outlined,
-                  title: strings.accountStatusLabel,
-                  subtitle: accountValue,
-                  trailingText: isCloudLinked
-                      ? strings.signOutBtn
-                      : strings.linkEmailBtn,
-                  onTap: () {
-                    if (isCloudLinked) {
-                      ref.read(authControllerProvider.notifier).signOut();
-                    } else {
-                      _showUpgradeVaultSheet(context, strings, tokens);
-                    }
-                  },
-                ),
-                Divider(height: 1, thickness: 1, color: tokens.line),
-                _buildNavRow(
-                  tokens: tokens,
-                  icon: Icons.medical_services_outlined,
-                  title: strings.psychiatristWorkspaceTitle,
-                  subtitle: strings.psychiatristWorkspaceSub,
-                  onTap: () {
-                    final router = GoRouter.maybeOf(context);
-                    if (router != null) {
-                      router.go(AppRouter.clinician);
-                    } else {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const ClinicianShellScreen(),
-                        ),
-                      );
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 22),
-
-          // Group 2: Display & Language
-          _sectionLabel(strings.profileGroupDisplay, tokens),
-          MindCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        strings.themeModeTitle.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: tokens.ink2,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      _buildThemeSwatchStrip(
-                        tokens: tokens,
-                        strings: strings,
-                        themeIndex: themeIndex,
-                      ),
-                      const SizedBox(height: 10),
-                      MindSegmented(
-                        index: themeIndex,
-                        labels: [
-                          strings.themeDaylight,
-                          strings.themeNight,
-                          strings.themeSystem,
-                        ],
-                        onChanged: (idx) {
-                          HapticFeedback.selectionClick();
-                          final mode = idx == 0
-                              ? ThemeMode.light
-                              : (idx == 1 ? ThemeMode.dark : ThemeMode.system);
-                          ref
-                              .read(themeControllerProvider.notifier)
-                              .setTheme(mode);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                Divider(height: 1, thickness: 1, color: tokens.line),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        strings.languageTitle.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: tokens.ink2,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      MindSegmented(
-                        index: langIndex,
-                        labels: const ['EN', 'FR', 'AR'],
-                        onChanged: (idx) {
-                          HapticFeedback.selectionClick();
-                          final lang = idx == 2
-                              ? AppLanguage.arabic
-                              : (idx == 1
-                                  ? AppLanguage.french
-                                  : AppLanguage.english);
-                          ref
-                              .read(localeControllerProvider.notifier)
-                              .setLanguage(lang);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                Divider(height: 1, thickness: 1, color: tokens.line),
-                _buildSwitchRow(
-                  tokens: tokens,
-                  icon: Icons.visibility_outlined,
-                  title: strings.comfortModeTitle,
-                  subtitle: strings.comfortModeSub,
-                  value: comfortMode,
-                  onChanged: (val) => ref
-                      .read(displayComfortProvider.notifier)
-                      .setComfortMode(val),
-                ),
-                Divider(height: 1, thickness: 1, color: tokens.line),
-                _buildSwitchRow(
-                  tokens: tokens,
-                  icon: Icons.notifications_none_rounded,
-                  title: strings.isArabic
-                      ? 'تنبيهات لطيفة غير ملحة'
-                      : (strings.isFrench
-                          ? 'Rappels doux et bienveillants'
-                          : 'Gentle Non-Pressuring Reminders'),
-                  subtitle: strings.isArabic
-                      ? 'تذكير اختياري بتدوين أثرك دون أي ضغط'
-                      : (strings.isFrench
-                          ? 'Un mot doux pour votre point du jour, sans pression'
-                          : 'Optional gentle prompt when you want a check-in nudge'),
-                  value: _gentleNotifications,
-                  onChanged: _setGentleNotifications,
-                ),
-                if (_gentleNotifications)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  const SizedBox(width: 14),
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          strings.isArabic
-                              ? 'الوتيرة المفضلة'
-                              : (strings.isFrench ? 'Rythme' : 'Frequency'),
+                          preferredName.isNotEmpty
+                              ? preferredName
+                              : strings.meSpaceDefaultTitle,
                           style: TextStyle(
-                            fontSize: 11.5,
+                            fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            letterSpacing: 0.6,
                             color: tokens.ink,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            _notifFreqChip(
-                              'daily',
-                              strings.isArabic
-                                  ? 'يومياً'
-                                  : (strings.isFrench ? 'Quotidien' : 'Daily'),
-                              tokens,
-                            ),
-                            _notifFreqChip(
-                              'alternate',
-                              strings.isArabic
-                                  ? 'يوم بيوم'
-                                  : (strings.isFrench
-                                      ? 'Un jour sur deux'
-                                      : 'Alternate Days'),
-                              tokens,
-                            ),
-                            _notifFreqChip(
-                              'weekly',
-                              strings.isArabic
-                                  ? 'أسبوعياً'
-                                  : (strings.isFrench
-                                      ? 'Hebdomadaire'
-                                      : 'Weekly'),
-                              tokens,
-                            ),
-                          ],
+                        const SizedBox(height: 3),
+                        Text(
+                          strings.profileSubtitle,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: tokens.ink2,
+                          ),
                         ),
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: tokens.surface2,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: tokens.line),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.notifications_active_outlined,
-                                size: 16,
-                                color: tokens.ink,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  strings.isArabic
-                                      ? 'مثال: "أثر ذهنك اليومي ينتظرك وقتما تكون مستعداً."'
-                                      : (strings.isFrench
-                                          ? 'Exemple : « Votre empreinte du jour vous attend quand vous êtes prêt(e). »'
-                                          : 'Sample: "Your daily Mind Trace is waiting whenever you\'re ready."'),
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    fontStyle: FontStyle.italic,
-                                    color: tokens.ink,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                        const SizedBox(height: 8),
+                        MindBadge(
+                          label: isCloudLinked
+                              ? strings.vaultStatusCloud
+                              : strings.vaultStatusAnonymous,
+                          icon: isCloudLinked
+                              ? Icons.cloud_done_outlined
+                              : Icons.phonelink_lock_outlined,
+                          backgroundColor: isCloudLinked
+                              ? tokens.primarySoft
+                              : tokens.surface2,
+                          textColor: tokens.ink,
                         ),
                       ],
                     ),
                   ),
-              ],
+                ],
+              ),
             ),
-          ),
 
-          const SizedBox(height: 22),
+            // Doctor quick shortcut when registered in clinician role
+            if (profile?.userRole == 'clinician') ...[
+              const SizedBox(height: 14),
+              MindButton(
+                text: strings.openDoctorWorkspaceBtn,
+                leadingIcon: Icons.medical_services_outlined,
+                variant: MindButtonVariant.primary,
+                isFullWidth: true,
+                onPressed: () {
+                  final router = GoRouter.maybeOf(context);
+                  if (router != null) {
+                    router.go(AppRouter.clinician);
+                  } else {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ClinicianShellScreen(),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ],
 
-          // Group 3: AI Guide & Security
-          _sectionLabel(strings.profileGroupAiSecurity, tokens),
-          MindCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                _buildNavRow(
-                  tokens: tokens,
-                  icon: Icons.smart_toy_outlined,
-                  title: strings.mindAssistantEngineTitle,
-                  subtitle: strings.mindAssistantEngineSub,
-                  onTap: () => AiEngineConfigSheet.show(context),
-                ),
-                Divider(height: 1, thickness: 1, color: tokens.line),
-                _buildSwitchRow(
-                  tokens: tokens,
-                  icon: Icons.memory_rounded,
-                  title: strings.aiHistoryTitle,
-                  subtitle: strings.aiHistoryDesc,
-                  value: aiHistoryEnabled,
-                  onChanged: _setAiHistory,
-                ),
-                Divider(height: 1, thickness: 1, color: tokens.line),
-                _buildNavRow(
-                  tokens: tokens,
-                  icon: Icons.auto_stories_outlined,
-                  title: strings.memoryVaultTitle,
-                  onTap: () => JournalMemorySheet.show(context),
-                ),
-                Divider(height: 1, thickness: 1, color: tokens.line),
-                _buildSwitchRow(
-                  tokens: tokens,
-                  icon: Icons.fingerprint_rounded,
-                  title: strings.biometricLockTitle,
-                  subtitle: strings.biometricLockDesc,
-                  value: appLock.isEnabled,
-                  onChanged: (val) async {
-                    final success = await ref
-                        .read(appLockProvider.notifier)
-                        .toggleBiometrics(val);
-                    if (!success && val && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(strings.biometricNotAvailableSnackbar),
-                          behavior: SnackBarBehavior.floating,
+            const SizedBox(height: 22),
+
+            // Card 1: Look & reading
+            _sectionLabel(strings.lookAndReadingSection, tokens),
+            MindCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          strings.themeModeTitle,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: tokens.ink,
+                          ),
                         ),
-                      );
-                    }
-                  },
-                ),
-              ],
+                        const SizedBox(height: 10),
+                        _buildThemeSwatchStrip(
+                          tokens: tokens,
+                          strings: strings,
+                          themeIndex: themeIndex,
+                        ),
+                        const SizedBox(height: 10),
+                        MindSegmented(
+                          index: themeIndex,
+                          labels: [
+                            strings.themeSunriseLabel,
+                            strings.themeNightLabel,
+                            strings.themeAutoLabel,
+                          ],
+                          onChanged: (idx) {
+                            HapticFeedback.selectionClick();
+                            final mode = idx == 0
+                                ? ThemeMode.light
+                                : (idx == 1
+                                      ? ThemeMode.dark
+                                      : ThemeMode.system);
+                            ref
+                                .read(themeControllerProvider.notifier)
+                                .setTheme(mode);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  Divider(height: 1, thickness: 1, color: tokens.line),
+                  _buildSwitchRow(
+                    tokens: tokens,
+                    icon: Icons.visibility_outlined,
+                    title: strings.comfortModeTitle,
+                    subtitle: strings.comfortModeSub,
+                    value: comfortMode,
+                    onChanged: (val) => ref
+                        .read(displayComfortProvider.notifier)
+                        .setComfortMode(val),
+                  ),
+                  Divider(height: 1, thickness: 1, color: tokens.line),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          strings.languageTitle,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: tokens.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        MindSegmented(
+                          index: langIndex,
+                          labels: const ['EN', 'FR', 'AR'],
+                          onChanged: (idx) {
+                            HapticFeedback.selectionClick();
+                            final lang = idx == 2
+                                ? AppLanguage.arabic
+                                : (idx == 1
+                                      ? AppLanguage.french
+                                      : AppLanguage.english);
+                            ref
+                                .read(localeControllerProvider.notifier)
+                                .setLanguage(lang);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
 
-          const SizedBox(height: 22),
+            const SizedBox(height: 22),
 
-          // Group 4: Data & Crisis
-          _sectionLabel(strings.profileGroupDataCrisis, tokens),
-          MindCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                _buildNavRow(
-                  tokens: tokens,
-                  icon: Icons.health_and_safety_outlined,
-                  title: strings.shareWithPsychiatristTitle,
-                  subtitle: strings.shareWithPsychiatristSub,
-                  onTap: () => ShareWithPsychiatristSheet.show(context),
-                ),
-                Divider(height: 1, thickness: 1, color: tokens.line),
-                _buildNavRow(
-                  tokens: tokens,
-                  icon: Icons.assignment_returned_outlined,
-                  title: strings.importCareFocusTitle,
-                  subtitle: strings.importCareFocusSub,
-                  onTap: () => ImportCareFocusSheet.show(context),
-                ),
-                Divider(height: 1, thickness: 1, color: tokens.line),
-                _buildNavRow(
-                  tokens: tokens,
-                  icon: Icons.description_outlined,
-                  title: strings.exportSummaryButton,
-                  onTap: () => ClinicalExportPreviewSheet.show(context, cases),
-                ),
-                Divider(height: 1, thickness: 1, color: tokens.line),
-                _buildNavRow(
-                  tokens: tokens,
-                  icon: Icons.inventory_2_outlined,
-                  title: strings.sharePacketTitle,
-                  subtitle: strings.sharePacketSub,
-                  onTap: () => _openSharePacketBuilder(context, strings),
-                ),
-                Divider(height: 1, thickness: 1, color: tokens.line),
-                _buildNavRow(
-                  tokens: tokens,
-                  icon: Icons.history_edu_outlined,
-                  title: strings.clinicalSharingHistoryTitle,
-                  subtitle: strings.clinicalSharingHistoryDesc,
-                  onTap: () => ClinicalSharingHistorySheet.show(context),
-                ),
-                Divider(height: 1, thickness: 1, color: tokens.line),
-                const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-                  child: Column(
-                    children: [
-                      Row(
+            // Card 2: About me & reminders
+            _sectionLabel(strings.aboutMeAndRemindersSection, tokens),
+            MindCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildNavRow(
+                    tokens: tokens,
+                    icon: Icons.badge_outlined,
+                    title: strings.preferredNameLabel,
+                    trailingText: preferredName.isNotEmpty
+                        ? preferredName
+                        : strings.notSetLabel,
+                    onTap: () => _showEditPreferredNameDialog(
+                      context,
+                      strings,
+                      tokens,
+                      preferredName,
+                    ),
+                  ),
+                  Divider(height: 1, thickness: 1, color: tokens.line),
+                  _buildNavRow(
+                    tokens: tokens,
+                    icon: Icons.psychology_outlined,
+                    title: strings.myStoryAndGoalsLabel,
+                    subtitle: strings.myAccountSub,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const PsychologicalProfileScreen(),
+                      ),
+                    ),
+                  ),
+                  Divider(height: 1, thickness: 1, color: tokens.line),
+                  _buildNavRow(
+                    tokens: tokens,
+                    icon: Icons.spa_outlined,
+                    title: strings.toolboxAndBodyNotesLabel,
+                    subtitle: strings.calmToolsHeader,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const InnerObservatoryScreen(),
+                      ),
+                    ),
+                  ),
+                  Divider(height: 1, thickness: 1, color: tokens.line),
+                  _buildSwitchRow(
+                    tokens: tokens,
+                    icon: Icons.notifications_none_rounded,
+                    title: strings.reminderPermissionTitle,
+                    subtitle: strings.reminderPermissionBody,
+                    value: _gentleNotifications,
+                    onChanged: _setGentleNotifications,
+                  ),
+                  if (_gentleNotifications)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: MindButton(
-                              text: strings.backupNowBtn,
-                              variant: MindButtonVariant.soft,
-                              leadingIcon: Icons.cloud_upload_outlined,
-                              onPressed: () async {
-                                HapticFeedback.mediumImpact();
-                                final result = await ref
-                                    .read(unifiedBackupServiceProvider)
-                                    .createFullBackup();
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        strings.isArabic
-                                            ? 'اكتمل النسخ الاحتياطي: ${result.tracesCount} أثر، ${result.sessionsCount} جلسات، ${result.memoriesCount} خلاصات محفوظة.'
-                                            : (strings.isFrench
-                                                ? 'Sauvegarde terminée : ${result.tracesCount} empreintes, ${result.sessionsCount} sessions, ${result.memoriesCount} souvenirs préservés.'
-                                                : 'Backup complete: ${result.tracesCount} traces, ${result.sessionsCount} sessions, ${result.memoriesCount} memories preserved.'),
-                                      ),
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
-                                }
-                              },
+                          Text(
+                            strings.reminderFrequencyLabel,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: tokens.ink,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: MindButton(
-                              text: strings.exportVaultBtn,
-                              variant: MindButtonVariant.secondary,
-                              leadingIcon: Icons.enhanced_encryption_outlined,
-                              onPressed: () => _promptEncryptedVaultExport(
-                                context,
-                                strings,
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _notifFreqChip(
+                                'daily',
+                                strings.everyDayChip,
                                 tokens,
                               ),
+                              _notifFreqChip(
+                                'alternate',
+                                strings.everyTwoDaysChip,
+                                tokens,
+                              ),
+                              _notifFreqChip(
+                                'weekly',
+                                strings.weeklyChip,
+                                tokens,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: tokens.surface2,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: tokens.line),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.notifications_active_outlined,
+                                  size: 16,
+                                  color: tokens.primary,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    '${strings.reminderSamplePrefix} "${strings.gentleReminderBodies.first}"',
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontStyle: FontStyle.italic,
+                                      color: tokens.ink2,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        child: MindButton(
-                          text: strings.isArabic
-                              ? 'استعادة خزينة مشفرة'
-                              : (strings.isFrench
-                                  ? 'Restaurer un coffre chiffré'
-                                  : 'Restore Encrypted Vault'),
+                    ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 22),
+
+            // Card 3: Doctor visit (optional)
+            _sectionLabel(strings.doctorVisitSection, tokens),
+            MindCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  _buildNavRow(
+                    tokens: tokens,
+                    icon: Icons.assignment_outlined,
+                    title: strings.preVisitBriefTitle,
+                    subtitle: strings.preVisitBriefSubtitle,
+                    onTap: () => PreVisitBriefSheet.show(context),
+                  ),
+                  Divider(height: 1, thickness: 1, color: tokens.line),
+                  _buildNavRow(
+                    tokens: tokens,
+                    icon: Icons.health_and_safety_outlined,
+                    title: strings.shareWithPsychiatristTitle,
+                    subtitle: strings.shareWithPsychiatristSub,
+                    onTap: () => ShareWithPsychiatristSheet.show(context),
+                  ),
+                  Divider(height: 1, thickness: 1, color: tokens.line),
+                  _buildNavRow(
+                    tokens: tokens,
+                    icon: Icons.assignment_returned_outlined,
+                    title: strings.importCareFocusTitle,
+                    subtitle: strings.importCareFocusSub,
+                    onTap: () => ImportCareFocusSheet.show(context),
+                  ),
+                  Divider(height: 1, thickness: 1, color: tokens.line),
+                  _buildNavRow(
+                    tokens: tokens,
+                    icon: Icons.description_outlined,
+                    title: strings.exportSummaryButton,
+                    onTap: () => ClinicalExportPreviewSheet.show(context, cases),
+                  ),
+                  Divider(height: 1, thickness: 1, color: tokens.line),
+                  _buildNavRow(
+                    tokens: tokens,
+                    icon: Icons.inventory_2_outlined,
+                    title: strings.sharePacketTitle,
+                    subtitle: strings.sharePacketSub,
+                    onTap: () => _openSharePacketBuilder(context, strings),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 22),
+
+            // Card 4: Privacy, lock & backup
+            _sectionLabel(strings.privacyLockBackupSection, tokens),
+            MindCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  _buildSwitchRow(
+                    tokens: tokens,
+                    icon: Icons.fingerprint_rounded,
+                    title: strings.biometricLockTitle,
+                    subtitle: strings.biometricLockDesc,
+                    value: appLock.isEnabled,
+                    onChanged: (val) async {
+                      final success = await ref
+                          .read(appLockProvider.notifier)
+                          .toggleBiometrics(val);
+                      if (!success && val && context.mounted) {
+                        showMindToast(
+                          context,
+                          strings.biometricNotAvailableSnackbar,
+                        );
+                      }
+                    },
+                  ),
+                  Divider(height: 1, thickness: 1, color: tokens.line),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: MindButton(
+                                text: strings.backupNowBtn,
+                                variant: MindButtonVariant.soft,
+                                leadingIcon: Icons.cloud_upload_outlined,
+                                onPressed: () async {
+                                  HapticFeedback.mediumImpact();
+                                  final result = await ref
+                                      .read(unifiedBackupServiceProvider)
+                                      .createFullBackup();
+                                  if (context.mounted) {
+                                    showMindToast(
+                                      context,
+                                      strings.backupCompleteToast(
+                                        result.tracesCount,
+                                        result.sessionsCount,
+                                        result.memoriesCount,
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: MindButton(
+                                text: strings.exportVaultBtn,
+                                variant: MindButtonVariant.secondary,
+                                leadingIcon: Icons.enhanced_encryption_outlined,
+                                onPressed: () => _promptEncryptedVaultExport(
+                                  context,
+                                  strings,
+                                  tokens,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        MindButton(
+                          text: strings.restoreBackupBtn,
                           variant: MindButtonVariant.secondary,
                           isFullWidth: true,
                           leadingIcon: Icons.restore_page_outlined,
@@ -1599,38 +1492,166 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             tokens,
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                Divider(height: 1, thickness: 1, color: tokens.line),
-                _buildNavRow(
-                  tokens: tokens,
-                  icon: Icons.health_and_safety_outlined,
-                  iconColor: tokens.safety,
-                  title: strings.supportCrisisRowTitle,
-                  onTap: () => SupportModalSheet.show(context),
-                ),
-                Divider(height: 1, thickness: 1, color: tokens.line),
-                _buildNavRow(
-                  tokens: tokens,
-                  icon: Icons.verified_user_outlined,
-                  title: strings.privacyPrinciplesTitle,
-                  onTap: () => _showPrivacyDialog(context, strings, tokens),
-                ),
-                Divider(height: 1, thickness: 1, color: tokens.line),
-                _buildNavRow(
-                  tokens: tokens,
-                  icon: Icons.delete_forever_outlined,
-                  iconColor: tokens.safety,
-                  title: strings.wipeDataTitle,
-                  titleColor: tokens.safety,
-                  subtitle: strings.wipeDataDesc,
-                  onTap: () => _startDoubleConfirmReset(strings, tokens),
-                ),
-              ],
+                  Divider(height: 1, thickness: 1, color: tokens.line),
+                  _buildNavRow(
+                    tokens: tokens,
+                    icon: Icons.verified_user_outlined,
+                    title: strings.privacyPrinciplesTitle,
+                    onTap: () => _showPrivacyDialog(context, strings, tokens),
+                  ),
+                  Divider(height: 1, thickness: 1, color: tokens.line),
+                  _buildNavRow(
+                    tokens: tokens,
+                    icon: Icons.health_and_safety_outlined,
+                    iconColor: tokens.safety,
+                    title: strings.supportCrisisRowTitle,
+                    onTap: () => SupportModalSheet.show(context),
+                  ),
+                  Divider(height: 1, thickness: 1, color: tokens.line),
+                  _buildNavRow(
+                    tokens: tokens,
+                    icon: Icons.delete_forever_outlined,
+                    iconColor: tokens.safety,
+                    title: strings.wipeDataTitle,
+                    titleColor: tokens.safety,
+                    subtitle: strings.wipeDataDesc,
+                    onTap: () => _startDoubleConfirmReset(strings, tokens),
+                  ),
+                ],
+              ),
             ),
-          ),
+
+            const SizedBox(height: 22),
+
+            // Card 5: Collapsed For clinicians & advanced accordion
+            MindCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  Semantics(
+                    button: true,
+                    expanded: _showAdvanced,
+                    label: strings.advancedCliniciansSection,
+                    child: MindPressable(
+                      key: const ValueKey('me-advanced-accordion'),
+                      onPressed: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => _showAdvanced = !_showAdvanced);
+                      },
+                      child: Container(
+                        constraints: const BoxConstraints(minHeight: 56),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.tune_rounded,
+                              size: 20,
+                              color: tokens.ink2,
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Text(
+                                strings.advancedCliniciansSection,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: tokens.ink,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              _showAdvanced
+                                  ? Icons.expand_less_rounded
+                                  : Icons.expand_more_rounded,
+                              size: 22,
+                              color: tokens.ink2,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (_showAdvanced) ...[
+                    Divider(height: 1, thickness: 1, color: tokens.line),
+                    _buildNavRow(
+                      tokens: tokens,
+                      icon: Icons.medical_services_outlined,
+                      title: strings.psychiatristWorkspaceTitle,
+                      subtitle: strings.psychiatristWorkspaceSub,
+                      onTap: () {
+                        final router = GoRouter.maybeOf(context);
+                        if (router != null) {
+                          router.go(AppRouter.clinician);
+                        } else {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const ClinicianShellScreen(),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                    Divider(height: 1, thickness: 1, color: tokens.line),
+                    _buildNavRow(
+                      tokens: tokens,
+                      icon: Icons.smart_toy_outlined,
+                      title: strings.mindAssistantEngineTitle,
+                      subtitle: strings.mindAssistantEngineSub,
+                      onTap: () => AiEngineConfigSheet.show(context),
+                    ),
+                    Divider(height: 1, thickness: 1, color: tokens.line),
+                    _buildSwitchRow(
+                      tokens: tokens,
+                      icon: Icons.memory_rounded,
+                      title: strings.aiHistoryTitle,
+                      subtitle: strings.aiHistoryDesc,
+                      value: aiHistoryEnabled,
+                      onChanged: _setAiHistory,
+                    ),
+                    Divider(height: 1, thickness: 1, color: tokens.line),
+                    _buildNavRow(
+                      tokens: tokens,
+                      icon: Icons.auto_stories_outlined,
+                      title: strings.memoryVaultTitle,
+                      onTap: () => JournalMemorySheet.show(context),
+                    ),
+                    Divider(height: 1, thickness: 1, color: tokens.line),
+                    _buildNavRow(
+                      tokens: tokens,
+                      icon: Icons.history_edu_outlined,
+                      title: strings.clinicalSharingHistoryTitle,
+                      subtitle: strings.clinicalSharingHistoryDesc,
+                      onTap: () => ClinicalSharingHistorySheet.show(context),
+                    ),
+                    Divider(height: 1, thickness: 1, color: tokens.line),
+                    _buildNavRow(
+                      tokens: tokens,
+                      icon: isCloudLinked
+                          ? Icons.logout_rounded
+                          : Icons.cloud_upload_outlined,
+                      title: strings.accountStatusLabel,
+                      subtitle: accountValue,
+                      trailingText: isCloudLinked
+                          ? strings.signOutBtn
+                          : strings.linkEmailBtn,
+                      onTap: () {
+                        if (isCloudLinked) {
+                          ref.read(authControllerProvider.notifier).signOut();
+                        } else {
+                          _showUpgradeVaultSheet(context, strings, tokens);
+                        }
+                      },
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -1686,9 +1707,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       Text(
                         subtitle,
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 12.5,
                           color: tokens.ink2,
-                          height: 1.3,
+                          height: 1.35,
                         ),
                       ),
                     ],
@@ -1714,9 +1735,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             maxLines: 1,
                             softWrap: false,
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              letterSpacing: 0.3,
                               color: tokens.ink,
                             ),
                           ),
@@ -2089,12 +2109,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Padding(
       padding: const EdgeInsetsDirectional.only(bottom: 8, start: 4),
       child: Text(
-        title.toUpperCase(),
+        title,
         style: TextStyle(
-          fontSize: 11.5,
-          fontWeight: FontWeight.w800,
+          fontSize: 13.5,
+          fontWeight: FontWeight.w700,
           color: tokens.ink2,
-          letterSpacing: 1.0,
         ),
       ),
     );

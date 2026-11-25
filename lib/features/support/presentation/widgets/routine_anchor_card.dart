@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/localization/app_strings.dart';
 import '../../../../app/theme/mind_tokens.dart';
+import '../../../../core/widgets/mind_toast.dart';
 import '../../../journey/controllers/journey_controller.dart';
 
 /// Low-pressure routine anchor card:
@@ -296,19 +297,7 @@ class _RoutineAnchorCardState extends ConsumerState<RoutineAnchorCard> {
                         category: 'Daily Routine Anchor',
                       );
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          isAr
-                              ? 'تم حفظ نقطة التوازن في اكتشافاتك'
-                              : (isFr
-                                    ? 'Repère enregistré dans vos découvertes'
-                                    : 'Routine anchor saved to Discoveries'),
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
+                    showMindToast(context, strings.savedToHelpfulToast);
                   }
                 },
                 icon: const Icon(Icons.bookmark_add_outlined, size: 14),

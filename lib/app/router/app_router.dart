@@ -65,6 +65,8 @@ class AppRouter {
 
       final prefs = await SharedPreferences.getInstance();
       final hasCompleted = prefs.getBool('mf_onboarding_completed') ?? false;
+      final preferredWorkspace =
+          prefs.getString('mf_preferred_workspace') ?? 'patient';
 
       final isGoingToOnboarding = state.matchedLocation == onboarding;
       final isGoingToAuth = state.matchedLocation == auth;
@@ -78,7 +80,10 @@ class AppRouter {
       } else {
         // Completed returning users stay away from onboarding
         if (isGoingToOnboarding) {
-          return home;
+          return preferredWorkspace == 'clinician' ? clinician : home;
+        }
+        if (state.matchedLocation == home && preferredWorkspace == 'clinician') {
+          return clinician;
         }
       }
       return null;

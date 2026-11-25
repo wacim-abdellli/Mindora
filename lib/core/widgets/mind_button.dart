@@ -42,16 +42,16 @@ class MindButton extends StatelessWidget {
 
     switch (variant) {
       case MindButtonVariant.primary:
-        bg = tokens.ink;
-        fg = tokens.bg;
+        bg = tokens.primary;
+        fg = tokens.onPrimary;
         border = Colors.transparent;
         borderWidth = 1.0;
         shadows = enabled ? tokens.primaryButtonShadows : const [];
       case MindButtonVariant.secondary:
         bg = tokens.surface;
         fg = tokens.ink;
-        border = tokens.line;
-        borderWidth = 1.0;
+        border = tokens.lineStrong;
+        borderWidth = 1.2;
         shadows = const [];
       case MindButtonVariant.soft:
         bg = tokens.softButtonBg;
@@ -62,13 +62,13 @@ class MindButton extends StatelessWidget {
       case MindButtonVariant.ghost:
         bg = Colors.transparent;
         fg = tokens.ink;
-        border = tokens.line;
+        border = tokens.lineStrong;
         borderWidth = 1.5;
         shadows = const [];
       case MindButtonVariant.danger:
-        bg = tokens.safetySoft;
-        fg = tokens.safety;
-        border = tokens.dangerBorder;
+        bg = tokens.safety;
+        fg = tokens.isDark ? tokens.bg : MindTokens.pureWhiteConstant;
+        border = Colors.transparent;
         borderWidth = 1.0;
         shadows = const [];
     }
@@ -108,9 +108,9 @@ class MindButton extends StatelessWidget {
                   fontFamily: LabTheme.fontFamily,
                   fontFamilyFallback: LabTheme.fontFallback,
                   color: effectiveFg,
-                  fontSize: 13.5,
+                  fontSize: 15.5,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: -0.2,
+                  letterSpacing: -0.1,
                 ),
               ),
               if (subText != null)
@@ -122,8 +122,8 @@ class MindButton extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: LabTheme.fontFamily,
                     fontFamilyFallback: LabTheme.fontFallback,
-                    color: effectiveFg.withValues(alpha: 0.78),
-                    fontSize: 11,
+                    color: effectiveFg.withValues(alpha: 0.84),
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -132,14 +132,14 @@ class MindButton extends StatelessWidget {
         ),
         if (trailingIcon != null && !isLoading) ...[
           const SizedBox(width: 8),
-          Icon(trailingIcon, size: 17, color: effectiveFg),
+          Icon(trailingIcon, size: 18, color: effectiveFg),
         ],
       ],
     );
 
     return ConstrainedBox(
       constraints: BoxConstraints(
-        minHeight: 48,
+        minHeight: variant == MindButtonVariant.primary ? 56 : 48,
         minWidth: isFullWidth ? double.infinity : 48,
       ),
       child: MindPressable(

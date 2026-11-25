@@ -4,20 +4,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/localization/app_strings.dart';
+import '../../app/theme/lab_theme.dart';
 import '../../app/theme/mind_tokens.dart';
 import '../widgets/mind_pressable.dart';
+import '../widgets/mind_toast.dart';
 import 'safety_model.dart';
 
-/// Persistent, low-noise one-tap safety shield reachable from every mode.
+/// Persistent, high-contrast one-tap safety shield reachable from every tab.
 class SupportButton extends ConsumerWidget {
   const SupportButton({super.key, this.compact = false});
 
-  /// Retained for caller compatibility; [SupportButton] always renders a calm
-  /// icon-only 48x48dp shield badge without intrusive navigation banner copy.
   final bool compact;
 
   void _openSupportSheet(BuildContext context) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -42,19 +42,19 @@ class SupportButton extends ConsumerWidget {
           height: 48,
           child: Center(
             child: Container(
-              width: 38,
-              height: 38,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: tokens.safetySoft,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: tokens.safety.withValues(alpha: 0.35),
-                  width: 1.0,
+                  color: tokens.safety.withValues(alpha: 0.38),
+                  width: 1.2,
                 ),
               ),
               child: Icon(
                 Icons.shield_outlined,
-                size: 19,
+                size: 20,
                 color: tokens.safety,
               ),
             ),
@@ -65,14 +65,14 @@ class SupportButton extends ConsumerWidget {
   }
 }
 
-/// The modal bottom sheet presenting Tunisian crisis and supportive resources.
+/// Modal bottom sheet presenting Tunisian crisis & supportive resources
+/// (`80 10 50 50`, `190`, `198`) with >= 48dp 1-tap call buttons.
 class SupportModalSheet extends ConsumerWidget {
   const SupportModalSheet({super.key});
 
-  /// Static entry point to display the support crisis sheet from any context.
   static Future<void> show(BuildContext context) {
     HapticFeedback.lightImpact();
-    return showModalBottomSheet(
+    return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -98,14 +98,7 @@ class SupportModalSheet extends ConsumerWidget {
     if (!launched) {
       await Clipboard.setData(ClipboardData(text: _formatPhone(phone)));
       if (context.mounted) {
-        final msg = strings.isArabic
-            ? 'تعذر فتح الاتصال — تم نسخ الرقم: ${_formatPhone(phone)}'
-            : (strings.isFrench
-                ? 'Appel indisponible — numéro copié : ${_formatPhone(phone)}'
-                : 'Dialer unavailable — number copied: ${_formatPhone(phone)}');
-        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-          SnackBar(content: Text(msg)),
-        );
+        showMindToast(context, strings.dialerCopiedToast(_formatPhone(phone)));
       }
     }
   }
@@ -127,14 +120,7 @@ class SupportModalSheet extends ConsumerWidget {
     if (!launched) {
       await Clipboard.setData(ClipboardData(text: url));
       if (context.mounted) {
-        final msg = strings.isArabic
-            ? 'تم نسخ الرابط: $url'
-            : (strings.isFrench
-                ? 'Lien copié : $url'
-                : 'Link copied: $url');
-        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-          SnackBar(content: Text(msg)),
-        );
+        showMindToast(context, strings.linkCopiedToast(url));
       }
     }
   }
@@ -150,164 +136,181 @@ class SupportModalSheet extends ConsumerWidget {
     final strings = ref.watch(appStringsProvider);
     final resources = CrisisResource.tunisianResources;
 
-    final sheetBg = tokens.surface;
-    final cardBg = tokens.surface2;
-    final borderColor = tokens.line;
-    final textPrimary = tokens.ink;
-    final textSecondary = tokens.ink2;
-
     return SafeArea(
       child: Container(
         decoration: BoxDecoration(
-          color: sheetBg,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(tokens.sheetRadius)),
-          border: Border.all(color: borderColor, width: 1),
+          color: tokens.surface,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(tokens.sheetRadius),
+          ),
+          border: Border.all(color: tokens.line, width: 1),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(
-                  color: tokens.safetySoft,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Icon(Icons.shield_outlined,
-                    color: tokens.safety, size: 18),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      strings.supportModalTitle,
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5, color: textPrimary),
-                    ),
-                    Text(
-                      strings.supportModalSub,
-                      style: TextStyle(fontSize: 11.5, color: textSecondary),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                icon: Icon(Icons.close, size: 18, color: textSecondary),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            strings.supportModalBody,
-            style: TextStyle(
-              fontSize: 12.5,
-              color: textSecondary,
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Flexible(
-            child: ListView.separated(
-              shrinkWrap: true,
-              itemCount: resources.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
-              itemBuilder: (ctx, index) {
-                final res = resources[index];
-                final hasPhone = res.phone.isNotEmpty;
-
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
-                    color: cardBg,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: borderColor, width: 1),
+                    color: tokens.safetySoft,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Row(
+                  child: Icon(
+                    Icons.shield_outlined,
+                    color: tokens.safety,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              res.localizedName(strings),
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13,
-                                color: textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              res.localizedDescription(strings),
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                color: textSecondary,
-                              ),
-                            ),
-                            if (res.isTollFree) ...[
-                              const SizedBox(height: 2),
+                      Text(
+                        strings.supportModalTitle,
+                        style: LabTheme.textStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 17,
+                          color: tokens.ink,
+                        ),
+                      ),
+                      Text(
+                        strings.supportModalSub,
+                        style: LabTheme.textStyle(
+                          fontSize: 13.0,
+                          color: tokens.ink2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                  icon: Icon(Icons.close_rounded, size: 22, color: tokens.ink2),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              strings.supportModalBody,
+              style: LabTheme.textStyle(
+                fontSize: 14.5,
+                color: tokens.ink2,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Flexible(
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: resources.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 10),
+                itemBuilder: (ctx, index) {
+                  final res = resources[index];
+                  final hasPhone = res.phone.isNotEmpty;
+
+                  return Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: tokens.surface2,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: tokens.line, width: 1),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Text(
-                                strings.isArabic
-                                    ? 'مجاني 24/7'
-                                    : (strings.isFrench
-                                        ? 'Gratuit 24/7'
-                                        : 'Toll-free 24/7'),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: tokens.m1,
-                                  fontWeight: FontWeight.w600,
+                                res.localizedName(strings),
+                                style: LabTheme.textStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                  color: tokens.ink,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                res.localizedDescription(strings),
+                                style: LabTheme.textStyle(
+                                  fontSize: 13.0,
+                                  height: 1.35,
+                                  color: tokens.ink2,
                                 ),
                               ),
                             ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      if (hasPhone)
-                        FilledButton.icon(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: tokens.safety,
-                            foregroundColor: tokens.bg,
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          icon: const Icon(Icons.phone_outlined, size: 14),
-                          label: Text(
-                            _formatPhone(res.phone),
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11),
-                          ),
-                          onPressed: () => _makeCall(context, strings, res.phone),
-                        )
-                      else if (res.website != null)
-                        OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: borderColor),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                          ),
-                          onPressed: () => _openWeb(context, strings, res.website!),
-                          child: Text(
-                            strings.isArabic
-                                ? 'معلومات'
-                                : (strings.isFrench ? 'INFO' : 'INFO'),
-                            style: TextStyle(color: textPrimary, fontSize: 11, fontWeight: FontWeight.w700),
                           ),
                         ),
-                    ],
-                  ),
-                );
-              },
+                        const SizedBox(width: 10),
+                        if (hasPhone)
+                          FilledButton.icon(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: tokens.safety,
+                              foregroundColor: tokens.isDark
+                                  ? tokens.bg
+                                  : MindTokens.pureWhiteConstant,
+                              minimumSize: const Size(48, 48),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            icon: const Icon(Icons.phone_outlined, size: 16),
+                            label: Text(
+                              _formatPhone(res.phone),
+                              style: LabTheme.textStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13.5,
+                                color: tokens.isDark
+                                    ? tokens.bg
+                                    : MindTokens.pureWhiteConstant,
+                              ),
+                            ),
+                            onPressed: () =>
+                                _makeCall(context, strings, res.phone),
+                          )
+                        else if (res.website != null)
+                          OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: tokens.lineStrong),
+                              minimumSize: const Size(48, 48),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            onPressed: () =>
+                                _openWeb(context, strings, res.website!),
+                            child: Text(
+                              strings.infoBadge,
+                              style: LabTheme.textStyle(
+                                color: tokens.ink,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

@@ -14,7 +14,7 @@ import 'package:mind_forensics/features/insights/domain/personal_baseline_model.
 import 'package:mind_forensics/features/insights/presentation/insights_screen.dart';
 import 'package:mind_forensics/features/mind_trace/controllers/mind_trace_controller.dart';
 import 'package:mind_forensics/features/mind_trace/domain/mind_trace_model.dart';
-import 'package:mind_forensics/features/track/presentation/track_screen.dart';
+import 'package:mind_forensics/features/track/presentation/widgets/progressive_details_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -153,27 +153,45 @@ void main() {
     );
 
     testWidgets(
-      '4. TrackScreen saves contextTags -> InsightsScreen & ClinicianPatientDetailScreen render links cleanly (incl. 320px AR RTL)',
+      '4. ProgressiveDetailsSheet saves contextTags -> InsightsScreen & ClinicianPatientDetailScreen render links cleanly (incl. 320px AR RTL)',
       (tester) async {
         final container = ProviderContainer();
         addTearDown(container.dispose);
 
-        await container.read(mindTraceControllerProvider.future);
+        final now = DateTime.now();
+        final baseTrace = MindTraceModel(
+          id: 'ctx_trace_1',
+          date: now,
+          overallMood: 'calm',
+          moodIntensity: 4,
+          createdAt: now,
+          updatedAt: now,
+        );
+        await container
+            .read(mindTraceControllerProvider.notifier)
+            .recordCheckIn(baseTrace, generateAi: false);
 
         await tester.pumpWidget(
           UncontrolledProviderScope(
             container: container,
             child: MaterialApp(
               theme: buildMindTheme(Brightness.dark),
-              home: const Scaffold(body: TrackScreen()),
+              home: Scaffold(
+                body: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: ProgressiveDetailsSheet(trace: baseTrace),
+                ),
+              ),
             ),
           ),
         );
         await tester.pumpAndSettle();
 
-        // Expand Optional Context card & select Daily Context Tags
-        await tester.ensureVisible(find.text('Add context (optional)'));
-        await tester.tap(find.text('Add context (optional)'));
+        const enStrings = AppStrings('en');
+        // Card 1 (Nuance) -> Skip, Card 2 (Sleep/Energy) -> Skip -> Card 3 (Context)
+        await tester.tap(find.text(enStrings.skipBtn));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(enStrings.skipBtn));
         await tester.pumpAndSettle();
 
         await tester.ensureVisible(find.text('Regular sleep'));
@@ -184,8 +202,8 @@ void main() {
         await tester.tap(find.text('Physical movement'));
         await tester.pumpAndSettle();
 
-        await tester.ensureVisible(find.text('Save Check-In'));
-        await tester.tap(find.text('Save Check-In'));
+        await tester.ensureVisible(find.text(enStrings.doneBtn));
+        await tester.tap(find.text(enStrings.doneBtn));
         await tester.pumpAndSettle();
 
         final saved = container.read(todayTraceProvider);
@@ -195,7 +213,7 @@ void main() {
           containsAll(['sleep_consistent', 'physical_movement']),
         );
 
-        // Render InsightsScreen and verify Daily Context & Routine Links card
+        // Render InsightsScreen and expand See more details to verify Daily Context & Routine Links card
         await tester.pumpWidget(
           UncontrolledProviderScope(
             container: container,
@@ -205,6 +223,13 @@ void main() {
             ),
           ),
         );
+        await tester.pumpAndSettle();
+
+        final moreBtn = find.byKey(
+          const ValueKey<String>('patterns-more-details-btn'),
+        );
+        await tester.ensureVisible(moreBtn);
+        await tester.tap(moreBtn);
         await tester.pumpAndSettle();
 
         await tester.scrollUntilVisible(

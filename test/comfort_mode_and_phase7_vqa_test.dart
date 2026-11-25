@@ -14,7 +14,7 @@ import 'package:mind_forensics/app/theme/display_comfort_controller.dart';
 import 'package:mind_forensics/app/theme/lab_theme.dart';
 import 'package:mind_forensics/app/theme/mind_tokens.dart';
 import 'package:mind_forensics/core/security/secure_key_manager.dart';
-import 'package:mind_forensics/core/widgets/quick_note_sparks_bar.dart';
+import 'package:mind_forensics/core/widgets/mood_face.dart';
 import 'package:mind_forensics/features/home/presentation/home_screen.dart';
 import 'package:mind_forensics/features/insights/domain/discovery_milestones_model.dart';
 import 'package:mind_forensics/features/insights/domain/recovery_ledger_model.dart';
@@ -185,9 +185,9 @@ void main() {
       final lightComfort = MindTokens.light.withComfortBoost(true);
       final darkComfort = MindTokens.dark.withComfortBoost(true);
 
-      expect(darkComfort.bg, equals(const Color(0xFF000000)));
-      expect(darkComfort.surface, equals(const Color(0xFF0A0A0A)));
-      expect(lightComfort.bg, equals(const Color(0xFFF5F6FA)));
+      expect(darkComfort.bg, equals(const Color(0xFF09090B)));
+      expect(darkComfort.surface, equals(const Color(0xFF111114)));
+      expect(lightComfort.bg, equals(const Color(0xFFFAF9F6)));
 
       for (final tokens in [lightComfort, darkComfort]) {
         for (final surface in [tokens.bg, tokens.surface, tokens.surface2]) {
@@ -230,13 +230,13 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        final ctxOff = tester.element(find.text('Home'));
+        final ctxOff = tester.element(find.text('Today'));
         expect(MediaQuery.textScalerOf(ctxOff).scale(10.0), closeTo(10.0, 0.05));
 
         await container.read(displayComfortProvider.notifier).setComfortMode(true);
         await tester.pumpAndSettle();
 
-        final ctxOn = tester.element(find.text('Home'));
+        final ctxOn = tester.element(find.text('Today'));
         final scaled = MediaQuery.textScalerOf(ctxOn).scale(10.0);
         expect(scaled, closeTo(11.5, 0.05));
         expect(scaled, inInclusiveRange(8.5, 13.5));
@@ -245,7 +245,7 @@ void main() {
         tester.platformDispatcher.textScaleFactorTestValue = 3.0;
         addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
         await tester.pumpAndSettle();
-        final ctxClamped = tester.element(find.text('Home'));
+        final ctxClamped = tester.element(find.text('Today'));
         expect(
           MediaQuery.textScalerOf(ctxClamped).scale(10.0),
           inInclusiveRange(8.5, 13.5),
@@ -307,7 +307,7 @@ void main() {
 
   group('Phase 7 Visual Quality Assurance Showcase (5 Real-Font Captures)', () {
     testWidgets(
-      '1. Home Tactile Mood Orb & Quick Note Sparks (412x915 Dark EN)',
+      '1. Home Check-In & Clinical Daily Pulse (412x915 Dark EN)',
       (tester) async {
         tester.view.physicalSize = const Size(824, 1830);
         tester.view.devicePixelRatio = 2.0;
@@ -332,9 +332,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(find.byType(QuickNoteSparksBar), findsOneWidget);
-        await tester.tap(find.byType(TextField).first);
-        await tester.pump(const Duration(milliseconds: 100));
+        expect(find.byType(MoodFace), findsWidgets);
 
         await capturePng(
           tester,
@@ -346,7 +344,7 @@ void main() {
     );
 
     testWidgets(
-      '2. TrackScreen 48x48 Somatic Steppers & Sleep Presets (412x1050 Dawn Light EN)',
+      '2. TrackScreen Vivid Month Calendar & + Log new moment Sheet (412x1050 Dawn Light EN)',
       (tester) async {
         tester.view.physicalSize = const Size(824, 2100);
         tester.view.devicePixelRatio = 2.0;
@@ -371,13 +369,10 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        await tester.ensureVisible(find.text('Add context (optional)'));
-        await tester.tap(find.text('Add context (optional)'));
-        await tester.pumpAndSettle();
-
         await tester.ensureVisible(
-          find.byKey(const ValueKey<String>('energy_inc')),
+          find.text(const AppStrings('en').logNewMomentLink),
         );
+        await tester.tap(find.text(const AppStrings('en').logNewMomentLink));
         await tester.pumpAndSettle();
 
         await capturePng(
@@ -438,6 +433,13 @@ void main() {
         await tester.pumpAndSettle();
 
         const enStrings = AppStrings('en');
+        final moreBtn = find.byKey(
+          const ValueKey<String>('patterns-more-details-btn'),
+        );
+        await tester.ensureVisible(moreBtn);
+        await tester.tap(moreBtn);
+        await tester.pumpAndSettle();
+
         final scrollable = find.byType(Scrollable).first;
         await tester.scrollUntilVisible(
           find.text(enStrings.discoveryMilestonesTitle),

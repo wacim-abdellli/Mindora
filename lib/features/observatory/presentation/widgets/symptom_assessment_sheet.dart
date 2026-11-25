@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/localization/app_strings.dart';
 import '../../../../app/theme/mind_tokens.dart';
+import '../../../../core/widgets/mind_toast.dart';
 import '../../../insights/data/pattern_awareness_service.dart';
 import '../../../profile/controllers/profile_controller.dart';
 import '../../../support/presentation/contextual_support_sheet.dart';
@@ -109,20 +110,9 @@ class _SymptomAssessmentSheetState extends ConsumerState<SymptomAssessmentSheet>
     ref.read(selectedSymptomIdsProvider.notifier).clear();
 
     if (mounted) {
-      final tokens = context.tokens;
+      final strings = ref.read(appStringsProvider);
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: tokens.surface,
-          content: Text(
-            ref.read(appStringsProvider).isArabic
-                ? 'تم تسجيل تقرير الأعراض في أرشيف المرصد'
-                : 'Symptom report recorded in Observatory archive',
-            style: TextStyle(color: tokens.ink, fontSize: 12.5),
-          ),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      showMindToast(context, strings.symptomLoggedToast);
     }
   }
 

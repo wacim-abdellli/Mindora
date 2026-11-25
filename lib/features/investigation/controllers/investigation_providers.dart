@@ -3,9 +3,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../app/localization/app_strings.dart';
+import '../../../core/safety/crisis_keywords.dart';
 import '../../../core/security/secure_key_manager.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../journal/controllers/journal_memory_controller.dart';
+import '../../journey/domain/journey_state_model.dart';
+import '../../mind_trace/domain/mind_trace_model.dart';
 import '../../profile/controllers/profile_controller.dart';
 import '../data/direct_gemini_investigator_service.dart';
 import '../data/direct_groq_investigator_service.dart';
@@ -587,7 +590,20 @@ class ActiveCaseController extends Notifier<AsyncValue<CaseModel?>> {
       );
     }
 
+    final trimmedText = text.trim();
+    final shouldBackfillIncident =
+        speaker == StatementSpeaker.user &&
+        !isSafetyStatement &&
+        current.incidentDescription.trim().isEmpty &&
+        trimmedText.isNotEmpty;
+
     final updated = current.copyWith(
+      incidentDescription: shouldBackfillIncident ? trimmedText : current.incidentDescription,
+      title: shouldBackfillIncident
+          ? (trimmedText.length > 32
+                ? '${trimmedText.substring(0, 32)}...'
+                : trimmedText)
+          : current.title,
       statements: updatedStatements,
       sessionSummary: newSummary,
       updatedAt: DateTime.now(),
@@ -681,6 +697,123 @@ class ActiveCaseController extends Notifier<AsyncValue<CaseModel?>> {
     ref.invalidate(savedCasesProvider);
   }
 
+  /// Bookmarks a helpful takeaway from an ongoing chat without completing or
+  /// closing the conversation.
+  Future<void> bookmarkTakeaway(String takeaway) async {
+    final current = state.value;
+    if (current == null) return;
+    final trimmed = takeaway.trim();
+    if (trimmed.isEmpty) return;
+
+    final updated = current.copyWith(
+      findingsSummary: trimmed,
+      userConclusion: trimmed,
+      updatedAt: DateTime.now(),
+    );
+
+    await ref.read(caseRepositoryProvider).saveCase(updated);
+    state = AsyncValue.data(updated);
+    ref.invalidate(savedCasesProvider);
+  }
+
+  /// Sends a user statement, enforces offline Level-2 crisis gating, and
+  /// generates + persists the AI reply inside the provider lifecycle so switching
+  /// tabs never drops a response.
+  ///
+  /// Returns `true` if normal reply generation ran, or `false` if intercepted by
+  /// Level-2 safety pause or empty/paused state.
+  Future<bool> sendMessageAndGenerateReply(
+    String text, {
+    LabelType? label,
+    MindTraceModel? latestTrace,
+    List<MindTraceModel>? historicalTraces,
+    JourneyStateModel? journey,
+    Future<void> Function()? onLevel2Crisis,
+  }) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return false;
+
+    final initial = state.value;
+    if (initial == null || initial.isPausedForSafety) return false;
+
+    final safetyLevel = CrisisKeywords.evaluateText(trimmed);
+    if (safetyLevel == 2) {
+      await addStatement(
+        trimmed,
+        StatementSpeaker.user,
+        label: label ?? LabelType.assumption,
+        isSafetyStatement: true,
+      );
+      final pausePersisted = await pauseCaseForSafety();
+      if (!pausePersisted) return false;
+      if (onLevel2Crisis != null) {
+        await onLevel2Crisis();
+      }
+      return false;
+    }
+
+    await addStatement(
+      trimmed,
+      StatementSpeaker.user,
+      label: label ?? LabelType.assumption,
+    );
+
+    final active = state.value;
+    if (active == null || active.isPausedForSafety) return false;
+
+    ref.read(aiRuntimeNoticeProvider.notifier).clear();
+    ref.read(companionReplyPendingProvider.notifier).setPending(true);
+    try {
+      final profile = ref.read(profileControllerProvider).value;
+      final includePast = profile?.shareWithAiCompanion ?? false;
+      final langCode = ref.read(appStringsProvider).languageCode;
+      final service = ref.read(investigatorServiceProvider);
+      final memories = ref.read(journalMemoryControllerProvider).value ?? [];
+      final window = SessionMemoryWindowManager.partition(active.statements);
+
+      String reply;
+      try {
+        reply = await service.getNextQuestion(
+          currentCase: active,
+          conversationHistory: window.verbatimStatements,
+          includePastCaseSummaries: includePast,
+          languageCode: langCode,
+          profile: profile,
+          journey: journey,
+          conversationMode: active.conversationMode,
+          latestTrace: latestTrace,
+          historicalTraces: historicalTraces,
+          compressedMemories: memories,
+          sessionSummary: window.sessionSummary ?? active.sessionSummary,
+        );
+      } catch (_) {
+        ref
+            .read(aiRuntimeNoticeProvider.notifier)
+            .report(AiFallbackReason.offlineOrNetwork);
+        reply = await MockInvestigatorService().getNextQuestion(
+          currentCase: active,
+          conversationHistory: window.verbatimStatements,
+          includePastCaseSummaries: includePast,
+          languageCode: langCode,
+          profile: profile,
+          journey: journey,
+          conversationMode: active.conversationMode,
+          latestTrace: latestTrace,
+          historicalTraces: historicalTraces,
+          compressedMemories: memories,
+          sessionSummary: window.sessionSummary ?? active.sessionSummary,
+        );
+      }
+
+      if (state.value?.id == active.id && reply.trim().isNotEmpty) {
+        await addStatement(reply, StatementSpeaker.investigator);
+      }
+      return true;
+    } finally {
+      ref.read(companionReplyPendingProvider.notifier).setPending(false);
+    }
+  }
+
   /// Generates the initial companion reply when a conversation starts from a
   /// starter prompt or mood handoff. Runs safely inside the provider lifecycle
   /// with MockInvestigatorService fallback so widget unmounts cannot drop the reply.
@@ -703,7 +836,7 @@ class ActiveCaseController extends Notifier<AsyncValue<CaseModel?>> {
           conversationHistory: current.statements,
           includePastCaseSummaries: includeProfile,
           languageCode: langCode,
-          profile: includeProfile ? profile : null,
+          profile: profile,
           conversationMode: current.conversationMode,
           sessionSummary: current.sessionSummary,
         );
@@ -716,7 +849,7 @@ class ActiveCaseController extends Notifier<AsyncValue<CaseModel?>> {
           conversationHistory: current.statements,
           includePastCaseSummaries: includeProfile,
           languageCode: langCode,
-          profile: includeProfile ? profile : null,
+          profile: profile,
           conversationMode: current.conversationMode,
           sessionSummary: current.sessionSummary,
         );

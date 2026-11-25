@@ -67,24 +67,24 @@ class QuickNoteSparksBar extends StatelessWidget {
               strings.quickSparksLabel,
               style: TextStyle(
                 fontFamily: 'Inter',
-                fontSize: 11,
+                fontSize: 12.5,
                 fontWeight: FontWeight.w600,
-                color: tokens.ink3,
+                color: tokens.ink2,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
                   for (int i = 0; i < sparks.length; i++) ...[
-                    if (i > 0) const SizedBox(width: 6),
+                    if (i > 0) const SizedBox(width: 8),
                     MindPill(
                       label: sparks[i],
-                      fontSize: 11.5,
+                      fontSize: 13.0,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 11,
-                        vertical: 5,
+                        horizontal: 14,
+                        vertical: 8,
                       ),
                       isSelected: activeLower.contains(sparks[i].toLowerCase()),
                       onTap: () => _toggleSpark(sparks[i]),

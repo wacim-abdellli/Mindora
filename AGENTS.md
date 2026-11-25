@@ -44,12 +44,10 @@ Welcome to the **Mindora** codebase. This file provides immediate operational ru
    - Copying text from other apps or books;
    - NO EMOJIS IN UI (Widgets, buttons, bottom sheets, badges).
 
-6. **LUXURY VERCEL DARK PALETTE:**
-   - Ground level background: `#000000` (Pure pitch black).
-   - Surface level 1: `#0A0A0A` with 1.0px hairline borders (`#222222`).
-   - Secondary accents: Cherry Red (`#E11D48`), Warm Beige (`#E7D8C9`), Sage Green (`#34D399`).
-   - Primary action buttons: Stark white background (`#FFFFFF`) with black text (`#000000`).
-   - Corner radii: Strict `8.0px`–`10.0px`.
+6. **CRISP CROSS-GENERATIONAL VERCEL + DAYLIGHT PALETTE (ZERO PURPLE, ZERO `#000000`):**
+   - Fresh-install default theme: **`Warm Alabaster` Daylight (`ThemeMode.light`)** — ground `#FAF9F6`, cards `#FFFFFF`, soft wells `#F3F1EC`, carbon ink `#111114` (`17.8:1`), crisp Vercel carbon primary `#111114` (`#FFFFFF` onPrimary), clean teal focus `#0D9488`, and 6 vivid mood accents (`Good #FFC93C`, `Calm #2DD4BF`, `Worried #38BDF8`, `Annoyed #FF7A59`, `Low #94A3B8`, `Restless #FBBF24`).
+   - Optional Night theme: **`Vercel Obsidian` Dark (`ThemeMode.dark`)** — ground `#09090B`, cards `#111114`, soft wells `#18181C`, pure crisp ink `#FAFAFA` (`18.1:1`), pure white primary CTA `#FAFAFA` (`#09090B` onPrimary), zero purple anywhere, never `#000000` pure pitch-black surfaces.
+   - Touch targets & typography: Primary buttons `>= 56dp` (`>= 48dp` everywhere else), body `16sp` (`18.5sp` Larger Text), hard minimum font floor `12.0sp`, sentence case only, friendly rounded cards (`20–24dp` radius).
 
 7. **TRILINGUAL LOCALIZATION (AR / FR / EN):**
    - Every user-facing string must be referenced via `ref.watch(appStringsProvider)` from `app_strings.dart`.

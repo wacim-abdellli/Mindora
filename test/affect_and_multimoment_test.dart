@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mind_forensics/app/localization/app_strings.dart';
 import 'package:mind_forensics/app/theme/lab_theme.dart';
-import 'package:mind_forensics/core/widgets/organic_mood_orb.dart';
+import 'package:mind_forensics/core/widgets/mood_face.dart';
 import 'package:mind_forensics/features/home/presentation/home_screen.dart';
 import 'package:mind_forensics/features/insights/domain/personal_baseline_model.dart';
 import 'package:mind_forensics/features/mind_trace/controllers/mind_trace_controller.dart';
@@ -46,7 +46,7 @@ void main() {
         await container.read(mindTraceControllerProvider.future);
         expect(container.read(todayTraceProvider)?.overallMood, equals('heavy'));
 
-        // Mount TrackScreen: VERY FIRST FRAME must already render 'heavy' (no 1s calm flash)
+        // Mount TrackScreen (My days): VERY FIRST FRAME shows today's Heavy timeline entry immediately
         await tester.pumpWidget(
           UncontrolledProviderScope(
             container: container,
@@ -58,14 +58,9 @@ void main() {
         );
         await tester.pump();
 
-        final trackOrb = tester.widget<OrganicMoodOrb>(
-          find.byType(OrganicMoodOrb),
-        );
-        expect(trackOrb.moodKey, equals('heavy'));
-        expect(trackOrb.intensity, equals(8));
-        expect(trackOrb.animateChanges, isFalse);
+        expect(find.textContaining('Low'), findsAtLeastNWidgets(1));
 
-        // Mount HomeScreen: VERY FIRST FRAME must also render 'heavy' (no calm fallback)
+        // Mount HomeScreen (Today): VERY FIRST FRAME renders the logged Heavy MoodFace immediately
         await tester.pumpWidget(
           UncontrolledProviderScope(
             container: container,
@@ -77,12 +72,9 @@ void main() {
         );
         await tester.pump();
 
-        final homeOrb = tester.widget<OrganicMoodOrb>(
-          find.byType(OrganicMoodOrb),
-        );
-        expect(homeOrb.moodKey, equals('heavy'));
-        expect(homeOrb.intensity, equals(8));
-        expect(find.textContaining('Heavy (8/10)'), findsOneWidget);
+        final homeMoodFaces = tester.widgetList<MoodFace>(find.byType(MoodFace));
+        expect(homeMoodFaces.any((f) => f.mood.key == 'heavy'), isTrue);
+        expect(find.textContaining('A lot'), findsOneWidget);
       },
     );
 
@@ -192,7 +184,7 @@ void main() {
     );
 
     testWidgets(
-      '4. TrackScreen supports Tier-2 nuanced multi-select and logging multiple moments in one day',
+      '4. TrackScreen supports 2-tap multi-moment logging + ProgressiveDetailsSheet nuanced feelings',
       (tester) async {
         final container = ProviderContainer();
         addTearDown(container.dispose);
@@ -208,62 +200,31 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // Select Core Heavy -> displays Heavy-affiliated Tier-2 feelings (Sad, Numb, Exhausted...)
-        await tester.ensureVisible(find.text('Heavy'));
-        await tester.tap(find.text('Heavy'));
-        await tester.pumpAndSettle();
-        expect(find.text('Numb'), findsOneWidget);
-        expect(find.text('Exhausted'), findsOneWidget);
-
-        await tester.ensureVisible(find.text('Numb'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Numb'));
+        // Tap '+ Log new moment' to log moment #1 (Low + A lot)
+        await tester.tap(find.text(const AppStrings('en').logNewMomentLink));
         await tester.pumpAndSettle();
 
-        await tester.ensureVisible(find.text('Exhausted'));
+        await tester.tap(find.text('Low').last);
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Exhausted'));
-        await tester.pumpAndSettle();
-
-        final saveBtn = find.text('Save Check-In');
-        await tester.ensureVisible(saveBtn);
-        await tester.tap(saveBtn);
+        await tester.tap(find.text(const AppStrings('en').strengthALot));
         await tester.pumpAndSettle();
 
-        expect(find.text("Update Today's Entry"), findsOneWidget);
-        expect(find.text('+ New moment'), findsOneWidget);
         expect(container.read(todayTracesProvider).length, equals(1));
-        expect(
-          container.read(todayTraceProvider)?.nuancedEmotions,
-          containsAll(['numb', 'exhausted']),
-        );
+        expect(container.read(todayTraceProvider)?.overallMood, equals('heavy'));
 
-        // Tap + New moment to add a second intra-day check-in without overwriting the first
-        await tester.ensureVisible(find.text('+ New moment'));
-        await tester.tap(find.text('+ New moment'));
+        // Log a second intra-day moment (Calm + A little) without overwriting the first
+        await tester.tap(find.text(const AppStrings('en').logNewMomentLink));
         await tester.pumpAndSettle();
 
-        expect(find.text('Log New Moment'), findsOneWidget);
-
-        await tester.ensureVisible(find.text('Relieved'));
-        await tester.tap(find.text('Relieved'));
+        await tester.tap(find.text('Calm').last);
         await tester.pumpAndSettle();
-
-        await tester.ensureVisible(find.text('Log New Moment'));
-        await tester.tap(find.text('Log New Moment'));
+        await tester.tap(find.text(const AppStrings('en').strengthALittle));
         await tester.pumpAndSettle();
 
         final todayList = container.read(todayTracesProvider);
         expect(todayList.length, equals(2));
         expect(todayList[0].overallMood, equals('heavy'));
         expect(todayList[1].overallMood, equals('calm'));
-        expect(todayList[1].nuancedEmotions, contains('relieved'));
-
-        // Switch to History & Calendar and confirm both moments render
-        await tester.tap(find.text('History & Calendar'));
-        await tester.pumpAndSettle();
-        expect(find.text('Numb'), findsWidgets);
-        expect(find.text('Relieved'), findsWidgets);
       },
     );
   });

@@ -68,10 +68,11 @@ void main() {
           findsNothing,
         );
 
-        // Start then pause breathing
-        await tester.tap(find.text('Begin 4-4-4-4 Breathing'));
+        // Start then stop breathing
+        final strings = const AppStrings('en');
+        await tester.tap(find.text(strings.breatheQuickBtn));
         await tester.pump();
-        await tester.tap(find.text('Pause Exercise'));
+        await tester.tap(find.text(strings.stopBtn));
         await tester.pumpAndSettle();
 
         expect(

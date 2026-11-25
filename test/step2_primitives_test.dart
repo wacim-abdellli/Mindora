@@ -194,31 +194,36 @@ void main() {
       }
     });
 
-    testWidgets('AmbientScaffold renders top mood glow in Dawn and omits it in Vercel Dark', (
+    testWidgets('AmbientScaffold renders top mood glow in both Sunrise Light and Twilight Dark', (
       tester,
     ) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildMindTheme(Brightness.light),
-          home: const AmbientScaffold(body: Text('DawnBody')),
+          home: const AmbientScaffold(body: Text('SunriseBody')),
         ),
       );
-      expect(find.byType(DecoratedBox), findsWidgets);
-
-      await tester.pumpWidget(Container());
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: buildMindTheme(Brightness.dark),
-          home: const AmbientScaffold(body: Text('VercelBody')),
-        ),
-      );
-      // In Vercel Dark glow == 0.0, no TweenAnimationBuilder radial gradient layer is mounted.
       expect(
         find.descendant(
           of: find.byType(AmbientScaffold),
           matching: find.byType(TweenAnimationBuilder<Color?>),
         ),
-        findsNothing,
+        findsOneWidget,
+      );
+
+      await tester.pumpWidget(Container());
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildMindTheme(Brightness.dark),
+          home: const AmbientScaffold(body: Text('TwilightBody')),
+        ),
+      );
+      expect(
+        find.descendant(
+          of: find.byType(AmbientScaffold),
+          matching: find.byType(TweenAnimationBuilder<Color?>),
+        ),
+        findsOneWidget,
       );
     });
 

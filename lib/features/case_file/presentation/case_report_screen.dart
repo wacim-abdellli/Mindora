@@ -9,6 +9,7 @@ import '../../../app/theme/mind_tokens.dart';
 import '../../../core/safety/crisis_keywords.dart';
 import '../../../core/safety/safety_interceptor.dart';
 import '../../../core/safety/support_button.dart';
+import '../../../core/widgets/mind_undo_banner.dart';
 import '../../../core/widgets/label_badge.dart';
 import '../../investigation/controllers/investigation_providers.dart';
 import '../../investigation/domain/case_model.dart';
@@ -178,74 +179,35 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
     ClinicalExportPreviewSheet.show(context, [c]);
   }
 
-  void _deleteCase(bool isDark, AppStrings strings) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: ctx.tokens.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ctx.tokens.cardRadius),
-          side: BorderSide(color: ctx.tokens.line, width: 1),
-        ),
-        title: Text(
-          strings.deleteCaseFileTitle,
-          style: TextStyle(
-            color: ctx.tokens.ink,
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.8,
-          ),
-        ),
-        content: Text(
-          strings.deleteCaseWarning,
-          style: TextStyle(fontSize: 12.5, color: ctx.tokens.ink2, height: 1.4),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(strings.cancelBtn, style: TextStyle(color: ctx.tokens.ink2)),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: ctx.tokens.safety,
-              foregroundColor: ctx.tokens.bg,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(ctx.tokens.buttonRadius),
-              ),
-            ),
-            onPressed: () async {
-              HapticFeedback.heavyImpact();
-              await ref.read(caseRepositoryProvider).deleteCase(widget.caseId);
-              ref.invalidate(savedCasesProvider);
-              final currentActive = ref.read(activeCaseControllerProvider).value;
-              if (currentActive?.id == widget.caseId) {
-                ref.invalidate(activeCaseControllerProvider);
-              }
-              if (ctx.mounted) {
-                Navigator.of(ctx).pop();
-              }
-              if (mounted) {
-                final router = GoRouter.maybeOf(context);
-                if (router != null && router.canPop()) {
-                  router.pop();
-                } else {
-                  context.go(AppRouter.home);
-                }
-              }
-            },
-            child: Text(
-              strings.deletePermanentlyBtn,
-              style: TextStyle(
-                color: ctx.tokens.bg,
-                fontWeight: FontWeight.w800,
-                fontSize: 11,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  Future<void> _deleteCase(bool isDark, AppStrings strings) async {
+    HapticFeedback.mediumImpact();
+    final repo = ref.read(caseRepositoryProvider);
+    final deletedCase = _case;
+    await repo.deleteCase(widget.caseId);
+    ref.invalidate(savedCasesProvider);
+    final currentActive = ref.read(activeCaseControllerProvider).value;
+    if (currentActive?.id == widget.caseId) {
+      ref.invalidate(activeCaseControllerProvider);
+    }
+    if (!mounted) return;
+    final rootCtx = Navigator.of(context, rootNavigator: true).context;
+    final router = GoRouter.maybeOf(context);
+    if (router != null && router.canPop()) {
+      router.pop();
+    } else {
+      context.go(AppRouter.home);
+    }
+    if (deletedCase != null && rootCtx.mounted) {
+      showMindUndoBanner(
+        rootCtx,
+        message: strings.talkDeletedUndo,
+        undoLabel: strings.undoBtn,
+        onUndo: () async {
+          await repo.saveCase(deletedCase);
+          ref.invalidate(savedCasesProvider);
+        },
+      );
+    }
   }
 
   @override
@@ -551,9 +513,7 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
               // Section 3b: Findings Summary (synthesized insights)
               if (c.findingsSummary != null && c.findingsSummary!.trim().isNotEmpty) ...[
                 _reportSectionHeader(
-                  strings.isArabic
-                      ? 'خلاصة الملاحظات'
-                      : (strings.isFrench ? 'SYNTHÈSE DES OBSERVATIONS' : 'KEY FINDINGS SUMMARY'),
+                  strings.summaryHighlightsHeader,
                   textSecondary,
                 ),
                 Container(
@@ -566,7 +526,7 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                   ),
                   child: Text(
                     c.findingsSummary!.trim(),
-                    style: TextStyle(color: textPrimary, fontSize: 13, height: 1.45),
+                    style: TextStyle(color: textPrimary, fontSize: 14.5, height: 1.5),
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -575,9 +535,7 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
               // Section 3c: Session Dialogue Excerpt (important when chain/hypotheses are empty)
               if (c.statements.isNotEmpty) ...[
                 _reportSectionHeader(
-                  strings.isArabic
-                      ? 'مقتطفات الحوار التأملي'
-                      : (strings.isFrench ? 'EXTRAITS DU DIALOGUE' : 'SESSION DIALOGUE'),
+                  strings.talkTranscriptHeader,
                   textSecondary,
                 ),
                 Container(
@@ -593,10 +551,8 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                     children: c.statements.take(12).map((st) {
                       final isUser = st.speaker == StatementSpeaker.user;
                       final speakerLabel = isUser
-                          ? (strings.isArabic ? 'أنت' : (strings.isFrench ? 'VOUS' : 'YOU'))
-                          : (strings.isArabic
-                              ? 'الرفيق'
-                              : (strings.isFrench ? 'COMPAGNON' : 'COMPANION'));
+                          ? strings.youSpeakerLabel
+                          : strings.companionSpeakerLabel;
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 10),
                         child: Column(
@@ -607,10 +563,9 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                                 Text(
                                   speakerLabel,
                                   style: TextStyle(
-                                    fontSize: 10,
+                                    fontSize: 12.5,
                                     fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.6,
-                                    color: isUser ? tokens.m1 : tokens.ink,
+                                    color: isUser ? tokens.primary : tokens.ink,
                                   ),
                                 ),
                                 if (st.label != null) ...[

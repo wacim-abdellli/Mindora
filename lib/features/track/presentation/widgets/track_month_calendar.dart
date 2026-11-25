@@ -124,9 +124,9 @@ class TrackMonthCalendar extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontFamily: 'Inter',
-                        fontSize: 11.5,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w700,
-                        color: tokens.ink3,
+                        color: tokens.ink2,
                       ),
                     ),
                   ),
@@ -187,8 +187,8 @@ class TrackMonthCalendar extends StatelessWidget {
               Border? circleBorder;
 
               if (isSelected) {
-                circleBg = isLogged ? moodColor : tokens.ink;
-                textColor = tokens.onMood;
+                circleBg = isLogged ? moodColor : tokens.primary;
+                textColor = isLogged ? tokens.onMood : tokens.onPrimary;
                 circleBorder = null;
               } else if (isLogged) {
                 circleBg = moodFill;
@@ -377,26 +377,33 @@ class _SelectedDayBanner extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          MindPressable(
-            onPressed: onClear,
-            semanticLabel: strings.showAllEntriesBtn,
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 36),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: tokens.surface,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: tokens.line),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                strings.showAllEntriesBtn,
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w700,
-                  color: tokens.ink,
+          Flexible(
+            flex: 0,
+            child: MindPressable(
+              onPressed: onClear,
+              semanticLabel: strings.showAllEntriesBtn,
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 40, maxWidth: 96),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: tokens.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: tokens.line),
+                ),
+                alignment: Alignment.center,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    strings.showAllEntriesBtn,
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12.0,
+                      fontWeight: FontWeight.w700,
+                      color: tokens.ink,
+                    ),
+                  ),
                 ),
               ),
             ),

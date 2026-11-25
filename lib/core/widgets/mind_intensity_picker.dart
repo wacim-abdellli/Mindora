@@ -67,7 +67,7 @@ class MindIntensityPicker extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: LabTheme.fontFamily,
                       fontFamilyFallback: LabTheme.fontFallback,
-                      fontSize: 11.5,
+                      fontSize: 12.5,
                       fontWeight: FontWeight.w500,
                       color: tokens.ink2,
                     ),
@@ -83,7 +83,7 @@ class MindIntensityPicker extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: LabTheme.fontFamily,
                       fontFamilyFallback: LabTheme.fontFallback,
-                      fontSize: 11.5,
+                      fontSize: 12.5,
                       fontWeight: FontWeight.w500,
                       color: tokens.ink2,
                     ),

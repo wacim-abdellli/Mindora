@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:mind_forensics/app/localization/app_strings.dart';
+import 'package:mind_forensics/core/widgets/mood_face.dart';
 import 'package:mind_forensics/features/home/presentation/home_screen.dart';
 import 'package:mind_forensics/features/home/presentation/widgets/home_organic_exercise_art.dart';
 import 'package:mind_forensics/features/mind_trace/controllers/mind_trace_controller.dart';
 import 'package:mind_forensics/features/mind_trace/domain/mind_trace_model.dart';
 import 'package:mind_forensics/features/support/presentation/contextual_support_sheet.dart';
+import 'package:mind_forensics/features/track/presentation/widgets/progressive_details_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -16,8 +19,8 @@ void main() {
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 
-  group('Home Screen Step 2 Clean & Calm Layout Tests', () {
-    testWidgets('Renders clean 4-block Home without chart/switcher clutter', (
+  group('Home Screen Clean Single-Job & Clinical Pulse Layout Tests', () {
+    testWidgets('Renders clean Today Home with 6 MoodFace tiles, Clinical Pulse, and Breather card', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(1080, 2400);
@@ -29,25 +32,15 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // 1. App bar & greeting
+      const strings = AppStrings('en');
       expect(find.text('Mindora'), findsOneWidget);
-      expect(find.textContaining('Dear'), findsOneWidget);
+      expect(find.textContaining(strings.defaultFriendName), findsOneWidget);
 
-      // 2. Step 6 Daily check-in card (plain human affect labels + intensity, zero telemetry waveform)
-      expect(find.textContaining('INTENSITY'), findsOneWidget);
-      expect(find.text('Calm'), findsOneWidget);
-      expect(find.text('Anxious'), findsOneWidget);
-      expect(find.text('Log Daily Check-in'), findsOneWidget);
-
-      // 4. Investigation CTA & Recent Investigations
-      expect(find.text('RECENT SESSIONS'), findsOneWidget);
-
-      // 5. Exercises for you card with organic vector pebble art (ZERO emojis)
-      expect(find.text('Exercises for you'), findsOneWidget);
+      // Hero 2-tap MoodFace grid + Clinical Pulse + Breather card
+      expect(find.byType(MoodFaceTile), findsNWidgets(6));
+      expect(find.byKey(const ValueKey('home-clinical-pulse-card')), findsOneWidget);
       expect(find.byType(HomeOrganicExerciseArt), findsOneWidget);
-      expect(find.text('Relieve stress'), findsOneWidget);
-      expect(find.text('Breathing practice'), findsOneWidget);
-      expect(find.text('5 min'), findsOneWidget);
+      expect(find.text(strings.takeOneMinuteBreather), findsOneWidget);
     });
 
     testWidgets('Reflects today check-in summary calmly on Home when logged', (
@@ -85,11 +78,15 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Calm (7/10)'), findsOneWidget);
+      const strings = AppStrings('en');
+      expect(
+        find.text(strings.youFeelTodayTitle(strings.plainMoodLabel('calm'))),
+        findsOneWidget,
+      );
     });
 
     testWidgets(
-      'Logging a check-in on Home saves to MindTraceController and updates todayTraceProvider',
+      'Logging a 2-tap check-in on Home saves to MindTraceController and updates todayTraceProvider',
       (tester) async {
         tester.view.physicalSize = const Size(1080, 2400);
         tester.view.devicePixelRatio = 2.0;
@@ -106,18 +103,16 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // Tap Log Daily Check-in (options-first, zero compulsory typing)
-        final saveBtn = find.text('Log Daily Check-in');
-        await tester.ensureVisible(saveBtn);
-        await tester.tap(saveBtn);
+        const strings = AppStrings('en');
+        await tester.tap(find.byKey(const ValueKey('today-mood-calm')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(strings.strengthMedium));
         await tester.pumpAndSettle();
 
-        // Verify trace was added into the central MindTraceNotifier state
         final traces = container.read(mindTraceControllerProvider).value ?? [];
         expect(traces.isNotEmpty, isTrue);
         expect(traces.first.overallMood, equals('calm'));
 
-        // Verify todayTraceProvider is now populated
         final todayTrace = container.read(todayTraceProvider);
         expect(todayTrace, isNotNull);
         expect(todayTrace?.overallMood, equals('calm'));
@@ -125,7 +120,7 @@ void main() {
     );
 
     testWidgets(
-      'Entering optional note in Home check-in persists note to journalText',
+      'Optional note via ProgressiveDetailsSheet persists note to journalText',
       (tester) async {
         tester.view.physicalSize = const Size(1080, 2400);
         tester.view.devicePixelRatio = 2.0;
@@ -133,6 +128,20 @@ void main() {
 
         final container = ProviderContainer();
         addTearDown(container.dispose);
+
+        final now = DateTime.now();
+        await container.read(mindTraceRepositoryProvider).saveTrace(
+              MindTraceModel(
+                id: 'trace_home_note',
+                userId: 'local_user',
+                date: now,
+                overallMood: 'calm',
+                moodIntensity: 6,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            );
+        await container.read(mindTraceControllerProvider.future);
 
         await tester.pumpWidget(
           UncontrolledProviderScope(
@@ -142,19 +151,25 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        final noteField = find.byType(TextField);
-        expect(noteField, findsOneWidget);
-        await tester.ensureVisible(noteField);
-        await tester.enterText(noteField, 'Felt peaceful during evening walk');
+        const strings = AppStrings('en');
+        final addDetailsBtn = find.text(strings.addDetailsCta);
+        await tester.ensureVisible(addDetailsBtn);
+        await tester.tap(addDetailsBtn);
         await tester.pumpAndSettle();
 
-        final saveBtn = find.text('Log Daily Check-in');
-        await tester.ensureVisible(saveBtn);
-        await tester.tap(saveBtn);
+        expect(find.byType(ProgressiveDetailsSheet), findsOneWidget);
+        for (var i = 0; i < 3; i++) {
+          await tester.tap(find.text(strings.skipBtn));
+          await tester.pumpAndSettle();
+        }
+        await tester.enterText(
+          find.byType(TextField),
+          'Felt peaceful during evening walk',
+        );
+        await tester.tap(find.text(strings.saveDetailsBtn));
         await tester.pumpAndSettle();
 
         final todayTrace = container.read(todayTraceProvider);
-        expect(todayTrace, isNotNull);
         expect(
           todayTrace?.journalText,
           equals('Felt peaceful during evening walk'),
@@ -163,7 +178,7 @@ void main() {
     );
 
     testWidgets(
-      'Tapping Relieve stress opens the 4-4-4-4 Vagal Breathing sheet',
+      'Tapping breather card opens the breathing exercise sheet',
       (tester) async {
         tester.view.physicalSize = const Size(1080, 2400);
         tester.view.devicePixelRatio = 2.0;
@@ -174,20 +189,17 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // Tap on Relieve stress exercise card
-        final exerciseCard = find.text('Relieve stress');
+        const strings = AppStrings('en');
+        final exerciseCard = find.text(strings.takeOneMinuteBreather);
         expect(exerciseCard, findsOneWidget);
         await tester.ensureVisible(exerciseCard);
         await tester.pumpAndSettle();
         await tester.tap(exerciseCard);
-        // Use fixed pump duration because Vagal Breathing has an active Timer.periodic
         await tester.pump(const Duration(milliseconds: 500));
 
-        // Verify modal bottom sheet opened with breathing controls
         expect(find.byType(ContextualSupportSheet), findsOneWidget);
-        expect(find.text('Begin 4-4-4-4 Breathing'), findsOneWidget);
+        expect(find.text(strings.breatheQuickBtn), findsOneWidget);
 
-        // Close sheet
         Navigator.of(tester.element(find.byType(ContextualSupportSheet))).pop();
         await tester.pump(const Duration(milliseconds: 500));
         expect(find.byType(ContextualSupportSheet), findsNothing);

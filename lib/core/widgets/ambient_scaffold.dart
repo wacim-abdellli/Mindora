@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../app/theme/mind_tokens.dart';
 
-/// Ambient theme-aware scaffold displaying the top mood glow in Light "Dawn"
-/// (`tokens.glow` = 30%) and pure `#000000` flat void in Dark "Vercel" (`glow = 0%`).
+/// Ambient theme-aware scaffold displaying a warm mood wash in both
+/// Sunrise Light (`tokens.glow` = 22%) and Twilight Night (`tokens.glow` = 14%).
 class AmbientScaffold extends StatelessWidget {
   const AmbientScaffold({
     super.key,

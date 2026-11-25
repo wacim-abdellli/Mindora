@@ -349,9 +349,15 @@ void main() {
         expect(tester.takeException(), isNull);
 
         if (lang == 'ar') {
-          final arStrings = const AppStrings('ar');
+          const arStrings = AppStrings('ar');
           expect(
-            Directionality.of(tester.element(find.text(arStrings.updateCheckInButton))),
+            Directionality.of(
+              tester.element(
+                find.text(
+                  arStrings.youFeelTodayTitle(arStrings.plainMoodLabel('calm')),
+                ),
+              ),
+            ),
             TextDirection.rtl,
           );
         }
@@ -361,7 +367,16 @@ void main() {
         await _settleFrame(tester);
         expect(tester.takeException(), isNull);
         if (lang == 'fr') {
-          expect(find.text('Calme'), findsWidgets);
+          final detailsBtn = find.byKey(
+            const ValueKey<String>('patterns-more-details-btn'),
+          );
+          await tester.ensureVisible(detailsBtn);
+          await tester.tap(detailsBtn);
+          await _settleFrame(tester);
+          expect(
+            find.text(const AppStrings('fr').moodCalmPlain),
+            findsWidgets,
+          );
           expect(find.text('Observations préliminaires (6j)'), findsOneWidget);
         }
         await _maybeCapture(tester, key, 'qa_11_insights_$lang.png');

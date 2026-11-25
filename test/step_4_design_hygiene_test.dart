@@ -10,8 +10,9 @@ import 'package:mind_forensics/app/router/app_router.dart';
 import 'package:mind_forensics/app/theme/lab_theme.dart';
 import 'package:mind_forensics/app/theme/mind_tokens.dart';
 import 'package:mind_forensics/core/widgets/mind_pressable.dart';
-import 'package:mind_forensics/core/widgets/organic_mood_orb.dart';
+import 'package:mind_forensics/core/widgets/mood_face.dart';
 import 'package:mind_forensics/features/home/presentation/home_screen.dart';
+import 'package:mind_forensics/features/home/presentation/widgets/home_clinical_pulse_card.dart';
 import 'package:mind_forensics/features/home/presentation/widgets/home_daily_check_in_card.dart';
 import 'package:mind_forensics/features/mind_trace/domain/mind_trace_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -92,7 +93,7 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('HomeDailyCheckInCard renders OrganicMoodOrb and navigates VIEW to /track', (tester) async {
+    testWidgets('HomeDailyCheckInCard renders MoodFace summary and navigates Talk CTA cleanly', (tester) async {
       final now = DateTime.now();
       final todayTrace = MindTraceModel(
         id: 't_today',
@@ -112,34 +113,32 @@ void main() {
           GoRoute(
             path: '/card',
             builder: (context, state) => Scaffold(
-              body: HomeDailyCheckInCard(
-                tokens: MindTokens.light,
-                strings: const AppStrings('en'),
-                isDark: false,
-                todayTrace: todayTrace,
-                traces: [todayTrace],
-                selectedMoodIndex: 0,
-                moodIntensity: 7,
-                todayNoteController: TextEditingController(),
-                moodOptions: const [
-                  (key: 'calm', icon: Icons.spa_outlined),
-                  (key: 'anxious', icon: Icons.bolt_outlined),
-                  (key: 'frustrated', icon: Icons.local_fire_department_outlined),
-                  (key: 'heavy', icon: Icons.grain_outlined),
-                  (key: 'restless', icon: Icons.air_outlined),
-                ],
-                onMoodSelected: (_) {},
-                onIntensityChanged: (_) {},
-                onSave: () {},
-                getMoodLabel: (key, s) => switch (key) {
-                  'calm' => s.moodCalm,
-                  'anxious' => s.moodAnxious,
-                  'frustrated' => s.moodFrustrated,
-                  'heavy' => s.moodHeavy,
-                  'restless' => s.moodRestless,
-                  _ => key,
-                },
-                getMoodColor: (_) => MindTokens.moodCalm,
+              body: SingleChildScrollView(
+                child: Builder(
+                  builder: (ctx) => HomeDailyCheckInCard(
+                    tokens: MindTokens.light,
+                    strings: const AppStrings('en'),
+                    isDark: false,
+                    todayTrace: todayTrace,
+                    traces: [todayTrace],
+                    selectedMoodIndex: 0,
+                    moodIntensity: 7,
+                    todayNoteController: TextEditingController(),
+                    moodOptions: const [
+                      (key: 'calm', icon: Icons.spa_outlined),
+                      (key: 'anxious', icon: Icons.bolt_outlined),
+                      (key: 'frustrated', icon: Icons.local_fire_department_outlined),
+                      (key: 'heavy', icon: Icons.grain_outlined),
+                      (key: 'restless', icon: Icons.air_outlined),
+                    ],
+                    onMoodSelected: (_) {},
+                    onIntensityChanged: (_) {},
+                    onSave: () {},
+                    getMoodLabel: (key, s) => s.plainMoodLabel(key),
+                    getMoodColor: (_) => MindTokens.moodCalm,
+                    onTalkAboutIt: (_) => ctx.go(AppRouter.track),
+                  ),
+                ),
               ),
             ),
           ),
@@ -154,11 +153,16 @@ void main() {
       await tester.pumpWidget(MaterialApp.router(routerConfig: router));
       await tester.pumpAndSettle();
 
-      expect(find.byType(OrganicMoodOrb), findsOneWidget);
-      expect(find.text('Calm'), findsOneWidget);
-      expect(find.text('VIEW'), findsOneWidget);
+      const en = AppStrings('en');
+      expect(find.byType(MoodFace), findsOneWidget);
+      expect(
+        find.text(en.youFeelTodayTitle(en.plainMoodLabel('calm'))),
+        findsOneWidget,
+      );
+      expect(find.text(en.talkItOutBtn), findsOneWidget);
 
-      await tester.tap(find.text('VIEW'));
+      await tester.ensureVisible(find.text(en.talkItOutBtn));
+      await tester.tap(find.text(en.talkItOutBtn));
       await tester.pumpAndSettle();
 
       expect(find.text('TRACK_DESTINATION'), findsOneWidget);
@@ -180,9 +184,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      expect(find.text('Unanswered text'), findsOneWidget);
-      expect(find.text('Work feedback'), findsOneWidget);
-      expect(find.text('Mental overload'), findsOneWidget);
+      expect(find.byType(MoodFaceTile), findsNWidgets(6));
+      expect(find.byType(HomeClinicalPulseCard), findsOneWidget);
     });
   });
 }

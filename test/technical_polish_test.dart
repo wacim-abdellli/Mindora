@@ -32,7 +32,7 @@ void main() {
       final mediaQueryFinder = find.byType(MediaQuery);
       expect(mediaQueryFinder, findsWidgets);
 
-      final BuildContext context = tester.element(find.text('Home'));
+      final BuildContext context = tester.element(find.text('Today'));
       final scaler = MediaQuery.textScalerOf(context);
       // Clamped scale factor should never exceed 1.35 even with large OS requests
       expect(scaler.scale(10.0), inInclusiveRange(8.5, 13.5));
@@ -54,7 +54,7 @@ void main() {
       await container.read(localeControllerProvider.notifier).setLanguage(AppLanguage.arabic);
       await tester.pumpAndSettle();
 
-      final BuildContext arContext = tester.element(find.text('الرئيسية'));
+      final BuildContext arContext = tester.element(find.text('اليوم'));
       final directionality = Directionality.of(arContext);
       expect(directionality, equals(TextDirection.rtl));
     });

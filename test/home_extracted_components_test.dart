@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mind_forensics/app/localization/app_strings.dart';
 import 'package:mind_forensics/app/theme/mind_tokens.dart';
+import 'package:mind_forensics/core/widgets/mind_strength_picker.dart';
 import 'package:mind_forensics/core/widgets/mood_emblem.dart';
+import 'package:mind_forensics/core/widgets/mood_face.dart';
 import 'package:mind_forensics/core/widgets/organic_mood_orb.dart';
 import 'package:mind_forensics/features/home/presentation/widgets/home_active_case_card.dart';
 import 'package:mind_forensics/features/home/presentation/widgets/home_daily_check_in_card.dart';
@@ -22,78 +24,67 @@ void main() {
       (key: 'frustrated', icon: Icons.local_fire_department_outlined),
     ];
 
-    testWidgets('HomeDailyCheckInCard renders options-first check-in controls and triggers callbacks', (tester) async {
+    testWidgets('HomeDailyCheckInCard renders 2-tap MoodFace controls and triggers callbacks', (tester) async {
       int selectedIdx = 0;
       double intensity = 5.0;
       bool saved = false;
+      String? quickMood;
+      int? quickIntensity;
       final controller = TextEditingController();
+      addTearDown(controller.dispose);
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: StatefulBuilder(
-              builder: (context, setState) {
-                return HomeDailyCheckInCard(
-                  tokens: tokens,
-                  strings: strings,
-                  isDark: true,
-                  todayTrace: null,
-                  traces: const [],
-                  selectedMoodIndex: selectedIdx,
-                  moodIntensity: intensity,
-                  todayNoteController: controller,
-                  moodOptions: moodOptions,
-                  onMoodSelected: (idx) => setState(() => selectedIdx = idx),
-                  onIntensityChanged: (val) => setState(() => intensity = val),
-                  onSave: () => saved = true,
-                  getMoodLabel: (key, str) => key.toUpperCase(),
-                  getMoodColor: (key) => MindTokens.moodCalm,
-                );
-              },
+            body: SingleChildScrollView(
+              child: StatefulBuilder(
+                builder: (context, setState) {
+                  return HomeDailyCheckInCard(
+                    tokens: tokens,
+                    strings: strings,
+                    isDark: true,
+                    todayTrace: null,
+                    traces: const [],
+                    selectedMoodIndex: selectedIdx,
+                    moodIntensity: intensity,
+                    todayNoteController: controller,
+                    moodOptions: moodOptions,
+                    onMoodSelected: (idx) => setState(() => selectedIdx = idx),
+                    onIntensityChanged: (val) => setState(() => intensity = val),
+                    onSave: () => saved = true,
+                    onQuickSave: (moodKey, strength, {bool createNew = false}) {
+                      quickMood = moodKey;
+                      quickIntensity = strength;
+                    },
+                    getMoodLabel: (key, str) => str.plainMoodLabel(key),
+                    getMoodColor: (key) => MindTokens.moodCalm,
+                  );
+                },
+              ),
             ),
           ),
         ),
       );
       await tester.pumpAndSettle();
 
-      // Verify emotion pills, intensity scale, and feeling word
-      expect(find.text('${strings.moodIntensityLabel.toUpperCase()}: 5/10'), findsOneWidget);
-      expect(find.text('Moderate'), findsOneWidget);
-      expect(find.text('CALM'), findsOneWidget);
-      expect(find.text('ANXIOUS'), findsOneWidget);
+      // Verify 6 MoodFace options render upfront and strength picker is hidden until Tap 1
+      expect(find.byType(MoodFaceTile), findsNWidgets(6));
+      expect(find.text(strings.howAreYouRightNow), findsOneWidget);
+      expect(find.byType(MindStrengthPicker), findsNothing);
 
-      // Select 'ANXIOUS'
-      await tester.tap(find.text('ANXIOUS'));
+      // Tap 1: Select Worried ('anxious')
+      await tester.tap(find.byKey(const ValueKey<String>('today-mood-anxious')));
       await tester.pumpAndSettle();
       expect(selectedIdx, equals(1));
+      expect(find.byType(MindStrengthPicker), findsOneWidget);
 
-      // Tap bar 8 cleanly -> jumps directly to 8/10 ('Strong') without dragging
-      await tester.tap(find.byKey(const ValueKey<String>('intensity-bar-8')));
+      // Tap 2: Select 'A lot' -> auto-saves at intensity 9
+      await tester.ensureVisible(find.text(strings.strengthALot));
+      await tester.tap(find.text(strings.strengthALot));
       await tester.pumpAndSettle();
-      expect(intensity, equals(8.0));
-      expect(find.text('${strings.moodIntensityLabel.toUpperCase()}: 8/10'), findsOneWidget);
-      expect(find.text('Strong'), findsOneWidget);
-
-      // Step fine control +1 -> 9/10 ('Overwhelming'), -1 -> 8/10 ('Strong')
-      await tester.tap(find.byKey(const ValueKey<String>('intensity-step-up')));
-      await tester.pumpAndSettle();
-      expect(intensity, equals(9.0));
-      expect(find.text('${strings.moodIntensityLabel.toUpperCase()}: 9/10'), findsOneWidget);
-      expect(find.text('Overwhelming'), findsOneWidget);
-
-      await tester.tap(find.byKey(const ValueKey<String>('intensity-step-down')));
-      await tester.pumpAndSettle();
-      expect(intensity, equals(8.0));
-
-      // Enter optional text note
-      await tester.enterText(find.byType(TextField), 'Calibrated evening walk');
-      await tester.pumpAndSettle();
-      expect(controller.text, equals('Calibrated evening walk'));
-
-      // Tap Save Check-in
-      await tester.tap(find.text(strings.saveCheckInButton));
-      await tester.pumpAndSettle();
-      expect(saved, isTrue);
+      expect(quickMood, equals('anxious'));
+      expect(quickIntensity, equals(9));
+      expect(saved, isFalse);
     });
 
     testWidgets('HomeActiveCaseCard renders case progress and invokes onResume', (tester) async {
@@ -140,15 +131,7 @@ void main() {
         (key: 'heavy', icon: Icons.grain_outlined),
         (key: 'restless', icon: Icons.air_outlined),
       ];
-      String labelFor(String key) => switch (key) {
-        'calm' => 'Calm',
-        'anxious' => 'Anxious',
-        'frustrated' => 'Frustrated',
-        'heavy' => 'Heavy',
-        'restless' => 'Restless',
-        _ => key,
-      };
-      int selectedIdx = 4; // Start on 'Restless'
+      int selectedIdx = 4;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -172,7 +155,7 @@ void main() {
                       onMoodSelected: (idx) => setState(() => selectedIdx = idx),
                       onIntensityChanged: (_) {},
                       onSave: () {},
-                      getMoodLabel: (key, _) => labelFor(key),
+                      getMoodLabel: (key, s) => s.plainMoodLabel(key),
                       getMoodColor: (_) => MindTokens.moodCalm,
                     );
                   },
@@ -185,17 +168,26 @@ void main() {
       await tester.pumpAndSettle();
 
       Map<String, Rect> captureRects() => {
-        for (final m in allMoods)
-          m.key: tester.getRect(find.text(labelFor(m.key))),
+        for (final mood in AppMood.values)
+          mood.key: tester.getRect(
+            find.byKey(ValueKey<String>('today-mood-${mood.key}')),
+          ),
       };
 
       final initialRects = captureRects();
 
-      // Selecting any pill (including 'Anxious' on Row 1) must not reflow sibling pills.
-      for (final m in allMoods) {
-        await tester.tap(find.text(labelFor(m.key)));
+      // Selecting any MoodFace tile must not reflow sibling tiles.
+      for (final mood in AppMood.values) {
+        final tileFinder = find.byKey(
+          ValueKey<String>('today-mood-${mood.key}'),
+        );
+        await tester.tap(tileFinder);
         await tester.pumpAndSettle();
-        expect(captureRects(), equals(initialRects), reason: 'Reflow after selecting ${m.key}');
+        expect(
+          captureRects(),
+          equals(initialRects),
+          reason: 'Reflow after selecting ${mood.key}',
+        );
       }
     });
 
@@ -303,15 +295,18 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Frustrated (9/10)'), findsOneWidget);
-      expect(find.text('Breathe'), findsOneWidget);
-      expect(find.text('Talk about it'), findsOneWidget);
+      expect(
+        find.text(strings.youFeelTodayTitle(strings.plainMoodLabel('frustrated'))),
+        findsOneWidget,
+      );
+      expect(find.text(strings.breatheQuickBtn), findsOneWidget);
+      expect(find.text(strings.talkItOutBtn), findsOneWidget);
 
-      await tester.tap(find.text('Breathe'));
+      await tester.tap(find.text(strings.breatheQuickBtn));
       await tester.pumpAndSettle();
       expect(breatheTapped, isTrue);
 
-      await tester.tap(find.text('Talk about it'));
+      await tester.tap(find.text(strings.talkItOutBtn));
       await tester.pumpAndSettle();
       expect(talkedTrace?.id, equals('t_logged'));
     });
@@ -377,11 +372,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(arStrings.thisWeekTitle), findsOneWidget);
-      expect(find.text(arStrings.observedDaysCount(2)), findsOneWidget);
-      expect(find.byType(MoodEmblem), findsNWidgets(2));
+      expect(find.text(arStrings.daysThisWeekCount(2)), findsOneWidget);
+      expect(find.byType(MoodFace), findsNWidgets(2));
       expect(tester.takeException(), isNull);
 
-      await tester.tap(find.byType(MoodEmblem).first);
+      await tester.tap(find.byType(MoodFace).first);
       await tester.pumpAndSettle();
       expect(tappedTrace, isNotNull);
     });

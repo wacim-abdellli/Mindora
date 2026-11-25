@@ -9,13 +9,10 @@ import '../localization/app_strings.dart';
 import '../theme/lab_theme.dart';
 import '../theme/mind_tokens.dart';
 
-/// Floating frosted-glass bottom navigation dock matching Vercel Dark luxury aesthetics:
-/// - Floating balanced dock (height `66`, radius `28`, `navGlass` + blur `24`, `1px line`)
-/// - 5 harmonized items (`Home`, `Track`, `AI Guide`, `Insights`, `Profile`)
-/// - Zero double-highlight confusion: only the active tab illuminates
-/// - Active standard tab: sleek 44x28 micro-capsule in `tokens.navCapsuleFill` with `tokens.ink` icon
-/// - Active AI Guide tab: luminous gradient capsule in `[tokens.m2, tokens.m1]` with soft glow
-/// - Inactive AI Guide tab: elegant clinical jewel capsule with `tokens.cardTint` and hairline border
+/// Floating 5-tab single-job navigation dock (`Today`, `My days`, `Talk`,
+/// `Patterns`, `Me`) built for both older adults (`>= 56dp` tall hits,
+/// always-visible `>= 12sp` labels) and Gen Z (warm Sunrise/Twilight frosted
+/// glass + smooth spring indicator).
 class ScaffoldWithNavBar extends ConsumerWidget {
   const ScaffoldWithNavBar({super.key, required this.navigationShell});
 
@@ -36,6 +33,34 @@ class ScaffoldWithNavBar extends ConsumerWidget {
     final currentIndex = navigationShell.currentIndex;
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
 
+    final tabs = [
+      (
+        icon: Icons.wb_sunny_outlined,
+        activeIcon: Icons.wb_sunny_rounded,
+        label: strings.navToday,
+      ),
+      (
+        icon: Icons.calendar_today_outlined,
+        activeIcon: Icons.calendar_month_rounded,
+        label: strings.navMyDays,
+      ),
+      (
+        icon: Icons.chat_bubble_outline_rounded,
+        activeIcon: Icons.chat_bubble_rounded,
+        label: strings.navTalk,
+      ),
+      (
+        icon: Icons.auto_graph_rounded,
+        activeIcon: Icons.insights_rounded,
+        label: strings.navPatterns,
+      ),
+      (
+        icon: Icons.person_outline_rounded,
+        activeIcon: Icons.person_rounded,
+        label: strings.navMe,
+      ),
+    ];
+
     return Scaffold(
       backgroundColor: tokens.bg,
       body: navigationShell,
@@ -44,78 +69,46 @@ class ScaffoldWithNavBar extends ConsumerWidget {
         child: SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 4, 14, 10),
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
             child: MediaQuery.withClampedTextScaling(
-              minScaleFactor: 0.85,
-              maxScaleFactor: 1.15,
+              minScaleFactor: 0.90,
+              maxScaleFactor: 1.25,
               child: RepaintBoundary(
                 child: Container(
-                  height: 66,
+                  constraints: const BoxConstraints(minHeight: 70),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(28),
+                    borderRadius: BorderRadius.circular(26),
                     boxShadow: tokens.navPillShadows,
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(28),
+                    borderRadius: BorderRadius.circular(26),
                     child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                       child: Container(
                         decoration: BoxDecoration(
                           color: tokens.navGlass,
-                          borderRadius: BorderRadius.circular(28),
+                          borderRadius: BorderRadius.circular(26),
                           border: Border.all(
                             color: tokens.line,
                             width: 1.0,
                           ),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 4,
+                        ),
                         child: Row(
                           children: [
-                            _buildNavItem(
-                              index: 0,
-                              currentIndex: currentIndex,
-                              icon: Icons.home_outlined,
-                              activeIcon: Icons.home_rounded,
-                              label: strings.navHome,
-                              tokens: tokens,
-                              reduceMotion: reduceMotion,
-                            ),
-                            _buildNavItem(
-                              index: 1,
-                              currentIndex: currentIndex,
-                              icon: Icons.adjust_outlined,
-                              activeIcon: Icons.adjust_rounded,
-                              label: strings.navTrack,
-                              tokens: tokens,
-                              reduceMotion: reduceMotion,
-                            ),
-                            _buildCenterAiItem(
-                              index: 2,
-                              currentIndex: currentIndex,
-                              icon: Icons.psychology_alt_outlined,
-                              activeIcon: Icons.psychology_alt_rounded,
-                              label: strings.navAiGuide,
-                              tokens: tokens,
-                              reduceMotion: reduceMotion,
-                            ),
-                            _buildNavItem(
-                              index: 3,
-                              currentIndex: currentIndex,
-                              icon: Icons.auto_stories_outlined,
-                              activeIcon: Icons.auto_stories_rounded,
-                              label: strings.navInsights,
-                              tokens: tokens,
-                              reduceMotion: reduceMotion,
-                            ),
-                            _buildNavItem(
-                              index: 4,
-                              currentIndex: currentIndex,
-                              icon: Icons.person_outline_rounded,
-                              activeIcon: Icons.person_rounded,
-                              label: strings.navProfile,
-                              tokens: tokens,
-                              reduceMotion: reduceMotion,
-                            ),
+                            for (var i = 0; i < tabs.length; i++)
+                              _buildNavItem(
+                                index: i,
+                                currentIndex: currentIndex,
+                                icon: tabs[i].icon,
+                                activeIcon: tabs[i].activeIcon,
+                                label: tabs[i].label,
+                                tokens: tokens,
+                                reduceMotion: reduceMotion,
+                              ),
                           ],
                         ),
                       ),
@@ -149,10 +142,11 @@ class ScaffoldWithNavBar extends ConsumerWidget {
         child: MergeSemantics(
           child: InkWell(
             onTap: () => _onTap(index),
+            borderRadius: BorderRadius.circular(20),
             splashColor: Colors.transparent,
             highlightColor: Colors.transparent,
-            child: SizedBox(
-              height: 66,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 60),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
@@ -160,27 +154,27 @@ class ScaffoldWithNavBar extends ConsumerWidget {
                   AnimatedContainer(
                     duration: reduceMotion
                         ? Duration.zero
-                        : const Duration(milliseconds: 200),
+                        : const Duration(milliseconds: 180),
                     curve: Curves.easeOutCubic,
-                    width: isSelected ? 44 : 36,
-                    height: 28,
+                    width: isSelected ? 46 : 36,
+                    height: 30,
                     decoration: BoxDecoration(
                       color: isSelected
                           ? tokens.navCapsuleFill
                           : Colors.transparent,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(15),
                     ),
                     alignment: Alignment.center,
                     child: AnimatedScale(
-                      scale: isSelected && !reduceMotion ? 1.06 : 1.0,
+                      scale: isSelected && !reduceMotion ? 1.08 : 1.0,
                       duration: reduceMotion
                           ? Duration.zero
-                          : const Duration(milliseconds: 200),
+                          : const Duration(milliseconds: 180),
                       curve: Curves.easeOutCubic,
                       child: Icon(
                         isSelected ? activeIcon : icon,
-                        size: 20,
-                        color: isSelected ? tokens.ink : tokens.ink3,
+                        size: 21,
+                        color: isSelected ? tokens.primary : tokens.ink2,
                       ),
                     ),
                   ),
@@ -188,117 +182,24 @@ class ScaffoldWithNavBar extends ConsumerWidget {
                   AnimatedDefaultTextStyle(
                     duration: reduceMotion
                         ? Duration.zero
-                        : const Duration(milliseconds: 200),
+                        : const Duration(milliseconds: 180),
                     curve: Curves.easeOutCubic,
                     style: TextStyle(
                       fontFamily: LabTheme.fontFamily,
                       fontFamilyFallback: LabTheme.fontFallback,
-                      fontSize: 10.5,
+                      fontSize: 12.0,
+                      height: 1.15,
                       fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.w500,
-                      color: isSelected ? tokens.ink : tokens.ink3,
-                      letterSpacing: -0.2,
+                          isSelected ? FontWeight.w700 : FontWeight.w600,
+                      color: isSelected ? tokens.primary : tokens.ink2,
                     ),
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCenterAiItem({
-    required int index,
-    required int currentIndex,
-    required IconData icon,
-    required IconData activeIcon,
-    required String label,
-    required MindTokens tokens,
-    required bool reduceMotion,
-  }) {
-    final isSelected = index == currentIndex;
-
-    return Expanded(
-      child: Semantics(
-        button: true,
-        selected: isSelected,
-        label: label,
-        child: MergeSemantics(
-          child: InkWell(
-            onTap: () => _onTap(index),
-            splashColor: Colors.transparent,
-            highlightColor: Colors.transparent,
-            child: SizedBox(
-              height: 66,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AnimatedContainer(
-                    duration: reduceMotion
-                        ? Duration.zero
-                        : const Duration(milliseconds: 200),
-                    curve: Curves.easeOutCubic,
-                    width: isSelected ? 48 : 36,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      gradient: isSelected
-                          ? LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [tokens.m2, tokens.m1],
-                            )
-                          : null,
-                      color: isSelected ? null : tokens.cardTint,
-                      borderRadius: BorderRadius.circular(14),
-                      border: isSelected
-                          ? null
-                          : Border.all(
-                              color: tokens.line,
-                              width: 1.0,
-                            ),
-                      boxShadow: isSelected ? tokens.navCenterShadows : null,
-                    ),
-                    alignment: Alignment.center,
-                    child: AnimatedScale(
-                      scale: isSelected && !reduceMotion ? 1.06 : 1.0,
-                      duration: reduceMotion
-                          ? Duration.zero
-                          : const Duration(milliseconds: 200),
-                      curve: Curves.easeOutCubic,
-                      child: Icon(
-                        isSelected ? activeIcon : icon,
-                        size: 20,
-                        color: isSelected ? tokens.onMood : tokens.ink2,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        softWrap: false,
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  AnimatedDefaultTextStyle(
-                    duration: reduceMotion
-                        ? Duration.zero
-                        : const Duration(milliseconds: 200),
-                    curve: Curves.easeOutCubic,
-                    style: TextStyle(
-                      fontFamily: LabTheme.fontFamily,
-                      fontFamilyFallback: LabTheme.fontFallback,
-                      fontSize: 10.5,
-                      fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.w500,
-                      color: isSelected ? tokens.ink : tokens.ink3,
-                      letterSpacing: -0.2,
-                    ),
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],

@@ -393,6 +393,7 @@ class DirectGeminiInvestigatorService implements InvestigatorService {
       conditions: conditions,
       contextualUserPrompt: contextualPrompt,
       sessionSummary: activeSummary,
+      customDirectives: profile?.customAiDirectives,
     );
 
     final result = await _callGeminiContents(

@@ -64,8 +64,8 @@ void main() {
 
       const fr = AppStrings('fr');
       const ar = AppStrings('ar');
-      expect(trackMoodLabel('happy', fr), 'Heureux');
-      expect(trackMoodLabel('happy', ar), 'فرحان');
+      expect(trackMoodLabel('happy', fr), fr.moodGood);
+      expect(trackMoodLabel('happy', ar), ar.moodGood);
     });
 
     test('PsychologicalProfileModel.isMinor protects canonical and legacy values', () {

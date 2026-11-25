@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:mind_forensics/app/localization/app_strings.dart';
 import 'package:mind_forensics/app/localization/locale_controller.dart';
 import 'package:mind_forensics/app/theme/lab_theme.dart';
 import 'package:mind_forensics/core/security/secure_key_manager.dart';
@@ -79,7 +80,15 @@ void main() {
         // Switch to Overview tab via navigation rail and jump back via observation card
         await tester.tap(find.text('Overview').first);
         await tester.pumpAndSettle();
-        expect(find.text('COHORT BASELINE OBSERVATIONS'), findsOneWidget);
+        final obsFinder = find.text(
+          const AppStrings('en').cohortObservationsTitle,
+        );
+        await tester.scrollUntilVisible(
+          obsFinder,
+          150,
+          scrollable: find.byType(Scrollable).last,
+        );
+        expect(obsFinder, findsOneWidget);
 
         await tester.tap(find.textContaining('Nadia B.').first);
         await tester.pumpAndSettle();

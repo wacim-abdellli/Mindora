@@ -304,15 +304,13 @@ void main() {
         AppRouter.router.go('/check-in');
         await tester.pumpAndSettle();
         expect(find.byType(TrackScreen), findsOneWidget);
-        expect(find.text('Check-In Today'), findsOneWidget);
+        expect(
+          find.text(const AppStrings('en').logNewMomentLink),
+          findsAtLeastNWidgets(1),
+        );
 
         // Navigate to /mind-trace alias -> lands on TrackScreen
         AppRouter.router.go(AppRouter.mindTrace);
-        await tester.pumpAndSettle();
-        expect(find.byType(TrackScreen), findsOneWidget);
-
-        // Navigate with initialTabIndex: 1 -> lands on History & Calendar tab
-        AppRouter.router.go(AppRouter.mindTrace, extra: {'initialTabIndex': 1});
         await tester.pumpAndSettle();
         expect(find.byType(TrackScreen), findsOneWidget);
         expect(find.byTooltip('Previous month'), findsOneWidget);

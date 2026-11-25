@@ -2,35 +2,40 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../app/localization/app_strings.dart';
 import '../../../app/localization/locale_controller.dart';
 import '../../../app/router/app_router.dart';
 import '../../../app/theme/display_comfort_controller.dart';
+import '../../../app/theme/lab_theme.dart';
 import '../../../app/theme/mind_tokens.dart';
-import '../../../core/safety/crisis_keywords.dart';
-import '../../../core/safety/safety_interceptor.dart';
+import '../../../app/theme/theme_controller.dart';
 import '../../../core/safety/support_button.dart';
 import '../../../core/widgets/ambient_scaffold.dart';
-import '../../../core/widgets/fingerprint_thread_signature.dart';
+import '../../../core/widgets/mind_badge.dart';
 import '../../../core/widgets/mind_button.dart';
 import '../../../core/widgets/mind_card.dart';
-import '../../../core/widgets/mind_intensity_picker.dart';
 import '../../../core/widgets/mind_pressable.dart';
+import '../../../core/widgets/mind_segmented.dart';
+import '../../../core/widgets/mind_strength_picker.dart';
+import '../../../core/widgets/mood_face.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../journey/controllers/journey_controller.dart';
 import '../../mind_trace/controllers/mind_trace_controller.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
 import '../../profile/controllers/profile_controller.dart';
 import '../../profile/domain/psychological_profile_model.dart';
+import '../domain/app_personalization_engine.dart';
 
-/// Fast 4-step, options-first onboarding for Mindora.
+/// Adaptive, 100% options-first 6-step onboarding for Mindora.
 ///
-/// Steps:
-/// 0: Welcome, live EN/FR/AR switcher, privacy promise & account restore link
-/// 1: Focus priorities (1-3 wrapped cards, optional)
-/// 2: Comfort & safety check (optional age band + minor safeguard + support context)
-/// 3: First check-in (5 core moods + 1-10 intensity) for a zero-blank-screen Home handoff
+/// Step 1: Language (`العربية (تونس)`, `Français`, `English`), Theme & Comfort size.
+/// Step 2: Role Gate (`For myself` vs `I am a Doctor / Psychiatrist` -> routes to `/clinician`).
+/// Step 3: Age group (Under 18 safeguard + hotlines; 65+ auto-enables Comfort Mode).
+/// Step 4: Multi-select goals (shapes Home & Doctor Prep features).
+/// Step 5: Care context + Daily focus areas (Sleep, Energy, Stress, Overthinking, Routine).
+/// Step 6: Decision Summary preview + First 2-tap MoodFace check-in.
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -39,62 +44,38 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 }
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
-  static const int _totalSteps = 4;
+  static const int _totalSteps = 6;
 
   static const List<String> _ageRanges = [
     'under_18',
     '18-24',
-    '25-34',
-    '35-44',
-    '45-54',
-    '55-64',
+    '25-44',
+    '45-64',
     '65+',
-    'prefer_not_to_say',
   ];
 
-  static const List<({String id, String canonicalGoal, IconData icon})>
-  _focusOptions = [
-    (
-      id: 'stress',
-      canonicalGoal: 'Ease stress & anxiety',
-      icon: Icons.air_rounded,
-    ),
-    (
-      id: 'mood',
-      canonicalGoal: 'Understand mood patterns',
-      icon: Icons.insights_rounded,
-    ),
-    (
-      id: 'overthinking',
-      canonicalGoal: 'Untangle overthinking',
-      icon: Icons.psychology_alt_outlined,
-    ),
-    (
-      id: 'sleep',
-      canonicalGoal: 'Sleep & energy rhythm',
-      icon: Icons.bedtime_outlined,
-    ),
-    (
-      id: 'specialist',
-      canonicalGoal: 'Reflect alongside a specialist',
-      icon: Icons.handshake_outlined,
-    ),
+  static const List<String> _goalKeys = [
+    'track_mood_sleep',
+    'doctor_visits',
+    'calm_stress',
+    'understand_energy',
+    'just_exploring',
   ];
 
-  static const List<({String key, IconData icon, Color color})> _moodOptions = [
-    (key: 'calm', icon: Icons.water_drop_outlined, color: MindTokens.moodCalm),
-    (key: 'anxious', icon: Icons.air_rounded, color: MindTokens.moodAnxious),
-    (
-      key: 'frustrated',
-      icon: Icons.bolt_rounded,
-      color: MindTokens.moodFrustrated,
-    ),
-    (key: 'heavy', icon: Icons.cloud_outlined, color: MindTokens.moodHeavy),
-    (
-      key: 'restless',
-      icon: Icons.waves_rounded,
-      color: MindTokens.moodRestless,
-    ),
+  static const List<String> _careContextKeys = [
+    'regular_doctor',
+    'occasional_doctor',
+    'self_care',
+  ];
+
+  static const List<String> _focusAreaKeys = [
+    'sleep',
+    'energy',
+    'stress',
+    'overthinking',
+    'work_study',
+    'family_social',
+    'routine',
   ];
 
   int _currentStep = 0;
@@ -102,18 +83,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   bool _isFinishing = false;
   bool _recordedFirstCheckIn = false;
 
-  // Step 2: Focus areas
-  final Set<String> _selectedGoals = {};
-  final TextEditingController _customGoalController = TextEditingController();
-  bool _showCustomGoalField = false;
-
-  // Step 3: Comfort & safety context
+  String _userRole = 'patient';
   String _selectedAgeRange = '';
-  String _selectedProfessionalSupport = '';
-
-  // Step 4: First check-in
-  String _selectedMood = 'calm';
-  int _firstIntensity = 5;
+  final Set<String> _selectedGoals = <String>{};
+  String _careContext = '';
+  final Set<String> _selectedFocusAreas = <String>{};
+  AppMood _selectedMood = AppMood.calm;
+  int _firstIntensity = 6;
 
   bool get _isMinor =>
       _selectedAgeRange == 'under_18' || _selectedAgeRange == '<18';
@@ -126,12 +102,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     });
   }
 
-  @override
-  void dispose() {
-    _customGoalController.dispose();
-    super.dispose();
-  }
-
   void _hydrateFromExistingProfile() {
     if (_hydrated) return;
     final profile = ref.read(profileControllerProvider).value;
@@ -139,18 +109,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     _hydrated = true;
 
     setState(() {
+      if (profile.userRole.isNotEmpty) {
+        _userRole = profile.userRole;
+      }
       if (profile.ageRange.isNotEmpty) {
         _selectedAgeRange = profile.ageRange;
-      }
-      if (profile.professionalSupport.isNotEmpty) {
-        _selectedProfessionalSupport = profile.professionalSupport;
       }
       if (profile.selectedGoals.isNotEmpty) {
         _selectedGoals.addAll(profile.selectedGoals);
       }
-      if (profile.customGoal.isNotEmpty) {
-        _customGoalController.text = profile.customGoal;
-        _showCustomGoalField = true;
+      if (profile.careContext.isNotEmpty) {
+        _careContext = profile.careContext;
+      }
+      if (profile.focusAreas.isNotEmpty) {
+        _selectedFocusAreas.addAll(profile.focusAreas);
       }
       if (profile.onboardingStep > 0) {
         _currentStep = profile.onboardingStep.clamp(0, _totalSteps - 1);
@@ -158,37 +130,34 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     });
   }
 
+  PsychologicalProfileModel _buildProfileDraft(
+    PsychologicalProfileModel? base,
+    String userId, {
+    required int step,
+  }) {
+    final goalsList = _selectedGoals.toList(growable: false);
+    final focusList = _selectedFocusAreas.toList(growable: false);
+    return (base ?? PsychologicalProfileModel.empty(userId: userId)).copyWith(
+      userId: userId,
+      userRole: _userRole,
+      ageRange: _selectedAgeRange,
+      selectedGoals: goalsList,
+      careContext: _careContext,
+      professionalSupport: _careContext,
+      focusAreas: focusList,
+      onboardingStep: step,
+      updatedAt: DateTime.now(),
+    );
+  }
+
   Future<void> _saveDraftProgress() async {
     final currentProfile = ref.read(profileControllerProvider).value;
     final userId = ref.read(authControllerProvider).user?.id ?? 'local_user';
-    final customGoalText = _customGoalController.text.trim();
-    final goalsList = _selectedGoals.toList();
-    final draft =
-        (currentProfile ?? PsychologicalProfileModel.empty(userId: userId))
-            .copyWith(
-              ageRange: _selectedAgeRange,
-              selectedGoals: goalsList,
-              customGoal: customGoalText,
-              personalGoals: [
-                ...goalsList,
-                if (customGoalText.isNotEmpty) customGoalText,
-              ].join(', '),
-              professionalSupport: _selectedProfessionalSupport,
-              onboardingStep: _currentStep,
-              updatedAt: DateTime.now(),
-            );
+    final draft = _buildProfileDraft(currentProfile, userId, step: _currentStep);
     await ref.read(profileControllerProvider.notifier).saveFullProfile(draft);
   }
 
   void _nextStep() {
-    if (_currentStep == 1) {
-      final customGoalText = _customGoalController.text.trim();
-      if (customGoalText.isNotEmpty &&
-          CrisisKeywords.evaluateText(customGoalText) == 2) {
-        SafetyInterceptor.showCrisisPauseDialog(context);
-        return;
-      }
-    }
     if (_currentStep >= _totalSteps - 1) {
       _finishOnboarding(saveInitialTrace: true);
       return;
@@ -211,14 +180,44 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     _nextStep();
   }
 
+  Future<void> _enterClinicianWorkspace() async {
+    if (_isFinishing) return;
+    setState(() {
+      _userRole = 'clinician';
+      _isFinishing = true;
+    });
+    HapticFeedback.mediumImpact();
+    try {
+      final authCtrl = ref.read(authControllerProvider.notifier);
+      await authCtrl.createAnonymousVault();
+      await authCtrl.completeOnboarding();
+
+      final currentProfile = await ref.read(profileControllerProvider.future);
+      final userId = ref.read(authControllerProvider).user?.id ?? 'local_user';
+      final profile = _buildProfileDraft(
+        currentProfile,
+        userId,
+        step: _totalSteps,
+      );
+      await ref
+          .read(profileControllerProvider.notifier)
+          .saveFullProfile(profile);
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('mf_preferred_workspace', 'clinician');
+
+      if (mounted) {
+        GoRouter.maybeOf(context)?.go(AppRouter.clinician);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isFinishing = false);
+      }
+    }
+  }
+
   Future<void> _finishOnboarding({required bool saveInitialTrace}) async {
     if (_isFinishing) return;
-    final customGoalText = _customGoalController.text.trim();
-    if (customGoalText.isNotEmpty &&
-        CrisisKeywords.evaluateText(customGoalText) == 2) {
-      SafetyInterceptor.showCrisisPauseDialog(context);
-      return;
-    }
     setState(() => _isFinishing = true);
     HapticFeedback.mediumImpact();
 
@@ -227,33 +226,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       await authCtrl.createAnonymousVault();
       await authCtrl.completeOnboarding();
 
-      // Wait for post-vault Riverpod rebuilds to finish so neither notifier
-      // overwrites the newly saved final profile or first check-in trace.
       final currentProfile = await ref.read(profileControllerProvider.future);
       await ref.read(mindTraceControllerProvider.future);
 
       final userId = ref.read(authControllerProvider).user?.id ?? 'local_user';
-      final goalsList = _selectedGoals.toList();
-      final fullGoals = [
-        ...goalsList,
-        if (customGoalText.isNotEmpty) customGoalText,
-      ].join(', ');
-
-      final profile = currentProfile.copyWith(
-        userId: userId,
-        ageRange: _selectedAgeRange,
-        selectedGoals: goalsList,
-        customGoal: customGoalText,
-        personalGoals: fullGoals,
-        professionalSupport: _selectedProfessionalSupport,
-        onboardingStep: _totalSteps,
-        updatedAt: DateTime.now(),
+      final profile = _buildProfileDraft(
+        currentProfile,
+        userId,
+        step: _totalSteps,
       );
 
       await ref
           .read(profileControllerProvider.notifier)
           .saveFullProfile(profile);
       await ref.read(journeyControllerProvider.notifier).resetJourney();
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('mf_preferred_workspace', 'patient');
 
       if (saveInitialTrace && !_recordedFirstCheckIn) {
         _recordedFirstCheckIn = true;
@@ -262,10 +251,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           id: 'trace_${now.millisecondsSinceEpoch}',
           userId: userId,
           date: now,
-          overallMood: _selectedMood,
+          overallMood: _selectedMood.key,
           moodIntensity: _firstIntensity,
           energyLevel: null,
-          selectedEmotions: [_selectedMood],
+          selectedEmotions: [_selectedMood.key],
           createdAt: now,
           updatedAt: now,
         );
@@ -284,49 +273,49 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
-  String _focusLabel(String id, AppStrings strings) {
-    switch (id) {
-      case 'stress':
-        return strings.focusGoalStress;
-      case 'mood':
-        return strings.focusGoalMood;
-      case 'overthinking':
-        return strings.focusGoalOverthinking;
-      case 'sleep':
-        return strings.focusGoalSleepEnergy;
-      case 'specialist':
-      default:
-        return strings.focusGoalSpecialist;
-    }
+  String _ageLabel(String range, AppStrings strings) {
+    if (range == 'under_18') return strings.ageUnder18;
+    if (range == '65+') return strings.age65Plus;
+    return range;
   }
 
-  String _moodLabel(String key, AppStrings strings) {
-    switch (key) {
-      case 'calm':
-        return strings.moodCalm;
-      case 'anxious':
-        return strings.moodAnxious;
-      case 'frustrated':
-        return strings.moodFrustrated;
-      case 'heavy':
-        return strings.moodHeavy;
-      case 'restless':
-      default:
-        return strings.moodRestless;
-    }
-  }
+  String _goalLabel(String key, AppStrings strings) => switch (key) {
+    'track_mood_sleep' => strings.goalTrackMoodSleep,
+    'doctor_visits' => strings.goalDoctorVisits,
+    'calm_stress' => strings.goalCalmStress,
+    'understand_energy' => strings.goalUnderstandEnergy,
+    _ => strings.goalJustExploring,
+  };
 
-  Color _moodColor(String key) {
-    return _moodOptions
-        .firstWhere((m) => m.key == key, orElse: () => _moodOptions.first)
-        .color;
-  }
+  IconData _goalIcon(String key) => switch (key) {
+    'track_mood_sleep' => Icons.bedtime_outlined,
+    'doctor_visits' => Icons.medical_information_outlined,
+    'calm_stress' => Icons.air_rounded,
+    'understand_energy' => Icons.bolt_outlined,
+    _ => Icons.explore_outlined,
+  };
+
+  String _careLabel(String key, AppStrings strings) => switch (key) {
+    'regular_doctor' => strings.careRegularDoctor,
+    'occasional_doctor' => strings.careOccasionalDoctor,
+    _ => strings.careSelfOnly,
+  };
+
+  String _focusLabel(String key, AppStrings strings) => switch (key) {
+    'sleep' => strings.focusSleep,
+    'energy' => strings.focusEnergy,
+    'stress' => strings.focusStress,
+    'overthinking' => strings.focusOverthinking,
+    'work_study' => strings.focusWorkStudy,
+    'family_social' => strings.focusFamilySocial,
+    _ => strings.focusRoutine,
+  };
 
   @override
   Widget build(BuildContext context) {
     ref.listen<AsyncValue<PsychologicalProfileModel?>>(
       profileControllerProvider,
-      (previous, next) {
+      (_, next) {
         if (next.hasValue && next.value != null && !_hydrated) {
           _hydrateFromExistingProfile();
         }
@@ -343,23 +332,40 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         child: Column(
           children: [
             _buildTopBar(tokens, strings, activeLocale),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+              child: Row(
+                children: [
+                  for (var i = 0; i < _totalSteps; i++) ...[
+                    Expanded(
+                      child: AnimatedContainer(
+                        duration: reduceMotion
+                            ? Duration.zero
+                            : const Duration(milliseconds: 220),
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: i <= _currentStep
+                              ? tokens.primary
+                              : tokens.lineStrong,
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                      ),
+                    ),
+                    if (i < _totalSteps - 1) const SizedBox(width: 6),
+                  ],
+                ],
+              ),
+            ),
             Expanded(
               child: AnimatedSwitcher(
                 duration: reduceMotion
                     ? Duration.zero
-                    : const Duration(milliseconds: 220),
+                    : const Duration(milliseconds: 200),
                 switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeIn,
-                layoutBuilder: (currentChild, previousChildren) {
-                  return Stack(
-                    alignment: Alignment.topCenter,
-                    children: [...previousChildren, ?currentChild],
-                  );
-                },
                 child: _buildActiveStep(tokens, strings),
               ),
             ),
-            _buildBottomCtaBar(tokens, strings),
+            _buildBottomBar(tokens, strings),
           ],
         ),
       ),
@@ -373,18 +379,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   ) {
     if (_currentStep == 0) {
       return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 12, 6),
+        padding: const EdgeInsets.fromLTRB(16, 10, 12, 4),
         child: Row(
           children: [
             Expanded(
               child: Wrap(
-                spacing: 6,
-                runSpacing: 6,
+                spacing: 8,
+                runSpacing: 8,
                 children: AppLanguage.values.map((lang) {
                   final selected = activeLocale.languageCode == lang.code;
                   return MindPressable(
                     semanticLabel: lang.displayName,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     onPressed: () {
                       ref
                           .read(localeControllerProvider.notifier)
@@ -397,13 +403,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       decoration: BoxDecoration(
-                        color: selected
-                            ? tokens.selectedTintFor(tokens.m1)
-                            : tokens.surface2,
-                        borderRadius: BorderRadius.circular(12),
+                        color: selected ? tokens.primary : tokens.surface2,
+                        borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: selected ? tokens.m1 : tokens.line,
-                          width: selected ? 1.4 : 1.0,
+                          color: selected ? tokens.primary : tokens.line,
                         ),
                       ),
                       child: Center(
@@ -412,11 +415,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         child: Text(
                           lang.shortCode,
                           style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: selected
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                            color: selected ? tokens.ink : tokens.ink2,
+                            fontFamily: LabTheme.fontFamily,
+                            fontFamilyFallback: LabTheme.fontFallback,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: selected ? tokens.onPrimary : tokens.ink,
                           ),
                         ),
                       ),
@@ -425,136 +428,121 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 }).toList(),
               ),
             ),
-            const SupportButton(compact: true),
+            const SupportButton(),
           ],
         ),
       );
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 2),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-            color: tokens.ink,
             tooltip: strings.backBtn,
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             onPressed: _previousStep,
+            icon: Icon(Icons.arrow_back_rounded, color: tokens.ink),
           ),
-          const SizedBox(width: 4),
           Expanded(
-            child: Row(
-              children: List.generate(_totalSteps, (index) {
-                final active = index <= _currentStep;
-                return Expanded(
-                  child: Container(
-                    height: 4,
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    decoration: BoxDecoration(
-                      color: active ? tokens.m1 : tokens.line,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                );
-              }),
-            ),
-          ),
-          const SizedBox(width: 6),
-          MindPressable(
-            semanticLabel: strings.onboardingSkip,
-            borderRadius: BorderRadius.circular(tokens.chipRadius),
-            onPressed: _skipCurrentStep,
-            child: Container(
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              alignment: Alignment.center,
-              child: Text(
-                strings.onboardingSkip,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: tokens.ink2,
-                ),
+            child: Text(
+              strings.stepProgressOf(_currentStep + 1, _totalSteps),
+              textAlign: TextAlign.center,
+              style: LabTheme.textStyle(
+                fontSize: 14.0,
+                fontWeight: FontWeight.w700,
+                color: tokens.ink2,
               ),
             ),
           ),
-          const SupportButton(compact: true),
+          if (_currentStep != 1)
+            TextButton(
+              onPressed: _skipCurrentStep,
+              style: TextButton.styleFrom(
+                minimumSize: const Size(56, 48),
+                foregroundColor: tokens.ink2,
+              ),
+              child: Text(
+                strings.skipBtn,
+                style: LabTheme.textStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
+                  color: tokens.ink2,
+                ),
+              ),
+            )
+          else
+            const SupportButton(compact: true),
         ],
       ),
     );
   }
 
   Widget _buildActiveStep(MindTokens tokens, AppStrings strings) {
-    switch (_currentStep) {
-      case 0:
-        return _buildWelcomeStep(tokens, strings);
-      case 1:
-        return _buildFocusStep(tokens, strings);
-      case 2:
-        return _buildComfortSafetyStep(tokens, strings);
-      case 3:
-      default:
-        return _buildFirstCheckInStep(tokens, strings);
-    }
+    return switch (_currentStep) {
+      0 => _buildStepWelcome(tokens, strings),
+      1 => _buildStepRoleGate(tokens, strings),
+      2 => _buildStepAgeSafety(tokens, strings),
+      3 => _buildStepGoals(tokens, strings),
+      4 => _buildStepCareAndFocus(tokens, strings),
+      _ => _buildStepFirstMood(tokens, strings),
+    };
   }
 
-  Widget _buildWelcomeStep(MindTokens tokens, AppStrings strings) {
+  Widget _buildStepWelcome(MindTokens tokens, AppStrings strings) {
+    final comfortMode = ref.watch(displayComfortProvider);
+    final themeMode = ref.watch(themeControllerProvider);
+    final activeLocale = ref.watch(localeControllerProvider);
+
     return SingleChildScrollView(
       key: const ValueKey('onboarding_step_0'),
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildStepCounter(tokens, strings.onboardingStepOf(1, _totalSteps)),
-          const SizedBox(height: 24),
-          Center(
-            child: Container(
-              width: 108,
-              height: 108,
-              decoration: BoxDecoration(
-                color: tokens.blobTintFor(tokens.m1),
-                shape: BoxShape.circle,
-                border: Border.all(color: tokens.m1.withValues(alpha: 0.25)),
-              ),
-              alignment: Alignment.center,
-              child: FingerprintThreadSignature(
-                size: 70,
-                primaryColor: tokens.m1,
-                accentColor: tokens.ink2,
-              ),
+          const Center(
+            child: MoodFace(
+              mood: AppMood.good,
+              size: 80,
+              isSelected: true,
             ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 16),
           Text(
-            strings.onboardingWelcomeHeadline,
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w700,
+            'Mindora',
+            textAlign: TextAlign.center,
+            style: LabTheme.textStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
               height: 1.2,
-              letterSpacing: -0.5,
               color: tokens.ink,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
             strings.onboardingWelcomeBody,
-            style: TextStyle(fontSize: 14.5, height: 1.55, color: tokens.ink2),
+            textAlign: TextAlign.center,
+            style: LabTheme.textStyle(
+              fontSize: 16.0,
+              height: 1.45,
+              color: tokens.ink2,
+            ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           MindCard(
-            variant: MindCardVariant.plain,
-            padding: const EdgeInsets.all(16),
+            variant: MindCardVariant.flat,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.shield_outlined, size: 20, color: tokens.m1),
-                const SizedBox(width: 12),
+                Icon(Icons.lock_outline_rounded, size: 20, color: tokens.ink),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     strings.onboardingPrivacyPromise,
-                    style: TextStyle(
-                      fontSize: 13,
-                      height: 1.48,
+                    style: LabTheme.textStyle(
+                      fontSize: 13.5,
+                      height: 1.4,
+                      fontWeight: FontWeight.w600,
                       color: tokens.ink,
                     ),
                   ),
@@ -562,111 +550,456 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
-          Builder(
-            builder: (context) {
-              final comfortMode = ref.watch(displayComfortProvider);
+          const SizedBox(height: 18),
+          Text(
+            strings.languageTitle,
+            style: LabTheme.textStyle(
+              fontSize: 14.5,
+              fontWeight: FontWeight.w700,
+              color: tokens.ink,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: AppLanguage.values.map((lang) {
+              final selected = activeLocale.languageCode == lang.code;
               return MindPressable(
-                key: const ValueKey('onboarding-comfort-mode-toggle'),
-                semanticLabel: strings.comfortModeTitle,
-                borderRadius: BorderRadius.circular(14),
                 onPressed: () {
                   HapticFeedback.selectionClick();
-                  ref.read(displayComfortProvider.notifier).toggle();
+                  ref.read(localeControllerProvider.notifier).setLanguage(lang);
                 },
-                child: MindCard(
-                  variant: MindCardVariant.plain,
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  constraints: const BoxConstraints(minHeight: 48, minWidth: 96),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
-                    vertical: 10,
+                    vertical: 12,
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.visibility_outlined,
-                        size: 18,
-                        color: tokens.m1,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              strings.comfortModeTitle,
-                              style: TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w600,
-                                color: tokens.ink,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              strings.comfortModeOnboardingHint,
-                              style: TextStyle(
-                                fontSize: 12,
-                                height: 1.35,
-                                color: tokens.ink2,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      IgnorePointer(
-                        child: SizedBox(
-                          height: 28,
-                          child: Switch.adaptive(
-                            value: comfortMode,
-                            activeTrackColor: tokens.m1,
-                            onChanged: (_) {},
-                          ),
-                        ),
-                      ),
-                    ],
+                  decoration: BoxDecoration(
+                    color: selected ? tokens.primary : tokens.surface,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: selected ? tokens.primary : tokens.lineStrong,
+                    ),
+                  ),
+                  child: Text(
+                    lang.displayName,
+                    style: LabTheme.textStyle(
+                      fontSize: 14.0,
+                      fontWeight: FontWeight.w700,
+                      color: selected ? tokens.onPrimary : tokens.ink,
+                    ),
                   ),
                 ),
               );
+            }).toList(),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            strings.themeModeTitle,
+            style: LabTheme.textStyle(
+              fontSize: 14.5,
+              fontWeight: FontWeight.w700,
+              color: tokens.ink,
+            ),
+          ),
+          const SizedBox(height: 8),
+          MindSegmented(
+            index: themeMode == ThemeMode.dark ? 1 : 0,
+            labels: [strings.themeDaylight, strings.themeNight],
+            onChanged: (idx) {
+              HapticFeedback.selectionClick();
+              ref
+                  .read(themeControllerProvider.notifier)
+                  .setTheme(idx == 1 ? ThemeMode.dark : ThemeMode.light);
             },
           ),
-          const SizedBox(height: 12),
-          Center(
-            child: MindPressable(
-              semanticLabel: strings.signInPromptBtn,
-              borderRadius: BorderRadius.circular(12),
-              onPressed: () {
-                GoRouter.maybeOf(context)?.push(AppRouter.auth);
-              },
-              child: Container(
-                constraints: const BoxConstraints(minHeight: 48),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
+          const SizedBox(height: 16),
+          Text(
+            strings.comfortModeTitle,
+            style: LabTheme.textStyle(
+              fontSize: 14.5,
+              fontWeight: FontWeight.w700,
+              color: tokens.ink,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _textSizeCard(
+                  tokens: tokens,
+                  sample: 'Aa',
+                  sampleSize: 18,
+                  label: strings.normalTextLabel,
+                  selected: !comfortMode,
+                  onTap: () => ref
+                      .read(displayComfortProvider.notifier)
+                      .setComfortMode(false),
                 ),
-                alignment: Alignment.center,
-                child: Wrap(
-                  alignment: WrapAlignment.center,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 6,
-                  runSpacing: 4,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _textSizeCard(
+                  key: const ValueKey('onboarding-comfort-mode-toggle'),
+                  tokens: tokens,
+                  sample: 'AA',
+                  sampleSize: 22,
+                  label: strings.largerTextLabel,
+                  selected: comfortMode,
+                  onTap: () => ref
+                      .read(displayComfortProvider.notifier)
+                      .setComfortMode(!comfortMode),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStepRoleGate(MindTokens tokens, AppStrings strings) {
+    return SingleChildScrollView(
+      key: const ValueKey('onboarding_step_role'),
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            strings.onboardingRoleTitle,
+            style: LabTheme.textStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              height: 1.25,
+              color: tokens.ink,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            strings.onboardingRoleSubtitle,
+            style: LabTheme.textStyle(
+              fontSize: 15.5,
+              height: 1.45,
+              color: tokens.ink2,
+            ),
+          ),
+          const SizedBox(height: 22),
+          _roleOptionCard(
+            key: const ValueKey('onboarding-role-patient'),
+            tokens: tokens,
+            icon: Icons.favorite_outline_rounded,
+            title: strings.rolePatientTitle,
+            subtitle: strings.rolePatientSub,
+            selected: _userRole == 'patient',
+            onTap: () {
+              HapticFeedback.selectionClick();
+              setState(() => _userRole = 'patient');
+              _nextStep();
+            },
+          ),
+          const SizedBox(height: 14),
+          _roleOptionCard(
+            key: const ValueKey('onboarding-role-clinician'),
+            tokens: tokens,
+            icon: Icons.medical_services_outlined,
+            title: strings.roleClinicianTitle,
+            subtitle: strings.roleClinicianSub,
+            selected: _userRole == 'clinician',
+            onTap: _enterClinicianWorkspace,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _roleOptionCard({
+    Key? key,
+    required MindTokens tokens,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: title,
+      child: MindPressable(
+        key: key,
+        onPressed: onTap,
+        borderRadius: BorderRadius.circular(tokens.cardRadius),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 88),
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: selected ? tokens.surface2 : tokens.surface,
+            borderRadius: BorderRadius.circular(tokens.cardRadius),
+            border: Border.all(
+              color: selected ? tokens.primary : tokens.lineStrong,
+              width: selected ? 2.0 : 1.0,
+            ),
+            boxShadow: tokens.shadows,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: selected ? tokens.primary : tokens.surface2,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  icon,
+                  size: 24,
+                  color: selected ? tokens.onPrimary : tokens.ink,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      strings.alreadyHaveVaultPrompt,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 13, color: tokens.ink2),
+                      title,
+                      style: LabTheme.textStyle(
+                        fontSize: 16.5,
+                        fontWeight: FontWeight.w800,
+                        color: tokens.ink,
+                      ),
                     ),
+                    const SizedBox(height: 4),
                     Text(
-                      strings.signInPromptBtn,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: tokens.m1,
-                        decoration: TextDecoration.underline,
+                      subtitle,
+                      style: LabTheme.textStyle(
+                        fontSize: 13.5,
+                        height: 1.4,
+                        color: tokens.ink2,
                       ),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
+              Icon(Icons.arrow_forward_ios_rounded, size: 16, color: tokens.ink2),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _textSizeCard({
+    Key? key,
+    required MindTokens tokens,
+    required String sample,
+    required double sampleSize,
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      child: MindPressable(
+        key: key,
+        onPressed: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        borderRadius: BorderRadius.circular(tokens.tileRadius),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 72),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          decoration: BoxDecoration(
+            color: selected ? tokens.primary : tokens.surface,
+            borderRadius: BorderRadius.circular(tokens.tileRadius),
+            border: Border.all(
+              color: selected ? tokens.primary : tokens.lineStrong,
+              width: selected ? 2.0 : 1.0,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                sample,
+                style: LabTheme.textStyle(
+                  fontSize: sampleSize,
+                  fontWeight: FontWeight.w800,
+                  color: selected ? tokens.onPrimary : tokens.ink,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: LabTheme.textStyle(
+                  fontSize: 14.0,
+                  fontWeight: FontWeight.w700,
+                  color: selected ? tokens.onPrimary : tokens.ink,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStepAgeSafety(MindTokens tokens, AppStrings strings) {
+    return SingleChildScrollView(
+      key: const ValueKey('onboarding_step_age'),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            strings.onboardingAboutYouTitle,
+            style: LabTheme.textStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              height: 1.25,
+              color: tokens.ink,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            strings.onboardingBasicInfoSubtitle,
+            style: LabTheme.textStyle(
+              fontSize: 15.5,
+              height: 1.5,
+              color: tokens.ink2,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: _ageRanges.map((range) {
+              final selected = _selectedAgeRange == range;
+              return MindPressable(
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _selectedAgeRange = range);
+                  if (range == '65+') {
+                    ref.read(displayComfortProvider.notifier).setComfortMode(true);
+                  }
+                },
+                borderRadius: BorderRadius.circular(tokens.buttonRadius),
+                child: Container(
+                  constraints: const BoxConstraints(
+                    minWidth: 112,
+                    minHeight: 54,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    color: selected ? tokens.primary : tokens.surface,
+                    borderRadius: BorderRadius.circular(tokens.buttonRadius),
+                    border: Border.all(
+                      color: selected ? tokens.primary : tokens.lineStrong,
+                      width: selected ? 2.0 : 1.0,
+                    ),
+                  ),
+                  child: Text(
+                    _ageLabel(range, strings),
+                    textAlign: TextAlign.center,
+                    style: LabTheme.textStyle(
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w700,
+                      color: selected ? tokens.onPrimary : tokens.ink,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          if (_selectedAgeRange == '65+') ...[
+            const SizedBox(height: 16),
+            MindCard(
+              variant: MindCardVariant.tint,
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  Icon(Icons.visibility_outlined, size: 20, color: tokens.ink),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      strings.ageAutoComfortBanner,
+                      style: LabTheme.textStyle(
+                        fontSize: 13.5,
+                        height: 1.4,
+                        fontWeight: FontWeight.w600,
+                        color: tokens.ink,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (_isMinor) ...[
+            const SizedBox(height: 18),
+            MindCard(
+              backgroundColor: tokens.safetySoft,
+              borderColor: tokens.safety.withValues(alpha: 0.40),
+              child: Row(
+                children: [
+                  Icon(Icons.shield_outlined, color: tokens.safety, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      strings.minorSupportNotice,
+                      style: LabTheme.textStyle(
+                        fontSize: 14.0,
+                        height: 1.45,
+                        fontWeight: FontWeight.w600,
+                        color: tokens.ink,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 18),
+          MindCard(
+            variant: MindCardVariant.flat,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  strings.onboardingCrisisSafetyNote,
+                  style: LabTheme.textStyle(
+                    fontSize: 14.0,
+                    height: 1.45,
+                    color: tokens.ink2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed: () => SupportModalSheet.show(context),
+                  icon: Icon(Icons.phone_in_talk_rounded, color: tokens.safety),
+                  label: Text(
+                    strings.openCrisisResourcesLabel,
+                    style: LabTheme.textStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                      color: tokens.safety,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -674,161 +1007,97 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  Widget _buildFocusStep(MindTokens tokens, AppStrings strings) {
+  Widget _buildStepGoals(MindTokens tokens, AppStrings strings) {
     return SingleChildScrollView(
-      key: const ValueKey('onboarding_step_1'),
-      padding: const EdgeInsets.fromLTRB(24, 14, 24, 24),
+      key: const ValueKey('onboarding_step_goals'),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildStepCounter(tokens, strings.onboardingStepOf(2, _totalSteps)),
-          const SizedBox(height: 12),
           Text(
-            strings.onboardingFocusTitle,
-            style: TextStyle(
-              fontSize: 23,
-              fontWeight: FontWeight.w700,
+            strings.onboardingGoalsTitle,
+            style: LabTheme.textStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
               height: 1.25,
-              letterSpacing: -0.4,
               color: tokens.ink,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            strings.onboardingFocusSubtitle,
-            style: TextStyle(fontSize: 13.5, height: 1.48, color: tokens.ink2),
-          ),
-          const SizedBox(height: 20),
-          ..._focusOptions.map((option) {
-            final isSelected = _selectedGoals.contains(option.canonicalGoal);
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: MindPressable(
-                semanticLabel: _focusLabel(option.id, strings),
-                borderRadius: BorderRadius.circular(16),
-                onPressed: () {
-                  setState(() {
-                    if (isSelected) {
-                      _selectedGoals.remove(option.canonicalGoal);
-                    } else {
-                      _selectedGoals.add(option.canonicalGoal);
-                    }
-                  });
-                  _saveDraftProgress();
-                },
-                child: Container(
-                  constraints: const BoxConstraints(minHeight: 54),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 13,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? tokens.selectedTintFor(tokens.m1)
-                        : tokens.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isSelected ? tokens.m1 : tokens.line,
-                      width: isSelected ? 1.5 : 1.0,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        option.icon,
-                        size: 20,
-                        color: isSelected ? tokens.m1 : tokens.ink2,
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Text(
-                          _focusLabel(option.id, strings),
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.w500,
-                            color: tokens.ink,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Icon(
-                        isSelected
-                            ? Icons.check_circle_rounded
-                            : Icons.radio_button_unchecked_rounded,
-                        size: 20,
-                        color: isSelected ? tokens.m1 : tokens.line,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }),
-          const SizedBox(height: 6),
-          MindPressable(
-            semanticLabel: strings.addCustomGoalToggle,
-            borderRadius: BorderRadius.circular(12),
-            onPressed: () {
-              setState(() => _showCustomGoalField = !_showCustomGoalField);
-            },
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 48),
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              alignment: AlignmentDirectional.centerStart,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    _showCustomGoalField
-                        ? Icons.expand_less_rounded
-                        : Icons.add_circle_outline_rounded,
-                    size: 18,
-                    color: tokens.m1,
-                  ),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      strings.addCustomGoalToggle,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: tokens.m1,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            strings.onboardingGoalsSub,
+            style: LabTheme.textStyle(
+              fontSize: 15.0,
+              height: 1.45,
+              color: tokens.ink2,
             ),
           ),
-          if (_showCustomGoalField) ...[
-            const SizedBox(height: 6),
-            TextField(
-              controller: _customGoalController,
-              onChanged: (_) => _saveDraftProgress(),
-              maxLines: 2,
-              style: TextStyle(fontSize: 14, color: tokens.ink),
-              decoration: InputDecoration(
-                hintText: strings.customGoalHint,
-                hintStyle: TextStyle(color: tokens.ink3, fontSize: 13),
-                filled: true,
-                fillColor: tokens.surface2,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
+          const SizedBox(height: 18),
+          for (final goalKey in _goalKeys) ...[
+            MindPressable(
+              key: ValueKey<String>('onboarding-goal-$goalKey'),
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                setState(() {
+                  if (_selectedGoals.contains(goalKey)) {
+                    _selectedGoals.remove(goalKey);
+                  } else {
+                    _selectedGoals.add(goalKey);
+                  }
+                });
+              },
+              borderRadius: BorderRadius.circular(tokens.rowRadius),
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 58),
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
                 ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(color: tokens.line),
+                decoration: BoxDecoration(
+                  color: _selectedGoals.contains(goalKey)
+                      ? tokens.primary
+                      : tokens.surface,
+                  borderRadius: BorderRadius.circular(tokens.rowRadius),
+                  border: Border.all(
+                    color: _selectedGoals.contains(goalKey)
+                        ? tokens.primary
+                        : tokens.lineStrong,
+                    width: _selectedGoals.contains(goalKey) ? 2.0 : 1.0,
+                  ),
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(color: tokens.line),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(color: tokens.focusRing, width: 2.0),
+                child: Row(
+                  children: [
+                    Icon(
+                      _goalIcon(goalKey),
+                      size: 22,
+                      color: _selectedGoals.contains(goalKey)
+                          ? tokens.onPrimary
+                          : tokens.ink,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _goalLabel(goalKey, strings),
+                        style: LabTheme.textStyle(
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w700,
+                          color: _selectedGoals.contains(goalKey)
+                              ? tokens.onPrimary
+                              : tokens.ink,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      _selectedGoals.contains(goalKey)
+                          ? Icons.check_circle_rounded
+                          : Icons.circle_outlined,
+                      size: 20,
+                      color: _selectedGoals.contains(goalKey)
+                          ? tokens.onPrimary
+                          : tokens.ink3,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -838,497 +1107,285 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  Widget _buildComfortSafetyStep(MindTokens tokens, AppStrings strings) {
-    final reduceMotion = MediaQuery.disableAnimationsOf(context);
-    final supportOptions = [
-      (
-        key: 'therapist',
-        label: strings.supportOptionSpecialist,
-        icon: Icons.psychology_outlined,
-      ),
-      (
-        key: 'self_guided',
-        label: strings.supportOptionSelfGuided,
-        icon: Icons.self_improvement_rounded,
-      ),
-      (
-        key: 'prefer_not_to_say',
-        label: strings.supportOptionPreferNotToSay,
-        icon: Icons.visibility_off_outlined,
-      ),
-    ];
-
+  Widget _buildStepCareAndFocus(MindTokens tokens, AppStrings strings) {
     return SingleChildScrollView(
-      key: const ValueKey('onboarding_step_2'),
-      padding: const EdgeInsets.fromLTRB(24, 14, 24, 24),
+      key: const ValueKey('onboarding_step_focus'),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildStepCounter(tokens, strings.onboardingStepOf(3, _totalSteps)),
-          const SizedBox(height: 12),
           Text(
-            strings.onboardingComfortTitle,
-            style: TextStyle(
-              fontSize: 23,
-              fontWeight: FontWeight.w700,
+            strings.onboardingCareAndFocusTitle,
+            style: LabTheme.textStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
               height: 1.25,
-              letterSpacing: -0.4,
               color: tokens.ink,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 18),
           Text(
-            strings.onboardingComfortSubtitle,
-            style: TextStyle(fontSize: 13.5, height: 1.48, color: tokens.ink2),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            strings.ageRangeLabel.toUpperCase(),
-            style: TextStyle(
-              fontSize: 11,
+            strings.onboardingDoctorCareQuestion,
+            style: LabTheme.textStyle(
+              fontSize: 15.5,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.7,
-              color: tokens.ink2,
+              color: tokens.ink,
             ),
           ),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: _ageRanges.map((range) {
-              final selected = _selectedAgeRange == range;
-              final display = strings.ageRangeDisplayName(range);
+            children: _careContextKeys.map((careKey) {
+              final selected = _careContext == careKey;
               return MindPressable(
-                semanticLabel: display,
-                borderRadius: BorderRadius.circular(14),
+                key: ValueKey<String>('onboarding-care-$careKey'),
                 onPressed: () {
-                  setState(() => _selectedAgeRange = range);
-                  _saveDraftProgress();
+                  HapticFeedback.selectionClick();
+                  setState(() => _careContext = careKey);
                 },
+                borderRadius: BorderRadius.circular(tokens.buttonRadius),
                 child: Container(
-                  constraints: const BoxConstraints(
-                    minWidth: 48,
-                    minHeight: 48,
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? tokens.selectedTintFor(tokens.m1)
-                        : tokens.surface2,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: selected ? tokens.m1 : tokens.line,
-                      width: selected ? 1.5 : 1.0,
-                    ),
-                  ),
-                  child: Center(
-                    widthFactor: 1.0,
-                    heightFactor: 1.0,
-                    child: Text(
-                      display,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: selected
-                            ? FontWeight.w700
-                            : FontWeight.w500,
-                        color: selected ? tokens.ink : tokens.ink2,
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-          AnimatedSize(
-            duration: reduceMotion
-                ? Duration.zero
-                : const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            child: _isMinor
-                ? Padding(
-                    padding: const EdgeInsets.only(top: 14),
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: tokens.safetySoft,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: tokens.safety.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.info_outline_rounded,
-                            size: 18,
-                            color: tokens.safety,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              strings.minorSupportNotice,
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                height: 1.48,
-                                color: tokens.ink,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                : const SizedBox.shrink(),
-          ),
-          const SizedBox(height: 22),
-          Text(
-            strings.supportSystemTitle.toUpperCase(),
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.7,
-              color: tokens.ink2,
-            ),
-          ),
-          const SizedBox(height: 10),
-          ...supportOptions.map((opt) {
-            final selected = _selectedProfessionalSupport == opt.key;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: MindPressable(
-                semanticLabel: opt.label,
-                borderRadius: BorderRadius.circular(16),
-                onPressed: () {
-                  setState(() => _selectedProfessionalSupport = opt.key);
-                  _saveDraftProgress();
-                },
-                child: Container(
-                  constraints: const BoxConstraints(minHeight: 50),
+                  constraints: const BoxConstraints(minHeight: 48),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: selected
-                        ? tokens.selectedTintFor(tokens.m1)
-                        : tokens.surface,
-                    borderRadius: BorderRadius.circular(16),
+                    color: selected ? tokens.primary : tokens.surface,
+                    borderRadius: BorderRadius.circular(tokens.buttonRadius),
                     border: Border.all(
-                      color: selected ? tokens.m1 : tokens.line,
-                      width: selected ? 1.5 : 1.0,
+                      color: selected ? tokens.primary : tokens.lineStrong,
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        opt.icon,
-                        size: 19,
-                        color: selected ? tokens.m1 : tokens.ink2,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          opt.label,
-                          style: TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: selected
-                                ? FontWeight.w600
-                                : FontWeight.w500,
-                            color: tokens.ink,
-                          ),
-                        ),
-                      ),
-                      Icon(
-                        selected
-                            ? Icons.radio_button_checked_rounded
-                            : Icons.radio_button_unchecked_rounded,
-                        size: 18,
-                        color: selected ? tokens.m1 : tokens.line,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: tokens.safetySoft,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: tokens.safety.withValues(alpha: 0.3)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.health_and_safety_outlined,
-                      size: 18,
-                      color: tokens.safety,
+                  child: Text(
+                    _careLabel(careKey, strings),
+                    style: LabTheme.textStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                      color: selected ? tokens.onPrimary : tokens.ink,
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        strings.onboardingCrisisSafetyNote,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          height: 1.48,
-                          color: tokens.ink,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Align(
-                  alignment: AlignmentDirectional.centerEnd,
-                  child: MindPressable(
-                    semanticLabel: strings.openCrisisResourcesLabel,
-                    borderRadius: BorderRadius.circular(tokens.chipRadius),
-                    onPressed: () => SupportModalSheet.show(context),
-                    child: Container(
-                      constraints: const BoxConstraints(minHeight: 48),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 10,
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        strings.openCrisisResourcesLabel,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: tokens.safety,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFirstCheckInStep(MindTokens tokens, AppStrings strings) {
-    final activeMoodColor = _moodColor(_selectedMood);
-
-    return SingleChildScrollView(
-      key: const ValueKey('onboarding_step_3'),
-      padding: const EdgeInsets.fromLTRB(24, 14, 24, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildStepCounter(tokens, strings.onboardingStepOf(4, _totalSteps)),
-          const SizedBox(height: 12),
-          Text(
-            strings.howFeelingRightNow,
-            style: TextStyle(
-              fontSize: 23,
-              fontWeight: FontWeight.w700,
-              height: 1.25,
-              letterSpacing: -0.4,
-              color: tokens.ink,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            strings.onboardingFirstCheckInSubtitle,
-            style: TextStyle(fontSize: 13.5, height: 1.48, color: tokens.ink2),
-          ),
-          const SizedBox(height: 22),
-          Text(
-            strings.todaysCoreState,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.7,
-              color: tokens.ink2,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: _moodOptions.map((mood) {
-              final selected = _selectedMood == mood.key;
-              final label = _moodLabel(mood.key, strings);
-              return MindPressable(
-                semanticLabel: label,
-                borderRadius: BorderRadius.circular(16),
-                onPressed: () {
-                  setState(() => _selectedMood = mood.key);
-                },
-                child: Container(
-                  constraints: const BoxConstraints(
-                    minWidth: 96,
-                    minHeight: 48,
-                  ),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: selected ? 13.4 : 14.0,
-                    vertical: selected ? 9.4 : 10.0,
-                  ),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? tokens.selectedTintFor(mood.color)
-                        : tokens.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: selected ? mood.color : tokens.line,
-                      width: selected ? 1.6 : 1.0,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        mood.icon,
-                        size: 18,
-                        color: selected ? mood.color : tokens.ink2,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        label,
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w600,
-                          color: tokens.ink,
-                        ),
-                      ),
-                    ],
                   ),
                 ),
               );
             }).toList(),
           ),
-          const SizedBox(height: 24),
-          MindCard(
-            variant: MindCardVariant.plain,
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        strings.moodIntensityLabel,
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w600,
-                          color: tokens.ink,
-                        ),
-                      ),
-                    ),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 185),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: tokens.selectedTintFor(activeMoodColor),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '$_firstIntensity/10 · ${strings.intensityLevelWord(_firstIntensity)}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                            color: tokens.ink,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                MindIntensityPicker(
-                  value: _firstIntensity,
-                  accentColor: activeMoodColor,
-                  strings: strings,
-                  onChanged: (rounded) =>
-                      setState(() => _firstIntensity = rounded),
-                ),
-              ],
+          const SizedBox(height: 22),
+          Text(
+            strings.onboardingFocusAreasQuestion,
+            style: LabTheme.textStyle(
+              fontSize: 15.5,
+              fontWeight: FontWeight.w700,
+              color: tokens.ink,
             ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _focusAreaKeys.map((focusKey) {
+              final selected = _selectedFocusAreas.contains(focusKey);
+              return MindPressable(
+                key: ValueKey<String>('onboarding-focus-$focusKey'),
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  setState(() {
+                    if (selected) {
+                      _selectedFocusAreas.remove(focusKey);
+                    } else {
+                      _selectedFocusAreas.add(focusKey);
+                    }
+                  });
+                },
+                borderRadius: BorderRadius.circular(tokens.chipRadius),
+                child: Container(
+                  constraints: const BoxConstraints(minHeight: 48),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: selected ? tokens.primary : tokens.surface2,
+                    borderRadius: BorderRadius.circular(tokens.chipRadius),
+                    border: Border.all(
+                      color: selected ? tokens.primary : tokens.lineStrong,
+                    ),
+                  ),
+                  child: Text(
+                    _focusLabel(focusKey, strings),
+                    style: LabTheme.textStyle(
+                      fontSize: 14.0,
+                      fontWeight: FontWeight.w700,
+                      color: selected ? tokens.onPrimary : tokens.ink,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStepCounter(MindTokens tokens, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: tokens.surface2,
-        borderRadius: BorderRadius.circular(tokens.chipRadius),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11.5,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.4,
-          color: tokens.ink2,
-        ),
+  Widget _buildStepFirstMood(MindTokens tokens, AppStrings strings) {
+    final textScale = MediaQuery.textScalerOf(context).scale(16.0) / 16.0;
+    final previewDraft = _buildProfileDraft(
+      ref.read(profileControllerProvider).value,
+      'preview',
+      step: _totalSteps,
+    );
+    final plan = AppPersonalizationEngine.resolve(previewDraft);
+    final tailoredPills = <String>[
+      if (plan.prioritizeSleepPulse) strings.summarySleepEnabled,
+      if (plan.isDoctorFollowed) strings.summaryDoctorReadyEnabled,
+      if (plan.emphasizeCalmTools) strings.summaryCalmToolsEnabled,
+      if (plan.isMinimalExplorationMode) strings.summaryMinimalEnabled,
+    ];
+
+    return SingleChildScrollView(
+      key: const ValueKey('onboarding_step_first_mood'),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (tailoredPills.isNotEmpty) ...[
+            MindCard(
+              variant: MindCardVariant.tint,
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    strings.tailoredForYouTitle,
+                    style: LabTheme.textStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      color: tokens.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      for (final p in tailoredPills)
+                        MindBadge(
+                          icon: Icons.check_circle_outline_rounded,
+                          label: p,
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+          Text(
+            strings.howAreYouRightNow,
+            style: LabTheme.textStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              height: 1.25,
+              color: tokens.ink,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            strings.onboardingFirstCheckInSubtitle,
+            style: LabTheme.textStyle(
+              fontSize: 15.0,
+              height: 1.45,
+              color: tokens.ink2,
+            ),
+          ),
+          const SizedBox(height: 16),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final cols = (constraints.maxWidth < 330 || textScale > 1.25)
+                  ? 2
+                  : 3;
+              final tileWidth =
+                  (constraints.maxWidth - (cols - 1) * 10) / cols;
+              return Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  for (final mood in AppMood.values)
+                    SizedBox(
+                      width: tileWidth,
+                      child: MoodFaceTile(
+                        mood: mood,
+                        label: strings.plainMoodLabel(mood.key),
+                        isSelected: _selectedMood == mood,
+                        onTap: () => setState(() => _selectedMood = mood),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 20),
+          Text(
+            strings.howStrongQuestion,
+            style: LabTheme.textStyle(
+              fontSize: 15.5,
+              fontWeight: FontWeight.w700,
+              color: tokens.ink,
+            ),
+          ),
+          const SizedBox(height: 10),
+          MindStrengthPicker(
+            selectedIntensity: _firstIntensity,
+            aLittleLabel: strings.strengthALittle,
+            mediumLabel: strings.strengthMedium,
+            aLotLabel: strings.strengthALot,
+            accentColor: MindTokens.moodColor(_selectedMood),
+            onSelected: (v) => setState(() => _firstIntensity = v),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildBottomCtaBar(MindTokens tokens, AppStrings strings) {
-    final String primaryLabel;
-    switch (_currentStep) {
-      case 0:
-        primaryLabel = strings.onboardingGetStarted;
-        break;
-      case 3:
-        primaryLabel = strings.saveAndEnterAppBtn;
-        break;
-      default:
-        primaryLabel = strings.onboardingContinue;
-    }
+  Widget _buildBottomBar(MindTokens tokens, AppStrings strings) {
+    final ctaLabel = _currentStep == 0
+        ? strings.onboardingStartBtn
+        : (_currentStep >= _totalSteps - 1
+              ? strings.saveAndEnterBtn
+              : strings.continueBtn);
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-      decoration: BoxDecoration(
-        color: tokens.surface,
-        border: Border(top: BorderSide(color: tokens.line)),
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          MindButton(
-            text: primaryLabel,
-            variant: MindButtonVariant.primary,
-            isFullWidth: true,
-            isLoading: _isFinishing,
-            onPressed: _nextStep,
-          ),
-          if (_currentStep == _totalSteps - 1) ...[
-            const SizedBox(height: 8),
+          if (_currentStep != 1)
             MindButton(
-              text: strings.skipAndEnterAppBtn,
-              variant: MindButtonVariant.ghost,
+              text: ctaLabel,
               isFullWidth: true,
-              onPressed: _isFinishing
-                  ? null
-                  : () => _finishOnboarding(saveInitialTrace: false),
+              isLoading: _isFinishing,
+              onPressed: _nextStep,
+            ),
+          if (_currentStep == 0) ...[
+            const SizedBox(height: 6),
+            Center(
+              child: TextButton(
+                onPressed: () => GoRouter.maybeOf(context)?.push(AppRouter.auth),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(48, 48),
+                  foregroundColor: tokens.ink2,
+                ),
+                child: Text(
+                  strings.signInTab,
+                  style: LabTheme.textStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w600,
+                    color: tokens.ink2,
+                  ),
+                ),
+              ),
             ),
           ],
         ],

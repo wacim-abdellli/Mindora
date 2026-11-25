@@ -412,6 +412,71 @@ class UnifiedBackupService {
     }
   }
 
+  /// Decrypts and inspects a backup package without writing to local storage,
+  /// returning record counts and decrypted JSON for a dry-run confirmation preview.
+  Future<BackupOperationResult> previewPasswordEncryptedBackup(
+    String encryptedJson,
+    String password,
+  ) async {
+    try {
+      String plaintext = encryptedJson;
+      final Map<String, dynamic> outer =
+          jsonDecode(encryptedJson) as Map<String, dynamic>;
+      if (outer['encrypted'] == true && outer['ciphertext'] != null) {
+        final saltB64 = outer['salt'] as String?;
+        final ciphertext = outer['ciphertext'] as String?;
+        final iterations =
+            outer['iterations'] as int? ?? AuthService.kPbkdf2Iterations;
+        if (saltB64 == null || ciphertext == null) {
+          return const BackupOperationResult(
+            success: false,
+            message: 'Invalid encrypted backup: missing salt or ciphertext.',
+          );
+        }
+        final salt = base64Url.decode(saltB64);
+        final derivedHashRecord = AuthService.hashPassword(
+          password,
+          explicitSalt: salt,
+          iterations: iterations,
+        );
+        final parts = derivedHashRecord.split('\$');
+        final derivedKeyBytes = base64Url.decode(parts[3]);
+        final cipher = LocalDataCipher(secretKeyBytes: derivedKeyBytes);
+        plaintext = await cipher.decryptString(ciphertext);
+      }
+
+      final Map<String, dynamic> data =
+          jsonDecode(plaintext) as Map<String, dynamic>;
+      if (data['app'] != 'Mindora' &&
+          data['sessions'] == null &&
+          data['traces'] == null) {
+        return const BackupOperationResult(
+          success: false,
+          message: 'Invalid backup format: missing Mindora schema headers.',
+        );
+      }
+      final traces = data['traces'] is List ? (data['traces'] as List).length : 0;
+      final sessions =
+          data['sessions'] is List ? (data['sessions'] as List).length : 0;
+      final memories =
+          data['memories'] is List ? (data['memories'] as List).length : 0;
+      return BackupOperationResult(
+        success: true,
+        message: 'Backup verified.',
+        tracesCount: traces,
+        sessionsCount: sessions,
+        memoriesCount: memories,
+        rawJson: plaintext,
+      );
+    } catch (_) {
+      return const BackupOperationResult(
+        success: false,
+        message:
+            'Decryption failed: Incorrect password or tampered backup payload.',
+      );
+    }
+  }
+
   /// Restores from an optional password-encrypted backup package.
   Future<BackupOperationResult> restoreFromPasswordEncryptedBackup(
     String encryptedJson,

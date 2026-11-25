@@ -14,7 +14,7 @@ class MindPill extends StatelessWidget {
     required this.onTap,
     this.icon,
     this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    this.fontSize = 12.5,
+    this.fontSize = 13.0,
   });
 
   final String label;
@@ -29,10 +29,10 @@ class MindPill extends StatelessWidget {
     final tokens = context.tokens;
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
 
-    final activeBg = tokens.ink;
-    final activeFg = tokens.bg;
+    final activeBg = tokens.primary;
+    final activeFg = tokens.onPrimary;
     final inactiveBg = tokens.surface2;
-    final inactiveFg = tokens.ink2;
+    final inactiveFg = tokens.ink;
 
     return MindPressable(
       onPressed: () {

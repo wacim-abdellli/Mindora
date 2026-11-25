@@ -77,7 +77,7 @@ void main() {
 
       // Breathing card is rendered
       expect(find.byType(BreathingExerciseCard), findsOneWidget);
-      expect(find.text('VAGAL BOX PACING (4-4-4-4)'), findsOneWidget);
+      expect(find.text('Slow breathing (4-4-4-4)'), findsOneWidget);
 
       // Sensory Grounding toggle is available
       expect(find.text('5-4-3-2-1 Sensory Grounding'), findsOneWidget);

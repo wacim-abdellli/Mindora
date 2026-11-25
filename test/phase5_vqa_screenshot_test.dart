@@ -232,8 +232,15 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        final moreBtn = find.byKey(
+          const ValueKey<String>('patterns-more-details-btn'),
+        );
+        await tester.ensureVisible(moreBtn);
+        await tester.tap(moreBtn);
+        await tester.pumpAndSettle();
+
         await tester.scrollUntilVisible(
-          find.text('OBSERVED FORENSIC LOOP'),
+          find.text(const AppStrings('en').forensicLoopMapTitle),
           240,
           scrollable: find.byType(Scrollable).first,
         );
@@ -351,7 +358,7 @@ void main() {
         await tester.pumpAndSettle();
 
         await tester.scrollUntilVisible(
-          find.text('OBSERVED FORENSIC LOOP'),
+          find.text(const AppStrings('en').forensicLoopMapTitle),
           240,
           scrollable: find.byType(Scrollable).first,
         );

@@ -9,22 +9,18 @@ import '../../../../app/localization/app_strings.dart';
 import '../../../../app/localization/locale_controller.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/mind_tokens.dart';
-import '../../../../core/safety/crisis_keywords.dart';
 import '../../../../core/safety/safety_interceptor.dart';
 import '../../../../core/widgets/mind_pressable.dart';
 import '../../../clinician/controllers/clinician_providers.dart';
-import '../../../journal/controllers/journal_memory_controller.dart';
 import '../../../journey/controllers/journey_controller.dart';
 import '../../../mind_trace/controllers/mind_trace_controller.dart';
 import '../../../profile/controllers/profile_controller.dart';
 import '../../../support/presentation/contextual_support_sheet.dart';
 import '../../controllers/investigation_providers.dart';
-import '../../data/mock_investigator_service.dart';
 import '../../domain/case_model.dart';
 import '../../domain/conversation_mode.dart';
 import '../../domain/investigator_service.dart';
 import '../../domain/label_type.dart';
-import '../../domain/session_memory_window.dart';
 import '../../domain/statement.dart';
 import 'ai_engine_config_sheet.dart';
 import 'companion_context_bridge_card.dart';
@@ -94,7 +90,11 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
 
   Future<void> _sendMessage([String? quickText]) async {
     final text = (quickText ?? _textController.text).trim();
-    if (text.isEmpty || _isInvestigatorTyping) return;
+    if (text.isEmpty ||
+        _isInvestigatorTyping ||
+        ref.read(companionReplyPendingProvider)) {
+      return;
+    }
 
     final activeCase =
         ref.read(activeCaseControllerProvider).value ?? widget.caseModel;
@@ -105,91 +105,31 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
     }
 
     HapticFeedback.lightImpact();
-    final notifier = ref.read(activeCaseControllerProvider.notifier);
-    final service = ref.read(investigatorServiceProvider);
-    final locale = ref.read(localeControllerProvider);
-
-    // Offline Level-2 pre-generation crisis interception
-    final safetyLevel = CrisisKeywords.evaluateText(text);
-    if (safetyLevel == 2) {
-      await notifier.addStatement(
-        text,
-        StatementSpeaker.user,
-        label: LabelType.assumption,
-        isSafetyStatement: true,
-      );
-      final pausePersisted = await notifier.pauseCaseForSafety();
-      if (!pausePersisted) return;
-      if (mounted) {
-        SafetyInterceptor.showCrisisPauseDialog(context);
-      }
-      return;
-    }
-
-    if (widget.caseModel.incidentDescription.trim().isEmpty) {
-      await notifier.updateIncident(text);
-    }
-
-    await notifier.addStatement(
-      text,
-      StatementSpeaker.user,
-      label: LabelType.assumption,
-    );
-
-    _scrollToBottom();
-
     if (mounted) {
       setState(() => _isInvestigatorTyping = true);
     }
+    _scrollToBottom();
 
     try {
-      final currentCase =
-          ref.read(activeCaseControllerProvider).value ?? widget.caseModel;
-      final profile = ref.read(profileControllerProvider).value;
+      final notifier = ref.read(activeCaseControllerProvider.notifier);
       final journey = ref.read(journeyControllerProvider).value;
       final traces = ref.read(mindTraceControllerProvider).value ?? [];
-      final memories = ref.read(journalMemoryControllerProvider).value ?? [];
+      final todayTrace = ref.read(todayTraceProvider);
 
-      ref.read(aiRuntimeNoticeProvider.notifier).clear();
-      final window =
-          SessionMemoryWindowManager.partition(currentCase.statements);
-      String reply;
-      try {
-        reply = await service.getNextQuestion(
-          currentCase: currentCase,
-          conversationHistory: window.verbatimStatements,
-          sessionSummary: window.sessionSummary ?? currentCase.sessionSummary,
-          languageCode: locale.languageCode,
-          profile: profile,
-          journey: journey,
-          conversationMode: _currentMode,
-          latestTrace: ref.read(todayTraceProvider),
-          historicalTraces: traces,
-          compressedMemories: memories,
-        );
-      } catch (_) {
-        ref
-            .read(aiRuntimeNoticeProvider.notifier)
-            .report(AiFallbackReason.offlineOrNetwork);
-        reply = await MockInvestigatorService().getNextQuestion(
-          currentCase: currentCase,
-          conversationHistory: window.verbatimStatements,
-          sessionSummary: window.sessionSummary ?? currentCase.sessionSummary,
-          languageCode: locale.languageCode,
-          profile: profile,
-          journey: journey,
-          conversationMode: _currentMode,
-          latestTrace: ref.read(todayTraceProvider),
-          historicalTraces: traces,
-          compressedMemories: memories,
-        );
-      }
+      final proceeded = await notifier.sendMessageAndGenerateReply(
+        text,
+        label: LabelType.assumption,
+        latestTrace: todayTrace,
+        historicalTraces: traces,
+        journey: journey,
+        onLevel2Crisis: () async {
+          if (mounted) {
+            SafetyInterceptor.showCrisisPauseDialog(context);
+          }
+        },
+      );
 
-      if (mounted && reply.trim().isNotEmpty) {
-        await notifier.addStatement(
-          reply,
-          StatementSpeaker.investigator,
-        );
+      if (mounted && proceeded) {
         HapticFeedback.selectionClick();
       }
     } finally {
@@ -529,6 +469,7 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
       onModeSelected: (mode) {
         if (mounted) {
           setState(() => _currentMode = mode);
+          ref.read(currentConversationModeProvider.notifier).setMode(mode);
           ref
               .read(activeCaseControllerProvider.notifier)
               .setConversationMode(mode);
@@ -549,6 +490,9 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
     final hasUserMessages =
         statements.any((s) => s.speaker == StatementSpeaker.user);
     final isLive = aiConfig.isLiveActive;
+    final profileConsented =
+        (profile?.shareWithAiCompanion ?? false) &&
+        (profile?.allowAiPersonalization ?? false);
     final showTypingIndicator =
         _isInvestigatorTyping || ref.watch(companionReplyPendingProvider);
     final runtimeNotice = ref.watch(aiRuntimeNoticeProvider);
@@ -572,7 +516,7 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                   tokens: tokens,
                   strings: strings,
                   isLive: isLive,
-                  profileConsented: profile?.shareWithAiCompanion ?? false,
+                  profileConsented: profileConsented,
                 )
               : ListView.builder(
                   controller: _scrollController,
@@ -685,169 +629,168 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
       decoration: BoxDecoration(
         color: tokens.surface,
         border: Border(bottom: BorderSide(color: tokens.line)),
       ),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        alignment: WrapAlignment.spaceBetween,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          MindPressable(
-            semanticLabel: '${strings.changeModeTooltip}: $modeTitle',
-            borderRadius: BorderRadius.circular(14),
-            onPressed: _openModeChooser,
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 48),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: tokens.cardTint,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: tokens.ink.withValues(alpha: 0.4),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    iconForConversationMode(_currentMode),
-                    size: 16,
-                    color: tokens.ink,
-                  ),
-                  const SizedBox(width: 7),
-                  Flexible(
-                    child: Text(
-                      modeTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: tokens.ink,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    size: 18,
-                    color: tokens.ink,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          MindPressable(
-            semanticLabel: strings.isArabic
-                ? 'تعليمات المساعد'
-                : (strings.isFrench ? 'Instructions IA' : 'Instructions'),
-            borderRadius: BorderRadius.circular(12),
-            onPressed: () => CustomAiInstructionsSheet.show(context),
-            child: Container(
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: hasCustomInstructions
-                    ? tokens.cardTint
-                    : tokens.surface2,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: hasCustomInstructions
-                      ? tokens.ink.withValues(alpha: 0.4)
-                      : tokens.line,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.tune_rounded,
-                    size: 15,
-                    color: hasCustomInstructions
-                        ? tokens.ink
-                        : tokens.ink2,
-                  ),
-                  const SizedBox(width: 5),
-                  Flexible(
-                    child: Text(
-                      strings.isArabic
-                          ? 'تعليمات'
-                          : (strings.isFrench
-                              ? 'Instructions'
-                              : 'Instructions'),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: hasCustomInstructions
-                            ? tokens.ink
-                            : tokens.ink2,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (hasUserMessages)
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(14, 4, 14, 4),
+        child: Row(
+          children: [
             MindPressable(
-              semanticLabel: strings.saveTakeawayReportBtn,
-              borderRadius: BorderRadius.circular(12),
-              onPressed: _isSynthesizing ? null : _synthesizeCaseBrief,
+              semanticLabel: '${strings.changeModeTooltip}: $modeTitle',
+              borderRadius: BorderRadius.circular(14),
+              onPressed: _openModeChooser,
               child: Container(
-                constraints: const BoxConstraints(minHeight: 40),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 11,
-                  vertical: 7,
-                ),
+                constraints: const BoxConstraints(minHeight: 48, maxWidth: 240),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: tokens.cardTint,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: tokens.ink.withValues(alpha: 0.45),
+                    color: tokens.ink.withValues(alpha: 0.4),
                   ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (_isSynthesizing)
-                      SizedBox(
-                        width: 13,
-                        height: 13,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 1.8,
-                          color: tokens.ink,
-                        ),
-                      )
-                    else
-                      Icon(
-                        Icons.fact_check_outlined,
-                        size: 15,
-                        color: tokens.ink,
-                      ),
-                    const SizedBox(width: 6),
+                    Icon(
+                      iconForConversationMode(_currentMode),
+                      size: 16,
+                      color: tokens.ink,
+                    ),
+                    const SizedBox(width: 7),
                     Flexible(
                       child: Text(
-                        strings.saveTakeawayReportBtn,
+                        modeTitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: tokens.ink,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 18,
+                      color: tokens.ink,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            MindPressable(
+              semanticLabel: strings.isArabic
+                  ? 'تعليمات المساعد'
+                  : (strings.isFrench ? 'Instructions IA' : 'Instructions'),
+              borderRadius: BorderRadius.circular(12),
+              onPressed: () => CustomAiInstructionsSheet.show(context),
+              child: Container(
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: hasCustomInstructions
+                      ? tokens.cardTint
+                      : tokens.surface2,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: hasCustomInstructions
+                        ? tokens.ink.withValues(alpha: 0.4)
+                        : tokens.line,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.tune_rounded,
+                      size: 15,
+                      color: hasCustomInstructions ? tokens.ink : tokens.ink2,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      strings.isArabic
+                          ? 'تعليمات'
+                          : 'Instructions',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: hasCustomInstructions ? tokens.ink : tokens.ink2,
+                      ),
+                    ),
+                    if (hasCustomInstructions) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: MindTokens.moodCalm,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            if (hasUserMessages) ...[
+              const SizedBox(width: 8),
+              MindPressable(
+                semanticLabel: strings.saveTakeawayReportBtn,
+                borderRadius: BorderRadius.circular(12),
+                onPressed: _isSynthesizing ? null : _synthesizeCaseBrief,
+                child: Container(
+                  constraints: const BoxConstraints(minHeight: 48),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: tokens.cardTint,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: tokens.ink.withValues(alpha: 0.45),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (_isSynthesizing)
+                        SizedBox(
+                          width: 13,
+                          height: 13,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.8,
+                            color: tokens.ink,
+                          ),
+                        )
+                      else
+                        Icon(
+                          Icons.fact_check_outlined,
+                          size: 15,
+                          color: tokens.ink,
+                        ),
+                      const SizedBox(width: 6),
+                      Text(
+                        strings.saveTakeawayReportBtn,
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                           color: tokens.ink,
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-        ],
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -868,12 +811,14 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                 focusPlan.observationCue.trim().isNotEmpty));
     final privacyTag = widget.caseModel.isPrivate
         ? strings.privacyPrivateSessionTag
-        : (isLive && profileConsented
-            ? strings.privacyCloudConsentedTag
-            : strings.privacyLocalTag);
+        : (isLive
+              ? (profileConsented
+                    ? strings.privacyCloudConsentedTag
+                    : strings.privacyConsentPausedTag)
+              : strings.privacyLocalTag);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -888,10 +833,10 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                 initialChoice: SupportChoice.settle,
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
           ],
           Container(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(
               color: tokens.surface,
               borderRadius: BorderRadius.circular(tokens.cardRadius),
@@ -903,22 +848,22 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                 Row(
                   children: [
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: 38,
+                      height: 38,
                       decoration: BoxDecoration(
                         color: tokens.cardTint,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(11),
                         border: Border.all(
                           color: tokens.ink.withValues(alpha: 0.35),
                         ),
                       ),
                       child: Icon(
                         iconForConversationMode(_currentMode),
-                        size: 20,
+                        size: 19,
                         color: tokens.ink,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -945,7 +890,7 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  fontSize: 11.5,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                   color: tokens.ink2,
                                 ),
@@ -957,33 +902,33 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Text(
                   strings.welcomeQuestionHeadline,
                   style: TextStyle(
                     fontFamily: 'Inter',
-                    fontSize: 21,
+                    fontSize: 20,
                     fontWeight: FontWeight.w700,
                     color: tokens.ink,
                     letterSpacing: -0.3,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
                   strings.welcomePickOrTypeSub,
                   style: TextStyle(
-                    fontSize: 14,
-                    height: 1.5,
+                    fontSize: 13.5,
+                    height: 1.45,
                     color: tokens.ink2,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           ...starters.take(3).map((starter) {
             return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.only(bottom: 8),
               child: MindPressable(
                 semanticLabel: starter,
                 borderRadius: BorderRadius.circular(tokens.cardRadius),
@@ -992,10 +937,10 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                   _sendMessage(starter);
                 },
                 child: Container(
-                  constraints: const BoxConstraints(minHeight: 52),
+                  constraints: const BoxConstraints(minHeight: 48),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 13,
+                    horizontal: 14,
+                    vertical: 11,
                   ),
                   decoration: BoxDecoration(
                     color: tokens.surface,
@@ -1009,7 +954,7 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                           starter,
                           style: TextStyle(
                             fontSize: 14,
-                            height: 1.4,
+                            height: 1.38,
                             fontWeight: FontWeight.w600,
                             color: tokens.ink,
                           ),
@@ -1148,7 +1093,9 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
           ),
           const SizedBox(height: 5),
           ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 340),
+            constraints: BoxConstraints(
+              maxWidth: math.min(MediaQuery.sizeOf(context).width * 0.84, 520),
+            ),
             child: Container(
               decoration: BoxDecoration(
                 color: bubbleBg,
@@ -1238,59 +1185,89 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                             ),
                           ] else ...[
                             const SizedBox(height: 10),
-                            MindPressable(
-                              semanticLabel: strings.saveTakeawayAction,
-                              borderRadius: BorderRadius.circular(tokens.chipRadius),
-                              onPressed: () async {
-                                HapticFeedback.lightImpact();
-                                final notifier =
-                                    ref.read(activeCaseControllerProvider.notifier);
-                                await notifier.saveConclusion(statement.text);
-                                if (!mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      strings.isArabic
-                                          ? 'تم حفظ الفكرة في ملفك'
-                                          : (strings.isFrench
-                                              ? 'Idée sauvegardée dans votre profil'
-                                              : 'Takeaway saved to your profile'),
+                            Builder(
+                              builder: (ctx) {
+                                final activeCase =
+                                    ref.watch(activeCaseControllerProvider).value ??
+                                    widget.caseModel;
+                                final isBookmarked =
+                                    activeCase.findingsSummary?.trim() ==
+                                    statement.text.trim();
+                                final chipLabel = isBookmarked
+                                    ? strings.takeawayBookmarkedLabel
+                                    : strings.saveTakeawayAction;
+                                return MindPressable(
+                                  semanticLabel: chipLabel,
+                                  borderRadius: BorderRadius.circular(
+                                    tokens.chipRadius,
+                                  ),
+                                  onPressed: () async {
+                                    HapticFeedback.lightImpact();
+                                    final notifier = ref.read(
+                                      activeCaseControllerProvider.notifier,
+                                    );
+                                    await notifier.bookmarkTakeaway(
+                                      statement.text,
+                                    );
+                                    if (!ctx.mounted) return;
+                                    ScaffoldMessenger.of(ctx).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          strings.isArabic
+                                              ? 'تم حفظ الفكرة في ملفك'
+                                              : (strings.isFrench
+                                                    ? 'Idée sauvegardée dans votre profil'
+                                                    : 'Takeaway saved to your profile'),
+                                        ),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    constraints: const BoxConstraints(
+                                      minHeight: 36,
                                     ),
-                                    behavior: SnackBarBehavior.floating,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isBookmarked
+                                          ? tokens.cardTint
+                                          : tokens.surface2,
+                                      borderRadius: BorderRadius.circular(
+                                        tokens.chipRadius,
+                                      ),
+                                      border: Border.all(
+                                        color: isBookmarked
+                                            ? tokens.ink.withValues(alpha: 0.4)
+                                            : tokens.line,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          isBookmarked
+                                              ? Icons.bookmark_rounded
+                                              : Icons.bookmark_add_outlined,
+                                          size: 14,
+                                          color: tokens.ink,
+                                        ),
+                                        const SizedBox(width: 5),
+                                        Text(
+                                          chipLabel,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            color: tokens.ink,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 );
                               },
-                              child: Container(
-                                constraints: const BoxConstraints(minHeight: 34),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: tokens.surface2,
-                                  borderRadius: BorderRadius.circular(tokens.chipRadius),
-                                  border: Border.all(color: tokens.line),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.bookmark_add_outlined,
-                                      size: 14,
-                                      color: tokens.ink,
-                                    ),
-                                    const SizedBox(width: 5),
-                                    Text(
-                                      strings.saveTakeawayAction,
-                                      style: TextStyle(
-                                        fontSize: 11.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: tokens.ink,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
                             ),
                           ],
                         ],
@@ -1520,9 +1497,11 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
     final activeCase =
         ref.watch(activeCaseControllerProvider).value ?? widget.caseModel;
     final isPaused = activeCase.isPausedForSafety;
+    final isReplying =
+        _isInvestigatorTyping || ref.watch(companionReplyPendingProvider);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
       decoration: BoxDecoration(
         color: tokens.surface,
         border: Border(top: BorderSide(color: tokens.line, width: 1)),
@@ -1532,9 +1511,9 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
           Expanded(
             child: TextField(
               controller: _textController,
-              enabled: !isPaused && !_isInvestigatorTyping,
+              enabled: !isPaused && !isReplying,
               minLines: 1,
-              maxLines: 4,
+              maxLines: 3,
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => isPaused ? null : _sendMessage(),
               style: TextStyle(fontSize: 14.5, color: tokens.ink),
@@ -1546,16 +1525,16 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                             ? 'Session mise en pause par sécurité'
                             : 'Session paused for safety'))
                     : strings.typeMessageHint,
+                hintMaxLines: 1,
                 hintStyle: TextStyle(
                   fontSize: 13.5,
-                  color:
-                      isPaused ? tokens.safety : tokens.ink2,
+                  color: isPaused ? tokens.safety : tokens.ink2,
                 ),
                 filled: true,
                 fillColor: tokens.surface2,
                 contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+                  horizontal: 14,
+                  vertical: 11,
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(tokens.buttonRadius),
@@ -1585,15 +1564,15 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                     : (strings.isFrench
                         ? 'Envoyer le message'
                         : 'Send message')),
-            enabled: !isPaused && !_isInvestigatorTyping,
+            enabled: !isPaused && !isReplying,
             borderRadius: BorderRadius.circular(tokens.buttonRadius),
             onPressed:
-                isPaused || _isInvestigatorTyping ? null : () => _sendMessage(),
+                isPaused || isReplying ? null : () => _sendMessage(),
             child: Container(
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: isPaused || _isInvestigatorTyping
+                color: isPaused || isReplying
                     ? tokens.line
                     : tokens.ink,
                 borderRadius: BorderRadius.circular(tokens.buttonRadius),
@@ -1603,7 +1582,7 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                     ? Icons.lock_outline_rounded
                     : Icons.arrow_upward_rounded,
                 size: 20,
-                color: isPaused || _isInvestigatorTyping
+                color: isPaused || isReplying
                     ? tokens.ink2
                     : tokens.bg,
               ),

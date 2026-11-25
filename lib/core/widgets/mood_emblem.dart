@@ -46,24 +46,32 @@ class MoodEmblem extends StatelessWidget {
     );
   }
 
-  /// Normalizes canonical or localized mood names to one of the 5 core keys.
+  /// Normalizes canonical or localized mood names to one of the 6 core keys.
   static String normalizeKey(String raw) {
     final key = raw.toLowerCase().trim();
-    if (key.contains('calm') || key.contains('calme') || key.contains('هاد')) {
+    if (key.contains('good') ||
+        key.contains('happy') ||
+        key.contains('bien') ||
+        key.contains('فرح') ||
+        key.contains('لباس')) {
+      return 'good';
+    }
+    if (key.contains('calm') || key.contains('calme') || key.contains('هاد') || key.contains('مرتاح')) {
       return 'calm';
     }
-    if (key.contains('anxi') || key.contains('متوت') || key.contains('قلق')) {
+    if (key.contains('anxi') || key.contains('worr') || key.contains('inqui') || key.contains('متوت') || key.contains('قلق')) {
       return 'anxious';
     }
-    if (key.contains('frustr') || key.contains('محب')) {
+    if (key.contains('frustr') || key.contains('annoy') || key.contains('agac') || key.contains('محب') || key.contains('نرفز')) {
       return 'frustrated';
     }
-    if (key.contains('heav') || key.contains('lourd') || key.contains('ثقيل')) {
+    if (key.contains('heav') || key.contains('low') || key.contains('lourd') || key.contains('abatt') || key.contains('ثقيل')) {
       return 'heavy';
     }
     if (key.contains('restless') ||
         key.contains('agit') ||
         key.contains('مشت') ||
+        key.contains('ركح') ||
         key.contains('متقلب')) {
       return 'restless';
     }
@@ -104,6 +112,24 @@ class _MoodEmblemPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     switch (normalizedKey) {
+      case 'good':
+        // Warm sunburst emblem for a bright, good day.
+        canvas.drawCircle(
+          Offset(w * 0.5, h * 0.5),
+          w * 0.22,
+          strokePaint,
+        );
+        for (int i = 0; i < 8; i++) {
+          final angle = i * 3.14159265 / 4.0;
+          final cosA = i == 0 ? 1.0 : (i == 4 ? -1.0 : (i == 2 || i == 6 ? 0.0 : (i == 1 || i == 7 ? 0.7071 : -0.7071)));
+          final sinA = i == 2 ? 1.0 : (i == 6 ? -1.0 : (i == 0 || i == 4 ? 0.0 : (i == 1 || i == 3 ? 0.7071 : -0.7071)));
+          canvas.drawLine(
+            Offset(w * (0.5 + 0.31 * cosA), h * (0.5 + 0.31 * sinA)),
+            Offset(w * (0.5 + 0.42 * cosA), h * (0.5 + 0.42 * sinA)),
+            softStrokePaint,
+          );
+          if (angle < 0) break;
+        }
       case 'calm':
         // Concentric botanical breath ripples around a calm anchor point.
         canvas.drawCircle(

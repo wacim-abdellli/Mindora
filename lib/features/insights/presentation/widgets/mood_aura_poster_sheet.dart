@@ -9,6 +9,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/localization/app_strings.dart';
 import '../../../../app/theme/mind_tokens.dart';
 import '../../../../core/widgets/mind_button.dart';
+import '../../../../core/widgets/mind_segmented.dart';
+import '../../../../core/widgets/mind_toast.dart';
 import '../../../clinician/controllers/clinician_providers.dart';
 import '../../../mind_trace/domain/emotion_descriptors.dart';
 import '../../../mind_trace/domain/mind_trace_model.dart';
@@ -286,10 +288,16 @@ class _MoodAuraPosterSheetState extends ConsumerState<MoodAuraPosterSheet> {
   String? _errorText;
   bool _isSharing = false;
   bool _isSaving = false;
+  bool _useTwilightPoster = false;
+  bool _initializedStyle = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (!_initializedStyle) {
+      _initializedStyle = true;
+      _useTwilightPoster = context.tokens.isDark;
+    }
     if (_pngBytes == null && _errorText == null) {
       _renderPoster();
     }
@@ -297,16 +305,21 @@ class _MoodAuraPosterSheetState extends ConsumerState<MoodAuraPosterSheet> {
 
   Future<void> _renderPoster() async {
     try {
-      final tokens = context.tokens;
+      final posterTokens = _useTwilightPoster
+          ? MindTokens.dark
+          : MindTokens.light;
       final strings = ref.read(appStringsProvider);
       final bytes = await MoodAuraPosterRenderer.renderPng(
         traces: widget.traces,
         summary: widget.summary,
-        tokens: tokens,
+        tokens: posterTokens,
         strings: strings,
       );
       if (mounted) {
-        setState(() => _pngBytes = bytes);
+        setState(() {
+          _pngBytes = bytes;
+          _errorText = null;
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -346,15 +359,7 @@ class _MoodAuraPosterSheetState extends ConsumerState<MoodAuraPosterSheet> {
       await MoodAuraPosterRenderer.savePngToLocalFile(bytes, fileName: fileName);
       if (!mounted) return;
       HapticFeedback.mediumImpact();
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        SnackBar(
-          backgroundColor: tokens.surface2,
-          content: Text(
-            strings.moodAuraSavedSnackbar(fileName),
-            style: TextStyle(color: tokens.ink, fontSize: 13),
-          ),
-        ),
-      );
+      showMindToast(context, strings.moodAuraSavedSnackbar(fileName));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -444,6 +449,24 @@ class _MoodAuraPosterSheetState extends ConsumerState<MoodAuraPosterSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    MindSegmented(
+                      index: _useTwilightPoster ? 1 : 0,
+                      labels: [
+                        strings.sunriseStyleLabel,
+                        strings.twilightStyleLabel,
+                      ],
+                      onChanged: (idx) {
+                        final nextTwilight = idx == 1;
+                        if (nextTwilight != _useTwilightPoster) {
+                          setState(() {
+                            _useTwilightPoster = nextTwilight;
+                            _pngBytes = null;
+                          });
+                          _renderPoster();
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 14),
                     if (_errorText != null)
                       Text(
                         _errorText!,

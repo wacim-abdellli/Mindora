@@ -180,12 +180,13 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        const enStrings = AppStrings('en');
         await tester.scrollUntilVisible(
-          find.text('OBSERVED STABILIZERS'),
+          find.text(enStrings.observedStabilizersTitle),
           240,
           scrollable: find.byType(Scrollable).first,
         );
-        expect(find.text('OBSERVED STABILIZERS'), findsOneWidget);
+        expect(find.text(enStrings.observedStabilizersTitle), findsOneWidget);
         expect(find.textContaining('same-day shift'), findsWidgets);
 
         await tester.pumpWidget(
@@ -201,11 +202,11 @@ void main() {
         await tester.pumpAndSettle();
 
         await tester.scrollUntilVisible(
-          find.text('OBSERVED STABILIZERS'),
+          find.text(enStrings.observedStabilizersTitle),
           240,
           scrollable: find.byType(Scrollable).first,
         );
-        expect(find.text('OBSERVED STABILIZERS'), findsOneWidget);
+        expect(find.text(enStrings.observedStabilizersTitle), findsOneWidget);
 
         // 320px + 1.35x text scaling + Arabic RTL check
         tester.view.physicalSize = const Size(320, 640);
