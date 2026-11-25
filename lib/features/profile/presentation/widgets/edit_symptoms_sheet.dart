@@ -19,6 +19,7 @@ class EditSymptomsSheet extends ConsumerStatefulWidget {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => EditSymptomsSheet(profile: profile),
     );

@@ -9,10 +9,12 @@ import '../../../core/security/local_data_cipher.dart';
 import '../../auth/data/auth_service.dart';
 import '../../insights/domain/forensic_loop_model.dart';
 import '../../investigation/domain/case_model.dart';
+import '../../mind_trace/domain/adaptive_tracking_engine.dart';
 import '../../mind_trace/domain/affect_taxonomy.dart';
 import '../../mind_trace/domain/daily_context_tags.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
 import '../../observatory/domain/symptom_report.dart';
+import '../../profile/domain/clinical_condition_catalog.dart';
 import '../../profile/domain/psychological_profile_model.dart';
 import '../domain/clinician_models.dart';
 import '../domain/post_visit_focus_model.dart';
@@ -94,33 +96,7 @@ class ClinicianSyncService {
                 final d = DateTime(t.date.year, t.date.month, t.date.day);
                 return !d.isBefore(cutoffDay);
               })
-              .map((t) {
-                var sanitized = t;
-                if (!consentScope.includePersonalNotes) {
-                  sanitized = sanitized.copyWith(
-                    clearJournalText: true,
-                    clearSituation: true,
-                    clearBehavioralResponse: true,
-                    clearAiReflection: true,
-                    clearVoiceNotePath: true,
-                    dynamicAnswers: const {},
-                    investigationAnswers: const {},
-                    clearSymptomsAndExperiences:
-                        !consentScope.includeSymptomReports,
-                  );
-                }
-                if (!consentScope.includeSleepEnergyAnxiety) {
-                  sanitized = sanitized.copyWith(
-                    clearSleepHours: true,
-                    clearSleepQuality: true,
-                    clearEnergyLevel: true,
-                    clearAnxietyLevel: true,
-                    clearPhysicalTension: true,
-                    contextTags: const [],
-                  );
-                }
-                return sanitized;
-              })
+              .map(consentScope.sanitizeTrace)
               .toList()
         : <MindTraceModel>[];
 
@@ -706,6 +682,20 @@ class ClinicianSyncService {
           'Observed stabilizers (self-reported): ${stabParts.join(' | ')}',
         );
       }
+      final conditionTracks = ClinicalConditionCatalog.resolveTracks(
+        packet.profileSnapshot,
+      );
+      final conditionMarkers = AdaptiveTrackingEngine.summarizeConditionMarkers(
+        packet.traces,
+        conditionTracks,
+        strings,
+      );
+      if (scope.includeMoodMetrics && conditionMarkers.isNotEmpty) {
+        buf.writeln(
+          'Condition-specific markers (${conditionTracks.map((t) => t.localizedTitle(strings)).join(', ')}): '
+          '${conditionMarkers.join(' | ')}',
+        );
+      }
       buf.writeln();
     }
 
@@ -756,6 +746,11 @@ class ClinicianSyncService {
             '  Trigger -> Thought (${c.chain!.thoughtLabel.displayName}) -> Emotion -> Response: '
             '${c.chain!.trigger} | ${c.chain!.thought} | ${c.chain!.emotion} (${c.chain!.emotionIntensity}/10) | ${c.chain!.behavior}',
           );
+        }
+        if (c.findingsSummary != null &&
+            c.findingsSummary!.trim().isNotEmpty &&
+            c.findingsSummary!.trim() != (c.userConclusion ?? '').trim()) {
+          buf.writeln('  Clinical intake note: ${c.findingsSummary!.trim()}');
         }
         if (c.userConclusion != null && c.userConclusion!.trim().isNotEmpty) {
           buf.writeln('  Patient takeaway: ${c.userConclusion!.trim()}');

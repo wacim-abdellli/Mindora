@@ -273,6 +273,7 @@ class MoodAuraPosterSheet extends ConsumerStatefulWidget {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => MoodAuraPosterSheet(traces: traces, summary: summary),
     );

@@ -7,17 +7,18 @@ import '../../../../app/theme/mind_tokens.dart';
 import '../../../../core/widgets/mind_badge.dart';
 import '../../../../core/widgets/mind_card.dart';
 import '../../../../core/widgets/mind_pressable.dart';
-import '../../../mind_trace/domain/daily_context_tags.dart';
+import '../../../../core/widgets/mind_toast.dart';
+import '../../../mind_trace/domain/adaptive_tracking_engine.dart';
 import '../../../mind_trace/domain/mind_trace_model.dart';
 import '../../../onboarding/domain/app_personalization_engine.dart';
+import '../../../profile/domain/psychological_profile_model.dart';
 
-/// Time-of-day adaptive clinical daily pulse card for `Today` ([HomeScreen]).
+/// Playful, non-military adaptive daily ritual card for `Today` ([HomeScreen]).
 ///
-/// Captures high-value longitudinal markers prized by psychiatrists (sleep
-/// duration & quality, energy/activation, stress load, stressors/stabilizers,
-/// and optional routine adherence) in 1–2 taps with ZERO typing, auto-saving
-/// directly onto today's [MindTraceModel].
-class HomeClinicalPulseCard extends StatelessWidget {
+/// Selects at most 2–3 high-signal metrics driven directly by the user's active
+/// condition tracks (covering 300+ DSM-5-TR / ICD-11 terms) and time of day,
+/// rendered with tactile visual widgets and a working Done / Collapse bar.
+class HomeClinicalPulseCard extends StatefulWidget {
   const HomeClinicalPulseCard({
     super.key,
     required this.tokens,
@@ -25,6 +26,8 @@ class HomeClinicalPulseCard extends StatelessWidget {
     required this.plan,
     required this.todayTrace,
     required this.onUpdateTrace,
+    this.profile,
+    this.loggedDaysThisWeek = 0,
     this.overrideHour,
   });
 
@@ -32,14 +35,28 @@ class HomeClinicalPulseCard extends StatelessWidget {
   final AppStrings strings;
   final AppPersonalizationPlan plan;
   final MindTraceModel? todayTrace;
-  final Future<void> Function(MindTraceModel Function(MindTraceModel? existing) updater)
+  final Future<void> Function(
+    MindTraceModel Function(MindTraceModel? existing) updater,
+  )
   onUpdateTrace;
+  final PsychologicalProfileModel? profile;
+  final int loggedDaysThisWeek;
   final int? overrideHour;
 
+  @override
+  State<HomeClinicalPulseCard> createState() => _HomeClinicalPulseCardState();
+}
+
+class _HomeClinicalPulseCardState extends State<HomeClinicalPulseCard> {
+  bool _collapsed = false;
+
   bool get _isMorning {
-    final hour = overrideHour ?? DateTime.now().hour;
+    final hour = widget.overrideHour ?? DateTime.now().hour;
     return hour >= 5 && hour < 14;
   }
+
+  int get _effectiveHour =>
+      widget.overrideHour ?? DateTime.now().hour;
 
   MindTraceModel _baseOrNew(MindTraceModel? existing) {
     if (existing != null) return existing;
@@ -56,46 +73,43 @@ class HomeClinicalPulseCard extends StatelessWidget {
     );
   }
 
-  int _completedCount() {
-    final t = todayTrace;
-    if (t == null) return 0;
-    var count = 0;
-    if (t.sleepHours != null) count++;
-    if (_isMorning) {
-      if (t.energyLevel != null) count++;
-    } else {
-      if (t.anxietyLevel != null) count++;
-      if ((t.behavioralResponse ?? '').trim().isNotEmpty ||
-          t.contextTags.isNotEmpty) {
-        count++;
-      }
+  void _handleDonePressed(BuildContext context, List<AdaptiveMetricSpec> specs) {
+    HapticFeedback.mediumImpact();
+    setState(() => _collapsed = !_collapsed);
+    if (_collapsed) {
+      showMindToast(context, widget.strings.ritualSavedSummaryToast);
     }
-    if (plan.showRoutineAnchorQuestion &&
-        (t.dynamicAnswers['routine_adherence'] ?? '').isNotEmpty) {
-      count++;
-    }
-    return count;
-  }
-
-  int _targetCount() {
-    var total = _isMorning ? 2 : 3;
-    if (plan.showRoutineAnchorQuestion) total++;
-    return total;
   }
 
   @override
   Widget build(BuildContext context) {
-    // Minimal exploration users only see clinical pulse if they already started filling details or explicitly enabled Doctor Prep.
+    final tokens = widget.tokens;
+    final strings = widget.strings;
+    final todayTrace = widget.todayTrace;
+    final plan = widget.plan;
+
+    // Minimal exploration users only see clinical ritual if they started logging or enabled Doctor Prep.
     if (plan.isMinimalExplorationMode &&
         todayTrace?.sleepHours == null &&
         todayTrace?.energyLevel == null &&
-        todayTrace?.anxietyLevel == null) {
+        todayTrace?.anxietyLevel == null &&
+        (todayTrace?.dynamicAnswers ?? {}).isEmpty) {
       return const SizedBox.shrink();
     }
 
-    final completed = _completedCount();
-    final total = _targetCount();
-    final isComplete = completed >= total;
+    final specs = AdaptiveTrackingEngine.buildDailyRitual(
+      profile: widget.profile,
+      plan: plan,
+      todayTrace: todayTrace,
+      hour: _effectiveHour,
+    );
+
+    final completed = specs
+        .where((s) => AdaptiveTrackingEngine.isMetricCompleted(s.kind, todayTrace))
+        .length;
+    final total = specs.length;
+    final isComplete = total > 0 && completed >= total;
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
 
     return MindCard(
       key: const ValueKey('home-clinical-pulse-card'),
@@ -104,15 +118,27 @@ class HomeClinicalPulseCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(
-                _isMorning
-                    ? Icons.wb_twilight_rounded
-                    : Icons.nights_stay_outlined,
-                size: 20,
-                color: tokens.ink,
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: tokens.tint(
+                    _isMorning ? MindTokens.moodGood : MindTokens.moodAnxious,
+                    tokens.isDark ? 0.18 : 0.16,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  _isMorning
+                      ? Icons.wb_twilight_rounded
+                      : Icons.nights_stay_outlined,
+                  size: 20,
+                  color: tokens.ink,
+                ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -121,15 +147,21 @@ class HomeClinicalPulseCard extends StatelessWidget {
                       _isMorning
                           ? strings.morningPulseTitle
                           : strings.eveningPulseTitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: LabTheme.textStyle(
-                        fontSize: 16.5,
+                        fontSize: 16.0,
                         fontWeight: FontWeight.w800,
                         color: tokens.ink,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      strings.pulseForYouAndDoctorSub,
+                      _isMorning
+                          ? strings.ritualMorningTag
+                          : strings.ritualEveningTag,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: LabTheme.textStyle(
                         fontSize: 13.0,
                         color: tokens.ink2,
@@ -139,347 +171,433 @@ class HomeClinicalPulseCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              MindBadge(
-                icon: isComplete ? Icons.check_circle_rounded : null,
-                label: isComplete ? strings.doneBtn : '$completed/$total',
-                backgroundColor: isComplete ? tokens.primary : tokens.surface2,
-                textColor: isComplete ? tokens.onPrimary : tokens.ink2,
-              ),
+              if (isComplete || _collapsed)
+                Semantics(
+                  button: true,
+                  label: _collapsed
+                      ? strings.ritualSavedCompactBtn
+                      : strings.ritualSaveCollapseBtn,
+                  child: MindPressable(
+                    key: const ValueKey('pulse-done-toggle-btn'),
+                    onPressed: () => _handleDonePressed(context, specs),
+                    borderRadius: BorderRadius.circular(tokens.chipRadius),
+                    child: Container(
+                      constraints: const BoxConstraints(minHeight: 42),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _collapsed ? tokens.surface2 : tokens.primary,
+                        borderRadius: BorderRadius.circular(tokens.chipRadius),
+                        border: Border.all(
+                          color: _collapsed ? tokens.lineStrong : tokens.primary,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _collapsed
+                                ? Icons.edit_outlined
+                                : Icons.check_circle_rounded,
+                            size: 15,
+                            color: _collapsed ? tokens.ink : tokens.onPrimary,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            _collapsed
+                                ? strings.ritualSavedCompactBtn
+                                : strings.ritualSaveCollapseBtn,
+                            style: LabTheme.textStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: _collapsed ? tokens.ink : tokens.onPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              else
+                MindBadge(
+                  key: const ValueKey('pulse-progress-indicator'),
+                  label: '$completed / $total',
+                  backgroundColor: tokens.surface,
+                  borderColor: tokens.lineStrong,
+                  textColor: tokens.ink2,
+                ),
             ],
           ),
-          const SizedBox(height: 16),
 
-          if (_isMorning) ...[
-            _buildSleepHoursQuestion(),
-            if (todayTrace?.sleepHours != null) ...[
-              const SizedBox(height: 14),
-              _buildSleepQualityQuestion(),
-            ],
-            const SizedBox(height: 16),
-            _buildEnergyQuestion(),
-          ] else ...[
-            _buildStressQuestion(),
-            if (todayTrace?.sleepHours == null) ...[
-              const SizedBox(height: 16),
-              _buildSleepHoursQuestion(),
-            ],
-            const SizedBox(height: 16),
-            _buildWhatShapedTodaySection(),
-          ],
-
-          if (plan.showRoutineAnchorQuestion) ...[
-            const SizedBox(height: 16),
-            _buildRoutineAnchorQuestion(),
-          ],
+          AnimatedSwitcher(
+            duration: reduceMotion
+                ? Duration.zero
+                : const Duration(milliseconds: 220),
+            child: _collapsed
+                ? Padding(
+                    key: const ValueKey('pulse-collapsed-view'),
+                    padding: const EdgeInsets.only(top: 12),
+                    child: _buildCollapsedSummary(
+                      specs,
+                      todayTrace,
+                      tokens,
+                      strings,
+                    ),
+                  )
+                : Column(
+                    key: const ValueKey('pulse-expanded-view'),
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (widget.loggedDaysThisWeek > 0) ...[
+                        const SizedBox(height: 10),
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: MindBadge(
+                            icon: Icons.auto_awesome_outlined,
+                            label: strings.ritualStreakPill(
+                              widget.loggedDaysThisWeek,
+                            ),
+                            backgroundColor: tokens.surface2,
+                            textColor: tokens.ink2,
+                          ),
+                        ),
+                      ],
+                      for (var i = 0; i < specs.length; i++) ...[
+                        SizedBox(height: i == 0 ? 16 : 18),
+                        _buildMetricBlock(
+                          specs[i],
+                          todayTrace,
+                          tokens,
+                          strings,
+                        ),
+                      ],
+                    ],
+                  ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSleepHoursQuestion() {
-    final current = todayTrace?.sleepHours;
-    final options = <(String key, String label, double hours, bool regular)>[
-      ('lt5', strings.sleepLt5h, 4.5, false),
-      ('5to6', strings.sleep5to6h, 5.5, false),
-      ('7to8', strings.sleep7to8h, 7.5, true),
-      ('9plus', strings.sleep9plusH, 9.0, true),
-    ];
+  Widget _buildCollapsedSummary(
+    List<AdaptiveMetricSpec> specs,
+    MindTraceModel? trace,
+    MindTokens tokens,
+    AppStrings strings,
+  ) {
+    final chosenLabels = <String>[];
+    for (final spec in specs) {
+      for (final opt in spec.options) {
+        if (AdaptiveTrackingEngine.isOptionSelected(spec.kind, opt, trace)) {
+          chosenLabels.add(
+            '${spec.localizedClinicianLabel(strings)}: ${opt.localized(strings)}',
+          );
+          break;
+        }
+      }
+    }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _questionTitle(strings.sleepHoursQuestion),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final opt in options)
-              _pulsePill(
-                key: ValueKey<String>('pulse-sleep-${opt.$1}'),
-                label: opt.$2,
-                selected: current != null && (current - opt.$3).abs() < 0.4,
-                onTap: () => onUpdateTrace((existing) {
-                  final base = _baseOrNew(existing);
-                  final tags = List<String>.from(base.contextTags);
-                  if (opt.$4) {
-                    if (!tags.contains('sleep_consistent')) {
-                      tags.add('sleep_consistent');
-                    }
-                  } else {
-                    tags.remove('sleep_consistent');
-                  }
-                  return base.copyWith(
-                    sleepHours: opt.$3,
-                    contextTags: tags,
-                    updatedAt: DateTime.now(),
-                  );
-                }),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: tokens.cardTint,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: tokens.line),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.check_circle_outline_rounded, size: 18, color: tokens.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              chosenLabels.isNotEmpty
+                  ? chosenLabels.join(' · ')
+                  : strings.ritualCompletedSummaryTitle,
+              style: LabTheme.textStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w600,
+                color: tokens.ink,
               ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSleepQualityQuestion() {
-    final current = todayTrace?.sleepQuality;
-    final options = <(String key, String label, int quality)>[
-      ('rested', strings.sleepRestedLabel, 5),
-      ('woke', strings.sleepWokeUpLabel, 3),
-      ('hard', strings.sleepHardLabel, 2),
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _questionTitle(strings.sleepQualityQuestion),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final opt in options)
-              _pulsePill(
-                key: ValueKey<String>('pulse-sleepq-${opt.$1}'),
-                label: opt.$2,
-                selected: current == opt.$3,
-                onTap: () => onUpdateTrace((existing) {
-                  final base = _baseOrNew(existing);
-                  return base.copyWith(
-                    sleepQuality: opt.$3,
-                    updatedAt: DateTime.now(),
-                  );
-                }),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEnergyQuestion() {
-    final current = todayTrace?.energyLevel;
-    final options = <(String key, String label, int level)>[
-      ('drained', strings.energyDrainedLabel, 2),
-      ('low', strings.energyLowLabel, 4),
-      ('steady', strings.energySteadyLabel, 7),
-      ('high', strings.energyHighLabel, 9),
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _questionTitle(strings.morningEnergyQuestion),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final opt in options)
-              _pulsePill(
-                key: ValueKey<String>('pulse-energy-${opt.$1}'),
-                label: opt.$2,
-                selected: current != null && (current - opt.$3).abs() <= 1,
-                onTap: () => onUpdateTrace((existing) {
-                  final base = _baseOrNew(existing);
-                  return base.copyWith(
-                    energyLevel: opt.$3,
-                    updatedAt: DateTime.now(),
-                  );
-                }),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStressQuestion() {
-    final current = todayTrace?.anxietyLevel;
-    final options = <(String key, String label, int level)>[
-      ('calm', strings.stressCalmLabel, 2),
-      ('mild', strings.stressMildLabel, 4),
-      ('heavy', strings.stressHeavyLabel, 7),
-      ('overwhelmed', strings.stressOverwhelmedLabel, 9),
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _questionTitle(strings.stressTodayQuestion),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final opt in options)
-              _pulsePill(
-                key: ValueKey<String>('pulse-stress-${opt.$1}'),
-                label: opt.$2,
-                selected: current != null && (current - opt.$3).abs() <= 1,
-                onTap: () => onUpdateTrace((existing) {
-                  final base = _baseOrNew(existing);
-                  return base.copyWith(
-                    anxietyLevel: opt.$3,
-                    updatedAt: DateTime.now(),
-                  );
-                }),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWhatShapedTodaySection() {
-    final currentTags = todayTrace?.contextTags ?? const <String>[];
-    final currentHelper = todayTrace?.behavioralResponse?.trim() ?? '';
-
-    const contextKeys = ['high_workload', 'late_caffeine_screens', 'social_connection'];
-    final helpers = <(String key, String label, String? contextTag)>[
-      ('walk', strings.helperWalk, 'physical_movement'),
-      ('rest', strings.helperRest, null),
-      ('breathe', strings.helperBreathing, null),
-      ('talked', strings.helperTalked, 'social_connection'),
-      ('quiet', strings.helperQuiet, null),
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _questionTitle(strings.whatShapedTodayQuestion),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final tagKey in contextKeys)
-              if (DailyContextTags.byKey(tagKey) != null)
-                _pulsePill(
-                  key: ValueKey<String>('pulse-tag-$tagKey'),
-                  label: DailyContextTags.byKey(tagKey)!.localized(strings),
-                  selected: currentTags.contains(tagKey),
-                  onTap: () => onUpdateTrace((existing) {
-                    final base = _baseOrNew(existing);
-                    final nextTags = List<String>.from(base.contextTags);
-                    if (nextTags.contains(tagKey)) {
-                      nextTags.remove(tagKey);
-                    } else {
-                      nextTags.add(tagKey);
-                    }
-                    return base.copyWith(
-                      contextTags: nextTags,
-                      updatedAt: DateTime.now(),
-                    );
-                  }),
-                ),
-            for (final helper in helpers)
-              _pulsePill(
-                key: ValueKey<String>('pulse-help-${helper.$1}'),
-                label: helper.$2,
-                selected: currentHelper == helper.$2,
-                onTap: () => onUpdateTrace((existing) {
-                  final base = _baseOrNew(existing);
-                  final nextTags = List<String>.from(base.contextTags);
-                  if (helper.$3 != null && !nextTags.contains(helper.$3)) {
-                    nextTags.add(helper.$3!);
-                  }
-                  return base.copyWith(
-                    behavioralResponse:
-                        currentHelper == helper.$2 ? '' : helper.$2,
-                    contextTags: nextTags,
-                    updatedAt: DateTime.now(),
-                  );
-                }),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRoutineAnchorQuestion() {
-    final current = todayTrace?.dynamicAnswers['routine_adherence'] ?? '';
-    final options = <(String key, String label)>[
-      ('yes', strings.routineYesLabel),
-      ('partly', strings.routinePartlyLabel),
-      ('no', strings.routineNoLabel),
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _questionTitle(strings.routineAnchorQuestion),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final opt in options)
-              _pulsePill(
-                key: ValueKey<String>('pulse-routine-${opt.$1}'),
-                label: opt.$2,
-                selected: current == opt.$1,
-                onTap: () => onUpdateTrace((existing) {
-                  final base = _baseOrNew(existing);
-                  final nextDynamic = Map<String, String>.from(base.dynamicAnswers);
-                  nextDynamic['routine_adherence'] = opt.$1;
-                  final nextTags = List<String>.from(base.contextTags);
-                  if (opt.$1 == 'yes') {
-                    if (!nextTags.contains('routine_kept')) {
-                      nextTags.add('routine_kept');
-                    }
-                  } else {
-                    nextTags.remove('routine_kept');
-                  }
-                  return base.copyWith(
-                    dynamicAnswers: nextDynamic,
-                    contextTags: nextTags,
-                    updatedAt: DateTime.now(),
-                  );
-                }),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _questionTitle(String text) {
-    return Text(
-      text,
-      style: LabTheme.textStyle(
-        fontSize: 14.5,
-        fontWeight: FontWeight.w700,
-        color: tokens.ink,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _pulsePill({
-    Key? key,
-    required String label,
+  Widget _buildMetricBlock(
+    AdaptiveMetricSpec spec,
+    MindTraceModel? trace,
+    MindTokens tokens,
+    AppStrings strings,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          spec.localizedTitle(strings),
+          style: LabTheme.textStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: tokens.ink,
+          ),
+        ),
+        const SizedBox(height: 10),
+        switch (spec.style) {
+          AdaptiveMetricVisualStyle.sleepArc =>
+            _buildSleepArcWidget(spec, trace, tokens, strings),
+          AdaptiveMetricVisualStyle.energyBattery =>
+            _buildBatteryBarsWidget(spec, trace, tokens, strings),
+          AdaptiveMetricVisualStyle.bubbleMeter =>
+            _buildBubbleScaleWidget(spec, trace, tokens, strings),
+          AdaptiveMetricVisualStyle.pillRow =>
+            _buildVisualSparksWidget(spec, trace, tokens, strings),
+        },
+      ],
+    );
+  }
+
+  Widget _buildSleepArcWidget(
+    AdaptiveMetricSpec spec,
+    MindTraceModel? trace,
+    MindTokens tokens,
+    AppStrings strings,
+  ) {
+    var activeIdx = -1;
+    for (var i = 0; i < spec.options.length; i++) {
+      if (AdaptiveTrackingEngine.isOptionSelected(
+        spec.kind,
+        spec.options[i],
+        trace,
+      )) {
+        activeIdx = i;
+        break;
+      }
+    }
+    final fillRatio = activeIdx < 0 ? 0.0 : (activeIdx + 1) / spec.options.length;
+    final arcColor = activeIdx <= 1 && activeIdx >= 0
+        ? MindTokens.moodRestless
+        : MindTokens.moodCalm;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) => ClipRRect(
+            borderRadius: BorderRadius.circular(99),
+            child: Container(
+              height: 7,
+              width: constraints.maxWidth,
+              color: tokens.surface2,
+              alignment: AlignmentDirectional.centerStart,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                width: (constraints.maxWidth * fillRatio).clamp(0.0, constraints.maxWidth),
+                height: 7,
+                decoration: BoxDecoration(
+                  color: arcColor,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final opt in spec.options)
+              _tactileSegmentTile(
+                spec: spec,
+                opt: opt,
+                selected: AdaptiveTrackingEngine.isOptionSelected(
+                  spec.kind,
+                  opt,
+                  trace,
+                ),
+                leading: Icon(
+                  Icons.bedtime_outlined,
+                  size: 16,
+                  color: AdaptiveTrackingEngine.isOptionSelected(
+                    spec.kind,
+                    opt,
+                    trace,
+                  )
+                      ? tokens.onPrimary
+                      : tokens.ink2,
+                ),
+                tokens: tokens,
+                strings: strings,
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBatteryBarsWidget(
+    AdaptiveMetricSpec spec,
+    MindTraceModel? trace,
+    MindTokens tokens,
+    AppStrings strings,
+  ) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final opt in spec.options)
+          _tactileSegmentTile(
+            spec: spec,
+            opt: opt,
+            selected: AdaptiveTrackingEngine.isOptionSelected(
+              spec.kind,
+              opt,
+              trace,
+            ),
+            leading: _SignalBars(
+              barsFilled: opt.level1to4,
+              totalBars: 4,
+              color: AdaptiveTrackingEngine.isOptionSelected(
+                spec.kind,
+                opt,
+                trace,
+              )
+                  ? tokens.onPrimary
+                  : tokens.primary,
+              mutedColor: tokens.lineStrong,
+            ),
+            tokens: tokens,
+            strings: strings,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildBubbleScaleWidget(
+    AdaptiveMetricSpec spec,
+    MindTraceModel? trace,
+    MindTokens tokens,
+    AppStrings strings,
+  ) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final opt in spec.options)
+          _tactileSegmentTile(
+            spec: spec,
+            opt: opt,
+            selected: AdaptiveTrackingEngine.isOptionSelected(
+              spec.kind,
+              opt,
+              trace,
+            ),
+            leading: _BubbleDot(
+              level: opt.level1to4,
+              selected: AdaptiveTrackingEngine.isOptionSelected(
+                spec.kind,
+                opt,
+                trace,
+              ),
+              tokens: tokens,
+            ),
+            tokens: tokens,
+            strings: strings,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildVisualSparksWidget(
+    AdaptiveMetricSpec spec,
+    MindTraceModel? trace,
+    MindTokens tokens,
+    AppStrings strings,
+  ) {
+    IconData iconFor(AdaptiveMetricOption opt) {
+      return switch (opt.key) {
+        'walk' => Icons.directions_walk_rounded,
+        'talked' => Icons.forum_outlined,
+        'heavy_work' => Icons.work_outline_rounded,
+        'rest' => Icons.spa_outlined,
+        'yes' => Icons.schedule_rounded,
+        'partly' => Icons.timelapse_rounded,
+        'no' => Icons.shuffle_rounded,
+        'passed' => Icons.air_rounded,
+        'paused' => Icons.pause_circle_outline_rounded,
+        'acted' => Icons.replay_rounded,
+        _ => Icons.circle_outlined,
+      };
+    }
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final opt in spec.options)
+          _tactileSegmentTile(
+            spec: spec,
+            opt: opt,
+            selected: AdaptiveTrackingEngine.isOptionSelected(
+              spec.kind,
+              opt,
+              trace,
+            ),
+            leading: Icon(
+              iconFor(opt),
+              size: 16,
+              color: AdaptiveTrackingEngine.isOptionSelected(
+                spec.kind,
+                opt,
+                trace,
+              )
+                  ? tokens.onPrimary
+                  : tokens.ink2,
+            ),
+            tokens: tokens,
+            strings: strings,
+          ),
+      ],
+    );
+  }
+
+  Widget _tactileSegmentTile({
+    required AdaptiveMetricSpec spec,
+    required AdaptiveMetricOption opt,
     required bool selected,
-    required VoidCallback onTap,
+    required Widget leading,
+    required MindTokens tokens,
+    required AppStrings strings,
   }) {
+    final label = opt.localized(strings);
     return Semantics(
       button: true,
       selected: selected,
       label: label,
       child: MindPressable(
-        key: key,
+        key: ValueKey<String>(opt.widgetKey),
         onPressed: () {
           HapticFeedback.selectionClick();
-          onTap();
+          widget.onUpdateTrace(
+            (existing) => AdaptiveTrackingEngine.applySelection(
+              _baseOrNew(existing),
+              spec.kind,
+              opt,
+              strings: strings,
+            ),
+          );
         },
-        borderRadius: BorderRadius.circular(tokens.chipRadius),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          constraints: const BoxConstraints(minHeight: 48, minWidth: 64),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          constraints: const BoxConstraints(minHeight: 48, minWidth: 68),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
           decoration: BoxDecoration(
             color: selected ? tokens.primary : tokens.surface2,
-            borderRadius: BorderRadius.circular(tokens.chipRadius),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: selected ? tokens.primary : tokens.lineStrong,
               width: selected ? 1.5 : 1.0,
@@ -488,10 +606,8 @@ class HomeClinicalPulseCard extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (selected) ...[
-                Icon(Icons.check_rounded, size: 16, color: tokens.onPrimary),
-                const SizedBox(width: 6),
-              ],
+              leading,
+              const SizedBox(width: 7),
               Flexible(
                 child: Text(
                   label,
@@ -507,6 +623,75 @@ class HomeClinicalPulseCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SignalBars extends StatelessWidget {
+  const _SignalBars({
+    required this.barsFilled,
+    required this.totalBars,
+    required this.color,
+    required this.mutedColor,
+  });
+
+  final int barsFilled;
+  final int totalBars;
+  final Color color;
+  final Color mutedColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        for (var i = 1; i <= totalBars; i++) ...[
+          if (i > 1) const SizedBox(width: 2),
+          Container(
+            width: 3,
+            height: 5.0 + (i * 2.5),
+            decoration: BoxDecoration(
+              color: i <= barsFilled ? color : mutedColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _BubbleDot extends StatelessWidget {
+  const _BubbleDot({
+    required this.level,
+    required this.selected,
+    required this.tokens,
+  });
+
+  final int level;
+  final bool selected;
+  final MindTokens tokens;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = 6.0 + (level.clamp(1, 4) * 2.0);
+    final fill = selected
+        ? tokens.onPrimary
+        : (level <= 1
+              ? MindTokens.moodCalm
+              : (level == 2
+                    ? MindTokens.moodGood
+                    : (level == 3
+                          ? MindTokens.moodRestless
+                          : MindTokens.moodFrustrated)));
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: fill,
+        shape: BoxShape.circle,
       ),
     );
   }

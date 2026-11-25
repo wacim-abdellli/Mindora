@@ -3,14 +3,12 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../app/localization/app_strings.dart';
-import '../../../../app/localization/locale_controller.dart';
-import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/mind_tokens.dart';
 import '../../../../core/safety/safety_interceptor.dart';
 import '../../../../core/widgets/mind_pressable.dart';
+import '../../../../core/widgets/mind_sheet.dart';
 import '../../../clinician/controllers/clinician_providers.dart';
 import '../../../journey/controllers/journey_controller.dart';
 import '../../../mind_trace/controllers/mind_trace_controller.dart';
@@ -18,23 +16,17 @@ import '../../../profile/controllers/profile_controller.dart';
 import '../../../support/presentation/contextual_support_sheet.dart';
 import '../../controllers/investigation_providers.dart';
 import '../../domain/case_model.dart';
-import '../../domain/conversation_mode.dart';
 import '../../domain/investigator_service.dart';
-import '../../domain/label_type.dart';
 import '../../domain/statement.dart';
 import 'ai_engine_config_sheet.dart';
 import 'companion_context_bridge_card.dart';
-import 'custom_ai_instructions_sheet.dart';
-import 'mode_chooser_sheet.dart';
 
-/// Conversational reflection workspace for the AI Guide with warm blank-session
-/// onboarding, single-tap mode switching, accessible statement labels, and
-/// silent mock fallback on network errors.
+/// Calm, minimalist, options-first dialogue sanctuary.
+///
+/// The AI autonomously adapts its posture and contextual reply options per turn,
+/// sparing the user from picking clinical modes or tagging every thought bubble.
 class LiveDialogueView extends ConsumerStatefulWidget {
-  const LiveDialogueView({
-    super.key,
-    required this.caseModel,
-  });
+  const LiveDialogueView({super.key, required this.caseModel});
 
   final CaseModel caseModel;
 
@@ -46,23 +38,6 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isInvestigatorTyping = false;
-  bool _isSynthesizing = false;
-  late ConversationMode _currentMode;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentMode = widget.caseModel.conversationMode;
-  }
-
-  @override
-  void didUpdateWidget(LiveDialogueView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.caseModel.conversationMode !=
-        widget.caseModel.conversationMode) {
-      _currentMode = widget.caseModel.conversationMode;
-    }
-  }
 
   @override
   void dispose() {
@@ -118,7 +93,6 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
 
       final proceeded = await notifier.sendMessageAndGenerateReply(
         text,
-        label: LabelType.assumption,
         latestTrace: todayTrace,
         historicalTraces: traces,
         journey: journey,
@@ -140,340 +114,94 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
     }
   }
 
-  Future<void> _setStatementLabel(
+  Future<void> _openMessageActions(
     Statement statement,
-    LabelType targetLabel,
+    AppStrings strings,
   ) async {
     HapticFeedback.selectionClick();
-    final nextLabel = statement.label == targetLabel ? null : targetLabel;
-
-    final currentCase = ref.read(activeCaseControllerProvider).value;
-    if (currentCase == null) return;
-
-    final now = DateTime.now();
-    final updatedStatements = currentCase.statements.map((s) {
-      if (s.id == statement.id) {
-        return s.copyWith(label: nextLabel, clearLabel: nextLabel == null);
-      }
-      return s;
-    }).toList();
-
-    final updatedCase = currentCase.copyWith(
-      statements: updatedStatements,
-      updatedAt: now,
-    );
-    ref.read(activeCaseControllerProvider.notifier).resumeCase(updatedCase);
-    await ref.read(caseRepositoryProvider).saveCase(updatedCase);
-  }
-
-  Future<void> _updateStatementDistortion(
-    Statement statement,
-    String? distortion,
-  ) async {
-    HapticFeedback.selectionClick();
-    final currentCase = ref.read(activeCaseControllerProvider).value;
-    if (currentCase == null) return;
-
-    final now = DateTime.now();
-    final updatedStatements = currentCase.statements.map((s) {
-      if (s.id == statement.id) {
-        return s.copyWith(
-          distortionTag: distortion,
-          clearDistortionTag: distortion == null,
-        );
-      }
-      return s;
-    }).toList();
-
-    final updatedCase = currentCase.copyWith(
-      statements: updatedStatements,
-      updatedAt: now,
-    );
-    ref.read(activeCaseControllerProvider.notifier).resumeCase(updatedCase);
-    await ref.read(caseRepositoryProvider).saveCase(updatedCase);
-  }
-
-  void _showCognitiveDistortionsSheet(Statement statement) {
-    HapticFeedback.lightImpact();
-    final strings = ref.read(appStringsProvider);
-
-    final distortions = [
-      (
-        id: 'mind_reading',
-        name: strings.isArabic
-            ? 'قراءة الأفكار'
-            : (strings.isFrench ? 'Lecture de pensée' : 'Mind Reading'),
-        desc: strings.distortionMindReading,
-      ),
-      (
-        id: 'catastrophizing',
-        name: strings.isArabic
-            ? 'التهويل والكارثية'
-            : (strings.isFrench ? 'Catastrophisme' : 'Catastrophizing'),
-        desc: strings.distortionCatastrophizing,
-      ),
-      (
-        id: 'all_or_nothing',
-        name: strings.isArabic
-            ? 'التفكير الثنائي المطلق'
-            : (strings.isFrench ? 'Tout-ou-rien' : 'All-or-Nothing'),
-        desc: strings.distortionAllOrNothing,
-      ),
-      (
-        id: 'emotional_reasoning',
-        name: strings.isArabic
-            ? 'الاستدلال الشعوري'
-            : (strings.isFrench ? 'Raisonnement émotionnel' : 'Emotional Reasoning'),
-        desc: strings.distortionEmotionalReasoning,
-      ),
-      (
-        id: 'mental_filter',
-        name: strings.isArabic
-            ? 'التصفية الذهنية'
-            : (strings.isFrench ? 'Filtre mental' : 'Mental Filter'),
-        desc: strings.distortionMentalFilter,
-      ),
-      (
-        id: 'overgeneralization',
-        name: strings.isArabic
-            ? 'التعميم المفرط'
-            : (strings.isFrench ? 'Généralisation' : 'Overgeneralization'),
-        desc: strings.distortionOvergeneralization,
-      ),
-    ];
-
-    showModalBottomSheet<void>(
+    await showMindSheet<void>(
       context: context,
-      backgroundColor: context.tokens.surface,
-      isScrollControlled: true,
-      shape: RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(context.tokens.sheetRadius)),
-      ),
+      showCloseButton: true,
+      title: strings.navTalk,
       builder: (ctx) {
-        final sheetTokens = ctx.tokens;
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: sheetTokens.line,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        strings.cognitiveDistortionSheetTitle,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.7,
-                          color: sheetTokens.ink,
-                        ),
-                      ),
-                    ),
-                    if (statement.distortionTag != null)
-                      TextButton(
-                        style: TextButton.styleFrom(
-                          foregroundColor: sheetTokens.safety,
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        onPressed: () {
-                          _updateStatementDistortion(statement, null);
-                          Navigator.pop(ctx);
-                        },
-                        child: Text(
-                          strings.isArabic
-                              ? 'إزالة'
-                              : (strings.isFrench ? 'Effacer' : 'Clear'),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  strings.cognitiveDistortionSheetDesc,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: sheetTokens.ink2,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Flexible(
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: distortions.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 8),
-                    itemBuilder: (context, idx) {
-                      final item = distortions[idx];
-                      final isSelected = statement.distortionTag == item.name;
-                      return MindPressable(
-                        semanticLabel: item.name,
-                        borderRadius:
-                            BorderRadius.circular(sheetTokens.buttonRadius),
-                        onPressed: () {
-                          HapticFeedback.selectionClick();
-                          _updateStatementDistortion(statement, item.name);
-                          Navigator.pop(ctx);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? sheetTokens.cardTint
-                                : sheetTokens.surface2,
-                            borderRadius: BorderRadius.circular(
-                              sheetTokens.buttonRadius,
-                            ),
-                            border: Border.all(
-                              color: isSelected
-                                  ? sheetTokens.ink
-                                  : sheetTokens.line,
-                              width: isSelected ? 1.4 : 1,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      item.name,
-                                      style: TextStyle(
-                                        fontSize: 13.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: isSelected
-                                            ? sheetTokens.ink
-                                            : sheetTokens.ink,
-                                      ),
-                                    ),
-                                  ),
-                                  if (isSelected)
-                                    Icon(
-                                      Icons.check_circle_outline,
-                                      size: 17,
-                                      color: sheetTokens.ink,
-                                    ),
-                                ],
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                item.desc,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: sheetTokens.ink2,
-                                  height: 1.35,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _synthesizeCaseBrief() async {
-    final currentCase = ref.read(activeCaseControllerProvider).value;
-    if (currentCase == null || currentCase.statements.isEmpty || _isSynthesizing) {
-      return;
-    }
-
-    setState(() => _isSynthesizing = true);
-    HapticFeedback.mediumImpact();
-
-    try {
-      final strings = ref.read(appStringsProvider);
-      final service = ref.read(investigatorServiceProvider);
-      final locale = ref.read(localeControllerProvider);
-      final profile = ref.read(profileControllerProvider).value;
-      final tokens = context.tokens;
-
-      final summary = await service.summarizeFindings(
-        currentCase: currentCase,
-        languageCode: locale.languageCode,
-        profile: profile,
-      );
-
-      final notifier = ref.read(activeCaseControllerProvider.notifier);
-      await notifier.saveFindings(summary);
-      await notifier.saveConclusion(summary);
-
-      if (mounted) {
-        final router = GoRouter.maybeOf(context);
-        if (router != null) {
-          router.push('/case/${currentCase.id}');
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: tokens.surface,
-              content: Text(
-                strings.caseSynthesizedSuccess,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: tokens.ink,
-                ),
+        final tokens = ctx.tokens;
+        Widget item({
+          required IconData icon,
+          required String label,
+          required VoidCallback onTap,
+        }) {
+          return MindPressable(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              onTap();
+            },
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 52),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: tokens.surface2,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: tokens.line),
               ),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-                side: BorderSide(color: tokens.line),
+              child: Row(
+                children: [
+                  Icon(icon, size: 20, color: tokens.ink),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: tokens.ink,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           );
         }
-      }
-    } catch (_) {
-    } finally {
-      if (mounted) {
-        setState(() => _isSynthesizing = false);
-      }
-    }
-  }
 
-  void _openModeChooser() {
-    ModeChooserSheet.show(
-      context,
-      activeMode: _currentMode,
-      onModeSelected: (mode) {
-        if (mounted) {
-          setState(() => _currentMode = mode);
-          ref.read(currentConversationModeProvider.notifier).setMode(mode);
-          ref
-              .read(activeCaseControllerProvider.notifier)
-              .setConversationMode(mode);
-        }
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            item(
+              icon: Icons.bookmark_add_outlined,
+              label: strings.talkKeepInsightAction,
+              onTap: () async {
+                await ref
+                    .read(activeCaseControllerProvider.notifier)
+                    .bookmarkTakeaway(statement.text);
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(strings.takeawayBookmarkedLabel),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+            ),
+            item(
+              icon: Icons.copy_rounded,
+              label: strings.talkCopyAction,
+              onTap: () async {
+                await Clipboard.setData(ClipboardData(text: statement.text));
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(strings.talkCopiedNotice),
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              },
+            ),
+          ],
+        );
       },
     );
   }
@@ -481,14 +209,16 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final strings = ref.watch(appStringsProvider);
     final aiConfig = ref.watch(aiConfigProvider);
     final profile = ref.watch(profileControllerProvider).value;
+    final activeCase =
+        ref.watch(activeCaseControllerProvider).value ?? widget.caseModel;
 
-    final statements = widget.caseModel.statements;
-    final hasUserMessages =
-        statements.any((s) => s.speaker == StatementSpeaker.user);
+    final statements = activeCase.statements;
+    final hasUserMessages = statements.any(
+      (s) => s.speaker == StatementSpeaker.user,
+    );
     final isLive = aiConfig.isLiveActive;
     final profileConsented =
         (profile?.shareWithAiCompanion ?? false) &&
@@ -497,13 +227,16 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
         _isInvestigatorTyping || ref.watch(companionReplyPendingProvider);
     final runtimeNotice = ref.watch(aiRuntimeNoticeProvider);
 
+    var lastAiIndex = -1;
+    for (var i = statements.length - 1; i >= 0; i--) {
+      if (statements[i].speaker == StatementSpeaker.investigator) {
+        lastAiIndex = i;
+        break;
+      }
+    }
+
     return Column(
       children: [
-        _buildContextHeaderStrip(
-          tokens: tokens,
-          strings: strings,
-          hasUserMessages: hasUserMessages,
-        ),
         if (runtimeNotice != AiFallbackReason.none)
           _buildRuntimeNoticeBanner(
             tokens: tokens,
@@ -512,16 +245,17 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
           ),
         Expanded(
           child: !hasUserMessages
-              ? _buildWelcomeEmptyState(
+              ? _buildCalmWelcomeCanvas(
                   tokens: tokens,
                   strings: strings,
+                  activeCase: activeCase,
                   isLive: isLive,
                   profileConsented: profileConsented,
                 )
               : ListView.builder(
                   controller: _scrollController,
                   cacheExtent: 500,
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                   itemCount:
                       statements.length + (showTypingIndicator ? 1 : 0),
                   itemBuilder: (context, index) {
@@ -531,26 +265,29 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                         label: strings.investigatorTyping,
                       );
                     }
-                    return _buildMessageBubble(
-                      statement: statements[index],
-                      isDark: isDark,
+                    final stmt = statements[index];
+                    return _buildEditorialMessage(
+                      statement: stmt,
                       tokens: tokens,
                       strings: strings,
-                      isLive: isLive,
+                      isLatestAiTurn:
+                          index == lastAiIndex &&
+                          !showTypingIndicator &&
+                          activeCase.offeredCalmExercise != null &&
+                          activeCase.offeredCalmExercise != 'none',
                     );
                   },
                 ),
         ),
-        _buildSuggestedRepliesBar(
-          tokens: tokens,
-          strings: strings,
-          hasUserMessages: hasUserMessages,
-        ),
-        _buildBottomInputBar(
-          isDark: isDark,
-          tokens: tokens,
-          strings: strings,
-        ),
+        if (hasUserMessages &&
+            !showTypingIndicator &&
+            activeCase.suggestedReplies.isNotEmpty &&
+            !activeCase.isPausedForSafety)
+          _buildDynamicOptionsBar(
+            tokens: tokens,
+            options: activeCase.suggestedReplies,
+          ),
+        _buildBottomInputBar(tokens: tokens, strings: strings),
       ],
     );
   }
@@ -583,9 +320,9 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
             child: Text(
               msg,
               style: TextStyle(
-                fontSize: 11.5,
+                fontSize: 12,
                 color: tokens.ink,
-                height: 1.3,
+                height: 1.35,
               ),
             ),
           ),
@@ -598,7 +335,7 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
             child: Text(
               strings.aiEngineSettingsAction,
               style: TextStyle(
-                fontSize: 11.5,
+                fontSize: 12,
                 fontWeight: FontWeight.w700,
                 color: tokens.ink,
               ),
@@ -615,193 +352,13 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
     );
   }
 
-  Widget _buildContextHeaderStrip({
+  Widget _buildCalmWelcomeCanvas({
     required MindTokens tokens,
     required AppStrings strings,
-    required bool hasUserMessages,
-  }) {
-    final modeTitle = localizedModeName(_currentMode, strings);
-    final hasCustomInstructions =
-        ref.watch(profileControllerProvider).value?.customAiDirectives
-                .trim()
-                .isNotEmpty ==
-            true;
-
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: tokens.surface,
-        border: Border(bottom: BorderSide(color: tokens.line)),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(14, 4, 14, 4),
-        child: Row(
-          children: [
-            MindPressable(
-              semanticLabel: '${strings.changeModeTooltip}: $modeTitle',
-              borderRadius: BorderRadius.circular(14),
-              onPressed: _openModeChooser,
-              child: Container(
-                constraints: const BoxConstraints(minHeight: 48, maxWidth: 240),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: tokens.cardTint,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: tokens.ink.withValues(alpha: 0.4),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      iconForConversationMode(_currentMode),
-                      size: 16,
-                      color: tokens.ink,
-                    ),
-                    const SizedBox(width: 7),
-                    Flexible(
-                      child: Text(
-                        modeTitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: tokens.ink,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      size: 18,
-                      color: tokens.ink,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            MindPressable(
-              semanticLabel: strings.isArabic
-                  ? 'تعليمات المساعد'
-                  : (strings.isFrench ? 'Instructions IA' : 'Instructions'),
-              borderRadius: BorderRadius.circular(12),
-              onPressed: () => CustomAiInstructionsSheet.show(context),
-              child: Container(
-                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: hasCustomInstructions
-                      ? tokens.cardTint
-                      : tokens.surface2,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: hasCustomInstructions
-                        ? tokens.ink.withValues(alpha: 0.4)
-                        : tokens.line,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.tune_rounded,
-                      size: 15,
-                      color: hasCustomInstructions ? tokens.ink : tokens.ink2,
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      strings.isArabic
-                          ? 'تعليمات'
-                          : 'Instructions',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: hasCustomInstructions ? tokens.ink : tokens.ink2,
-                      ),
-                    ),
-                    if (hasCustomInstructions) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: MindTokens.moodCalm,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-            if (hasUserMessages) ...[
-              const SizedBox(width: 8),
-              MindPressable(
-                semanticLabel: strings.saveTakeawayReportBtn,
-                borderRadius: BorderRadius.circular(12),
-                onPressed: _isSynthesizing ? null : _synthesizeCaseBrief,
-                child: Container(
-                  constraints: const BoxConstraints(minHeight: 48),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: tokens.cardTint,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: tokens.ink.withValues(alpha: 0.45),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (_isSynthesizing)
-                        SizedBox(
-                          width: 13,
-                          height: 13,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 1.8,
-                            color: tokens.ink,
-                          ),
-                        )
-                      else
-                        Icon(
-                          Icons.fact_check_outlined,
-                          size: 15,
-                          color: tokens.ink,
-                        ),
-                      const SizedBox(width: 6),
-                      Text(
-                        strings.saveTakeawayReportBtn,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: tokens.ink,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWelcomeEmptyState({
-    required MindTokens tokens,
-    required AppStrings strings,
+    required CaseModel activeCase,
     required bool isLive,
     required bool profileConsented,
   }) {
-    final starters = strings.localizedStartersForMode(_currentMode.name);
     final todayTrace = ref.watch(todayTraceProvider);
     final focusPlan = ref.watch(postVisitFocusControllerProvider).value;
     final hasBridge = todayTrace != null ||
@@ -809,7 +366,8 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
             !focusPlan.isDismissed &&
             (focusPlan.focusItems.any((i) => !i.isCompleted) ||
                 focusPlan.observationCue.trim().isNotEmpty));
-    final privacyTag = widget.caseModel.isPrivate
+
+    final privacyLine = activeCase.isPrivate
         ? strings.privacyPrivateSessionTag
         : (isLive
               ? (profileConsented
@@ -817,12 +375,60 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                     : strings.privacyConsentPausedTag)
               : strings.privacyLocalTag);
 
+    final doorways = [
+      strings.talkDoorwaySpinning,
+      strings.talkDoorwayHeavyDay,
+      strings.talkDoorwayJustSit,
+    ];
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const SizedBox(height: 8),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: MindTokens.moodCalm.withValues(alpha: 0.16),
+                border: Border.all(
+                  color: MindTokens.moodCalm.withValues(alpha: 0.45),
+                ),
+              ),
+              child: Icon(
+                Icons.spa_outlined,
+                size: 22,
+                color: tokens.ink,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            strings.talkWelcomeHeadline,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: tokens.ink,
+              height: 1.3,
+              letterSpacing: strings.isArabic ? 0 : -0.4,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${strings.talkWelcomeSub} · $privacyLine',
+            style: TextStyle(
+              fontSize: 13.5,
+              height: 1.45,
+              color: tokens.ink2,
+            ),
+          ),
           if (hasBridge) ...[
+            const SizedBox(height: 18),
             CompanionContextBridgeCard(
               todayTrace: todayTrace,
               focusPlan: focusPlan,
@@ -833,127 +439,36 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                 initialChoice: SupportChoice.settle,
               ),
             ),
-            const SizedBox(height: 10),
           ],
-          Container(
-            padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              color: tokens.surface,
-              borderRadius: BorderRadius.circular(tokens.cardRadius),
-              border: Border.all(color: tokens.line),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: tokens.cardTint,
-                        borderRadius: BorderRadius.circular(11),
-                        border: Border.all(
-                          color: tokens.ink.withValues(alpha: 0.35),
-                        ),
-                      ),
-                      child: Icon(
-                        iconForConversationMode(_currentMode),
-                        size: 19,
-                        color: tokens.ink,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: tokens.surface2,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: tokens.line),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.lock_outline_rounded,
-                              size: 13,
-                              color: tokens.ink2,
-                            ),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                privacyTag,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: tokens.ink2,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  strings.welcomeQuestionHeadline,
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: tokens.ink,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  strings.welcomePickOrTypeSub,
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    height: 1.45,
-                    color: tokens.ink2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          ...starters.take(3).map((starter) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+          const SizedBox(height: 20),
+          for (final doorway in doorways)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
               child: MindPressable(
-                semanticLabel: starter,
-                borderRadius: BorderRadius.circular(tokens.cardRadius),
+                semanticLabel: doorway,
+                borderRadius: BorderRadius.circular(18),
                 onPressed: () {
                   HapticFeedback.lightImpact();
-                  _sendMessage(starter);
+                  _sendMessage(doorway);
                 },
                 child: Container(
-                  constraints: const BoxConstraints(minHeight: 48),
+                  constraints: const BoxConstraints(minHeight: 54),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 11,
+                    horizontal: 16,
+                    vertical: 14,
                   ),
                   decoration: BoxDecoration(
                     color: tokens.surface,
-                    borderRadius: BorderRadius.circular(tokens.cardRadius),
+                    borderRadius: BorderRadius.circular(18),
                     border: Border.all(color: tokens.line),
                   ),
                   child: Row(
                     children: [
                       Expanded(
                         child: Text(
-                          starter,
+                          doorway,
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 14.5,
                             height: 1.38,
                             fontWeight: FontWeight.w600,
                             color: tokens.ink,
@@ -964,525 +479,208 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                       Icon(
                         Icons.arrow_forward_rounded,
                         size: 18,
-                        color: tokens.ink,
+                        color: tokens.ink2,
                       ),
                     ],
                   ),
                 ),
               ),
-            );
-          }),
-          const SizedBox(height: 4),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            alignment: WrapAlignment.center,
-            children: [
-              MindPressable(
-                semanticLabel: strings.openSelfCareToolsShort,
-                borderRadius: BorderRadius.circular(14),
-                onPressed: () {
-                  final router = GoRouter.maybeOf(context);
-                  if (router != null) {
-                    router.push(AppRouter.observatory);
-                  } else {
-                    ContextualSupportSheet.show(context);
-                  }
-                },
-                child: Container(
-                  constraints: const BoxConstraints(minHeight: 48),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: tokens.surface2,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: tokens.line),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.spa_outlined,
-                        size: 16,
-                        color: tokens.ink,
-                      ),
-                      const SizedBox(width: 7),
-                      Flexible(
-                        child: Text(
-                          strings.openSelfCareToolsShort,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: tokens.ink,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildMessageBubble({
+  Widget _buildEditorialMessage({
     required Statement statement,
-    required bool isDark,
     required MindTokens tokens,
     required AppStrings strings,
-    required bool isLive,
+    required bool isLatestAiTurn,
   }) {
     final isUser = statement.speaker == StatementSpeaker.user;
-    final epistemicColor = statement.label != null
-        ? switch (statement.label!) {
-            LabelType.fact => MindTokens.moodAnxious,
-            LabelType.assumption => MindTokens.moodRestless,
-            LabelType.interpretation => MindTokens.moodHeavy,
-          }
-        : null;
-    final bubbleBg = isUser ? tokens.surface2 : tokens.surface;
-    final bubbleBorder = epistemicColor != null
-        ? epistemicColor.withValues(alpha: isDark ? 0.45 : 0.35)
-        : (isUser
-            ? tokens.line
-            : (isLive ? tokens.ink.withValues(alpha: 0.35) : tokens.line));
+    final maxBubbleWidth = math.min(
+      MediaQuery.sizeOf(context).width * 0.84,
+      520.0,
+    );
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment:
             isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (!isUser) ...[
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isLive ? tokens.ink : tokens.ink2,
-                  ),
+          GestureDetector(
+            onLongPress: () => _openMessageActions(statement, strings),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxBubbleWidth),
+              child: Container(
+                padding: isUser
+                    ? const EdgeInsets.symmetric(horizontal: 16, vertical: 12)
+                    : const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: isUser ? tokens.surface2 : tokens.surface,
+                  borderRadius: BorderRadius.circular(isUser ? 20 : 18),
+                  border: Border.all(color: tokens.line),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  strings.navInvestigator,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                    color: isLive ? tokens.ink : tokens.ink2,
-                  ),
-                ),
-              ] else ...[
-                Text(
-                  strings.userSpeakerYou,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                    color: tokens.ink2,
-                  ),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 5),
-          ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: math.min(MediaQuery.sizeOf(context).width * 0.84, 520),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: bubbleBg,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: bubbleBorder, width: 1),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(15),
-                child: Stack(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Padding(
-                      padding: EdgeInsetsDirectional.fromSTEB(
-                        epistemicColor != null ? 18 : 15,
-                        13,
-                        15,
-                        13,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    if (!isUser) ...[
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            statement.text,
-                            style: TextStyle(
-                              fontSize: 15,
-                              height: 1.55,
-                              color: tokens.ink,
-                              fontWeight: isUser ? FontWeight.w500 : FontWeight.w400,
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: MindTokens.moodCalm,
                             ),
                           ),
-                          if (isUser) ...[
-                            const SizedBox(height: 10),
-                            Wrap(
-                              spacing: 6,
-                              runSpacing: 6,
-                              children: [
-                                for (final option in LabelType.values)
-                                  _buildDirectLabelPill(
-                                    statement: statement,
-                                    option: option,
-                                    tokens: tokens,
-                                    strings: strings,
-                                  ),
-                                MindPressable(
-                                  semanticLabel: statement.distortionTag ??
-                                      strings.tagDistortionBtn,
-                                  borderRadius:
-                                      BorderRadius.circular(tokens.chipRadius),
-                                  onPressed: () =>
-                                      _showCognitiveDistortionsSheet(statement),
-                                  child: Container(
-                                    constraints: const BoxConstraints(
-                                      minWidth: 48,
-                                      minHeight: 40,
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: statement.distortionTag != null
-                                          ? tokens.cardTint
-                                          : tokens.surface,
-                                      borderRadius: BorderRadius.circular(
-                                        tokens.chipRadius,
-                                      ),
-                                      border: Border.all(
-                                        color: statement.distortionTag != null
-                                            ? tokens.ink
-                                            : tokens.line,
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      statement.distortionTag ??
-                                          strings.tagDistortionBtn,
-                                      style: TextStyle(
-                                        fontSize: 11.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: statement.distortionTag != null
-                                            ? tokens.ink
-                                            : tokens.ink2,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              strings.talkConsultSpeaker,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: tokens.ink2,
+                              ),
                             ),
-                          ] else ...[
-                            const SizedBox(height: 10),
-                            Builder(
-                              builder: (ctx) {
-                                final activeCase =
-                                    ref.watch(activeCaseControllerProvider).value ??
-                                    widget.caseModel;
-                                final isBookmarked =
-                                    activeCase.findingsSummary?.trim() ==
-                                    statement.text.trim();
-                                final chipLabel = isBookmarked
-                                    ? strings.takeawayBookmarkedLabel
-                                    : strings.saveTakeawayAction;
-                                return MindPressable(
-                                  semanticLabel: chipLabel,
-                                  borderRadius: BorderRadius.circular(
-                                    tokens.chipRadius,
-                                  ),
-                                  onPressed: () async {
-                                    HapticFeedback.lightImpact();
-                                    final notifier = ref.read(
-                                      activeCaseControllerProvider.notifier,
-                                    );
-                                    await notifier.bookmarkTakeaway(
-                                      statement.text,
-                                    );
-                                    if (!ctx.mounted) return;
-                                    ScaffoldMessenger.of(ctx).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          strings.isArabic
-                                              ? 'تم حفظ الفكرة في ملفك'
-                                              : (strings.isFrench
-                                                    ? 'Idée sauvegardée dans votre profil'
-                                                    : 'Takeaway saved to your profile'),
-                                        ),
-                                        behavior: SnackBarBehavior.floating,
-                                      ),
-                                    );
-                                  },
-                                  child: Container(
-                                    constraints: const BoxConstraints(
-                                      minHeight: 36,
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: isBookmarked
-                                          ? tokens.cardTint
-                                          : tokens.surface2,
-                                      borderRadius: BorderRadius.circular(
-                                        tokens.chipRadius,
-                                      ),
-                                      border: Border.all(
-                                        color: isBookmarked
-                                            ? tokens.ink.withValues(alpha: 0.4)
-                                            : tokens.line,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          isBookmarked
-                                              ? Icons.bookmark_rounded
-                                              : Icons.bookmark_add_outlined,
-                                          size: 14,
-                                          color: tokens.ink,
-                                        ),
-                                        const SizedBox(width: 5),
-                                        Text(
-                                          chipLabel,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w700,
-                                            color: tokens.ink,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
+                          ),
                         ],
                       ),
-                    ),
-                    if (epistemicColor != null)
-                      PositionedDirectional(
-                        start: 0,
-                        top: 0,
-                        bottom: 0,
-                        width: 3.5,
-                        child: ColoredBox(color: epistemicColor),
+                      const SizedBox(height: 6),
+                    ],
+                    Text(
+                      statement.text,
+                      style: TextStyle(
+                        fontSize: isUser ? 15.0 : 15.5,
+                        height: 1.55,
+                        color: tokens.ink,
+                        fontWeight: isUser ? FontWeight.w500 : FontWeight.w400,
                       ),
+                    ),
                   ],
                 ),
               ),
             ),
           ),
+          if (!isUser && isLatestAiTurn) ...[
+            const SizedBox(height: 10),
+            MindPressable(
+              key: const ValueKey('talk-inline-calm-offer'),
+              semanticLabel: strings.talkCalmBreathOfferBtn,
+              borderRadius: BorderRadius.circular(16),
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                ContextualSupportSheet.show(
+                  context,
+                  initialChoice: SupportChoice.settle,
+                );
+              },
+              child: Container(
+                constraints: BoxConstraints(
+                  minHeight: 48,
+                  maxWidth: maxBubbleWidth,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: tokens.cardTint,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: MindTokens.moodCalm.withValues(alpha: 0.45),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.air_rounded, size: 17, color: tokens.ink),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        strings.talkCalmBreathOfferBtn,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w600,
+                          color: tokens.ink,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 16,
+                      color: tokens.ink2,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildDirectLabelPill({
-    required Statement statement,
-    required LabelType option,
+  Widget _buildDynamicOptionsBar({
     required MindTokens tokens,
-    required AppStrings strings,
+    required List<String> options,
   }) {
-    final isSelected = statement.label == option;
-    final optionColor = switch (option) {
-      LabelType.fact => MindTokens.moodAnxious,
-      LabelType.assumption => MindTokens.moodRestless,
-      LabelType.interpretation => MindTokens.moodHeavy,
-    };
-    final labelText = localizedStatementLabelName(option, strings);
-
-    return MindPressable(
-      key: ValueKey('stmt-label-${statement.id}-${option.name}'),
-      semanticLabel: labelText,
-      borderRadius: BorderRadius.circular(tokens.chipRadius),
-      onPressed: () => _setStatementLabel(statement, option),
-      child: Container(
-        constraints: const BoxConstraints(minWidth: 48, minHeight: 40),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? tokens.selectedTintFor(optionColor)
-              : tokens.surface,
-          borderRadius: BorderRadius.circular(tokens.chipRadius),
-          border: Border.all(
-            color: isSelected ? optionColor : tokens.line,
-            width: isSelected ? 1.4 : 1.0,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              iconForStatementLabel(option),
-              size: 13.5,
-              color: isSelected ? optionColor : tokens.ink2,
-            ),
-            const SizedBox(width: 4),
-            Flexible(
-              child: Text(
-                labelText,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                  color: isSelected ? tokens.ink : tokens.ink2,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSuggestedRepliesBar({
-    required MindTokens tokens,
-    required AppStrings strings,
-    required bool hasUserMessages,
-  }) {
-    final activeCase =
-        ref.watch(activeCaseControllerProvider).value ?? widget.caseModel;
-    final hasFactTagged = activeCase.statements.any(
-      (s) => s.speaker == StatementSpeaker.user && s.label == LabelType.fact,
-    );
-
-    final chips = <Widget>[
-      if (hasUserMessages && !hasFactTagged)
-        _buildReplyChip(
-          key: const ValueKey('reply-spark-find-fact'),
-          tokens: tokens,
-          icon: Icons.verified_outlined,
-          label: strings.companionSparkFindFact,
-          highlighted: true,
-          onPressed: () => _sendMessage(strings.companionSparkFindFact),
-        ),
-      _buildReplyChip(
-        key: const ValueKey('reply-spark-facts-vs-guesses'),
-        tokens: tokens,
-        icon: Icons.fact_check_outlined,
-        label: strings.suggestedReplyFactsVsGuesses,
-        highlighted: false,
-        onPressed: () => _sendMessage(strings.suggestedReplyFactsVsGuesses),
-      ),
-      if (hasUserMessages) ...[
-        _buildReplyChip(
-          key: const ValueKey('reply-spark-other-angle'),
-          tokens: tokens,
-          icon: Icons.compare_arrows_rounded,
-          label: strings.companionSparkOtherAngle,
-          highlighted: false,
-          onPressed: () => _sendMessage(strings.companionSparkOtherAngle),
-        ),
-        _buildReplyChip(
-          key: const ValueKey('reply-spark-keep-brief'),
-          tokens: tokens,
-          icon: Icons.short_text_rounded,
-          label: strings.companionSparkKeepBrief,
-          highlighted: false,
-          onPressed: () => _sendMessage(strings.companionSparkKeepBrief),
-        ),
-      ],
-      _buildReplyChip(
-        key: const ValueKey('reply-spark-grounding'),
-        tokens: tokens,
-        icon: Icons.spa_outlined,
-        label: strings.suggestedReplyGroundingFirst,
-        highlighted: !hasUserMessages,
-        onPressed: () => ContextualSupportSheet.show(context),
-      ),
-      if (hasUserMessages)
-        _buildReplyChip(
-          key: const ValueKey('reply-spark-save-takeaway'),
-          tokens: tokens,
-          icon: Icons.bookmark_added_outlined,
-          label: strings.suggestedReplySaveTakeaway,
-          highlighted: false,
-          onPressed: _synthesizeCaseBrief,
-        ),
-    ];
-
     return Container(
+      key: const ValueKey('talk-dynamic-options-bar'),
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.only(top: 6, bottom: 8),
       decoration: BoxDecoration(
         color: tokens.bg,
-        border: Border(top: BorderSide(color: tokens.line)),
+        border: Border(top: BorderSide(color: tokens.line, width: 0.8)),
       ),
       child: SingleChildScrollView(
-        key: const ValueKey('companion-reply-sparks-bar'),
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 14),
         child: Row(
           children: [
-            for (var i = 0; i < chips.length; i++) ...[
+            for (var i = 0; i < options.length; i++) ...[
               if (i > 0) const SizedBox(width: 8),
-              chips[i],
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildReplyChip({
-    Key? key,
-    required MindTokens tokens,
-    required IconData icon,
-    required String label,
-    required bool highlighted,
-    required VoidCallback onPressed,
-  }) {
-    return MindPressable(
-      key: key,
-      semanticLabel: label,
-      borderRadius: BorderRadius.circular(14),
-      onPressed: _isInvestigatorTyping ? null : onPressed,
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 40),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: highlighted ? tokens.cardTint : tokens.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: highlighted
-                ? tokens.ink.withValues(alpha: 0.4)
-                : tokens.line,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 14,
-              color: highlighted ? tokens.ink : tokens.ink2,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: tokens.ink,
+              MindPressable(
+                key: ValueKey('talk-dynamic-option-$i'),
+                semanticLabel: options[i],
+                borderRadius: BorderRadius.circular(20),
+                onPressed: _isInvestigatorTyping
+                    ? null
+                    : () => _sendMessage(options[i]),
+                child: Container(
+                  constraints: const BoxConstraints(minHeight: 48),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: tokens.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: tokens.line),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    options[i],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13.0,
+                      fontWeight: FontWeight.w600,
+                      color: tokens.ink,
+                    ),
+                  ),
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),
@@ -1490,7 +688,6 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
   }
 
   Widget _buildBottomInputBar({
-    required bool isDark,
     required MindTokens tokens,
     required AppStrings strings,
   }) {
@@ -1501,7 +698,7 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
         _isInvestigatorTyping || ref.watch(companionReplyPendingProvider);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
       decoration: BoxDecoration(
         color: tokens.surface,
         border: Border(top: BorderSide(color: tokens.line, width: 1)),
@@ -1516,7 +713,7 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
               maxLines: 3,
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => isPaused ? null : _sendMessage(),
-              style: TextStyle(fontSize: 14.5, color: tokens.ink),
+              style: TextStyle(fontSize: 15, color: tokens.ink),
               decoration: InputDecoration(
                 hintText: isPaused
                     ? (strings.isArabic
@@ -1524,28 +721,28 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                         : (strings.isFrench
                             ? 'Session mise en pause par sécurité'
                             : 'Session paused for safety'))
-                    : strings.typeMessageHint,
+                    : strings.talkComposerHint,
                 hintMaxLines: 1,
                 hintStyle: TextStyle(
-                  fontSize: 13.5,
+                  fontSize: 14,
                   color: isPaused ? tokens.safety : tokens.ink2,
                 ),
                 filled: true,
                 fillColor: tokens.surface2,
                 contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 11,
+                  horizontal: 18,
+                  vertical: 13,
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(tokens.buttonRadius),
+                  borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide(color: tokens.line, width: 1),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(tokens.buttonRadius),
+                  borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide(color: tokens.line, width: 1),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(tokens.buttonRadius),
+                  borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide(color: tokens.ink, width: 1.2),
                 ),
               ),
@@ -1565,26 +762,19 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                         ? 'Envoyer le message'
                         : 'Send message')),
             enabled: !isPaused && !isReplying,
-            borderRadius: BorderRadius.circular(tokens.buttonRadius),
-            onPressed:
-                isPaused || isReplying ? null : () => _sendMessage(),
+            borderRadius: BorderRadius.circular(24),
+            onPressed: isPaused || isReplying ? null : () => _sendMessage(),
             child: Container(
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: isPaused || isReplying
-                    ? tokens.line
-                    : tokens.ink,
-                borderRadius: BorderRadius.circular(tokens.buttonRadius),
+                color: isPaused || isReplying ? tokens.line : tokens.ink,
+                borderRadius: BorderRadius.circular(24),
               ),
               child: Icon(
-                isPaused
-                    ? Icons.lock_outline_rounded
-                    : Icons.arrow_upward_rounded,
+                isPaused ? Icons.lock_outline_rounded : Icons.arrow_upward_rounded,
                 size: 20,
-                color: isPaused || isReplying
-                    ? tokens.ink2
-                    : tokens.bg,
+                color: isPaused || isReplying ? tokens.ink2 : tokens.bg,
               ),
             ),
           ),
@@ -1595,10 +785,7 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
 }
 
 class _CalmTypingIndicator extends StatefulWidget {
-  const _CalmTypingIndicator({
-    required this.tokens,
-    required this.label,
-  });
+  const _CalmTypingIndicator({required this.tokens, required this.label});
 
   final MindTokens tokens;
   final String label;
@@ -1616,18 +803,8 @@ class _CalmTypingIndicatorState extends State<_CalmTypingIndicator>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (MediaQuery.disableAnimationsOf(context)) {
-      _controller.stop();
-    } else if (!_controller.isAnimating) {
-      _controller.repeat();
-    }
+      duration: const Duration(milliseconds: 1400),
+    )..repeat(reverse: true);
   }
 
   @override
@@ -1640,67 +817,37 @@ class _CalmTypingIndicatorState extends State<_CalmTypingIndicator>
   Widget build(BuildContext context) {
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: widget.tokens.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: widget.tokens.line, width: 1),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (reduceMotion)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: List.generate(
-                      3,
-                      (_) => Container(
-                        width: 6,
-                        height: 6,
-                        margin: const EdgeInsetsDirectional.only(end: 4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: widget.tokens.ink,
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  AnimatedBuilder(
-                    animation: _controller,
-                    builder: (_, _) {
-                      return Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: List.generate(3, (i) {
-                          final phase = (_controller.value * 2 * math.pi) - (i * 0.7);
-                          final alpha = (0.35 + 0.65 * ((math.sin(phase) + 1) / 2))
-                              .clamp(0.3, 1.0);
-                          return Container(
-                            width: 6,
-                            height: 6,
-                            margin: const EdgeInsetsDirectional.only(end: 4),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: widget.tokens.ink.withValues(alpha: alpha),
-                            ),
-                          );
-                        }),
-                      );
-                    },
-                  ),
-                const SizedBox(width: 6),
-                Text(
-                  widget.label,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: widget.tokens.ink2,
-                  ),
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              final pulse = reduceMotion
+                  ? 0.75
+                  : (0.4 + (_controller.value * 0.6));
+              return Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: widget.tokens.ink.withValues(alpha: pulse),
                 ),
-              ],
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              widget.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                fontStyle: FontStyle.italic,
+                color: widget.tokens.ink2,
+              ),
             ),
           ),
         ],

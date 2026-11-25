@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mind_forensics/app/localization/app_strings.dart';
 import 'package:mind_forensics/app/localization/locale_controller.dart';
 import 'package:mind_forensics/app/theme/lab_theme.dart';
 import 'package:mind_forensics/core/security/secure_key_manager.dart';
@@ -22,47 +21,32 @@ void main() {
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 
-  group('Milestone 8.2: Zero-Typing Thought Sorter & Context-Aware Reply Sparks', () {
+  group('Talk v2: Zero Clinical Clutter, Silent Pattern Tagging & Dynamic AI Options', () {
     testWidgets(
-      'User statement bubble supports direct 1-tap Fact/Assumption/Interpretation switching and adaptive reply sparks',
+      'AI adapts automatically with contextual quick options and silently tags clinician pattern metadata without button clutter',
       (tester) async {
         tester.view.physicalSize = const Size(824, 1830);
         tester.view.devicePixelRatio = 2.0;
         addTearDown(tester.view.reset);
 
         final now = DateTime.now();
-        final seededCase = CaseModel(
-          id: 'case_sorter_8_2',
+        final freshCase = CaseModel(
+          id: 'case_adaptive_v2',
           caseNumber: 'SESSION 08',
-          title: 'Presentation worry',
+          title: 'Afternoon worry',
           createdAt: now,
           updatedAt: now,
           currentStage: CaseStage.incident,
-          incidentDescription: 'My manager did not reply yet.',
-          statements: [
-            Statement(
-              id: 'stmt_u1',
-              text: 'My manager did not reply, so they must be upset with me.',
-              speaker: StatementSpeaker.user,
-              label: LabelType.assumption,
-              timestamp: now,
-            ),
-            Statement(
-              id: 'stmt_ai1',
-              text: 'What part of that is directly observable right now?',
-              speaker: StatementSpeaker.investigator,
-              timestamp: now,
-            ),
-          ],
+          incidentDescription: '',
         );
 
         final container = ProviderContainer();
         addTearDown(container.dispose);
 
-        await container.read(caseRepositoryProvider).saveCase(seededCase);
+        await container.read(caseRepositoryProvider).saveCase(freshCase);
         container
             .read(activeCaseControllerProvider.notifier)
-            .resumeCase(seededCase);
+            .resumeCase(freshCase);
 
         await tester.pumpWidget(
           UncontrolledProviderScope(
@@ -75,65 +59,48 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // Direct 3-pill sorter exists on the user bubble
-        final factPill = find.byKey(const ValueKey('stmt-label-stmt_u1-fact'));
-        final assumptionPill =
-            find.byKey(const ValueKey('stmt-label-stmt_u1-assumption'));
-        final interpPill =
-            find.byKey(const ValueKey('stmt-label-stmt_u1-interpretation'));
-
-        expect(factPill, findsOneWidget);
-        expect(assumptionPill, findsOneWidget);
-        expect(interpPill, findsOneWidget);
-
-        // Before tagging a Fact, "Separate the observable fact" spark is highlighted
-        expect(
-          find.byKey(const ValueKey('reply-spark-find-fact')),
-          findsOneWidget,
+        // Enter a worried thought — user does NOT need to choose any CBT mode
+        await tester.enterText(
+          find.byType(TextField),
+          'My manager read my message and has not replied.',
         );
-
-        // 1-tap switch directly from Assumption -> Fact
-        await tester.tap(factPill);
-        await tester.pumpAndSettle();
-
-        final afterFact =
-            await container.read(caseRepositoryProvider).getCaseById(seededCase.id);
-        expect(afterFact?.statements.first.label, equals(LabelType.fact));
-
-        // Now that a Fact is tagged, "Separate the observable fact" steps aside cleanly
-        expect(
-          find.byKey(const ValueKey('reply-spark-find-fact')),
-          findsNothing,
-        );
-
-        // Re-tapping Fact clears the label cleanly
-        await tester.tap(factPill);
-        await tester.pumpAndSettle();
-        final afterClear =
-            await container.read(caseRepositoryProvider).getCaseById(seededCase.id);
-        expect(afterClear?.statements.first.label, isNull);
-
-        // Tap 1-tap continuation reply spark ("Show another calm angle") without typing
-        final angleSpark = find.byKey(const ValueKey('reply-spark-other-angle'));
-        expect(angleSpark, findsOneWidget);
-        await tester.ensureVisible(angleSpark);
-        await tester.pumpAndSettle();
-        await tester.tap(angleSpark);
+        await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 500));
         await tester.pumpAndSettle();
 
-        const enStrings = AppStrings('en');
-        expect(find.text(enStrings.companionSparkOtherAngle), findsWidgets);
-        final afterSend =
-            await container.read(caseRepositoryProvider).getCaseById(seededCase.id);
-        expect(afterSend?.statements.length, greaterThan(2));
+        // No clinical [Fact] [Guess] [Story] tag buttons clutter the user bubble
+        expect(find.text('Guess'), findsNothing);
+        expect(find.text('+ Tag thought'), findsNothing);
+        expect(find.text('Save Takeaway'), findsNothing);
+
+        // Yet the AI silently populated thought type + distortion theme on the user statement for the doctor view
+        final saved = await container
+            .read(caseRepositoryProvider)
+            .getCaseById(freshCase.id);
+        final userStmt = saved!.statements
+            .firstWhere((s) => s.speaker == StatementSpeaker.user);
+        expect(userStmt.label, equals(LabelType.assumption));
+        expect(userStmt.distortionTag, equals('Mind Reading'));
+
+        // Contextual AI-authored options appear cleanly above composer for 1-tap reply
+        final firstOption = find.byKey(const ValueKey('talk-dynamic-option-0'));
+        expect(firstOption, findsOneWidget);
+        await tester.tap(firstOption);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+        await tester.pumpAndSettle();
+
+        final afterSecondTurn = await container
+            .read(caseRepositoryProvider)
+            .getCaseById(freshCase.id);
+        expect(afterSecondTurn!.statements.length, greaterThan(2));
         expect(tester.takeException(), isNull);
       },
     );
 
     testWidgets(
-      'Active conversation with 3-pill sorter and reply sparks fits 320px + 1.35x AR RTL without overflow',
+      'Active conversation with AI-chosen options fits 320px + 1.35x AR RTL without overflow',
       (tester) async {
         tester.view.physicalSize = const Size(320, 720);
         tester.view.devicePixelRatio = 1.0;
@@ -153,9 +120,18 @@ void main() {
               id: 'stmt_ar1',
               text: 'حاسس روحي مضغوط برشا خاطر ما كملتش كل شي اليوم.',
               speaker: StatementSpeaker.user,
-              label: LabelType.interpretation,
               timestamp: now,
             ),
+            Statement(
+              id: 'stmt_ar2',
+              text: 'مفهوم تماماً. خوذ نفس هادي معايا توا، ما فماش حتى ضغط.',
+              speaker: StatementSpeaker.investigator,
+              timestamp: now,
+            ),
+          ],
+          suggestedReplies: const [
+            'مجرد تعب من طول اليوم',
+            'أعطيني خطوة خفيفة برك',
           ],
         );
 
@@ -190,11 +166,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(
-          find.byKey(const ValueKey('stmt-label-stmt_ar1-fact')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const ValueKey('companion-reply-sparks-bar')),
+          find.byKey(const ValueKey('talk-dynamic-options-bar')),
           findsOneWidget,
         );
         expect(tester.takeException(), isNull);

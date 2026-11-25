@@ -9,7 +9,6 @@ import 'package:mind_forensics/features/home/presentation/widgets/home_organic_e
 import 'package:mind_forensics/features/mind_trace/controllers/mind_trace_controller.dart';
 import 'package:mind_forensics/features/mind_trace/domain/mind_trace_model.dart';
 import 'package:mind_forensics/features/support/presentation/contextual_support_sheet.dart';
-import 'package:mind_forensics/features/track/presentation/widgets/progressive_details_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -120,7 +119,7 @@ void main() {
     );
 
     testWidgets(
-      'Optional note via ProgressiveDetailsSheet persists note to journalText',
+      'HomeDailyCheckInCard hides redundant + Add sleep CTA when logged, leaving Today clean',
       (tester) async {
         tester.view.physicalSize = const Size(1080, 2400);
         tester.view.devicePixelRatio = 2.0;
@@ -152,28 +151,9 @@ void main() {
         await tester.pumpAndSettle();
 
         const strings = AppStrings('en');
-        final addDetailsBtn = find.text(strings.addDetailsCta);
-        await tester.ensureVisible(addDetailsBtn);
-        await tester.tap(addDetailsBtn);
-        await tester.pumpAndSettle();
-
-        expect(find.byType(ProgressiveDetailsSheet), findsOneWidget);
-        for (var i = 0; i < 3; i++) {
-          await tester.tap(find.text(strings.skipBtn));
-          await tester.pumpAndSettle();
-        }
-        await tester.enterText(
-          find.byType(TextField),
-          'Felt peaceful during evening walk',
-        );
-        await tester.tap(find.text(strings.saveDetailsBtn));
-        await tester.pumpAndSettle();
-
-        final todayTrace = container.read(todayTraceProvider);
-        expect(
-          todayTrace?.journalText,
-          equals('Felt peaceful during evening walk'),
-        );
+        expect(find.text(strings.addDetailsCta), findsNothing);
+        expect(find.text(strings.breatheQuickBtn), findsOneWidget);
+        expect(find.text(strings.talkItOutBtn), findsOneWidget);
       },
     );
 

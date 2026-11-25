@@ -10,6 +10,7 @@ import '../../profile/domain/psychological_profile_model.dart';
 import '../domain/ai_companion_context_selector.dart';
 import '../domain/ai_companion_system_prompt.dart';
 import '../domain/case_model.dart';
+import '../domain/companion_turn_response.dart';
 import '../domain/conversational_pacing_enforcer.dart';
 import '../domain/conversation_mode.dart';
 import '../domain/hypothesis.dart';
@@ -33,6 +34,7 @@ class DirectGeminiInvestigatorService implements InvestigatorService {
   DirectGeminiInvestigatorService({
     required this.apiKey,
     this.modelName = defaultModel,
+    this.proxyUrl = '',
     this.clientFactory,
     this.onRequestAttempted,
     this.onFallback,
@@ -42,10 +44,13 @@ class DirectGeminiInvestigatorService implements InvestigatorService {
 
   final String apiKey;
   final String modelName;
+  final String proxyUrl;
   final HttpClient Function()? clientFactory;
   final void Function(Uri url, Map<String, dynamic> payload)? onRequestAttempted;
   final void Function(AiFallbackReason reason)? onFallback;
   final MockInvestigatorService _fallback = MockInvestigatorService();
+
+  bool get _hasProxy => proxyUrl.trim().isNotEmpty;
 
   /// Counter tracking external network requests attempted.
   int networkRequestsAttempted = 0;
@@ -186,9 +191,10 @@ class DirectGeminiInvestigatorService implements InvestigatorService {
     required List<Map<String, dynamic>> contents,
     required String systemInstruction,
     bool isJson = false,
+    Map<String, dynamic>? responseSchema,
   }) async {
     final cleanKey = apiKey.trim();
-    if (isMockKey(cleanKey)) return null;
+    if (!_hasProxy && isMockKey(cleanKey)) return null;
 
     final canProceed = await DailyUsageLimiter.canMakeRequest();
     if (!canProceed) {
@@ -203,11 +209,15 @@ class DirectGeminiInvestigatorService implements InvestigatorService {
 
     var networkUnavailable = false;
     for (final currentModel in modelsToTry) {
-      final url = Uri.parse(
-        'https://generativelanguage.googleapis.com/v1beta/models/$currentModel:generateContent',
-      );
+      final url = _hasProxy
+          ? Uri.parse(proxyUrl.trim())
+          : Uri.parse(
+              'https://generativelanguage.googleapis.com/v1beta/models/$currentModel:generateContent',
+            );
 
       final payload = {
+        if (_hasProxy) 'provider': 'gemini',
+        if (_hasProxy) 'model': currentModel,
         'system_instruction': {
           'parts': [
             {'text': systemInstruction}
@@ -217,6 +227,8 @@ class DirectGeminiInvestigatorService implements InvestigatorService {
         'generationConfig': {
           'temperature': 0.7,
           if (isJson) 'response_mime_type': 'application/json',
+          if (isJson && responseSchema != null)
+            'response_schema': responseSchema,
         },
       };
 
@@ -227,10 +239,12 @@ class DirectGeminiInvestigatorService implements InvestigatorService {
 
         client = clientFactory != null
             ? clientFactory!()
-            : (HttpClient()..connectionTimeout = const Duration(seconds: 4));
+            : (HttpClient()..connectionTimeout = const Duration(seconds: 6));
         final request = await client.postUrl(url);
         request.headers.contentType = ContentType.json;
-        request.headers.set('x-goog-api-key', cleanKey);
+        if (cleanKey.isNotEmpty && !isMockKey(cleanKey)) {
+          request.headers.set('x-goog-api-key', cleanKey);
+        }
         request.write(jsonEncode(payload));
 
         final response = await request.close();
@@ -269,6 +283,154 @@ class DirectGeminiInvestigatorService implements InvestigatorService {
           : AiFallbackReason.apiError,
     );
     return null;
+  }
+
+  List<Map<String, dynamic>> _buildGeminiContents(
+    CaseModel currentCase,
+    List<Statement> conversationHistory,
+  ) {
+    final contents = <Map<String, dynamic>>[];
+    final incident = currentCase.incidentDescription.trim();
+
+    for (final s in conversationHistory) {
+      final text = s.text.trim();
+      if (text.isEmpty) continue;
+      final role = s.speaker == StatementSpeaker.user ? 'user' : 'model';
+
+      if (contents.isNotEmpty && contents.last['role'] == role) {
+        final parts = contents.last['parts'] as List<dynamic>;
+        parts.add({'text': text});
+      } else {
+        if (contents.isEmpty && role == 'model') {
+          contents.add({
+            'role': 'user',
+            'parts': [
+              {
+                'text': incident.isNotEmpty
+                    ? 'Initial situation: $incident'
+                    : 'Hello. I need a calm space to talk.',
+              },
+            ],
+          });
+        }
+        contents.add({
+          'role': role,
+          'parts': [
+            {'text': text},
+          ],
+        });
+      }
+    }
+
+    if (contents.isEmpty) {
+      contents.add({
+        'role': 'user',
+        'parts': [
+          {
+            'text': incident.isNotEmpty
+                ? incident
+                : 'I am carrying heavy feelings right now and want to talk calmly.',
+          },
+        ],
+      });
+    }
+
+    if (contents.last['role'] != 'user') {
+      contents.add({
+        'role': 'user',
+        'parts': [
+          {
+            'text':
+                'What feels most helpful to reflect on or ask next without overwhelming me?',
+          },
+        ],
+      });
+    }
+    return contents;
+  }
+
+  @override
+  Future<CompanionTurnResponse> getAdaptiveTurn({
+    required CaseModel currentCase,
+    required List<Statement> conversationHistory,
+    bool includePastCaseSummaries = true,
+    String? languageCode,
+    PsychologicalProfileModel? profile,
+    JourneyStateModel? journey,
+    MindTraceModel? latestTrace,
+    List<MindTraceModel>? historicalTraces,
+    List<JournalMemoryModel>? compressedMemories,
+    String? sessionSummary,
+  }) async {
+    if (!canTransmitCaseData(
+      currentCase: currentCase,
+      profile: profile,
+      checkProfileConsent: true,
+    )) {
+      return _fallback.getAdaptiveTurn(
+        currentCase: currentCase,
+        conversationHistory: conversationHistory,
+        includePastCaseSummaries: includePastCaseSummaries,
+        languageCode: languageCode,
+        profile: profile,
+        journey: journey,
+        latestTrace: latestTrace,
+        historicalTraces: historicalTraces,
+        compressedMemories: compressedMemories,
+        sessionSummary: sessionSummary,
+      );
+    }
+
+    final lang = languageCode ?? 'en';
+    final contents = _buildGeminiContents(currentCase, conversationHistory);
+    final contextualPrompt = AiCompanionContextSelector.buildContext(
+      profile: profile,
+      latestTrace: latestTrace,
+      historicalTraces: historicalTraces,
+      journey: journey,
+      compressedMemories: compressedMemories,
+    );
+    final hasConsent = profile != null &&
+        profile.shareWithAiCompanion &&
+        profile.allowAiPersonalization;
+    final conditions = hasConsent
+        ? profile.conditions.map((c) => c.condition).toList()
+        : <ConditionType>[];
+
+    final systemInstruction = AiCompanionSystemPrompt.buildAdaptivePrompt(
+      languageCode: lang,
+      conditions: conditions,
+      contextualUserPrompt: contextualPrompt,
+      sessionSummary: sessionSummary ?? currentCase.sessionSummary,
+      customDirectives: profile?.customAiDirectives,
+    );
+
+    final raw = await _callGeminiContents(
+      contents: contents,
+      systemInstruction: systemInstruction,
+      isJson: true,
+      responseSchema: CompanionTurnResponse.geminiResponseSchema,
+    );
+
+    if (raw != null && raw.trim().isNotEmpty) {
+      final parsed = CompanionTurnResponse.tryParseJson(raw);
+      if (parsed != null) {
+        return parsed;
+      }
+    }
+
+    return _fallback.getAdaptiveTurn(
+      currentCase: currentCase,
+      conversationHistory: conversationHistory,
+      includePastCaseSummaries: includePastCaseSummaries,
+      languageCode: languageCode,
+      profile: profile,
+      journey: journey,
+      latestTrace: latestTrace,
+      historicalTraces: historicalTraces,
+      compressedMemories: compressedMemories,
+      sessionSummary: sessionSummary,
+    );
   }
 
   @override

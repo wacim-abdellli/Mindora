@@ -18,6 +18,7 @@ Future<void> showQuickCalmBreathingSheet(
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    useRootNavigator: true,
     backgroundColor: context.tokens.bg.withValues(alpha: 0.0),
     builder: (_) => QuickCalmBreathingSheet(strings: strings),
   );

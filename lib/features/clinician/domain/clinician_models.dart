@@ -167,6 +167,56 @@ class ClinicalConsentScope {
       includePreVisitAgenda: json['includePreVisitAgenda'] as bool? ?? true,
     );
   }
+
+  static const Set<String> structuredTrackKeys = <String>{
+    'motor_speed',
+    'routine_adherence',
+    'track_loop_load',
+    'track_urge_response',
+    'track_anhedonia',
+    'track_felt_safety',
+    'track_focus_flow',
+    'track_sensory_load',
+    'track_emotion_wave',
+    'track_presence',
+    'track_urge_wave',
+    'track_day_spark',
+  };
+
+  /// Enforces consent boundaries consistently on any [MindTraceModel].
+  MindTraceModel sanitizeTrace(MindTraceModel t) {
+    var cleaned = t;
+    if (!includePersonalNotes) {
+      final safeDynamic = <String, String>{
+        for (final entry in cleaned.dynamicAnswers.entries)
+          if (includeSleepEnergyAnxiety &&
+              structuredTrackKeys.contains(entry.key))
+            entry.key: entry.value,
+      };
+      cleaned = cleaned.copyWith(
+        clearJournalText: true,
+        clearSituation: true,
+        clearBehavioralResponse: true,
+        clearAiReflection: true,
+        clearVoiceNotePath: true,
+        dynamicAnswers: safeDynamic,
+        investigationAnswers: const {},
+        clearSymptomsAndExperiences: !includeSymptomReports,
+      );
+    }
+    if (!includeSleepEnergyAnxiety) {
+      cleaned = cleaned.copyWith(
+        clearSleepHours: true,
+        clearSleepQuality: true,
+        clearEnergyLevel: true,
+        clearAnxietyLevel: true,
+        clearPhysicalTension: true,
+        dynamicAnswers: includePersonalNotes ? cleaned.dynamicAnswers : const {},
+        contextTags: const [],
+      );
+    }
+    return cleaned;
+  }
 }
 
 /// Optional options-first patient pre-visit preparation attached to a sync packet.
@@ -338,32 +388,7 @@ class ClinicianSyncPacket {
     final parsedTraces = scope.includeMoodMetrics
         ? ((json['traces'] as List<dynamic>?) ?? const [])
               .map((e) => MindTraceModel.fromJson(e as Map<String, dynamic>))
-              .map((t) {
-                var cleaned = t;
-                if (!scope.includePersonalNotes) {
-                  cleaned = cleaned.copyWith(
-                    clearJournalText: true,
-                    clearSituation: true,
-                    clearBehavioralResponse: true,
-                    clearAiReflection: true,
-                    clearVoiceNotePath: true,
-                    dynamicAnswers: const {},
-                    investigationAnswers: const {},
-                    clearSymptomsAndExperiences: !scope.includeSymptomReports,
-                  );
-                }
-                if (!scope.includeSleepEnergyAnxiety) {
-                  cleaned = cleaned.copyWith(
-                    clearSleepHours: true,
-                    clearSleepQuality: true,
-                    clearEnergyLevel: true,
-                    clearAnxietyLevel: true,
-                    clearPhysicalTension: true,
-                    contextTags: const [],
-                  );
-                }
-                return cleaned;
-              })
+              .map(scope.sanitizeTrace)
               .toList(growable: false)
         : const <MindTraceModel>[];
 

@@ -10,6 +10,7 @@ import '../../profile/domain/psychological_profile_model.dart';
 import '../domain/ai_companion_context_selector.dart';
 import '../domain/ai_companion_system_prompt.dart';
 import '../domain/case_model.dart';
+import '../domain/companion_turn_response.dart';
 import '../domain/conversational_pacing_enforcer.dart';
 import '../domain/conversation_mode.dart';
 import '../domain/hypothesis.dart';
@@ -235,6 +236,111 @@ class DirectGroqInvestigatorService implements InvestigatorService {
       cleaned = cleaned.substring(0, cleaned.length - 3);
     }
     return cleaned.trim();
+  }
+
+  @override
+  Future<CompanionTurnResponse> getAdaptiveTurn({
+    required CaseModel currentCase,
+    required List<Statement> conversationHistory,
+    bool includePastCaseSummaries = true,
+    String? languageCode,
+    PsychologicalProfileModel? profile,
+    JourneyStateModel? journey,
+    MindTraceModel? latestTrace,
+    List<MindTraceModel>? historicalTraces,
+    List<JournalMemoryModel>? compressedMemories,
+    String? sessionSummary,
+  }) async {
+    if (!DirectGeminiInvestigatorService.canTransmitCaseData(
+      currentCase: currentCase,
+      profile: profile,
+      checkProfileConsent: true,
+    )) {
+      return _fallback.getAdaptiveTurn(
+        currentCase: currentCase,
+        conversationHistory: conversationHistory,
+        includePastCaseSummaries: includePastCaseSummaries,
+        languageCode: languageCode,
+        profile: profile,
+        journey: journey,
+        latestTrace: latestTrace,
+        historicalTraces: historicalTraces,
+        compressedMemories: compressedMemories,
+        sessionSummary: sessionSummary,
+      );
+    }
+
+    final lang = languageCode ?? 'en';
+    final incident = currentCase.incidentDescription.trim();
+    final contextualPrompt = AiCompanionContextSelector.buildContext(
+      profile: profile,
+      latestTrace: latestTrace,
+      historicalTraces: historicalTraces,
+      journey: journey,
+      compressedMemories: compressedMemories,
+    );
+    final hasConsent = profile != null &&
+        profile.shareWithAiCompanion &&
+        profile.allowAiPersonalization;
+    final conditions = hasConsent
+        ? profile.conditions.map((c) => c.condition).toList()
+        : <ConditionType>[];
+
+    final systemInstruction =
+        '${AiCompanionSystemPrompt.buildAdaptivePrompt(languageCode: lang, conditions: conditions, contextualUserPrompt: contextualPrompt, sessionSummary: sessionSummary ?? currentCase.sessionSummary, customDirectives: profile?.customAiDirectives)}\n'
+        'JSON RESPONSE SCHEMA (STRICTLY VALID JSON OBJECT ONLY):\n'
+        '{"reply": string, "chosen_posture": "soothe_listen"|"somatic_ground"|"validate_feelings"|"gentle_reframe"|"practical_step"|"closing_warmth", "suggested_replies": [string, ...], "offer_calm_exercise": "none"|"breathing"|"grounding", "silent_thought_type": "fact"|"assumption"|"interpretation"|"none", "silent_distortion_theme": string, "silent_trigger": string, "silent_core_thought": string, "silent_emotion": string, "silent_intensity": integer, "silent_coping_behavior": string, "clinical_intake_note": string, "save_worthy_summary": string}';
+
+    final messages = <Map<String, String>>[
+      {'role': 'system', 'content': systemInstruction},
+    ];
+    for (final s in conversationHistory) {
+      final text = s.text.trim();
+      if (text.isEmpty) continue;
+      final role = s.speaker == StatementSpeaker.user ? 'user' : 'assistant';
+      if (messages.length > 1 && messages.last['role'] == role) {
+        messages.last['content'] = '${messages.last['content']}\n$text';
+      } else {
+        messages.add({'role': role, 'content': text});
+      }
+    }
+    if (messages.length == 1) {
+      messages.add({
+        'role': 'user',
+        'content': incident.isNotEmpty
+            ? incident
+            : 'I am noticing heavy thoughts right now and want to unpack them calmly.',
+      });
+    } else if (messages.last['role'] != 'user') {
+      messages.add({
+        'role': 'user',
+        'content': 'What feels most supportive to share or explore next?',
+      });
+    }
+
+    final raw = await _callChatCompletions(
+      messages: messages,
+      isJsonObject: true,
+    );
+    if (raw != null && raw.trim().isNotEmpty) {
+      final parsed = CompanionTurnResponse.tryParseJson(raw);
+      if (parsed != null) {
+        return parsed;
+      }
+    }
+
+    return _fallback.getAdaptiveTurn(
+      currentCase: currentCase,
+      conversationHistory: conversationHistory,
+      includePastCaseSummaries: includePastCaseSummaries,
+      languageCode: languageCode,
+      profile: profile,
+      journey: journey,
+      latestTrace: latestTrace,
+      historicalTraces: historicalTraces,
+      compressedMemories: compressedMemories,
+      sessionSummary: sessionSummary,
+    );
   }
 
   @override

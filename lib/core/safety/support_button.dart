@@ -17,12 +17,7 @@ class SupportButton extends ConsumerWidget {
   final bool compact;
 
   void _openSupportSheet(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => const SupportModalSheet(),
-    );
+    SupportModalSheet.show(context);
   }
 
   @override
@@ -75,6 +70,7 @@ class SupportModalSheet extends ConsumerWidget {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => const SupportModalSheet(),
     );

@@ -31,7 +31,6 @@ import '../../mind_trace/domain/mind_trace_model.dart';
 import '../../onboarding/domain/app_personalization_engine.dart';
 import '../../profile/controllers/profile_controller.dart';
 import '../../support/presentation/contextual_support_sheet.dart';
-import '../../track/presentation/widgets/progressive_details_sheet.dart';
 import 'widgets/home_clinical_pulse_card.dart';
 import 'widgets/home_daily_check_in_card.dart';
 import 'widgets/home_organic_exercise_art.dart';
@@ -222,12 +221,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         : strings.defaultFriendName;
 
     final activeFocusPlan = ref.watch(postVisitFocusControllerProvider).value;
+    final profile = ref.watch(profileControllerProvider).value;
     final plan = ref.watch(appPersonalizationPlanProvider);
     final traceAsync = ref.watch(mindTraceControllerProvider);
     final traces = traceAsync.value ?? [];
     final todayTraces = traces.todayTraces;
     final todayTrace = todayTraces.isNotEmpty ? todayTraces.last : null;
     final distinctLoggedDays = {for (final t in traces) t.dateKey}.length;
+    final weekCutoff = DateTime.now().subtract(const Duration(days: 6));
+    final weekDaysLogged = {
+      for (final t in traces)
+        if (!t.date.isBefore(
+          DateTime(weekCutoff.year, weekCutoff.month, weekCutoff.day),
+        ))
+          t.dateKey,
+    }.length;
 
     return AmbientScaffold(
       body: SafeArea(
@@ -305,8 +313,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         intensity,
                         createNew: createNew,
                       ),
-                  onAddDetails: (trace) =>
-                      ProgressiveDetailsSheet.show(context, trace: trace),
                   getMoodLabel: _getMoodLabel,
                   getMoodColor: _getMoodColor,
                   onBreatheTap: () => ContextualSupportSheet.show(
@@ -319,11 +325,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                 const SizedBox(height: 14),
 
-                // 2. Clinically High-Value Adaptive Daily Pulse (Morning Sleep/Energy or Evening Stress/Helpers)
+                // 2. Playful, condition-aware Daily Ritual (max 2-3 visual taps)
                 HomeClinicalPulseCard(
                   tokens: tokens,
                   strings: strings,
                   plan: plan,
+                  profile: profile,
+                  loggedDaysThisWeek: weekDaysLogged,
                   todayTrace: todayTrace,
                   onUpdateTrace: _updateTodayClinicalPulse,
                 ),

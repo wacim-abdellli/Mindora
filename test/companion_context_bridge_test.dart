@@ -105,7 +105,10 @@ void main() {
           find.byKey(const ValueKey('companion-checkin-bridge-card')),
           findsNothing,
         );
-        expect(find.text('Save key takeaway'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('talk-dynamic-options-bar')),
+          findsOneWidget,
+        );
         expect(
           find.textContaining('Tight chest before tomorrow presentation'),
           findsOneWidget,

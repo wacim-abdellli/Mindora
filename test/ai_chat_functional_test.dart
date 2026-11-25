@@ -4,17 +4,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mind_forensics/app/localization/app_strings.dart';
 import 'package:mind_forensics/app/theme/lab_theme.dart';
 import 'package:mind_forensics/core/security/secure_key_manager.dart';
+import 'package:mind_forensics/features/clinician/data/clinician_sync_service.dart';
+import 'package:mind_forensics/features/clinician/domain/clinician_models.dart';
 import 'package:mind_forensics/features/investigation/controllers/investigation_providers.dart';
 import 'package:mind_forensics/features/investigation/data/mock_investigator_service.dart';
 import 'package:mind_forensics/features/investigation/domain/ai_companion_system_prompt.dart';
 import 'package:mind_forensics/features/investigation/domain/case_model.dart';
 import 'package:mind_forensics/features/investigation/domain/case_stage.dart';
-import 'package:mind_forensics/features/investigation/domain/conversation_mode.dart';
+import 'package:mind_forensics/features/investigation/domain/companion_turn_response.dart';
 import 'package:mind_forensics/features/investigation/domain/label_type.dart';
 import 'package:mind_forensics/features/investigation/domain/statement.dart';
 import 'package:mind_forensics/features/investigation/presentation/ai_companion_hub_view.dart';
 import 'package:mind_forensics/features/investigation/presentation/flash_case_screen.dart';
-import 'package:mind_forensics/features/profile/domain/psychological_profile_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -24,111 +25,123 @@ void main() {
     SecureKeyManager.resetStaticCache();
   });
 
-  group('AI Chat Functionality & State Lifecycle Tests', () {
+  group('Talk v2 Adaptive Brain & Calm Sanctuary Lifecycle Tests', () {
     test(
-      'MockInvestigatorService progresses distinctly across turns in all 6 modes and respects customDirectives',
+      'MockInvestigatorService.getAdaptiveTurn chooses posture, options, calm offers, and silent labels autonomously',
       () async {
         final service = MockInvestigatorService();
         final now = DateTime.now();
         final baseCase = CaseModel(
-          id: 'c_prog',
+          id: 'c_adapt',
           caseNumber: 'SESSION 01',
-          title: 'Progression Check',
+          title: 'Adaptive Check',
           createdAt: now,
           updatedAt: now,
           currentStage: CaseStage.incident,
-          incidentDescription: 'Feeling tense before Monday review.',
-          statements: const [],
+          incidentDescription: '',
         );
 
-        for (final mode in ConversationMode.values) {
-          final replies = <String>{};
-          final history = <Statement>[];
-          for (var turn = 1; turn <= 4; turn++) {
-            history.add(
-              Statement(
-                id: 'u_$turn',
-                text: 'Turn $turn sharing my worry.',
-                speaker: StatementSpeaker.user,
-                label: LabelType.assumption,
-                timestamp: now.add(Duration(minutes: turn)),
-              ),
-            );
-            final reply = await service.getNextQuestion(
-              currentCase: baseCase.copyWith(conversationMode: mode),
-              conversationHistory: List.of(history),
-              languageCode: 'en',
-              conversationMode: mode,
-            );
-            expect(reply.trim(), isNotEmpty);
-            replies.add(reply);
-            history.add(
-              Statement(
-                id: 'a_$turn',
-                text: reply,
-                speaker: StatementSpeaker.investigator,
-                timestamp: now.add(Duration(minutes: turn)),
-              ),
-            );
-          }
-          expect(
-            replies.length,
-            equals(4),
-            reason: 'Expected 4 distinct progressive replies for mode $mode',
-          );
-        }
-
-        // Arabic topic-aware + custom brief directive check
-        final briefProfile = PsychologicalProfileModel(
-          customAiDirectives: 'Keep replies short and direct.',
-          shareWithAiCompanion: false,
-          updatedAt: now,
-        );
-        final topicReply = await service.getNextQuestion(
+        // 1. Acute somatic distress -> somaticGround + breathing offer
+        final panicTurn = await service.getAdaptiveTurn(
           currentCase: baseCase,
           conversationHistory: [
             Statement(
-              id: 'u_spark',
-              text: 'نفرّق بين الحقيقة والتخمين',
+              id: 'u1',
+              text: 'My chest feels tight and I feel a panic coming on.',
+              speaker: StatementSpeaker.user,
+              timestamp: now,
+            ),
+          ],
+          languageCode: 'en',
+        );
+        expect(panicTurn.chosenPosture, equals(AdaptivePosture.somaticGround));
+        expect(panicTurn.offerCalmExercise, equals(CalmExerciseOffer.breathing));
+        expect(panicTurn.suggestedReplies, isNotEmpty);
+
+        // 2. Ambiguous silence -> gentleReframe + silent assumption / Mind Reading + tailored options
+        final silenceTurn = await service.getAdaptiveTurn(
+          currentCase: baseCase,
+          conversationHistory: [
+            Statement(
+              id: 'u2',
+              text: 'They read my message four hours ago and still did not reply.',
+              speaker: StatementSpeaker.user,
+              timestamp: now,
+            ),
+          ],
+          languageCode: 'en',
+        );
+        expect(silenceTurn.chosenPosture, equals(AdaptivePosture.gentleReframe));
+        expect(silenceTurn.offerCalmExercise, equals(CalmExerciseOffer.none));
+        expect(silenceTurn.silentThoughtType, equals(LabelType.assumption));
+        expect(silenceTurn.silentDistortionTheme, equals('Mind Reading'));
+        expect(silenceTurn.suggestedReplies.length, inInclusiveRange(2, 3));
+
+        // 3. Exhausted / "Just sit" -> sootheListen, no diagnostic pressure
+        final tiredTurn = await service.getAdaptiveTurn(
+          currentCase: baseCase,
+          conversationHistory: [
+            Statement(
+              id: 'u3',
+              text: 'اقعد معايا شوية من غير أسئلة ثقيلة، تعبان اليوم.',
               speaker: StatementSpeaker.user,
               timestamp: now,
             ),
           ],
           languageCode: 'ar',
-          profile: briefProfile,
-          conversationMode: ConversationMode.exploreThought,
         );
-        expect(topicReply, contains('الحاجة اللي شفتها'));
+        expect(tiredTurn.chosenPosture, equals(AdaptivePosture.sootheListen));
+        expect(tiredTurn.suggestedReplies, isNotEmpty);
       },
     );
 
     test(
-      'AiCompanionSystemPrompt injects customDirectives cleanly without duplicating user context',
+      'CompanionTurnResponse parses fenced JSON, strips emojis, and deduplicates options safely',
       () {
-        final prompt = AiCompanionSystemPrompt.buildFullPrompt(
-          mode: ConversationMode.exploreThought,
-          languageCode: 'en',
-          customDirectives: 'Be concise, calm, and structured.',
-        );
-        expect(prompt, contains('USER COMMUNICATION & TONE PREFERENCES:'));
-        expect(prompt, contains('Be concise, calm, and structured.'));
+        final parsed = CompanionTurnResponse.tryParseJson('''
+```json
+{
+  "reply": "Take a slow breath here. 🌸 Does this tension stay in your chest?",
+  "chosen_posture": "somatic_ground",
+  "suggested_replies": ["My chest is tight 😊", "My chest is tight", "Just sit calmly"],
+  "offer_calm_exercise": "breathing",
+  "silent_thought_type": "interpretation",
+  "silent_distortion_theme": "catastrophizing",
+  "save_worthy_summary": "Paused to ground before spiraling."
+}
+```
+''');
+        expect(parsed, isNotNull);
+        expect(parsed!.reply, isNot(contains('🌸')));
+        expect(parsed.chosenPosture, equals(AdaptivePosture.somaticGround));
+        expect(parsed.offerCalmExercise, equals(CalmExerciseOffer.breathing));
+        expect(parsed.suggestedReplies, equals(['My chest is tight', 'Just sit calmly']));
+        expect(parsed.silentThoughtType, equals(LabelType.interpretation));
+        expect(parsed.silentDistortionTheme, equals('Catastrophizing'));
+      },
+    );
 
-        final deduplicated = AiCompanionSystemPrompt.buildFullPrompt(
-          mode: ConversationMode.exploreThought,
-          languageCode: 'en',
-          contextualUserPrompt:
-              'USER PROFILE CONTEXT:\n• Custom User Directives: "Keep it brief"',
-          customDirectives: 'Keep it brief',
+    test(
+      'AiCompanionSystemPrompt.buildAdaptivePrompt embeds autonomous rules and custom directives',
+      () {
+        final prompt = AiCompanionSystemPrompt.buildAdaptivePrompt(
+          languageCode: 'ar',
+          customDirectives: 'Be extra brief and calming.',
+          ageGroupHint: '65+ older adult',
         );
         expect(
-          deduplicated.contains('USER COMMUNICATION & TONE PREFERENCES:'),
-          isFalse,
+          prompt,
+          contains('SENIOR CLINICAL CONSULTATION ROLE & STRUCTURED DOCTOR HANDOFF'),
         );
+        expect(prompt, contains('clinical_intake_note'));
+        expect(prompt, contains('65+ older adult'));
+        expect(prompt, contains('Be extra brief and calming.'));
+        expect(prompt, contains('تحدث بلهجة تونسية دافئة'));
       },
     );
 
     test(
-      'ActiveCaseController.bookmarkTakeaway preserves active chat and sendMessageAndGenerateReply persists reply & backfills title',
+      'ActiveCaseController.sendMessageAndGenerateReply persists adaptive options, silent labels, and privacy toggle',
       () async {
         final container = ProviderContainer();
         addTearDown(container.dispose);
@@ -141,33 +154,29 @@ void main() {
         expect(proceeded, isTrue);
 
         final afterReply = container.read(activeCaseControllerProvider).value!;
-        expect(afterReply.incidentDescription, contains('colleague read'));
         expect(afterReply.title, contains('colleague read'));
+        expect(afterReply.suggestedReplies, isNotEmpty);
+        final userStmt = afterReply.statements
+            .firstWhere((s) => s.speaker == StatementSpeaker.user);
+        expect(userStmt.label, equals(LabelType.assumption));
+        expect(userStmt.distortionTag, equals('Mind Reading'));
+
+        await notifier.toggleCasePrivacy(afterReply.id);
         expect(
-          afterReply.statements.any(
-            (s) => s.speaker == StatementSpeaker.investigator,
-          ),
+          container.read(activeCaseControllerProvider).value!.isPrivate,
           isTrue,
         );
 
-        final aiMsg = afterReply.statements
-            .lastWhere((s) => s.speaker == StatementSpeaker.investigator)
-            .text;
-        await notifier.bookmarkTakeaway(aiMsg);
-
-        final afterBookmark =
-            container.read(activeCaseControllerProvider).value!;
-        expect(afterBookmark.findingsSummary, equals(aiMsg));
+        await notifier.bookmarkTakeaway(afterReply.statements.last.text);
         expect(
-          afterBookmark.isCompleted,
+          container.read(activeCaseControllerProvider).value!.isCompleted,
           isFalse,
-          reason: 'Bookmarking a single AI reply must not close active chat',
         );
       },
     );
 
     testWidgets(
-      'FlashCaseScreen(initialHubView: true) stays on Hub, More switches active mode, and + prevents empty duplicate sessions',
+      'FlashCaseScreen renders calm Talk UI, prevents duplicate empty chats, and toggles private mode in More sheet',
       (tester) async {
         tester.view.physicalSize = const Size(412, 915);
         tester.view.devicePixelRatio = 1.0;
@@ -188,15 +197,16 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(find.byType(AiCompanionHubView), findsOneWidget);
+        expect(find.text('6 MODES'), findsNothing);
 
-        // 2. Live chat + prevents duplicate empty Saved sessions
+        // 2. Live calm chat + prevents duplicate empty Saved sessions
         await tester.pumpWidget(
           UncontrolledProviderScope(
             container: container,
             child: MaterialApp(
               theme: buildMindTheme(Brightness.light),
               home: const FlashCaseScreen(
-                key: ValueKey('live_chat_screen'),
+                key: ValueKey('calm_live_chat'),
                 initialHubView: false,
               ),
             ),
@@ -206,7 +216,7 @@ void main() {
 
         final initialCount =
             (await container.read(savedCasesProvider.future)).length;
-        await tester.tap(find.byIcon(Icons.add_rounded));
+        await tester.tap(find.byKey(const ValueKey('talk-new-chat-btn')));
         await tester.pumpAndSettle();
         final afterPlusCount =
             (await container.read(savedCasesProvider.future)).length;
@@ -216,28 +226,84 @@ void main() {
           findsOneWidget,
         );
 
-        // 3. More -> Switch style updates both mode provider and active case
-        await tester.tap(find.byIcon(Icons.more_horiz_rounded));
+        // 3. More sheet allows locking conversation private cleanly (zero mode-chooser wall)
+        await tester.tap(find.byKey(const ValueKey('talk-more-btn')));
         await tester.pumpAndSettle();
-        await tester.tap(find.text(const AppStrings('en').modesAndHistoryTooltip));
-        await tester.pumpAndSettle();
-        final groundingFinder = find.text('Grounding');
-        await tester.scrollUntilVisible(
-          groundingFinder,
-          150,
-          scrollable: find.byType(Scrollable).last,
+        expect(find.text('Modes & History'), findsNothing);
+        await tester.tap(
+          find.text(const AppStrings('en').talkPrivateToggleTitle),
         );
-        await tester.tap(groundingFinder);
         await tester.pumpAndSettle();
+        expect(
+          container.read(activeCaseControllerProvider).value?.isPrivate,
+          isTrue,
+        );
+      },
+    );
 
-        expect(
-          container.read(currentConversationModeProvider),
-          equals(ConversationMode.grounding),
+    test(
+      'Clinical consultation turn populates CaseModel chain, intake summary, and Doctor EHR note',
+      () async {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        await container
+            .read(activeCaseControllerProvider.notifier)
+            .startNewCase('');
+        await container
+            .read(activeCaseControllerProvider.notifier)
+            .sendMessageAndGenerateReply(
+              'My mind keeps spinning and ruining my sleep tonight.',
+            );
+
+        final activeCase = container.read(activeCaseControllerProvider).value;
+        expect(activeCase, isNotNull);
+        final chain = activeCase!.chain;
+        expect(chain, isNotNull);
+        expect(chain!.trigger, isNotEmpty);
+        expect(chain.thought, isNotEmpty);
+        expect(chain.emotion, isNotEmpty);
+        expect(chain.emotionIntensity, greaterThan(0));
+        expect(chain.behavior, isNotEmpty);
+        expect(activeCase.findingsSummary, isNotEmpty);
+
+        const syncService = ClinicianSyncService(defaultPbkdf2Iterations: 2000);
+        final now = DateTime.now();
+        final packet = syncService.buildPatientPacket(
+          patientDisplayName: 'Salma T.',
+          patientAnonymousId: 'u_consult',
+          consentScope: const ClinicalConsentScope(
+            windowDays: 30,
+            includeMoodMetrics: true,
+            includeSleepEnergyAnxiety: true,
+            includePersonalNotes: true,
+            includeSharedCases: true,
+            includeSymptomReports: true,
+            includePsychologicalProfile: false,
+            includePreVisitAgenda: false,
+          ),
+          traces: const [],
+          cases: [activeCase],
+          symptomReports: const [],
+          referenceNow: now,
         );
-        expect(
-          container.read(activeCaseControllerProvider).value?.conversationMode,
-          equals(ConversationMode.grounding),
+
+        expect(packet.sharedCases.length, equals(1));
+        expect(packet.sharedCases.first.findingsSummary, equals(activeCase.findingsSummary));
+
+        final record = ClinicianPatientRecord(
+          patientId: 'u_consult',
+          displayName: 'Salma T.',
+          importedAt: now,
+          lastSyncedAt: now,
+          latestPacket: packet,
         );
+        final ehrNote = syncService.generateEhrClinicalNote(
+          record,
+          const AppStrings('en'),
+        );
+        expect(ehrNote, contains('Clinical intake note:'));
+        expect(ehrNote, contains(activeCase.findingsSummary));
       },
     );
   });

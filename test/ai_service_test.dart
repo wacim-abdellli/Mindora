@@ -3,12 +3,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mind_forensics/app/localization/app_strings.dart';
 import 'package:mind_forensics/features/investigation/controllers/investigation_providers.dart';
 import 'package:mind_forensics/features/investigation/data/direct_gemini_investigator_service.dart';
 import 'package:mind_forensics/features/investigation/data/mock_investigator_service.dart';
 import 'package:mind_forensics/features/investigation/domain/ai_service.dart';
 import 'package:mind_forensics/features/investigation/domain/case_model.dart';
 import 'package:mind_forensics/features/investigation/domain/case_stage.dart';
+import 'package:mind_forensics/features/investigation/domain/companion_turn_response.dart';
 import 'package:mind_forensics/features/investigation/domain/conversation_mode.dart';
 import 'package:mind_forensics/features/investigation/domain/forensic_chain.dart';
 import 'package:mind_forensics/features/investigation/domain/label_type.dart';
@@ -23,6 +25,22 @@ import 'package:mind_forensics/features/settings/presentation/settings_screen.da
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _TimeoutThrowingInvestigatorService extends MockInvestigatorService {
+  @override
+  Future<CompanionTurnResponse> getAdaptiveTurn({
+    required CaseModel currentCase,
+    required List<Statement> conversationHistory,
+    bool includePastCaseSummaries = true,
+    String? languageCode,
+    PsychologicalProfileModel? profile,
+    JourneyStateModel? journey,
+    MindTraceModel? latestTrace,
+    List<MindTraceModel>? historicalTraces,
+    List<JournalMemoryModel>? compressedMemories,
+    String? sessionSummary,
+  }) {
+    throw TimeoutException('Simulated upstream timeout');
+  }
+
   @override
   Future<String> getNextQuestion({
     required CaseModel currentCase,
@@ -250,14 +268,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Verify clean Step 7 Talk header and chat input field
-      expect(find.text('Talk'), findsAtLeastNWidgets(1));
-      expect(find.text('Explore a Thought'), findsOneWidget);
-      expect(find.text('Talk with your companion...'), findsOneWidget);
-
-      // Verify Options-First suggested next replies bar
-      expect(find.text('Separate facts vs guesses'), findsOneWidget);
-      expect(find.text('I need grounding first'), findsOneWidget);
+      const en = AppStrings('en');
+      // Verify calm Talk header, uncluttered composer, and 3 warm clinical doorways
+      expect(find.text(en.navTalk), findsAtLeastNWidgets(1));
+      expect(find.text('Explore a Thought'), findsNothing);
+      expect(find.text(en.talkComposerHint), findsOneWidget);
+      expect(find.text(en.talkDoorwaySpinning), findsOneWidget);
 
       // Send a test user message via text input
       await tester.enterText(
@@ -267,15 +283,11 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500)); // Process mock investigator reply
       await tester.pumpAndSettle();
 
-      // Verify both user message, accessible Fact/Guess/Story chip, and AI Guide response
+      // Verify calm chat bubble (without inline Fact/Guess/Save clutter) + AI-authored options bar
       expect(find.text('I am worried about my project deadline.'), findsOneWidget);
-      expect(find.text('Guess'), findsAtLeastNWidgets(1));
-      expect(find.text('Save key takeaway'), findsOneWidget);
-
-      // Tapping statement tag cycles Guess -> Fact -> Story with matching icon & text
-      await tester.tap(find.text('Guess').first);
-      await tester.pumpAndSettle();
-      expect(find.text('Fact'), findsAtLeastNWidgets(1));
+      expect(find.byKey(const ValueKey('stmt-label-stmt_u1-fact')), findsNothing);
+      expect(find.byKey(const ValueKey('talk-dynamic-options-bar')), findsOneWidget);
+      expect(find.byKey(const ValueKey('talk-dynamic-option-0')), findsOneWidget);
     });
 
     testWidgets(
@@ -308,8 +320,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('My supervisor seemed distant.'), findsOneWidget);
-      // Fallback mock investigator reply added at least one reply after user statement
-      expect(find.text('Saved (1)'), findsOneWidget);
+      // Fallback mock investigator reply responded cleanly with contextual dynamic options
+      expect(find.byKey(const ValueKey('talk-dynamic-options-bar')), findsOneWidget);
     });
   });
 

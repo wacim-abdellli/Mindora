@@ -1,33 +1,19 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../app/localization/app_strings.dart';
 import '../../../app/theme/lab_theme.dart';
 import '../../../app/theme/mind_tokens.dart';
-import '../../../core/widgets/fingerprint_thread_signature.dart';
 import '../../../core/widgets/mind_pressable.dart';
 import '../../../core/widgets/mind_undo_banner.dart';
-import '../../case_file/domain/clarity_anchor_model.dart';
-import '../../case_file/presentation/widgets/clarity_anchor_card.dart';
 import '../controllers/investigation_providers.dart';
 import '../domain/case_model.dart';
-import '../domain/conversation_mode.dart';
-import 'widgets/mode_chooser_sheet.dart';
 
-/// The Landing Screen and Hub for the AI Companion.
+/// Calm Past Consultations view opened from Talk's `[History]` button.
 ///
-/// Features (Build Session 05):
-/// - Poetic introduction & identity banner
-/// - Mode Selection Grid (6 modes with localized descriptions)
-/// - Socratic suggested conversation starters
-/// - Start New Conversation action
-/// - Recent Conversation History list (Resume, Rename, Delete, Clear All)
-/// - Luxury Vercel Dark & Master Burgundy aesthetics
-/// - Strictly 0 emojis
+/// Deliberately avoids clinical mode grids and button clutter so users simply
+/// start a fresh consultation, revisit a past note, lock it private, or delete safely.
 class AiCompanionHubView extends ConsumerStatefulWidget {
   const AiCompanionHubView({super.key, this.onSessionSelected});
 
@@ -72,10 +58,7 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
                 borderSide: BorderSide(color: dialogTokens.line),
               ),
             ),
-            style: TextStyle(
-              fontSize: 13,
-              color: dialogTokens.ink,
-            ),
+            style: TextStyle(fontSize: 14, color: dialogTokens.ink),
           ),
           actions: [
             TextButton(
@@ -110,7 +93,10 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
     );
   }
 
-  Future<void> _showDeleteDialog(BuildContext context, CaseModel caseModel) async {
+  Future<void> _showDeleteDialog(
+    BuildContext context,
+    CaseModel caseModel,
+  ) async {
     final strings = ref.read(appStringsProvider);
     final repo = ref.read(caseRepositoryProvider);
     HapticFeedback.mediumImpact();
@@ -153,7 +139,7 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
           content: Text(
             strings.clearAllConversationsConfirm,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 13.5,
               height: 1.45,
               color: dialogTokens.ink2,
             ),
@@ -188,390 +174,92 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
     );
   }
 
-  Color _accentForMode(ConversationMode mode) {
-    switch (mode) {
-      case ConversationMode.exploreThought:
-        return MindTokens.moodRestless;
-      case ConversationMode.understandEmotion:
-        return MindTokens.moodFrustrated;
-      case ConversationMode.psychologicalAnalysis:
-        return MindTokens.moodAnxious;
-      case ConversationMode.guidedReflection:
-        return MindTokens.moodCalm;
-      case ConversationMode.justTalk:
-        return MindTokens.moodHeavy;
-      case ConversationMode.grounding:
-        return MindTokens.moodCalm;
-    }
-  }
-
-  Future<void> _startConversation([String? initialPrompt]) async {
-    HapticFeedback.mediumImpact();
-    final controller = ref.read(activeCaseControllerProvider.notifier);
-    final activeMode = ref.read(currentConversationModeProvider);
-    await controller.startNewCase(initialPrompt ?? '', mode: activeMode);
+  Future<void> _startFreshTalk() async {
+    HapticFeedback.lightImpact();
+    await ref.read(activeCaseControllerProvider.notifier).startNewCase('');
     widget.onSessionSelected?.call();
-    if (initialPrompt != null && initialPrompt.trim().isNotEmpty) {
-      unawaited(controller.requestAiReply());
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final strings = ref.watch(appStringsProvider);
-    final selectedMode = ref.watch(currentConversationModeProvider);
     final savedCasesAsync = ref.watch(savedCasesProvider);
-
-    final surfaceColor = tokens.surface;
-    final borderColor = tokens.line;
-    final textPrimary = tokens.ink;
-    final textSecondary = tokens.ink2;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Poetic Hero Introduction
-          _buildHeroHeader(isDark, strings, textPrimary, textSecondary),
-
-          const SizedBox(height: 20),
-
-          // 2. Mode Selection Section
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  strings.selectConversationMode.toUpperCase(),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
-                    color: context.tokens.ink,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: context.tokens.surface2,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: borderColor),
-                ),
-                child: Text(
-                  '6 MODES',
-                  style: TextStyle(
-                    fontSize: 9,
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: tokens.surface,
+              borderRadius: BorderRadius.circular(tokens.cardRadius),
+              border: Border.all(color: tokens.line),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  strings.talkHistoryTooltip,
+                  style: LabTheme.textStyle(
+                    fontSize: 19,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
-                    color: textSecondary,
+                    color: tokens.ink,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Mode Cards Grid
-          ...ConversationMode.values.map((mode) {
-            final isSelected = mode == selectedMode;
-            final modeTitle = localizedModeName(mode, strings);
-            final modeDesc = localizedModeDesc(mode, strings);
-            final modeColor = _accentForMode(mode);
-
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: MindPressable(
-                semanticLabel: modeTitle,
-                borderRadius: BorderRadius.circular(tokens.cardRadius),
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  ref
-                      .read(currentConversationModeProvider.notifier)
-                      .setMode(mode);
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? modeColor.withValues(alpha: isDark ? 0.11 : 0.08)
-                        : surfaceColor,
-                    borderRadius: BorderRadius.circular(tokens.cardRadius),
-                    border: Border.all(
-                      color: isSelected ? modeColor : borderColor,
-                      width: isSelected ? 1.5 : 1.0,
-                    ),
+                const SizedBox(height: 6),
+                Text(
+                  strings.talkWelcomeSub,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    height: 1.45,
+                    color: tokens.ink2,
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(tokens.cardRadius - 1),
-                    child: Stack(
+                ),
+                const SizedBox(height: 14),
+                MindPressable(
+                  key: const ValueKey('hub-new-talk-btn'),
+                  semanticLabel: strings.newConversationBtn,
+                  borderRadius: BorderRadius.circular(tokens.buttonRadius),
+                  onPressed: _startFreshTalk,
+                  child: Container(
+                    width: double.infinity,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: tokens.ink,
+                      borderRadius: BorderRadius.circular(tokens.buttonRadius),
+                    ),
+                    alignment: Alignment.center,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Padding(
-                          padding: const EdgeInsetsDirectional.fromSTEB(17, 14, 14, 14),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(9),
-                                decoration: BoxDecoration(
-                                  color: modeColor.withValues(
-                                      alpha: isSelected ? 0.20 : (isDark ? 0.10 : 0.08)),
-                                  borderRadius: BorderRadius.circular(tokens.buttonRadius),
-                                  border: Border.all(
-                                    color: modeColor.withValues(
-                                        alpha: isSelected ? 0.45 : 0.22),
-                                  ),
-                                ),
-                                child: Icon(
-                                  iconForConversationMode(mode),
-                                  size: 18,
-                                  color: modeColor,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            modeTitle,
-                                            style: TextStyle(
-                                              fontSize: 13.5,
-                                              fontWeight: FontWeight.w700,
-                                              color: isSelected ? modeColor : textPrimary,
-                                            ),
-                                          ),
-                                        ),
-                                        if (isSelected)
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 8, vertical: 3),
-                                            decoration: BoxDecoration(
-                                              color: modeColor.withValues(alpha: 0.16),
-                                              borderRadius: BorderRadius.circular(tokens.chipRadius),
-                                            ),
-                                            child: Text(
-                                              'ACTIVE',
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w800,
-                                                letterSpacing: 0.5,
-                                                color: modeColor,
-                                              ),
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      modeDesc,
-                                      style: TextStyle(
-                                        fontSize: 12.5,
-                                        height: 1.4,
-                                        color: isSelected
-                                            ? textPrimary.withValues(alpha: 0.90)
-                                            : textSecondary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        PositionedDirectional(
-                          start: 0,
-                          top: 0,
-                          bottom: 0,
-                          width: isSelected ? 3.5 : 2.5,
-                          child: ColoredBox(
-                            color: isSelected
-                                ? modeColor
-                                : modeColor.withValues(alpha: isDark ? 0.35 : 0.25),
+                        Icon(Icons.add_rounded, size: 18, color: tokens.bg),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            strings.newConversationBtn,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: tokens.bg,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-              ),
-            );
-          }),
-
-          const SizedBox(height: 14),
-
-          // 3. Suggested Conversation Starters
-          Text(
-            strings.suggestedStartersTitle.toUpperCase(),
-            style: TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.8,
-              color: _accentForMode(selectedMode),
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: strings.localizedStartersForMode(selectedMode.name).map((starter) {
-              final selectedModeColor = _accentForMode(selectedMode);
-              return MindPressable(
-                semanticLabel: starter,
-                borderRadius: BorderRadius.circular(tokens.chipRadius),
-                onPressed: () => _startConversation(starter),
-                child: Container(
-                  constraints: const BoxConstraints(minHeight: 48),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: tokens.surface2,
-                    borderRadius: BorderRadius.circular(tokens.chipRadius),
-                    border: Border.all(
-                      color: isDark ? borderColor : tokens.line,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 14,
-                        color: selectedModeColor,
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          starter,
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
-                            color: textPrimary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-
-          const SizedBox(height: 20),
-
-          // 4. Primary CTA: Start New Conversation
-          MindPressable(
-            semanticLabel: strings.newConversationBtn,
-            borderRadius: BorderRadius.circular(tokens.buttonRadius),
-            onPressed: () => _startConversation(),
-            child: Container(
-              width: double.infinity,
-              height: 50,
-              decoration: BoxDecoration(
-                color: tokens.ink,
-                borderRadius: BorderRadius.circular(tokens.buttonRadius),
-              ),
-              alignment: Alignment.center,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.add_rounded,
-                    size: 18,
-                    color: tokens.bg,
-                  ),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      strings.newConversationBtn.toUpperCase(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.6,
-                        color: tokens.bg,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              ],
             ),
           ),
 
-          const SizedBox(height: 26),
+          const SizedBox(height: 22),
 
-          // 4b. Pocket Clarity Anchors (only when distilled sessions exist)
-          savedCasesAsync.maybeWhen(
-            data: (cases) {
-              final anchors = ClarityAnchorModel.fromCases(cases).take(4).toList();
-              if (anchors.isEmpty) return const SizedBox.shrink();
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      strings.pocketAnchorsSectionTitle.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: strings.isArabic ? 0 : 0.8,
-                        color: tokens.ink,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          for (var i = 0; i < anchors.length; i++) ...[
-                            if (i > 0) const SizedBox(width: 10),
-                            SizedBox(
-                              width: 280,
-                              child: ClarityAnchorCard(
-                                anchor: anchors[i],
-                                strings: strings,
-                                compact: true,
-                                onTap: () {
-                                  HapticFeedback.lightImpact();
-                                  final router = GoRouter.maybeOf(context);
-                                  if (router != null) {
-                                    router.push('/case/${anchors[i].caseId}');
-                                  } else {
-                                    final target = cases.firstWhere(
-                                      (c) => c.id == anchors[i].caseId,
-                                    );
-                                    ref
-                                        .read(
-                                          activeCaseControllerProvider.notifier,
-                                        )
-                                        .resumeCase(target);
-                                    widget.onSessionSelected?.call();
-                                  }
-                                },
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-            orElse: () => const SizedBox.shrink(),
-          ),
-
-          // 5. Recent Conversations List
           Row(
             children: [
               Expanded(
@@ -580,9 +268,9 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 11.5,
+                    fontSize: 12,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
+                    letterSpacing: strings.isArabic ? 0 : 0.7,
                     color: tokens.ink,
                   ),
                 ),
@@ -593,7 +281,7 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
                     ? TextButton(
                         onPressed: () => _showClearAllDialog(context),
                         style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
                           minimumSize: const Size(48, 36),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
@@ -623,7 +311,7 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
             error: (err, _) => Center(
               child: Text(
                 'Error loading conversations: $err',
-                style: TextStyle(fontSize: 11, color: textSecondary),
+                style: TextStyle(fontSize: 12, color: tokens.ink2),
               ),
             ),
             data: (cases) {
@@ -631,22 +319,22 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
                 return Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: surfaceColor,
-                    borderRadius: BorderRadius.circular(context.tokens.cardRadius),
-                    border: Border.all(color: borderColor),
+                    color: tokens.surface,
+                    borderRadius: BorderRadius.circular(tokens.cardRadius),
+                    border: Border.all(color: tokens.line),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.history_toggle_off_rounded, size: 20, color: textSecondary),
+                      Icon(
+                        Icons.history_toggle_off_rounded,
+                        size: 20,
+                        color: tokens.ink2,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           strings.noRecentConversations,
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            color: textSecondary,
-                            fontStyle: FontStyle.italic,
-                          ),
+                          style: TextStyle(fontSize: 13, color: tokens.ink2),
                         ),
                       ),
                     ],
@@ -658,224 +346,162 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
                 children: cases.map((c) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 10),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: surfaceColor,
-                        borderRadius: BorderRadius.circular(context.tokens.cardRadius),
-                        border: Border.all(color: borderColor),
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          ref
-                              .read(activeCaseControllerProvider.notifier)
-                              .resumeCase(c);
-                          widget.onSessionSelected?.call();
-                        },
-                        leading: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: context.tokens.cardTint,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: context.tokens.ink.withValues(alpha: 0.25),
-                            ),
-                          ),
-                          child: Icon(
-                            iconForConversationMode(c.conversationMode),
-                            size: 16,
-                            color: tokens.ink,
-                          ),
+                    child: MindPressable(
+                      semanticLabel: c.title,
+                      borderRadius: BorderRadius.circular(tokens.cardRadius),
+                      onPressed: () {
+                        HapticFeedback.selectionClick();
+                        ref
+                            .read(activeCaseControllerProvider.notifier)
+                            .resumeCase(c);
+                        widget.onSessionSelected?.call();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
                         ),
-                        title: Row(
+                        decoration: BoxDecoration(
+                          color: tokens.surface,
+                          borderRadius: BorderRadius.circular(
+                            tokens.cardRadius,
+                          ),
+                          border: Border.all(color: tokens.line),
+                        ),
+                        child: Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              width: 36,
+                              height: 36,
                               decoration: BoxDecoration(
                                 color: tokens.surface2,
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: tokens.line),
                               ),
-                              child: Text(
-                                strings.formatSessionNumber(c.caseNumber),
-                                style: TextStyle(
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: textSecondary,
-                                ),
+                              child: Icon(
+                                c.isPrivate
+                                    ? Icons.lock_outline_rounded
+                                    : Icons.chat_bubble_outline_rounded,
+                                size: 17,
+                                color: tokens.ink2,
                               ),
                             ),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: 12),
                             Expanded(
-                              child: Text(
-                                c.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: textPrimary,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    c.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 14.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: tokens.ink,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 2,
+                                    crossAxisAlignment:
+                                        WrapCrossAlignment.center,
+                                    children: [
+                                      Text(
+                                        strings.formatSessionNumber(
+                                          c.caseNumber,
+                                        ),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: tokens.ink2,
+                                        ),
+                                      ),
+                                      if (c.isPrivate)
+                                        Text(
+                                          strings.privacyPrivateSessionTag,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: tokens.ink2,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            PopupMenuButton<String>(
+                              icon: Icon(
+                                Icons.more_vert_rounded,
+                                size: 19,
+                                color: tokens.ink2,
+                              ),
+                              color: tokens.surface,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                side: BorderSide(color: tokens.line),
+                              ),
+                              onSelected: (val) async {
+                                if (val == 'resume') {
+                                  ref
+                                      .read(activeCaseControllerProvider.notifier)
+                                      .resumeCase(c);
+                                  widget.onSessionSelected?.call();
+                                } else if (val == 'privacy') {
+                                  await ref
+                                      .read(activeCaseControllerProvider.notifier)
+                                      .toggleCasePrivacy(c.id);
+                                } else if (val == 'rename') {
+                                  _showRenameDialog(context, c);
+                                } else if (val == 'delete') {
+                                  await _showDeleteDialog(context, c);
+                                }
+                              },
+                              itemBuilder: (ctx) => [
+                                PopupMenuItem(
+                                  value: 'resume',
+                                  child: Text(
+                                    strings.resumeConversationBtn,
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        subtitle: Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Wrap(
-                            spacing: 6,
-                            runSpacing: 2,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              Text(
-                                localizedModeName(c.conversationMode, strings),
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: tokens.ink,
+                                PopupMenuItem(
+                                  value: 'privacy',
+                                  child: Text(
+                                    strings.talkPrivateToggleTitle,
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
                                 ),
-                              ),
-                              Text('•', style: TextStyle(fontSize: 11.5, color: textSecondary)),
-                              Text(
-                                '${c.statements.length} exchanges',
-                                style: TextStyle(fontSize: 11.5, color: textSecondary),
-                              ),
-                            ],
-                          ),
-                        ),
-                        trailing: PopupMenuButton<String>(
-                          icon: Icon(Icons.more_vert_rounded, size: 18, color: textSecondary),
-                          color: tokens.surface,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            side: BorderSide(color: tokens.line),
-                          ),
-                          onSelected: (val) {
-                            if (val == 'resume') {
-                              ref
-                                  .read(activeCaseControllerProvider.notifier)
-                                  .resumeCase(c);
-                            } else if (val == 'rename') {
-                              _showRenameDialog(context, c);
-                            } else if (val == 'delete') {
-                              _showDeleteDialog(context, c);
-                            }
-                          },
-                          itemBuilder: (ctx) => [
-                            PopupMenuItem(
-                              value: 'resume',
-                              child: Text(strings.resumeConversationBtn, style: const TextStyle(fontSize: 13)),
-                            ),
-                            PopupMenuItem(
-                              value: 'rename',
-                              child: Text(strings.renameConversationTitle, style: const TextStyle(fontSize: 13)),
-                            ),
-                            PopupMenuItem(
-                              value: 'delete',
-                              child: Text(
-                                strings.deleteConversationTitle,
-                                style: TextStyle(fontSize: 13, color: tokens.safety),
-                              ),
+                                PopupMenuItem(
+                                  value: 'rename',
+                                  child: Text(
+                                    strings.renameConversationTitle,
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                                PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text(
+                                    strings.deleteConversationTitle,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: tokens.safety,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ),
                     ),
-                  ),
                   );
                 }).toList(),
               );
             },
           ),
-          const SizedBox(height: 32),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeroHeader(
-    bool isDark,
-    AppStrings strings,
-    Color textPrimary,
-    Color textSecondary,
-  ) {
-    final tokens = context.tokens;
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: tokens.surface,
-        borderRadius: BorderRadius.circular(tokens.cardRadius),
-        border: Border.all(color: tokens.line, width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const FingerprintThreadSignature(size: 20, animated: false),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      strings.aiCompanionTitle.toUpperCase(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
-                        color: tokens.ink,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: tokens.cardTint,
-                  borderRadius: BorderRadius.circular(tokens.chipRadius),
-                  border: Border.all(color: tokens.ink.withValues(alpha: 0.35)),
-                ),
-                child: Text(
-                  'CONFIDENTIAL & OFFLINE-FIRST',
-                  style: TextStyle(
-                    fontSize: 8.5,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                    color: tokens.ink,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            '“${strings.aiCompanionIntro}”',
-            style: LabTheme.textStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              height: 1.38,
-              color: textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            strings.aiCompanionSupporting,
-            style: TextStyle(
-              fontSize: 11.5,
-              height: 1.45,
-              color: textSecondary,
-            ),
-          ),
+          const SizedBox(height: 28),
         ],
       ),
     );

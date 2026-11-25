@@ -16,10 +16,12 @@ import '../../insights/domain/forensic_loop_model.dart';
 import '../../insights/domain/personal_baseline_model.dart';
 import '../../insights/presentation/widgets/forensic_loop_map_card.dart';
 import '../../insights/presentation/widgets/observed_stabilizers_card.dart';
+import '../../mind_trace/domain/adaptive_tracking_engine.dart';
 import '../../mind_trace/domain/affect_taxonomy.dart';
 import '../../mind_trace/domain/daily_context_tags.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
 import '../../observatory/domain/default_symptom_library.dart';
+import '../../profile/domain/clinical_condition_catalog.dart';
 import '../../track/presentation/widgets/track_mood_utils.dart';
 import '../controllers/clinician_providers.dart';
 import '../domain/clinician_models.dart';
@@ -553,6 +555,82 @@ class _ClinicianPatientDetailScreenState
                 ),
               ],
             ),
+          ),
+        ],
+
+        // Condition-Specific Care Track Markers (synced cleanly when consented)
+        if (scope.includeMoodMetrics) ...[
+          Builder(
+            builder: (context) {
+              final tracks = ClinicalConditionCatalog.resolveTracks(
+                record.latestPacket.profileSnapshot,
+              );
+              final markers = AdaptiveTrackingEngine.summarizeConditionMarkers(
+                record.latestPacket.traces,
+                tracks,
+                strings,
+              );
+              final explicitTracks = tracks
+                  .where((t) => t != ClinicalTrack.generalWellness)
+                  .toList(growable: false);
+              if (markers.isEmpty && explicitTracks.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 16),
+                  MindCard(
+                    key: const ValueKey('clinician-condition-markers-card'),
+                    variant: MindCardVariant.flat,
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          strings.doctorDossierConditionMarkersTitle,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: tokens.ink,
+                          ),
+                        ),
+                        if (explicitTracks.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              for (final t in explicitTracks)
+                                MindBadge(
+                                  label: t.localizedTitle(strings),
+                                  backgroundColor: tokens.cardTint,
+                                  textColor: tokens.ink,
+                                ),
+                            ],
+                          ),
+                        ],
+                        if (markers.isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          for (final line in markers)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Text(
+                                '• $line',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: tokens.ink2,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
 
@@ -1245,6 +1323,28 @@ class _ClinicianPatientDetailScreenState
                           fontSize: 12.5,
                           color: tokens.ink2,
                           height: 1.4,
+                        ),
+                      ),
+                    ],
+                    if (c.findingsSummary != null &&
+                        c.findingsSummary!.trim().isNotEmpty &&
+                        c.findingsSummary!.trim() !=
+                            (c.userConclusion ?? '').trim()) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: tokens.surface2,
+                          borderRadius: BorderRadius.circular(tokens.chipRadius),
+                        ),
+                        child: Text(
+                          c.findingsSummary!.trim(),
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: tokens.ink,
+                            height: 1.4,
+                          ),
                         ),
                       ),
                     ],

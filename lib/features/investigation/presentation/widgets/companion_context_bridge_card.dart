@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 
 import '../../../../app/localization/app_strings.dart';
 import '../../../../app/theme/mind_tokens.dart';
-import '../../../../core/widgets/mind_button.dart';
 import '../../../../core/widgets/mind_card.dart';
 import '../../../../core/widgets/mind_pressable.dart';
 import '../../../clinician/domain/post_visit_focus_model.dart';
@@ -11,13 +10,8 @@ import '../../../mind_trace/domain/daily_context_tags.dart';
 import '../../../mind_trace/domain/mind_trace_model.dart';
 import '../../../track/presentation/widgets/track_mood_utils.dart';
 
-/// Optional, 1-tap context bridge shown at the top of an empty Companion
-/// session whenever the user has logged a check-in today or has an active
-/// clinician Post-Visit Focus item.
-///
-/// Strictly options-first: never auto-submits anything without an explicit tap,
-/// routes prompts through the parent's safety-scanned send callback, and fits
-/// cleanly on 320px + 1.35x Arabic RTL.
+/// Streamlined, calm 1-tap bridge shown above an empty Talk sanctuary when
+/// the user checked in today or has an active care-team focus note.
 class CompanionContextBridgeCard extends StatelessWidget {
   const CompanionContextBridgeCard({
     super.key,
@@ -78,120 +72,15 @@ class CompanionContextBridgeCard extends StatelessWidget {
     return MindCard(
       key: const ValueKey('companion-checkin-bridge-card'),
       variant: MindCardVariant.tint,
-      padding: const EdgeInsets.all(15),
+      padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (trace != null) ...[
-            Row(
-              children: [
-                Container(
-                  width: 9,
-                  height: 9,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: moodColor,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    strings.companionBridgeTitle.toUpperCase(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: strings.isArabic ? 0 : 0.7,
-                      color: tokens.ink2,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  flex: 0,
-                  child: Container(
-                    constraints: const BoxConstraints(maxWidth: 120),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: tokens.selectedTintFor(moodColor),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: moodColor.withValues(alpha: 0.45),
-                      ),
-                    ),
-                    child: Text(
-                      '$moodLabel · ${trace.moodIntensity}/10',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12.0,
-                        fontWeight: FontWeight.w700,
-                        color: tokens.ink,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            if (tagLabels.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  for (final tag in tagLabels)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 9,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: tokens.surface,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: tokens.line),
-                      ),
-                      child: Text(
-                        tag,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w500,
-                          color: tokens.ink2,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-            if ((trace.journalText ?? '').trim().isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                trace.journalText!.trim(),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 13,
-                  height: 1.4,
-                  color: tokens.ink,
-                ),
-              ),
-            ],
-            const SizedBox(height: 12),
-            MindButton(
+            MindPressable(
               key: const ValueKey('companion-bridge-unpack-btn'),
-              text: strings.companionBridgeUnpackBtn,
-              variant: MindButtonVariant.primary,
-              leadingIcon: Icons.auto_awesome_outlined,
-              isFullWidth: true,
+              semanticLabel: strings.companionBridgeUnpackBtn,
+              borderRadius: BorderRadius.circular(14),
               onPressed: () {
                 HapticFeedback.lightImpact();
                 onStartPrompt(
@@ -203,24 +92,120 @@ class CompanionContextBridgeCard extends StatelessWidget {
                   ),
                 );
               },
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 48),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: tokens.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: tokens.line),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: moodColor,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            strings.talkContextRibbonCheckIn(
+                              moodLabel,
+                              trace.moodIntensity,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
+                              height: 1.35,
+                              color: tokens.ink,
+                            ),
+                          ),
+                          if ((trace.journalText ?? '').trim().isNotEmpty) ...[
+                            const SizedBox(height: 3),
+                            Text(
+                              trace.journalText!.trim(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 12.0,
+                                color: tokens.ink2,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 18,
+                      color: tokens.ink,
+                    ),
+                  ],
+                ),
+              ),
             ),
             if (trace.moodIntensity >= 7) ...[
               const SizedBox(height: 8),
-              MindButton(
+              MindPressable(
                 key: const ValueKey('companion-bridge-settle-btn'),
-                text: strings.companionBridgeSettleFirstBtn,
-                variant: MindButtonVariant.soft,
-                leadingIcon: Icons.air_rounded,
-                isFullWidth: true,
+                semanticLabel: strings.companionBridgeSettleFirstBtn,
+                borderRadius: BorderRadius.circular(12),
                 onPressed: () {
                   HapticFeedback.selectionClick();
                   onOpenSettleSupport();
                 },
+                child: Container(
+                  constraints: const BoxConstraints(minHeight: 44),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: tokens.surface2,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: tokens.line),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.air_rounded, size: 16, color: tokens.ink),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          strings.companionBridgeSettleFirstBtn,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: tokens.ink,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ],
           if (focusItem != null) ...[
-            if (trace != null) const SizedBox(height: 10),
+            if (trace != null) const SizedBox(height: 8),
             MindPressable(
               key: const ValueKey('companion-bridge-focus-btn'),
               semanticLabel: strings.companionBridgeFocusChip(focusItem.title),
@@ -232,10 +217,10 @@ class CompanionContextBridgeCard extends StatelessWidget {
                 );
               },
               child: Container(
-                constraints: const BoxConstraints(minHeight: 48),
+                constraints: const BoxConstraints(minHeight: 44),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
-                  vertical: 10,
+                  vertical: 8,
                 ),
                 decoration: BoxDecoration(
                   color: tokens.surface,
@@ -252,7 +237,7 @@ class CompanionContextBridgeCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        strings.companionBridgeFocusChip(focusItem.title),
+                        strings.talkContextRibbonFocus(focusItem.title),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(

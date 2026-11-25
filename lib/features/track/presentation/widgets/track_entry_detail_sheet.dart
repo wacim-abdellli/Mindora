@@ -43,6 +43,7 @@ class TrackEntryDetailSheet extends ConsumerWidget {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => TrackEntryDetailSheet(
         trace: trace,
@@ -421,6 +422,7 @@ class EditPastTraceSheet extends ConsumerStatefulWidget {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => EditPastTraceSheet(trace: trace),
     );

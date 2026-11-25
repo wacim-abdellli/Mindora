@@ -11,7 +11,6 @@ import 'package:mind_forensics/features/investigation/domain/conversation_mode.d
 import 'package:mind_forensics/features/investigation/presentation/ai_companion_hub_view.dart';
 import 'package:mind_forensics/features/investigation/presentation/flash_case_screen.dart';
 import 'package:mind_forensics/features/investigation/presentation/widgets/ai_engine_config_sheet.dart';
-import 'package:mind_forensics/features/investigation/presentation/widgets/mode_chooser_sheet.dart';
 import 'package:mind_forensics/features/mind_trace/domain/mind_trace_model.dart';
 import 'package:mind_forensics/features/profile/domain/condition_type.dart';
 import 'package:mind_forensics/features/profile/domain/diagnostic_status.dart';
@@ -281,7 +280,7 @@ void main() {
     });
 
     testWidgets(
-      'AiCompanionHubView renders identity header, all 6 modes, and starters',
+      'AiCompanionHubView renders calm Past Talks list without clinical 6-mode wall',
       (WidgetTester tester) async {
         tester.view.physicalSize = const Size(800, 2400);
         tester.view.devicePixelRatio = 1.0;
@@ -295,33 +294,17 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // Verify header and introduction
-        expect(find.text('AI COMPANION'), findsOneWidget);
-        expect(
-          find.text(
-            '“An intelligent space to explore what is happening within you.”',
-          ),
-          findsOneWidget,
-        );
-
-        // Verify 6 modes are listed
-        expect(find.text('Explore a Thought'), findsOneWidget);
-        expect(find.text('Understand an Emotion'), findsOneWidget);
-        expect(find.text('Psychological Analysis'), findsOneWidget);
-        expect(find.text('Guided Reflection'), findsOneWidget);
-        expect(find.text('Just Talk'), findsOneWidget);
-        expect(find.text('Grounding'), findsOneWidget);
-
-        // Verify Start New Conversation CTA
-        expect(find.text('NEW CONVERSATION'), findsOneWidget);
-
-        // Verify Suggested Starters section
-        expect(find.text('SUGGESTED STARTERS'), findsOneWidget);
+        const en = AppStrings('en');
+        // Verify calm header and primary CTA without manual 6-mode clinical cards
+        expect(find.text(en.talkHistoryTooltip), findsOneWidget);
+        expect(find.text('6 MODES'), findsNothing);
+        expect(find.text('Psychological Analysis'), findsNothing);
+        expect(find.byKey(const ValueKey('hub-new-talk-btn')), findsOneWidget);
       },
     );
 
     testWidgets(
-      'FlashCaseScreen supports switching between Hub and Live Dialogue',
+      'FlashCaseScreen switches calmly between Dialogue Sanctuary and History Hub',
       (WidgetTester tester) async {
         tester.view.physicalSize = const Size(800, 2400);
         tester.view.devicePixelRatio = 1.0;
@@ -333,32 +316,29 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // Initially active conversation dialogue & warm welcome state are open
+        const en = AppStrings('en');
+        // Initially calm sanctuary welcome view is shown
         expect(find.text('Talk'), findsAtLeastNWidgets(1));
-        expect(find.text("What's on your mind?"), findsOneWidget);
-        expect(find.text('Local On-Device'), findsOneWidget);
-        expect(find.text('Talk with your companion...'), findsOneWidget);
+        expect(find.text(en.talkWelcomeHeadline), findsOneWidget);
+        expect(find.text(en.talkComposerHint), findsOneWidget);
 
-        // Tap Saved pill in AppBar to toggle Hub view
-        await tester.tap(find.text('Saved (1)'));
+        // Tap History icon button in AppBar to open Past consultations view
+        await tester.tap(find.byKey(const ValueKey('talk-history-btn')));
         await tester.pumpAndSettle();
 
-        // Verify Hub view is now presented
         expect(find.byType(AiCompanionHubView), findsOneWidget);
-        expect(find.text('AI COMPANION'), findsOneWidget);
-        expect(find.text('Explore a Thought'), findsAtLeastNWidgets(1));
+        expect(find.text(en.talkHistoryTooltip), findsOneWidget);
 
-        // Tap back button in AppBar to return to chat
+        // Tap back button in AppBar to return to dialogue
         await tester.tap(find.byIcon(Icons.arrow_back_rounded));
         await tester.pumpAndSettle();
 
-        // Verify returned to dialogue
-        expect(find.text('Talk with your companion...'), findsOneWidget);
+        expect(find.text(en.talkComposerHint), findsOneWidget);
       },
     );
 
     testWidgets(
-      'FlashCaseScreen header exposes More sheet (Engine + Mode Switcher) and sends welcome starter cleanly',
+      'FlashCaseScreen header exposes More sheet (Engine + Instructions) and sends doorway cleanly',
       (WidgetTester tester) async {
         tester.view.physicalSize = const Size(800, 1600);
         tester.view.devicePixelRatio = 1.0;
@@ -370,8 +350,8 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // More button opens calm options sheet exposing Engine & Mode Switcher
-        await tester.tap(find.byIcon(Icons.more_horiz_rounded));
+        // More button opens calm options sheet exposing AI engine settings
+        await tester.tap(find.byKey(const ValueKey('talk-more-btn')));
         await tester.pumpAndSettle();
         await tester.tap(find.text(const AppStrings('en').aiEngineTooltip));
         await tester.pumpAndSettle();
@@ -380,35 +360,18 @@ void main() {
         Navigator.of(tester.element(find.byType(AiEngineConfigSheet))).pop();
         await tester.pumpAndSettle();
 
-        // Mode Switcher Pill opens ModeChooserSheet with all 6 modes
-        await tester.tap(find.text('Explore a Thought'));
-        await tester.pumpAndSettle();
-        expect(find.byType(ModeChooserSheet), findsOneWidget);
-        expect(find.text('Choose a conversation style'), findsOneWidget);
+        // No manual Mode Chooser bar sits above chat
+        expect(find.text('Explore a Thought'), findsNothing);
 
-        await tester.tap(find.text('Grounding'));
-        await tester.pumpAndSettle();
-
-        // Mode pill + starters updated cleanly for Grounding
-        expect(find.text('Grounding'), findsOneWidget);
-        expect(
-          find.text('Guide me through a 5-4-3-2-1 sensory grounding.'),
-          findsOneWidget,
-        );
-
-        // Tapping starter sends message and enters active conversation
-        await tester.tap(
-          find.text('Guide me through a 5-4-3-2-1 sensory grounding.'),
-        );
+        // Tapping warm human doorway starts adaptive conversation & renders AI options
+        const en = AppStrings('en');
+        await tester.tap(find.text(en.talkDoorwaySpinning));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 500));
         await tester.pumpAndSettle();
 
-        expect(
-          find.text('Guide me through a 5-4-3-2-1 sensory grounding.'),
-          findsOneWidget,
-        );
-        expect(find.text('Save key takeaway'), findsOneWidget);
+        expect(find.text(en.talkDoorwaySpinning), findsOneWidget);
+        expect(find.byKey(const ValueKey('talk-dynamic-options-bar')), findsOneWidget);
       },
     );
   });

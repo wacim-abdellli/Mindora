@@ -122,6 +122,7 @@ class SafetyInterceptor {
                   showModalBottomSheet<void>(
                     context: context,
                     isScrollControlled: true,
+                    useRootNavigator: true,
                     backgroundColor: Colors.transparent,
                     builder: (_) => const SupportModalSheet(),
                   );

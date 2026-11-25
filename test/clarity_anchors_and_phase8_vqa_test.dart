@@ -168,7 +168,7 @@ void main() {
     });
 
     testWidgets(
-      'CaseReportScreen and AiCompanionHubView surface Pocket Clarity Anchor cards cleanly',
+      'CaseReportScreen and AiCompanionHubView keep views clean with Pocket Clarity Anchors removed',
       (tester) async {
         tester.view.physicalSize = const Size(824, 1830);
         tester.view.devicePixelRatio = 2.0;
@@ -211,14 +211,14 @@ void main() {
 
         expect(
           find.byKey(const ValueKey('clarity-anchor-card-case_anchor_ui')),
-          findsOneWidget,
+          findsNothing,
         );
         expect(
           find.text('Rested work tomorrow beats exhausted work tonight.'),
           findsAtLeastNWidgets(1),
         );
 
-        // Verify AiCompanionHubView displays Pocket Clarity Anchors strip
+        // Verify AiCompanionHubView stays clean without Pocket Clarity Anchors strip
         await tester.pumpWidget(
           UncontrolledProviderScope(
             container: container,
@@ -233,11 +233,11 @@ void main() {
         const enStrings = AppStrings('en');
         expect(
           find.text(enStrings.pocketAnchorsSectionTitle.toUpperCase()),
-          findsOneWidget,
+          findsNothing,
         );
         expect(
           find.byKey(const ValueKey('clarity-anchor-card-case_anchor_ui')),
-          findsOneWidget,
+          findsNothing,
         );
         expect(tester.takeException(), isNull);
       },

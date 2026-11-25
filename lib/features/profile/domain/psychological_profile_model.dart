@@ -80,8 +80,10 @@ class PsychologicalProfileModel {
     // Onboarding Progress Tracking
     this.onboardingStep = 0,
 
-    // Section 2: Psychological Experiences
+    // Section 2: Psychological Experiences & Adaptive Care Tracks
     this.conditions = const [],
+    this.selectedConditionIds = const [],
+    this.selectedTrackIds = const [],
 
     // Section 3: Symptoms and Difficulties
     this.selectedSymptoms = const [],
@@ -144,8 +146,10 @@ class PsychologicalProfileModel {
         normalized == 'moins de 18 ans';
   }
 
-  // Section 2: Psychological Experiences
+  // Section 2: Psychological Experiences & Adaptive Care Tracks
   final List<UserConditionEntry> conditions;
+  final List<String> selectedConditionIds;
+  final List<String> selectedTrackIds;
 
   // Section 3: Symptoms and Difficulties
   final List<String> selectedSymptoms;
@@ -192,6 +196,8 @@ class PsychologicalProfileModel {
       ageRange.trim().isEmpty &&
       personalIntroduction.trim().isEmpty &&
       conditions.isEmpty &&
+      selectedConditionIds.isEmpty &&
+      selectedTrackIds.isEmpty &&
       selectedSymptoms.isEmpty &&
       symptomNotes.trim().isEmpty &&
       symptomsAndExperiences.trim().isEmpty &&
@@ -222,7 +228,10 @@ class PsychologicalProfileModel {
       personalIntroduction.trim().isNotEmpty;
 
   /// True if Section 2 (Experiences) has items
-  bool get hasExperiences => conditions.isNotEmpty;
+  bool get hasExperiences =>
+      conditions.isNotEmpty ||
+      selectedConditionIds.isNotEmpty ||
+      selectedTrackIds.isNotEmpty;
 
   /// True if Section 3 (Symptoms) has items
   bool get hasSymptoms =>
@@ -266,6 +275,8 @@ class PsychologicalProfileModel {
     String? preferredRhythm,
     int? onboardingStep,
     List<UserConditionEntry>? conditions,
+    List<String>? selectedConditionIds,
+    List<String>? selectedTrackIds,
     List<String>? selectedSymptoms,
     String? symptomNotes,
     String? symptomsAndExperiences,
@@ -310,6 +321,8 @@ class PsychologicalProfileModel {
       preferredRhythm: preferredRhythm ?? this.preferredRhythm,
       onboardingStep: onboardingStep ?? this.onboardingStep,
       conditions: conditions ?? this.conditions,
+      selectedConditionIds: selectedConditionIds ?? this.selectedConditionIds,
+      selectedTrackIds: selectedTrackIds ?? this.selectedTrackIds,
       selectedSymptoms: selectedSymptoms ?? this.selectedSymptoms,
       symptomNotes: symptomNotes ?? this.symptomNotes,
       symptomsAndExperiences:
@@ -353,6 +366,8 @@ class PsychologicalProfileModel {
         'preferredRhythm': preferredRhythm,
         'onboardingStep': onboardingStep,
         'conditions': conditions.map((c) => c.toJson()).toList(),
+        'selectedConditionIds': selectedConditionIds,
+        'selectedTrackIds': selectedTrackIds,
         'selectedSymptoms': selectedSymptoms,
         'symptomNotes': symptomNotes,
         'symptomsAndExperiences': symptomsAndExperiences,
@@ -411,6 +426,14 @@ class PsychologicalProfileModel {
       onboardingStep: (json['onboardingStep'] as num?)?.toInt() ?? 0,
       conditions: (json['conditions'] as List<dynamic>?)
               ?.map((e) => UserConditionEntry.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      selectedConditionIds: (json['selectedConditionIds'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
+      selectedTrackIds: (json['selectedTrackIds'] as List<dynamic>?)
+              ?.map((e) => e.toString())
               .toList() ??
           const [],
       selectedSymptoms: (json['selectedSymptoms'] as List<dynamic>?)

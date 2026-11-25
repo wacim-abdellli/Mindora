@@ -1,0 +1,21 @@
+{
+  "name": "mindora-ai-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Zero-key-in-APK App Check proxy routing Mindora Talk requests to Gemini Paid Tier with Groq ZDR fallback.",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc",
+    "serve": "firebase emulators:start --only functions"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

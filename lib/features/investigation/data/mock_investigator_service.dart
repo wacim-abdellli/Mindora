@@ -3,9 +3,11 @@ import '../../journey/domain/journey_state_model.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
 import '../../profile/domain/psychological_profile_model.dart';
 import '../domain/case_model.dart';
+import '../domain/companion_turn_response.dart';
 import '../domain/conversation_mode.dart';
 import '../domain/hypothesis.dart';
 import '../domain/investigator_service.dart';
+import '../domain/label_type.dart';
 import '../domain/statement.dart';
 
 /// Simulated implementation of The Warm Investigator for offline development & testing.
@@ -18,6 +20,586 @@ import '../domain/statement.dart';
 /// 5. Short turns.
 /// 6. Trilingual clinical fidelity (authentic Tunisian Arabic, French, English).
 class MockInvestigatorService implements InvestigatorService {
+  @override
+  Future<CompanionTurnResponse> getAdaptiveTurn({
+    required CaseModel currentCase,
+    required List<Statement> conversationHistory,
+    bool includePastCaseSummaries = true,
+    String? languageCode,
+    PsychologicalProfileModel? profile,
+    JourneyStateModel? journey,
+    MindTraceModel? latestTrace,
+    List<MindTraceModel>? historicalTraces,
+    List<JournalMemoryModel>? compressedMemories,
+    String? sessionSummary,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 260));
+    final lang = languageCode ?? 'en';
+    final userTurns = conversationHistory
+        .where((s) => s.speaker == StatementSpeaker.user)
+        .toList();
+    final count = userTurns.length;
+    final latestText = userTurns.isNotEmpty
+        ? userTurns.last.text.trim()
+        : currentCase.incidentDescription.trim();
+    final lower = latestText.toLowerCase();
+
+    final directives = (profile?.customAiDirectives ?? '').toLowerCase();
+    final prefersBrief = directives.contains('short') ||
+        directives.contains('brief') ||
+        directives.contains('concise') ||
+        directives.contains('direct') ||
+        directives.contains('bref') ||
+        directives.contains('court') ||
+        directives.contains('قصير') ||
+        directives.contains('مختصر');
+
+    final highDistress = lower.contains('panic') ||
+        lower.contains('breath') ||
+        lower.contains('chest') ||
+        lower.contains('overwhelm') ||
+        lower.contains('can\'t calm') ||
+        lower.contains('مخنوق') ||
+        lower.contains('تنفس') ||
+        lower.contains('صدر') ||
+        lower.contains('مرعوب') ||
+        lower.contains('panique') ||
+        lower.contains('étouff') ||
+        lower.contains('poitrine') ||
+        lower.contains('débord') ||
+        (count <= 1 &&
+            latestTrace != null &&
+            latestTrace.isCompleted &&
+            latestTrace.moodIntensity >= 8);
+
+    final wantsJustSitOrExhausted = lower.contains('just sit') ||
+        lower.contains('no heavy questions') ||
+        lower.contains('no questions') ||
+        lower.contains('keep it simpler') ||
+        lower.contains('keep it brief') ||
+        lower.contains('tired') ||
+        lower.contains('exhaust') ||
+        lower.contains('rest here') ||
+        lower.contains('اقعد معايا') ||
+        lower.contains('تعبان') ||
+        lower.contains('من غير أسئلة') ||
+        lower.contains('ارتح') ||
+        lower.contains('sans pression') ||
+        lower.contains('épuis') ||
+        lower.contains('fatigu');
+
+    final feelsLighterOrDone = lower.contains('lighter') ||
+        lower.contains('better now') ||
+        lower.contains('pause here') ||
+        lower.contains('thank') ||
+        lower.contains('أخف') ||
+        lower.contains('أحسن') ||
+        lower.contains('يعيشك') ||
+        lower.contains('plus léger') ||
+        lower.contains('mieux');
+
+    final mentionsSocialSilence = lower.contains('reply') ||
+        lower.contains('replied') ||
+        lower.contains('message') ||
+        lower.contains('silent') ||
+        lower.contains('silence') ||
+        lower.contains('upset with') ||
+        lower.contains('ignored') ||
+        lower.contains('ما جاوب') ||
+        lower.contains('زعفان') ||
+        lower.contains('سكوت') ||
+        lower.contains('répon');
+
+    final mentionsSpinningThoughts = lower.contains('spinning') ||
+        lower.contains('replaying') ||
+        lower.contains('overthinking') ||
+        lower.contains('mistake') ||
+        lower.contains('worried') ||
+        lower.contains('worry') ||
+        lower.contains('متقلق') ||
+        lower.contains('مخي') ||
+        lower.contains('تفكير') ||
+        lower.contains('boucle') ||
+        lower.contains('inqui');
+
+    final asksPracticalStep = lower.contains('small step') ||
+        lower.contains('what can i do') ||
+        lower.contains('next step') ||
+        lower.contains('practical') ||
+        lower.contains('شنوة نعمل') ||
+        lower.contains('خطوة') ||
+        lower.contains('petit pas') ||
+        lower.contains('concret');
+
+    final fallbackIntensity =
+        (latestTrace != null && latestTrace.moodIntensity > 0)
+        ? latestTrace.moodIntensity
+        : null;
+
+    if (feelsLighterOrDone) {
+      if (lang == 'ar') {
+        return CompanionTurnResponse(
+          reply:
+              'يعطيك الصحة اللي وقفت وقفة هادية مع روحك. ارتاح توا، والملخّص منظّم وواضح وقت ما تحب تشاركو مع طبيبك.',
+          chosenPosture: AdaptivePosture.closingWarmth,
+          suggestedReplies: const [
+            'نسكّر الجلسة هنا',
+            'نزيد نقطة أخرى للطبيب',
+          ],
+          silentThoughtType: LabelType.fact,
+          saveWorthySummary: 'أنهى المتابعة بهدوء وتوازن بعيداً عن الضغط.',
+          silentTrigger: 'نهاية جلسة المتابعة والشعور بتحسّن',
+          silentCoreThought: 'نجم نوقف ونرتاح من غير ما نحلّ كل شيء الليلة',
+          silentEmotion: 'ارتياح',
+          silentIntensity: fallbackIntensity ?? 3,
+          silentCopingBehavior: 'استراحة واعية وتخفيف الضغط',
+          clinicalIntakeNote:
+              'تراجع واضح في حدّة التوتر في نهاية المتابعة مع استعداد لمشاركة الملخص في الزيارة الطبية.',
+        );
+      } else if (lang == 'fr') {
+        return CompanionTurnResponse(
+          reply:
+              'Merci d’avoir pris ce moment pour faire le point calmement. Reposez-vous maintenant — cette synthèse reste prête pour votre prochain rendez-vous médical.',
+          chosenPosture: AdaptivePosture.closingWarmth,
+          suggestedReplies: const [
+            'Terminer ici pour aujourd’hui',
+            'Ajouter un point pour le médecin',
+          ],
+          silentThoughtType: LabelType.fact,
+          saveWorthySummary:
+              'Fin d’échange apaisée avec synthèse clinique structurée prête.',
+          silentTrigger: 'Clôture du point de suivi et apaisement',
+          silentCoreThought:
+              'Je peux relâcher la pression sans tout régler ce soir',
+          silentEmotion: 'Apaisement',
+          silentIntensity: fallbackIntensity ?? 3,
+          silentCopingBehavior: 'Pause volontaire et mise au calme',
+          clinicalIntakeNote:
+              'Fin de consultation avec baisse notable de la tension perçue et synthèse prête pour le clinicien.',
+        );
+      }
+      return CompanionTurnResponse(
+        reply:
+            'Thank you for talking this through calmly. Rest well tonight — your notes are organized cleanly whenever you choose to share them with your doctor.',
+        chosenPosture: AdaptivePosture.closingWarmth,
+        suggestedReplies: const [
+          'Wrap up calmly for today',
+          'Add one more note for my doctor',
+        ],
+        silentThoughtType: LabelType.fact,
+        saveWorthySummary:
+            'Stepped back steadily with key observations organized cleanly.',
+        silentTrigger: 'Consultation check-in closure',
+        silentCoreThought: 'I can rest tonight without solving everything at once',
+        silentEmotion: 'Settled',
+        silentIntensity: fallbackIntensity ?? 3,
+        silentCopingBehavior: 'Conscious pause and pacing',
+        clinicalIntakeNote:
+            'Patient concluded check-in visibly steadier; calm closure achieved and structured summary ready for doctor review.',
+      );
+    }
+
+    if (highDistress) {
+      if (lang == 'ar') {
+        return CompanionTurnResponse(
+          reply: count <= 1
+              ? 'حاسس اللي الضغط قوي على صدرك واللحظة ثقيلة برشا. خلّينا نهدّيو التنفّس الأوّل، وبعد نثبّتو من وقتاش بدات النوبة هذي ونومك كيفاش كان.'
+              : 'خذ زفير أطول بشوية من الشهيق ورخّي كتافك. هل بدات الحالة هذي فجأة اليوم ولا معاها قلة نوم من أيام؟',
+          chosenPosture: AdaptivePosture.somaticGround,
+          suggestedReplies: const [
+            'حاسس أنفاسي تهدى شوية',
+            'قلة النوم زادت تعّبتني',
+          ],
+          offerCalmExercise: CalmExerciseOffer.breathing,
+          silentThoughtType: LabelType.interpretation,
+          silentTrigger: 'موجة قلق وشدّ جسدي في الصدر أو التنفس',
+          silentCoreThought: 'الخوف من تفاقم الضيق أو عدم السيطرة على الأعراض',
+          silentEmotion: 'ذعر وضغط حاد',
+          silentIntensity: fallbackIntensity ?? 8,
+          silentCopingBehavior: 'تمهّل وتهدئة التنفّس قبل مواصلة الحديث',
+          clinicalIntakeNote:
+              'حالة ضيق حاد مصحوبة بشدّ جسدي؛ تم التركيز على تهدئة التنفّس مع رصد توقيت البداية وحالة النوم لملف الطبيب.',
+        );
+      } else if (lang == 'fr') {
+        return CompanionTurnResponse(
+          reply: count <= 1
+              ? 'Je sens que la pression physique est forte en ce moment. Posons d’abord la respiration, puis nous noterons calmement depuis quand cela dure et comment vous dormez.'
+              : 'Expirez plus lentement que vous n’inspirez, les épaules relâchées. Cette montée est-elle apparue brusquement aujourd’hui ou après plusieurs nuits courtes ?',
+          chosenPosture: AdaptivePosture.somaticGround,
+          suggestedReplies: const [
+            'Mon souffle s’apaise un peu',
+            'Mes nuits sont courtes ces jours-ci',
+          ],
+          offerCalmExercise: CalmExerciseOffer.breathing,
+          silentThoughtType: LabelType.interpretation,
+          silentTrigger: 'Montée aiguë d’oppression ou de panique',
+          silentCoreThought:
+              'Crainte d’être débordé physiquement sans parvenir à récupérer',
+          silentEmotion: 'Anxiété intense',
+          silentIntensity: fallbackIntensity ?? 8,
+          silentCopingBehavior: 'Ralentissement respiratoire avant l’exploration',
+          clinicalIntakeNote:
+              'Détresse aiguë à forte composante physique ; apaisement respiratoire priorisé et lien avec le sommeil relevé pour le médecin.',
+        );
+      }
+      return CompanionTurnResponse(
+        reply: count <= 1
+            ? 'I hear how intense and physical this feels right now. Let us steady your breathing first, then gently note when this wave began and how your sleep has held up.'
+            : 'Take one slow breath out longer than you breathe in and let your shoulders drop. Did this surge start suddenly today, or has poor sleep been building underneath it?',
+        chosenPosture: AdaptivePosture.somaticGround,
+        suggestedReplies: const [
+          'Breathing feels a little steadier',
+          'Poor sleep has been building up',
+        ],
+        offerCalmExercise: CalmExerciseOffer.breathing,
+        silentThoughtType: LabelType.interpretation,
+        silentTrigger: 'Acute surge of chest tightness or overwhelm',
+        silentCoreThought: 'Fear of being overtaken by sudden physical panic',
+        silentEmotion: 'Acute Anxiety',
+        silentIntensity: fallbackIntensity ?? 8,
+        silentCopingBehavior: 'Slow paced breathing reset',
+        clinicalIntakeNote:
+            'High-intensity acute distress with physical tightness; prioritized breath settling while screening onset timing and sleep deficit for clinician follow-up.',
+      );
+    }
+
+    if (wantsJustSitOrExhausted) {
+      if (lang == 'ar') {
+        return CompanionTurnResponse(
+          reply: count <= 1
+              ? 'مفهوم تماماً، ما فما حتى ضغط باش تحكي برشا توا. فقط بش ندوّن لطبيبك: هل الإرهاق هذا مأثّر على نومك وطاقتك في الأيام الأخيرة؟'
+              : 'طبيعي البدن يطلب الراحة كي يتراكم الثقل. تحب نلخّصو النقطة هذي في جملتين لطبيبك وتخلّي مخك يرتاح الليلة؟',
+          chosenPosture: AdaptivePosture.sootheListen,
+          suggestedReplies: const [
+            'إي، نومي مكسّر الأيام هذي',
+            'لخّصها لطبيبي خلّيني نرتاح',
+          ],
+          silentThoughtType: LabelType.fact,
+          silentTrigger: 'تراكم الإرهاق وانخفاض الطاقة اليومية',
+          silentCoreThought: 'لا توجد طاقة كافية للتركيز أو النقاش الطويل الآن',
+          silentEmotion: 'إرهاق',
+          silentIntensity: fallbackIntensity ?? 6,
+          silentCopingBehavior: 'تخفيف العبء الذهني وحماية الراحة',
+          clinicalIntakeNote:
+              'إرهاق واضح مع انخفاض القدرة على الاحتمال؛ تم تخفيف الجهد أثناء الحوار ورصد تأثير النوم للمراجعة الطبية.',
+        );
+      } else if (lang == 'fr') {
+        return CompanionTurnResponse(
+          reply: count <= 1
+              ? 'C’est tout à fait entendu, aucune obligation d’en dire long. Pour votre dossier médical simplement : est-ce que cette fatigue perturbe aussi votre sommeil ces nuits-ci ?'
+              : 'Lorsque tout s’accumule, l’organisme demande une pause. Voulez-vous que je retienne juste l’essentiel pour votre médecin afin que vous puissiez décrocher ce soir ?',
+          chosenPosture: AdaptivePosture.sootheListen,
+          suggestedReplies: const [
+            'Oui, mon sommeil est haché',
+            'Gardez l’essentiel pour le médecin',
+          ],
+          silentThoughtType: LabelType.fact,
+          silentTrigger: 'Épuisement accumulé et baisse d’énergie',
+          silentCoreThought:
+              'Manque de réserve mentale pour analyser davantage ce soir',
+          silentEmotion: 'Épuisement',
+          silentIntensity: fallbackIntensity ?? 6,
+          silentCopingBehavior: 'Protection du repos et réduction de charge',
+          clinicalIntakeNote:
+              'Fatigue marquée ; consultation maintenue très allégée avec vérification de la qualité du sommeil pour le dossier médical.',
+        );
+      }
+      return CompanionTurnResponse(
+        reply: count <= 1
+            ? 'Understood — no pressure to unpack everything right now. For your care notes alone: has this exhaustion been affecting your sleep or morning energy over the last few days?'
+            : 'Running on empty weighs heavily on both body and mind. Would you like me to keep a brief two-line summary for your doctor so you can rest without carrying it tonight?',
+        chosenPosture: AdaptivePosture.sootheListen,
+        suggestedReplies: const [
+          'Yes, my sleep has been broken lately',
+          'Summarize briefly so I can rest',
+        ],
+        silentThoughtType: LabelType.fact,
+        silentTrigger: 'Accumulated strain and low energy reserve',
+        silentCoreThought: 'Too drained to carry or explain more demands tonight',
+        silentEmotion: 'Exhausted',
+        silentIntensity: fallbackIntensity ?? 6,
+        silentCopingBehavior: 'Protecting rest and pacing evening load',
+        clinicalIntakeNote:
+            'Notable mental/physical fatigue reported; kept interaction low-effort while screening sleep impact for clinician review.',
+      );
+    }
+
+    if (asksPracticalStep) {
+      if (lang == 'ar') {
+        return CompanionTurnResponse(
+          reply:
+              'أحسن خطوة عملية للساعة الجاية هي نحميو توازنك البدني: كاس ماء، تبديل بلاصة لعشر دقائق، وتأجيل القرارات الثقيلة لبكرة بعد راحة الليل.',
+          chosenPosture: AdaptivePosture.practicalStep,
+          suggestedReplies: const [
+            'تأجيل التفكير فيه لبكرة',
+            'نعمل استراحة قصيرة توا',
+          ],
+          silentThoughtType: LabelType.fact,
+          silentTrigger: 'بحث عن خطوة تهدئة عملية فورية',
+          silentCoreThought: 'أحتاج إجراء بسيط وملموس يهدّي الإيقاع اليوم',
+          silentEmotion: 'استعداد للتهدئة',
+          silentIntensity: fallbackIntensity ?? 5,
+          silentCopingBehavior: 'تخفيف المنبهات وتأجيل الحسم للغد',
+          clinicalIntakeNote:
+              'المستفيد منفتح على خطوات عملية؛ تم الاتفاق على روتين تهدئة قصير وحماية النوم.',
+        );
+      } else if (lang == 'fr') {
+        return CompanionTurnResponse(
+          reply:
+              'Le geste le plus stabilisant pour l’heure qui vient reste simple et protecteur : boire un verre d’eau, changer de pièce dix minutes et reporter ce sujet à demain à tête reposée.',
+          chosenPosture: AdaptivePosture.practicalStep,
+          suggestedReplies: const [
+            'Je remets ça à demain matin',
+            'Je prends une pause courte',
+          ],
+          silentThoughtType: LabelType.fact,
+          silentTrigger: 'Demande d’ancrage pratique immédiat',
+          silentCoreThought:
+              'Une action simple peut réduire la surcharge ce soir',
+          silentEmotion: 'Apaisement progressif',
+          silentIntensity: fallbackIntensity ?? 5,
+          silentCopingBehavior: 'Micro-pause physique et report conscient',
+          clinicalIntakeNote:
+              'Patient réceptif aux repères concrets ; plan d’action léger orienté repos nocturne convenu.',
+        );
+      }
+      return CompanionTurnResponse(
+        reply:
+            'The steadiest clinical step for the next hour is simple and protective: drink a glass of water, step away into a quieter room for ten minutes, and park heavy decisions until morning.',
+        chosenPosture: AdaptivePosture.practicalStep,
+        suggestedReplies: const [
+          'Parking it until tomorrow feels right',
+          'I will step away for ten minutes',
+        ],
+        silentThoughtType: LabelType.fact,
+        silentTrigger: 'Request for immediate stabilizing step',
+        silentCoreThought: 'A small concrete boundary helps quiet evening tension',
+        silentEmotion: 'Grounding',
+        silentIntensity: fallbackIntensity ?? 5,
+        silentCopingBehavior: 'Physical reset and deferring heavy decisions',
+        clinicalIntakeNote:
+            'Patient receptive to actionable pacing; agreed on brief sensory break and sleep-protective boundary.',
+      );
+    }
+
+    if (mentionsSocialSilence) {
+      if (lang == 'ar') {
+        return CompanionTurnResponse(
+          reply: prefersBrief
+              ? 'الانتظار في السكوت يخلّي المخ يتوقع الأسوأ بسرعة. هل عادة يطوّلو في الرد كي يبداو لاهيين، ولا الحساسية هذي تتكرر معاك الأيام الأخيرة؟'
+              : 'السكوت بعد رسالة مهمة يوجّع ويشعل القلق في البدن. قبل ما تحكم على الموقف: هل صار قبل وطوّلو في الرد بسبب ضغط الخدمة، وهل التفكير هذا قاعد يأثّر على تركيزك اليوم؟',
+          chosenPosture: AdaptivePosture.gentleReframe,
+          suggestedReplies: const [
+            'إي، ساعات يغطسو في الخدمة',
+            'التفكير هذا يقلقني طول اليوم',
+            'أعطيني خطوة تهدئة صغيرة',
+          ],
+          silentThoughtType: LabelType.assumption,
+          silentDistortionTheme: 'Mind Reading',
+          silentTrigger: 'تأخّر الرد أو الصمت بعد رسالة مهمة',
+          silentCoreThought: 'ربما أنا السبب أو أن العلاقة تضررت',
+          silentEmotion: 'قلق اجتماعي وتوتر',
+          silentIntensity: fallbackIntensity ?? 6,
+          silentCopingBehavior: 'مراجعة احتمالات واقعية بدل الجزم الفوري',
+          clinicalIntakeNote:
+              'انشغال ذهني وقلق مرتبط بتأخر التجاوب الاجتماعي؛ جاري فحص تكرار الفكرة وتأثيرها على الأداء اليومي.',
+        );
+      } else if (lang == 'fr') {
+        return CompanionTurnResponse(
+          reply: prefersBrief
+              ? 'Le silence après un message déclenche vite l’alerte. Cela leur arrive-t-il souvent quand la journée est chargée, et est-ce que cela pèse sur votre concentration aujourd’hui ?'
+              : 'Attendre sans réponse met vite le système nerveux en alerte. Avant d’en tirer une conclusion personnelle : ont-ils déjà tardé à répondre par simple surcharge, et cette attente coupe-t-elle votre rythme aujourd’hui ?',
+          chosenPosture: AdaptivePosture.gentleReframe,
+          suggestedReplies: const [
+            'Oui, ses journées sont chargées',
+            'Ça reste lourd sur ma journée',
+            'Une petite piste d’apaisement',
+          ],
+          silentThoughtType: LabelType.assumption,
+          silentDistortionTheme: 'Mind Reading',
+          silentTrigger: 'Absence de réponse après un échange important',
+          silentCoreThought:
+              'Quelque chose ne va pas ou l’autre personne m’en veut',
+          silentEmotion: 'Inquiétude relationnelle',
+          silentIntensity: fallbackIntensity ?? 6,
+          silentCopingBehavior: 'Recherche d’alternatives factuelles au silence',
+          clinicalIntakeNote:
+              'Ruminations relationnelles déclenchées par une attente sans réponse ; évaluation du retentissement quotidien en cours.',
+        );
+      }
+      return CompanionTurnResponse(
+        reply: prefersBrief
+            ? 'Silence after an important message triggers alarm quickly. Have they been slow to reply during busy afternoons before, and is this weighing on your focus today?'
+            : 'Waiting without a reply pulls the mind straight toward worst-case explanations. Have they gone quiet before simply because work got hectic, and is this loop disrupting your focus or rest today?',
+        chosenPosture: AdaptivePosture.gentleReframe,
+        suggestedReplies: const [
+          'Yeah, they get slammed at work',
+          'It is still draining my focus today',
+          'Help me settle down first',
+        ],
+        silentThoughtType: LabelType.assumption,
+        silentDistortionTheme: 'Mind Reading',
+        silentTrigger: 'Delayed reply or social silence after an important note',
+        silentCoreThought: 'They are upset with me or pulling away',
+        silentEmotion: 'Anxious Tension',
+        silentIntensity: fallbackIntensity ?? 6,
+        silentCopingBehavior: 'Checking alternative benign explanations',
+        clinicalIntakeNote:
+            'Interpersonal uncertainty and mind-reading worry following unanswered outreach; screening daytime functioning impact.',
+      );
+    }
+
+    if (mentionsSpinningThoughts || count == 1 || count == 3) {
+      if (lang == 'ar') {
+        return CompanionTurnResponse(
+          reply: count <= 1
+              ? (prefersBrief
+                  ? 'كي يدور التفكير هكا يتعب البدن والعقل. شنوة الموضوع الرئيسي اللي يرجعلك أكثر من غيرو، ومن وقتاش لاحظتو بدا يتقلق؟'
+                  : 'باين اللي بالك مشغول بحمل ثقيل من مدة. لو نحطّو نقطة وحدة واضحة لملخّص طبيبك: شنوة أكثر موقف ولا قلق يعيد يدور في بالك، ومن وقتاش بدا؟')
+              : 'كي تاخو خطوة للوراء ثانية: لو شخص قريب حكالك نفس الانشغال هذا، شنوة الكلمة الواقعية اللي تهدّيه وتخفّف عليه الليلة؟',
+          chosenPosture: AdaptivePosture.gentleReframe,
+          suggestedReplies: count <= 1
+              ? const [
+                  'قلق متواصل من أيام على غلطة أو مسؤولية',
+                  'موقف اليوم مازال مأثر فيا',
+                  'نومي متقطع من كثر التفكير',
+                ]
+              : const [
+                  'كنت نقولو ما تقساش على روحك',
+                  'مازالت مقتنع بيها بصراحة',
+                  'أعطيني خطوة عملية صغيرة',
+                ],
+          silentThoughtType: LabelType.assumption,
+          silentDistortionTheme: count <= 1 ? 'Catastrophizing' : null,
+          silentTrigger: 'أفكار متكررة وصعوبة في إيقاف التفكير',
+          silentCoreThought: 'الوضع ما يتحلّش أو أن خطأ صغير باش يكبر',
+          silentEmotion: 'قلق وتشتت ذهني',
+          silentIntensity: fallbackIntensity ?? 6,
+          silentCopingBehavior: 'تحديد القلق الرئيسي ووضعه في سياقه الواقعي',
+          clinicalIntakeNote:
+              'اجترار ذهني وأفكار متسارعة؛ تم رصد الموضوع الأساسي وفحص بداية الحالة وتأثيرها على النوم للزيارة الطبية.',
+        );
+      } else if (lang == 'fr') {
+        return CompanionTurnResponse(
+          reply: count <= 1
+              ? (prefersBrief
+                  ? 'Quand les pensées tournent en boucle, cela épuise vite. Quel point précis revient le plus fort, et depuis quand cela vous pèse-t-il ?'
+                  : 'Porter des pensées qui tournent sans arrêt finit par fatiguer l’organisme. Pour bien situer ce qui vous arrive : quel sujet précis revient le plus fort, et depuis combien de jours est-il présent ?')
+              : 'Si un proche vous confiait exactement cette inquiétude ce soir, quelle phrase juste et apaisante lui diriez-vous en premier ?',
+          chosenPosture: AdaptivePosture.gentleReframe,
+          suggestedReplies: count <= 1
+              ? const [
+                  'Cela dure depuis plusieurs jours',
+                  'Une scène précise d’aujourd’hui me pèse',
+                  'Cela coupe surtout mon sommeil',
+                ]
+              : const [
+                  'Je lui dirais de ne pas se juger',
+                  'Ça reste difficile à lâcher',
+                  'Quel petit pas pour ce soir ?',
+                ],
+          silentThoughtType: LabelType.assumption,
+          silentDistortionTheme: count <= 1 ? 'Catastrophizing' : null,
+          silentTrigger: 'Pensées intrusives en boucle et surcharge cognitive',
+          silentCoreThought:
+              'Quelque chose m’échappe ou risque de mal tourner',
+          silentEmotion: 'Appréhension',
+          silentIntensity: fallbackIntensity ?? 6,
+          silentCopingBehavior: 'Mise à distance bienveillante des scénarios',
+          clinicalIntakeNote:
+              'Ruminations persistantes rapportées ; précision du thème dominant, de la durée d’évolution et du retentissement nocturne pour le clinicien.',
+        );
+      }
+      return CompanionTurnResponse(
+        reply: count <= 1
+            ? (prefersBrief
+                ? 'Looping thoughts drain energy quickly. What single concern keeps returning most sharply, and how many days has it felt this way?'
+                : 'Carrying thoughts that keep replaying takes a real physical toll. To organize this clearly for your care notes: what specific worry keeps returning loudest, and when did it start building up?')
+            : 'Stepping back for just a moment: if someone close to you came to you with this exact worry tonight, what steady, fair perspective would you offer them first?',
+        chosenPosture: AdaptivePosture.gentleReframe,
+        suggestedReplies: count <= 1
+            ? const [
+                'It has been building for several days',
+                'A heavy moment from today keeps looping',
+                'Mostly affecting my evening rest and sleep',
+              ]
+            : const [
+                'I would tell them to ease off self-blame',
+                'It still feels tough to shake tonight',
+                'Give me one protective evening step',
+              ],
+        silentThoughtType: LabelType.assumption,
+        silentDistortionTheme: count <= 1 ? 'Catastrophizing' : null,
+        silentTrigger: 'Persistent mental replay and anticipatory worry',
+        silentCoreThought: 'Something went wrong or cannot be settled safely',
+        silentEmotion: 'Worried & Overloaded',
+        silentIntensity: fallbackIntensity ?? 6,
+        silentCopingBehavior: 'Externalizing worry and checking onset timeline',
+        clinicalIntakeNote:
+            'Persistent cognitive looping reported; exploring primary concern, symptom duration, and sleep disruption for doctor summary.',
+      );
+    }
+
+    // Turn 2 / clinical symptom & functioning clarification
+    if (lang == 'ar') {
+      return CompanionTurnResponse(
+        reply:
+            'مفهوم، طبيعي تحس بثقل في وضع هكا. بش نوضّحو الصورة أكثر لمتابعتك: كيفاش مأثّر الإحساس هذا على نومك، طاقتك، ولا جسمك اليوم — شدّ، تعب، ولا حزن؟',
+        chosenPosture: AdaptivePosture.validateFeelings,
+        suggestedReplies: const [
+          'أكثر حاجة شدّ وقلق في البدن',
+          'إرهاق وقلة نوم في الليل',
+          'تحب نرتّبو خطوة صغيرة؟',
+        ],
+        silentThoughtType: LabelType.interpretation,
+        silentTrigger: latestText.isEmpty ? 'متابعة الحالة اليومية' : latestText,
+        silentCoreThought: 'الضغط مأثّر على توازني اليومي ومجهودي',
+        silentEmotion: 'توتر وحزن خفيف',
+        silentIntensity: fallbackIntensity ?? 5,
+        silentCopingBehavior: 'ملاحظة علامات البدن والنوم بهدوء',
+        clinicalIntakeNote:
+            'استكمال استكشاف الأعراض الجسدية وجودة النوم ومستوى الطاقة لتوثيقها في التقرير الموجه للطبيب.',
+      );
+    } else if (lang == 'fr') {
+      return CompanionTurnResponse(
+        reply:
+            'C’est tout à fait compréhensible de ressentir ce poids. Pour situer clairement votre état aujourd’hui : est-ce que cela se traduit surtout par une tension physique, une baisse de sommeil ou une grande fatigue ?',
+        chosenPosture: AdaptivePosture.validateFeelings,
+        suggestedReplies: const [
+          'Surtout une tension physique',
+          'Fatigue et sommeil perturbé',
+          'Allons vers un repère calme',
+        ],
+        silentThoughtType: LabelType.interpretation,
+        silentTrigger: latestText.isEmpty ? 'Point de suivi clinique' : latestText,
+        silentCoreThought: 'La charge pèse sur mon équilibre de ces jours-ci',
+        silentEmotion: 'Tension et fatigue',
+        silentIntensity: fallbackIntensity ?? 5,
+        silentCopingBehavior: 'Repérage corporel et hygiène du sommeil',
+        clinicalIntakeNote:
+            'Évaluation en cours des manifestations physiques, de la fatigue et du sommeil en vue de la synthèse médicale.',
+      );
+    }
+    return CompanionTurnResponse(
+      reply:
+          'That makes complete sense to feel heavy about. To help document your state clearly: is this showing up mostly as physical tension, low mood, or disrupted sleep and energy right now?',
+      chosenPosture: AdaptivePosture.validateFeelings,
+      suggestedReplies: const [
+        'Mostly physical tightness and tension',
+        'Disrupted sleep and low energy',
+        'Give me one tiny protective step',
+      ],
+      silentThoughtType: LabelType.interpretation,
+      silentTrigger: latestText.isEmpty ? 'Clinical check-in follow-up' : latestText,
+      silentCoreThought: 'Daily load is noticeably draining my baseline balance',
+      silentEmotion: 'Strained & Heavy',
+      silentIntensity: fallbackIntensity ?? 5,
+      silentCopingBehavior: 'Monitoring sleep, tension, and recovery baseline',
+      clinicalIntakeNote:
+          'Clarifying symptom expression across sleep, energy, and somatic tension for concise clinician handoff.',
+    );
+  }
+
   @override
   Future<String> getNextQuestion({
     required CaseModel currentCase,

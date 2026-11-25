@@ -6,9 +6,11 @@ import '../../../../app/localization/app_strings.dart';
 import '../../../../app/theme/lab_theme.dart';
 import '../../../../app/theme/mind_tokens.dart';
 import '../../controllers/profile_controller.dart';
+import '../../domain/clinical_condition_catalog.dart';
 import '../../domain/condition_type.dart';
 import '../../domain/diagnostic_status.dart';
 import '../../domain/psychological_profile_model.dart';
+import 'clinical_condition_search_sheet.dart';
 import 'condition_status_bottom_sheet.dart';
 
 class EditExperiencesSheet extends ConsumerWidget {
@@ -20,6 +22,7 @@ class EditExperiencesSheet extends ConsumerWidget {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => EditExperiencesSheet(profile: profile),
     );
@@ -101,7 +104,83 @@ class EditExperiencesSheet extends ConsumerWidget {
             Expanded(
               child: ListView(
                 physics: const BouncingScrollPhysics(),
-                children: ExperienceCategory.values.map((cat) {
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 18),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: context.tokens.surface2,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          strings.clinicalTracksSectionTitle,
+                          style: LabTheme.textStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                            color: textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            for (final track
+                                in ClinicalConditionCatalog.resolveTracks(liveProfile))
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: context.tokens.cardTint,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: border),
+                                ),
+                                child: Text(
+                                  track.localizedTitle(strings),
+                                  style: LabTheme.textStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: textPrimary,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          key: const ValueKey('profile-search-300-conditions-btn'),
+                          onPressed: () async {
+                            final res = await ClinicalConditionSearchSheet.show(
+                              context,
+                              initialConditionIds: liveProfile.selectedConditionIds,
+                              initialTrackIds: liveProfile.selectedTrackIds,
+                            );
+                            if (res != null) {
+                              await ref
+                                  .read(profileControllerProvider.notifier)
+                                  .saveFullProfile(
+                                    liveProfile.copyWith(
+                                      selectedConditionIds:
+                                          res.selectedConditionIds,
+                                      selectedTrackIds: res.selectedTrackIds,
+                                      updatedAt: DateTime.now(),
+                                    ),
+                                  );
+                            }
+                          },
+                          icon: const Icon(Icons.search_rounded, size: 18),
+                          label: Text(strings.search300ConditionsCta),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ...ExperienceCategory.values.map((cat) {
                   final catTitle = cat.localizedTitle(strings);
                   final conditionsInCat = cat.conditions;
 
@@ -199,7 +278,8 @@ class EditExperiencesSheet extends ConsumerWidget {
                       ],
                     ),
                   );
-                }).toList(),
+                }),
+                ],
               ),
             ),
           ],

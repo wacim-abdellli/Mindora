@@ -26,9 +26,9 @@ class AppStrings {
       ? 'أدوات العناية'
       : (isFrench ? 'Outils Bien-être' : 'Self-Care Tools');
   String get navAiGuide =>
-      isArabic ? 'المساعد' : (isFrench ? 'Assistant' : 'AI Guide');
+      isArabic ? 'المتابعة' : (isFrench ? 'Suivi' : 'Care Consult');
   String get navInvestigator =>
-      isArabic ? 'المساعد النفسي' : (isFrench ? 'Assistant IA' : 'AI Guide');
+      isArabic ? 'استشارة طبية' : (isFrench ? 'Consultation' : 'Clinical Consult');
   String get navProfile =>
       isArabic ? 'ملفي' : (isFrench ? 'Profil' : 'Profile');
 
@@ -1497,11 +1497,15 @@ class AppStrings {
       ? 'المختبر السريري'
       : (isFrench ? 'Labo Clinique' : 'Clinical Lab');
   String get investigatorTyping => isArabic
-      ? 'المرافق بصدد التفكير...'
-      : (isFrench ? 'Réflexion en cours...' : 'Reflecting...');
+      ? 'الأخصائي يراجع كلامك...'
+      : (isFrench
+            ? 'Analyse clinique en cours...'
+            : 'Care Specialist is reviewing...');
   String get typeMessageHint => isArabic
-      ? 'اكتب شنوة في بالك...'
-      : (isFrench ? 'Écrivez votre message...' : 'Talk with your companion...');
+      ? 'احكي عن حالتك بكلامك البسيط...'
+      : (isFrench
+            ? 'Décrivez ce que vous ressentez...'
+            : 'Describe how you are feeling...');
   String get welcomeDialoguePrompt => isArabic
       ? 'خوذ راحتك. شنوة اللّي شاغلك توا؟'
       : (isFrench
@@ -2509,10 +2513,10 @@ class AppStrings {
       ? 'المحادثات السابقة'
       : (isFrench ? 'Conversations récentes' : 'Recent Conversations');
   String get noRecentConversations => isArabic
-      ? 'لا توجد محادثات سابقة بعد. اختر نمطاً أعلاه للبدء.'
+      ? 'ما فمّاش استشارات محفوظة بعد — تنجم تبدأ وقت ما تحب.'
       : (isFrench
-            ? 'Aucune conversation enregistrée. Choisissez un mode ci-dessus.'
-            : 'No conversations saved yet. Select a mode above to begin.');
+            ? 'Aucune consultation enregistrée pour le moment.'
+            : 'No saved consultations yet — begin whenever you feel ready.');
   String get suggestedStartersTitle => isArabic
       ? 'مقترحات للمحادثة'
       : (isFrench ? 'Idées de départ' : 'Suggested Starters');
@@ -2852,8 +2856,10 @@ class AppStrings {
             ? 'Aucun bilan enregistré ce jour-là.'
             : 'No check-in logged on this day.');
   String get exploreWithAiGuideBtn => isArabic
-      ? 'استكشاف مع المساعد'
-      : (isFrench ? 'Explorer avec l’Assistant IA' : 'Explore with AI Guide');
+      ? 'مواصلة في استشارة المتابعة'
+      : (isFrench
+            ? 'Approfondir en suivi clinique'
+            : 'Discuss in Care Consult');
   String get editEntryTitle => isArabic
       ? 'تعديل التسجيل'
       : (isFrench ? 'Modifier le bilan' : 'Edit Check-In Entry');
@@ -3211,8 +3217,10 @@ class AppStrings {
   String get engineBadgeGroq => 'Groq';
   String get engineBadgeGemini => 'Gemini';
   String get aiEngineTooltip => isArabic
-      ? 'إعدادات محرّك الذكاء الاصطناعي'
-      : (isFrench ? 'Réglages du moteur IA' : 'AI engine settings');
+      ? 'إعدادات محرّك الاستشارة'
+      : (isFrench
+            ? 'Réglages du moteur clinique'
+            : 'Consultation engine settings');
   String get modesAndHistoryTooltip => isArabic
       ? 'الأساليب والجلسات السابقة'
       : (isFrench ? 'Modes & historique' : 'Modes & History');
@@ -3499,8 +3507,8 @@ class AppStrings {
       ? 'العرض واللغة'
       : (isFrench ? 'Affichage & Langue' : 'Display & Language');
   String get profileGroupAiSecurity => isArabic
-      ? 'المساعد والأمان'
-      : (isFrench ? 'Assistant IA & Sécurité' : 'AI Guide & Security');
+      ? 'المتابعة والأمان'
+      : (isFrench ? 'Suivi clinique & Sécurité' : 'Care Consult & Security');
   String get profileGroupDataCrisis => isArabic
       ? 'البيانات والطوارئ'
       : (isFrench ? 'Données & Crise' : 'Data & Crisis');
@@ -3540,18 +3548,20 @@ class AppStrings {
       ? 'تأكيد المسح النهائي؟'
       : (isFrench ? 'Confirmation finale ?' : 'Final confirmation?');
   String get resetConfirmStep2Body => isArabic
-      ? 'كل التدوينات، الجلسات، الذكريات والملف الشخصي على هذا الجهاز باش يتمسحو نهائياً. ما فماش رجوع.'
+      ? 'كل التدوينات، الاستشارات، الذكريات والملف الشخصي على هذا الجهاز باش يتمسحو نهائياً. ما فماش رجوع.'
       : (isFrench
-            ? 'Toutes vos traces, conversations et données de profil seront supprimées de façon irréversible.'
-            : 'All check-ins, AI Guide conversations, memories, and profile records on this device will be permanently removed.');
+            ? 'Toutes vos traces, consultations et données de profil seront supprimées de façon irréversible.'
+            : 'All check-ins, consultation sessions, memories, and profile records on this device will be permanently removed.');
   String get confirmResetBtn => isArabic
       ? 'نعم، امسح كل شيء'
       : (isFrench ? 'Tout effacer' : 'Erase Everything');
 
-  // Slice 3A: AI Engine Config & Non-Silent Runtime Notice
+  // Slice 3A: Clinical Engine Config & Non-Silent Runtime Notice
   String get aiEngineSheetTitle => isArabic
-      ? 'محرك المساعد الذكي'
-      : (isFrench ? 'MOTEUR DE L’ASSISTANT IA' : 'MIND ASSISTANT ENGINE');
+      ? 'إعدادات محرك المتابعة'
+      : (isFrench
+            ? 'MOTEUR DE SUIVI CLINIQUE'
+            : 'CLINICAL ENGINE SETTINGS');
   String get aiEngineLiveGroqBadge =>
       isArabic ? 'GROQ مباشر' : (isFrench ? 'GROQ EN DIRECT' : 'LIVE GROQ');
   String get aiEngineLiveGeminiBadge => isArabic
@@ -5793,8 +5803,8 @@ class AppStrings {
       : (isFrench ? 'Afficher ou masquer la clé' : 'Show or hide key');
 
   String get listeningPrefsLabel => isArabic
-      ? 'أسلوب الاستماع'
-      : (isFrench ? 'Style d’écoute' : 'Listening style');
+      ? 'أسلوب الاستشارة الطبية'
+      : (isFrench ? 'Style de consultation' : 'Consultation style');
 
   String get whyThisHelpsHeader => isArabic
       ? 'كيفاش يعاونك التمرين هذا'
@@ -5816,8 +5826,8 @@ class AppStrings {
       : (isFrench ? 'Vue plus claire' : 'Clearer view');
 
   String get companionNoteHeader => isArabic
-      ? 'ملاحظة Mindora'
-      : (isFrench ? 'Note de Mindora' : 'Mindora note');
+      ? 'ملاحظة المتابعة'
+      : (isFrench ? 'Note de suivi' : 'Consultation note');
 
   String get myNoteHeader => isArabic
       ? 'ملاحظتي'
@@ -6291,6 +6301,138 @@ class AppStrings {
   String get privacyConsentPausedTag => isArabic
       ? 'محلي (المشاركة السحابية موقفة)'
       : (isFrench ? 'Local (partage cloud désactivé)' : 'Local (cloud consent off)');
+
+  // Calm Clinical Consultation Sanctuary
+  String get talkConsultSpeaker => isArabic
+      ? 'مستشار المتابعة'
+      : (isFrench ? 'Spécialiste de suivi' : 'Care Specialist');
+  String get talkWelcomeHeadline => isArabic
+      ? 'مرحباً بك. شنوة أكثر حاجة مقلقتك في حالتك اليوم؟'
+      : (isFrench
+            ? 'Bonjour. Qu’est-ce qui pèse le plus sur votre état aujourd’hui ?'
+            : 'Welcome. What is affecting you most right now?');
+  String get talkWelcomeSub => isArabic
+      ? 'فضاء متابعة سرّي؛ ننظّمو فيه أعراضك وتفاصيلك لطبيبك وقت ما تختار تشاركها.'
+      : (isFrench
+            ? 'Échange confidentiel structuré clairement pour votre médecin dès que vous choisissez de partager.'
+            : 'Confidential check-in structured clearly for your doctor whenever you choose to share.');
+  String get talkDoorwaySpinning => isArabic
+      ? 'أفكار متسارعة تقلقني وتؤثّر على راحتي ونومي'
+      : (isFrench
+            ? 'Des pensées en boucle qui pèsent sur mon calme et mon sommeil'
+            : 'Racing thoughts weighing on my rest and focus');
+  String get talkDoorwayHeavyDay => isArabic
+      ? 'نحسّ بضغط أو ثقل نفسي نحب نفصّلو'
+      : (isFrench
+            ? 'Un poids ou une tension forte à faire le point aujourd’hui'
+            : 'A heavy feeling or strain I need to unpack');
+  String get talkDoorwayJustSit => isArabic
+      ? 'تعبان برشا اليوم — خلّي الأسئلة خفيفة ومختصرة'
+      : (isFrench
+            ? 'Je suis épuisé aujourd’hui — gardons l’échange court et doux'
+            : 'Drained today — keep questions brief and gentle');
+  String get talkComposerHint => isArabic
+      ? 'اوصف شنوة تحسّ، الأعراض ولا النوم...'
+      : (isFrench
+            ? 'Décrivez ce que vous ressentez, votre sommeil...'
+            : 'Describe how you feel, sleep, or worries...');
+  String get talkHistoryTooltip => isArabic
+      ? 'سجل الاستشارات السابقة'
+      : (isFrench ? 'Consultations passées' : 'Past consultations');
+  String get talkKeepInsightAction => isArabic
+      ? 'احفظ الجملة هذي'
+      : (isFrench ? 'Garder cette idée' : 'Keep this insight');
+  String get talkCopyAction => isArabic
+      ? 'نسخ النص'
+      : (isFrench ? 'Copier le texte' : 'Copy text');
+  String get talkCopiedNotice => isArabic
+      ? 'تم النسخ'
+      : (isFrench ? 'Copié' : 'Copied');
+  String get talkPrivateToggleTitle => isArabic
+      ? 'خلّي الحديث هذا سري على تليفونك فقط'
+      : (isFrench
+            ? 'Garder cet échange privé sur l’appareil'
+            : 'Keep this conversation private on device');
+  String get talkPrivateEnabledNotice => isArabic
+      ? 'الحديث سري الآن — ما يتشاركش لا مع الطبيب ولا مع السحابة.'
+      : (isFrench
+            ? 'Privé sur l’appareil — exclu de tout partage clinique ou cloud.'
+            : 'Marked private — excluded from clinic sync and cloud calls.');
+  String get talkCalmBreathOfferText => isArabic
+      ? 'تبدو اللحظة مشحونة شوية — تحب ناخذو دقيقة تنفّس قبل؟'
+      : (isFrench
+            ? 'Ce moment semble intense — voulez-vous respirer 1 minute d’abord ?'
+            : 'This feels heavy right now — want 60 seconds to settle your breath?');
+  String get talkCalmBreathOfferBtn => isArabic
+      ? 'دقيقة تنفّس هادي'
+      : (isFrench ? 'Respirer 1 minute' : 'Try 1-minute breath');
+  String talkContextRibbonCheckIn(String mood, int intensity) => isArabic
+      ? 'سجّلت اليوم: $mood · $intensity/10 — تحب نحكيو فيه؟'
+      : (isFrench
+            ? 'Noté aujourd’hui : $mood · $intensity/10 — en parler ?'
+            : 'Earlier today: $mood · $intensity/10 — want to unpack that?');
+  String talkContextRibbonFocus(String itemTitle) => isArabic
+      ? 'نقطة من طبيبك: $itemTitle'
+      : (isFrench
+            ? 'Suivi du médecin : $itemTitle'
+            : 'Care note: $itemTitle');
+
+  // Adaptive Condition Catalog (300+ -> 12 Tracks) & Non-Military Daily Ritual
+  String get ritualSaveCollapseBtn =>
+      isArabic ? 'تم · حفظ' : (isFrench ? 'Terminé' : 'Done');
+  String get ritualSavedCompactBtn =>
+      isArabic ? 'محفوظ · تعديل' : (isFrench ? 'Enregistré · Modifier' : 'Saved · Edit');
+  String get ritualMorningTag => isArabic
+      ? 'روتين الصباح · 10 ثواني'
+      : (isFrench ? 'Rituel du matin · 10 s' : 'Morning check-in · 10 sec');
+  String get ritualEveningTag => isArabic
+      ? 'روتين المساء · 10 ثواني'
+      : (isFrench ? 'Rituel du soir · 10 s' : 'Evening check-in · 10 sec');
+  String get ritualSavedSummaryToast => isArabic
+      ? 'تم الحفظ في متابعتك اليومية وملف الطبيب'
+      : (isFrench
+            ? 'Enregistré pour vous et votre médecin'
+            : 'Saved for you & your doctor');
+  String get ritualCompletedSummaryTitle => isArabic
+      ? 'تم تسجيل نقاط اليوم'
+      : (isFrench ? 'Repères du jour enregistrés' : 'Today’s focus logged');
+  String ritualStreakPill(int days) => isArabic
+      ? '$days أيام هذا الأسبوع'
+      : (isFrench ? '$days jours cette semaine' : '$days days this week');
+  String get pickWhatYouNavigateQuestion => isArabic
+      ? 'شنوة المجالات اللي تحب نركّزو عليها معاك؟ (اختياري)'
+      : (isFrench
+            ? 'Que souhaitez-vous suivre en priorité ? (optionnel)'
+            : 'What would you like Mindora to tailor for? (optional)');
+  String get search300ConditionsCta => isArabic
+      ? 'ابحث في +300 حالة وموضوع دقيق'
+      : (isFrench
+            ? 'Rechercher parmi 300+ vécus précis'
+            : 'Search 300+ exact conditions');
+  String get searchConditionsFieldHint => isArabic
+      ? 'ابحث مثلاً: ثنائي القطب، وسواس، أرق، هلع، تشتت...'
+      : (isFrench
+            ? 'Ex. : bipolaire, TOC, insomnie, panique, TDAH...'
+            : 'Search e.g. Bipolar, OCD, Insomnia, Panic, ADHD...');
+  String get conditionsTrackingBanner => isArabic
+      ? 'اختياراتك تساعد التطبيق يخصّص أسئلة اليوم لك ولطبيبك — وليس للتشخيص الطبي.'
+      : (isFrench
+            ? 'Ceci adapte vos questions quotidiennes pour vous et votre médecin — sans poser de diagnostic.'
+            : 'This customizes your daily questions for you & your doctor — never a medical diagnosis.');
+  String get noMatchingConditionsLabel => isArabic
+      ? 'ما لقيناش نتيجة مطابقة — جرب كلمة أبسط ولا اختار مسار عام.'
+      : (isFrench
+            ? 'Aucun résultat — essayez un mot simple ou un parcours général.'
+            : 'No match found — try a simpler word or pick a general track.');
+  String get clinicalTracksSectionTitle => isArabic
+      ? 'مسارات المتابعة اليومية'
+      : (isFrench ? 'Parcours de suivi adaptés' : 'Active Care Tracks');
+  String get doctorDossierConditionMarkersTitle => isArabic
+      ? 'مؤشرات المتابعة الخاصة بالحالة'
+      : (isFrench ? 'Repères spécifiques au parcours' : 'Condition-specific markers');
+  String get yourDailyQuestionsPreviewLabel => isArabic
+      ? 'الأسئلة اليومية اللي باش نركّزو عليها:'
+      : (isFrench ? 'Vos repères quotidiens adaptés :' : 'Daily check-ins tailored for you:');
 
   // Helper factory
   static AppStrings of(BuildContext context) {

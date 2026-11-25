@@ -21,9 +21,12 @@ import '../../clinician/presentation/widgets/share_with_psychiatrist_sheet.dart'
 import '../../investigation/controllers/investigation_providers.dart';
 import '../../investigation/domain/case_model.dart';
 import '../../mind_trace/controllers/mind_trace_controller.dart';
+import '../../mind_trace/domain/adaptive_tracking_engine.dart';
 import '../../mind_trace/domain/affect_taxonomy.dart';
 import '../../mind_trace/domain/daily_context_tags.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
+import '../../profile/controllers/profile_controller.dart';
+import '../../profile/domain/clinical_condition_catalog.dart';
 import '../../progress/data/progress_analytics_service.dart';
 import '../../progress/domain/progress_analytics_model.dart';
 import '../../track/presentation/widgets/track_mood_utils.dart';
@@ -82,6 +85,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
   ) {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       backgroundColor: tokens.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(tokens.sheetRadius)),
@@ -141,6 +145,16 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
     final allTraces = ref.watch(mindTraceControllerProvider).value ?? [];
     final traces = _filterTracesByRange(allTraces);
     final analytics = ref.watch(progressAnalyticsProvider);
+    final profile = ref.watch(profileControllerProvider).value;
+    final activeTracks = ClinicalConditionCatalog.resolveTracks(profile);
+    final conditionMarkers = AdaptiveTrackingEngine.summarizeConditionMarkers(
+      allTraces,
+      activeTracks,
+      strings,
+    );
+    final nonDefaultTracks = activeTracks
+        .where((t) => t != ClinicalTrack.generalWellness)
+        .toList(growable: false);
 
     return Scaffold(
       backgroundColor: tokens.bg,
@@ -254,6 +268,56 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
               ),
             ),
             const SizedBox(height: 14),
+
+            if (nonDefaultTracks.isNotEmpty || conditionMarkers.isNotEmpty) ...[
+              MindCard(
+                key: const ValueKey('insights-condition-tracks-card'),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      strings.clinicalTracksSectionTitle,
+                      style: LabTheme.textStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: tokens.ink,
+                      ),
+                    ),
+                    if (nonDefaultTracks.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          for (final track in nonDefaultTracks)
+                            MindBadge(
+                              label: track.localizedTitle(strings),
+                              backgroundColor: tokens.cardTint,
+                              textColor: tokens.ink,
+                            ),
+                        ],
+                      ),
+                    ],
+                    if (conditionMarkers.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      for (final line in conditionMarkers)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Text(
+                            '• $line',
+                            style: LabTheme.textStyle(
+                              fontSize: 13.5,
+                              color: tokens.ink2,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+            ],
 
             // Card 2: What helps you feel better (Observed Stabilizers)
             if (baseline.recoveryLedger.hasEvidence) ...[

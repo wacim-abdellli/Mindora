@@ -344,15 +344,6 @@ class _HomeDailyCheckInCardState extends State<HomeDailyCheckInCard> {
           ),
         ],
         const SizedBox(height: 14),
-        if (widget.onAddDetails != null) ...[
-          MindButton(
-            text: strings.addDetailsCta,
-            variant: MindButtonVariant.soft,
-            isFullWidth: true,
-            onPressed: () => widget.onAddDetails!(todayTrace),
-          ),
-          const SizedBox(height: 10),
-        ],
         LayoutBuilder(
           builder: (context, constraints) {
             final stack = constraints.maxWidth < 300 || textScale > 1.35;

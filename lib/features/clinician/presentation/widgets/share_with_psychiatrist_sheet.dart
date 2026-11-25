@@ -48,6 +48,7 @@ class ShareWithPsychiatristSheet extends ConsumerStatefulWidget {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => ShareWithPsychiatristSheet(
         initialTopics: initialTopics,

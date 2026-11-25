@@ -19,6 +19,7 @@ class PrivacyManagementSheet extends ConsumerStatefulWidget {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => PrivacyManagementSheet(profile: profile),
     );

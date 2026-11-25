@@ -39,11 +39,11 @@ void main() {
       // Dialogue is smoothly active
       const en = AppStrings('en');
       expect(find.text(en.navTalk), findsAtLeastNWidgets(1));
-      expect(find.text(en.typeMessageHint), findsOneWidget);
+      expect(find.text(en.talkComposerHint), findsOneWidget);
       expect(find.text('AI HUB'), findsNothing);
     });
 
-    testWidgets('2. No layout overflow in clean Step 7 header on narrow viewport (320px)',
+    testWidgets('2. No layout overflow in clean Talk v2 header on narrow viewport (320px)',
         (WidgetTester tester) async {
       tester.view.physicalSize = const Size(320, 640);
       tester.view.devicePixelRatio = 1.0;
@@ -71,7 +71,7 @@ void main() {
       const en = AppStrings('en');
       expect(caughtError, isNull, reason: 'Expected zero layout overflows in Talk header');
       expect(find.text(en.navTalk), findsAtLeastNWidgets(1));
-      expect(find.textContaining('Saved ('), findsOneWidget);
+      expect(find.byKey(const ValueKey('talk-history-btn')), findsOneWidget);
     });
 
     testWidgets('3. Repeated navigation preserves active investigation without duplicate sessions',
@@ -108,7 +108,7 @@ void main() {
       expect(allCases.length, equals(1));
     });
 
-    testWidgets('4. Mode switcher sheet is explicitly toggled from More without breaking active session',
+    testWidgets('4. Calm More sheet toggles without breaking active session',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         const ProviderScope(
@@ -120,21 +120,17 @@ void main() {
       await tester.pumpAndSettle();
 
       const en = AppStrings('en');
-      expect(find.text(en.typeMessageHint), findsOneWidget);
+      expect(find.text(en.talkComposerHint), findsOneWidget);
       expect(find.text('AI HUB'), findsNothing);
 
-      await tester.tap(find.byIcon(Icons.more_horiz_rounded));
+      await tester.tap(find.byKey(const ValueKey('talk-more-btn')));
       await tester.pumpAndSettle();
 
-      expect(find.text(en.modesAndHistoryTooltip), findsOneWidget);
-      await tester.tap(find.text(en.modesAndHistoryTooltip));
-      await tester.pumpAndSettle();
-
-      expect(find.byType(BottomSheet), findsOneWidget);
+      expect(find.text(en.listeningPrefsLabel), findsOneWidget);
       Navigator.of(tester.element(find.byType(FlashCaseScreen))).pop();
       await tester.pumpAndSettle();
 
-      expect(find.text(en.typeMessageHint), findsOneWidget);
+      expect(find.text(en.talkComposerHint), findsOneWidget);
       expect(find.text('AI HUB'), findsNothing);
     });
 
@@ -241,9 +237,9 @@ void main() {
       expect(active.statements.length, equals(2));
       expect(active.statements.first.text, equals('I felt overwhelmed during the review.'));
 
-      // Verify the screen displays the historical statement and hydrated mode
+      // Verify the screen displays the hydrated historical statement cleanly without mode-bar clutter
       expect(find.text('I felt overwhelmed during the review.'), findsOneWidget);
-      expect(find.text('Psychological Analysis'), findsOneWidget);
+      expect(find.text('Psychological Analysis'), findsNothing);
 
       // Verify no duplicate cases were written to repository
       final allCases = await repo.getAllCases();

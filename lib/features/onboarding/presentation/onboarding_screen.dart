@@ -25,7 +25,9 @@ import '../../journey/controllers/journey_controller.dart';
 import '../../mind_trace/controllers/mind_trace_controller.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
 import '../../profile/controllers/profile_controller.dart';
+import '../../profile/domain/clinical_condition_catalog.dart';
 import '../../profile/domain/psychological_profile_model.dart';
+import '../../profile/presentation/widgets/clinical_condition_search_sheet.dart';
 import '../domain/app_personalization_engine.dart';
 
 /// Adaptive, 100% options-first 6-step onboarding for Mindora.
@@ -88,8 +90,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final Set<String> _selectedGoals = <String>{};
   String _careContext = '';
   final Set<String> _selectedFocusAreas = <String>{};
+  final Set<String> _selectedConditionIds = <String>{};
+  final Set<String> _selectedTrackIds = <String>{};
   AppMood _selectedMood = AppMood.calm;
   int _firstIntensity = 6;
+
+  static const List<ClinicalTrack> _starterTracks = [
+    ClinicalTrack.bipolarCycling,
+    ClinicalTrack.depressiveSpectrum,
+    ClinicalTrack.anxietyPanic,
+    ClinicalTrack.obsessiveCompulsive,
+    ClinicalTrack.sleepWake,
+    ClinicalTrack.neurodevelopmental,
+  ];
 
   bool get _isMinor =>
       _selectedAgeRange == 'under_18' || _selectedAgeRange == '<18';
@@ -124,6 +137,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       if (profile.focusAreas.isNotEmpty) {
         _selectedFocusAreas.addAll(profile.focusAreas);
       }
+      if (profile.selectedConditionIds.isNotEmpty) {
+        _selectedConditionIds.addAll(profile.selectedConditionIds);
+      }
+      if (profile.selectedTrackIds.isNotEmpty) {
+        _selectedTrackIds.addAll(profile.selectedTrackIds);
+      }
       if (profile.onboardingStep > 0) {
         _currentStep = profile.onboardingStep.clamp(0, _totalSteps - 1);
       }
@@ -145,6 +164,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       careContext: _careContext,
       professionalSupport: _careContext,
       focusAreas: focusList,
+      selectedConditionIds: _selectedConditionIds.toList(growable: false),
+      selectedTrackIds: _selectedTrackIds.toList(growable: false),
       onboardingStep: step,
       updatedAt: DateTime.now(),
     );
@@ -1223,6 +1244,98 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               );
             }).toList(),
           ),
+          const SizedBox(height: 22),
+          Text(
+            strings.pickWhatYouNavigateQuestion,
+            style: LabTheme.textStyle(
+              fontSize: 15.5,
+              fontWeight: FontWeight.w700,
+              color: tokens.ink,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _starterTracks.map((track) {
+              final selected = _selectedTrackIds.contains(track.id);
+              return MindPressable(
+                key: ValueKey<String>('onboarding-track-${track.id}'),
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  setState(() {
+                    if (selected) {
+                      _selectedTrackIds.remove(track.id);
+                    } else {
+                      _selectedTrackIds.add(track.id);
+                    }
+                  });
+                },
+                borderRadius: BorderRadius.circular(tokens.chipRadius),
+                child: Container(
+                  constraints: const BoxConstraints(minHeight: 48),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 11,
+                  ),
+                  decoration: BoxDecoration(
+                    color: selected ? tokens.primary : tokens.surface2,
+                    borderRadius: BorderRadius.circular(tokens.chipRadius),
+                    border: Border.all(
+                      color: selected ? tokens.primary : tokens.lineStrong,
+                    ),
+                  ),
+                  child: Text(
+                    track.localizedTitle(strings),
+                    style: LabTheme.textStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      color: selected ? tokens.onPrimary : tokens.ink,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            key: const ValueKey('onboarding-search-300-conditions-btn'),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(48, 48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(tokens.buttonRadius),
+              ),
+              side: BorderSide(color: tokens.lineStrong),
+            ),
+            onPressed: () async {
+              final res = await ClinicalConditionSearchSheet.show(
+                context,
+                initialConditionIds: _selectedConditionIds.toList(),
+                initialTrackIds: _selectedTrackIds.toList(),
+              );
+              if (res != null && mounted) {
+                setState(() {
+                  _selectedConditionIds
+                    ..clear()
+                    ..addAll(res.selectedConditionIds);
+                  _selectedTrackIds
+                    ..clear()
+                    ..addAll(res.selectedTrackIds);
+                });
+              }
+            },
+            icon: Icon(Icons.search_rounded, size: 18, color: tokens.ink),
+            label: Text(
+              _selectedConditionIds.isEmpty
+                  ? strings.search300ConditionsCta
+                  : '${strings.search300ConditionsCta} (${_selectedConditionIds.length})',
+              style: LabTheme.textStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: tokens.ink,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1236,7 +1349,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       step: _totalSteps,
     );
     final plan = AppPersonalizationEngine.resolve(previewDraft);
+    final resolvedTracks = ClinicalConditionCatalog.resolveTracks(previewDraft);
     final tailoredPills = <String>[
+      for (final t in resolvedTracks)
+        if (t != ClinicalTrack.generalWellness) t.localizedTitle(strings),
       if (plan.prioritizeSleepPulse) strings.summarySleepEnabled,
       if (plan.isDoctorFollowed) strings.summaryDoctorReadyEnabled,
       if (plan.emphasizeCalmTools) strings.summaryCalmToolsEnabled,

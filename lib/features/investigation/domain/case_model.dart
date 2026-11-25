@@ -29,6 +29,8 @@ class CaseModel {
     this.isCompleted = false,
     this.isPausedForSafety = false,
     this.isPrivate = false,
+    this.suggestedReplies = const [],
+    this.offeredCalmExercise,
   });
 
   /// Internal unique ID (UUID).
@@ -86,6 +88,12 @@ class CaseModel {
   /// Private cases are shielded and strictly excluded from Session Brief exports.
   final bool isPrivate;
 
+  /// Contextual, AI-chosen 1-tap quick replies for the latest turn.
+  final List<String> suggestedReplies;
+
+  /// Optional quiet exercise offer (`'breathing'` / `'grounding'`) triggered by AI.
+  final String? offeredCalmExercise;
+
   CaseModel copyWith({
     String? id,
     String? userId,
@@ -106,6 +114,9 @@ class CaseModel {
     bool? isCompleted,
     bool? isPausedForSafety,
     bool? isPrivate,
+    List<String>? suggestedReplies,
+    String? offeredCalmExercise,
+    bool clearOfferedCalmExercise = false,
   }) {
     return CaseModel(
       id: id ?? this.id,
@@ -127,6 +138,10 @@ class CaseModel {
       isCompleted: isCompleted ?? this.isCompleted,
       isPausedForSafety: isPausedForSafety ?? this.isPausedForSafety,
       isPrivate: isPrivate ?? this.isPrivate,
+      suggestedReplies: suggestedReplies ?? this.suggestedReplies,
+      offeredCalmExercise: clearOfferedCalmExercise
+          ? null
+          : (offeredCalmExercise ?? this.offeredCalmExercise),
     );
   }
 
@@ -150,6 +165,8 @@ class CaseModel {
     'isCompleted': isCompleted,
     'isPausedForSafety': isPausedForSafety,
     'isPrivate': isPrivate,
+    'suggestedReplies': suggestedReplies,
+    'offeredCalmExercise': offeredCalmExercise,
   };
 
   factory CaseModel.fromJson(Map<String, dynamic> json) {
@@ -214,6 +231,12 @@ class CaseModel {
       isCompleted: json['isCompleted'] as bool? ?? false,
       isPausedForSafety: json['isPausedForSafety'] as bool? ?? false,
       isPrivate: json['isPrivate'] as bool? ?? false,
+      suggestedReplies:
+          (json['suggestedReplies'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
+      offeredCalmExercise: json['offeredCalmExercise'] as String?,
     );
   }
 }

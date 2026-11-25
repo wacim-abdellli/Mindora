@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/localization/app_strings.dart';
+import '../../../app/localization/locale_controller.dart';
 import '../../../app/theme/lab_theme.dart';
 import '../../../app/theme/mind_tokens.dart';
 import '../../../core/safety/support_button.dart';
 import '../../../core/widgets/mind_pressable.dart';
 import '../../../core/widgets/mind_sheet.dart';
 import '../../journal/presentation/widgets/journal_memory_sheet.dart';
+import '../../profile/controllers/profile_controller.dart';
 import '../controllers/investigation_providers.dart';
 import '../domain/case_model.dart';
 import '../domain/statement.dart';
@@ -16,12 +19,10 @@ import 'ai_companion_hub_view.dart';
 import 'widgets/ai_engine_config_sheet.dart';
 import 'widgets/custom_ai_instructions_sheet.dart';
 import 'widgets/live_dialogue_view.dart';
-import 'widgets/mode_chooser_sheet.dart';
 
-/// Calm single-bar `Talk` tab:
-/// - 1 clean 56dp AppBar (`Talk`, `[Saved (N)]`, `[+]`, `[...] More`, `[Help]`)
-/// - Secondary settings (listening style, instructions, memories, AI engine)
-///   tucked inside the `More` sheet so chat fills the screen even at 320px 2.0x.
+/// Calm single-bar `Talk` sanctuary:
+/// - Minimalist 56dp AppBar (`Talk` + quiet status dot, `[History]`, `[+]`, `[...]`, `[Help]`)
+/// - Zero manual mode-picker clutter: AI adapts tone & quick options dynamically
 class FlashCaseScreen extends ConsumerStatefulWidget {
   const FlashCaseScreen({super.key, this.initialHubView = false});
 
@@ -32,20 +33,16 @@ class FlashCaseScreen extends ConsumerStatefulWidget {
 }
 
 class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
-  late bool _showHubView = widget.initialHubView;
+  late bool _showHubView;
+  bool _isSynthesizing = false;
 
   @override
   void initState() {
     super.initState();
-    _ensureActiveCase();
-  }
-
-  @override
-  void didUpdateWidget(covariant FlashCaseScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.initialHubView && !oldWidget.initialHubView && !_showHubView) {
-      setState(() => _showHubView = true);
-    }
+    _showHubView = widget.initialHubView;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureActiveCase();
+    });
   }
 
   Future<void> _ensureActiveCase() async {
@@ -61,10 +58,69 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
     }
   }
 
+  Future<void> _saveSummaryNote(BuildContext context, AppStrings strings) async {
+    final currentCase = ref.read(activeCaseControllerProvider).value;
+    if (currentCase == null ||
+        !currentCase.statements.any((s) => s.speaker == StatementSpeaker.user) ||
+        _isSynthesizing) {
+      return;
+    }
+
+    setState(() => _isSynthesizing = true);
+    HapticFeedback.mediumImpact();
+
+    try {
+      final service = ref.read(investigatorServiceProvider);
+      final locale = ref.read(localeControllerProvider);
+      final profile = ref.read(profileControllerProvider).value;
+      final tokens = context.tokens;
+
+      final summary = await service.summarizeFindings(
+        currentCase: currentCase,
+        languageCode: locale.languageCode,
+        profile: profile,
+      );
+
+      final notifier = ref.read(activeCaseControllerProvider.notifier);
+      await notifier.saveFindings(summary);
+      await notifier.saveConclusion(summary);
+
+      if (!context.mounted) return;
+      final router = GoRouter.maybeOf(context);
+      if (router != null) {
+        unawaited(router.push('/case/${currentCase.id}'));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: tokens.surface,
+            content: Text(
+              strings.caseSynthesizedSuccess,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: tokens.ink,
+              ),
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (_) {
+      // Keep calm without disruptive error banners
+    } finally {
+      if (mounted) {
+        setState(() => _isSynthesizing = false);
+      }
+    }
+  }
+
   Future<void> _openMoreSheet(BuildContext context, AppStrings strings) async {
-    final activeMode = ref.read(currentConversationModeProvider);
     final aiConfig = ref.read(aiConfigProvider);
-    final engineLabel = !aiConfig.isLiveActive
+    final activeCase = ref.read(activeCaseControllerProvider).value;
+    final hasUserMessages = activeCase != null &&
+        activeCase.statements.any((s) => s.speaker == StatementSpeaker.user);
+    final isPrivate = activeCase?.isPrivate ?? false;
+    final engineLabel = aiConfig.isMockKey
         ? strings.engineBadgeOffline
         : (aiConfig.provider == AiEngineProvider.groq
               ? strings.engineBadgeGroq
@@ -140,26 +196,35 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
               title: strings.listeningPrefsLabel,
               onTap: () => CustomAiInstructionsSheet.show(context),
             ),
-            row(
-              icon: Icons.forum_outlined,
-              title: strings.modesAndHistoryTooltip,
-              onTap: () async {
-                await ModeChooserSheet.show(
-                  context,
-                  activeMode: activeMode,
-                  onModeSelected: (picked) {
-                    if (mounted) {
-                      ref
-                          .read(currentConversationModeProvider.notifier)
-                          .setMode(picked);
-                      ref
-                          .read(activeCaseControllerProvider.notifier)
-                          .setConversationMode(picked);
-                    }
-                  },
-                );
-              },
-            ),
+            if (activeCase != null)
+              row(
+                icon: isPrivate ? Icons.lock_rounded : Icons.lock_open_rounded,
+                title: strings.talkPrivateToggleTitle,
+                subtitle: isPrivate ? strings.privacyPrivateSessionTag : null,
+                onTap: () async {
+                  await ref
+                      .read(activeCaseControllerProvider.notifier)
+                      .toggleCasePrivacy(activeCase.id);
+                  if (!context.mounted) return;
+                  final nowPrivate =
+                      ref.read(activeCaseControllerProvider).value?.isPrivate ??
+                      !isPrivate;
+                  if (nowPrivate) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(strings.talkPrivateEnabledNotice),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                },
+              ),
+            if (hasUserMessages)
+              row(
+                icon: Icons.fact_check_outlined,
+                title: strings.saveTakeawayReportBtn,
+                onTap: () => _saveSummaryNote(context, strings),
+              ),
             row(
               icon: Icons.bookmark_border_rounded,
               title: strings.memoryVaultTitle,
@@ -180,9 +245,16 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
   @override
   Widget build(BuildContext context) {
     final caseAsync = ref.watch(activeCaseControllerProvider);
-    final savedCases = ref.watch(savedCasesProvider).value ?? [];
     final strings = ref.watch(appStringsProvider);
     final tokens = context.tokens;
+    final aiConfig = ref.watch(aiConfigProvider);
+    final profile = ref.watch(profileControllerProvider).value;
+    final profileConsented =
+        (profile?.shareWithAiCompanion ?? false) &&
+        (profile?.allowAiPersonalization ?? false);
+    final caseModel = caseAsync.value;
+    final isLiveConnected =
+        aiConfig.isLiveActive && profileConsented && !(caseModel?.isPrivate ?? false);
 
     ref.listen<AsyncValue<CaseModel?>>(activeCaseControllerProvider, (
       prev,
@@ -202,8 +274,6 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
       }
     });
 
-    final caseModel = caseAsync.value;
-
     return Scaffold(
       backgroundColor: tokens.bg,
       appBar: AppBar(
@@ -219,57 +289,51 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
               )
             : null,
         titleSpacing: 12,
-        title: Text(
-          strings.navTalk,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: LabTheme.textStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 20,
-            color: tokens.ink,
-          ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                strings.navTalk,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LabTheme.textStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 19,
+                  color: tokens.ink,
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isLiveConnected
+                    ? MindTokens.moodCalm
+                    : tokens.ink2.withValues(alpha: 0.45),
+              ),
+            ),
+          ],
         ),
         actions: [
           if (!_showHubView)
-            MindPressable(
+            IconButton(
+              key: const ValueKey('talk-history-btn'),
+              icon: Icon(Icons.history_rounded, size: 22, color: tokens.ink),
+              tooltip: strings.talkHistoryTooltip,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               onPressed: () {
                 HapticFeedback.selectionClick();
                 setState(() => _showHubView = true);
               },
-              semanticLabel: strings.talkSavedPill(savedCases.length),
-              borderRadius: BorderRadius.circular(14),
-              child: Container(
-                constraints: const BoxConstraints(minHeight: 48, maxWidth: 96),
-                alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: tokens.surface2,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: tokens.line),
-                  ),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      strings.talkSavedPill(savedCases.length),
-                      maxLines: 1,
-                      style: LabTheme.textStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        color: tokens.ink,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
             ),
           if (!_showHubView)
             IconButton(
-              icon: Icon(Icons.add_rounded, size: 22, color: tokens.ink),
+              key: const ValueKey('talk-new-chat-btn'),
+              icon: Icon(Icons.add_rounded, size: 23, color: tokens.ink),
               tooltip: strings.newConversationBtn,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
@@ -291,13 +355,13 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
                   }
                   return;
                 }
-                final activeMode = ref.read(currentConversationModeProvider);
                 await ref
                     .read(activeCaseControllerProvider.notifier)
-                    .startNewCase('', mode: activeMode);
+                    .startNewCase('');
               },
             ),
           IconButton(
+            key: const ValueKey('talk-more-btn'),
             icon: Icon(Icons.more_horiz_rounded, size: 22, color: tokens.ink),
             tooltip: strings.listeningPrefsLabel,
             padding: EdgeInsets.zero,
@@ -305,7 +369,6 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
             onPressed: () => _openMoreSheet(context, strings),
           ),
           const SupportButton(compact: true),
-          const SizedBox(width: 4),
         ],
       ),
       body: _showHubView
@@ -331,3 +394,5 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
     );
   }
 }
+
+void unawaited(Future<void>? future) {}

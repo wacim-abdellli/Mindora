@@ -17,6 +17,7 @@ import '../data/mock_investigator_service.dart';
 import '../domain/case_model.dart';
 import '../domain/case_repository.dart';
 import '../domain/case_stage.dart';
+import '../domain/companion_turn_response.dart';
 import '../domain/conversation_mode.dart';
 import '../domain/forensic_chain.dart';
 import '../domain/hypothesis.dart';
@@ -89,8 +90,8 @@ class AiConfigState {
   bool get hasProxy => proxyUrl.trim().isNotEmpty;
 
   bool get isMockKey {
+    if (hasProxy) return false;
     if (provider == AiEngineProvider.groq) {
-      if (hasProxy) return false;
       final clean = groqApiKey.trim();
       return clean.isEmpty || clean == kDevMockGeminiKey;
     }
@@ -352,6 +353,7 @@ final investigatorServiceProvider = Provider<InvestigatorService>((ref) {
     return DirectGeminiInvestigatorService(
       apiKey: config.apiKey,
       modelName: config.modelName,
+      proxyUrl: config.proxyUrl,
       onFallback: (reason) =>
           ref.read(aiRuntimeNoticeProvider.notifier).report(reason),
     );
@@ -494,6 +496,22 @@ class ActiveCaseController extends Notifier<AsyncValue<CaseModel?>> {
       state = AsyncValue.data(
         current.copyWith(title: newTitle.trim(), updatedAt: DateTime.now()),
       );
+    }
+    ref.invalidate(savedCasesProvider);
+  }
+
+  /// Toggles whether a session stays strictly local/private on-device.
+  Future<void> toggleCasePrivacy(String id) async {
+    final repo = ref.read(caseRepositoryProvider);
+    final target = await repo.getCaseById(id);
+    if (target == null) return;
+    final updated = target.copyWith(
+      isPrivate: !target.isPrivate,
+      updatedAt: DateTime.now(),
+    );
+    await repo.saveCase(updated);
+    if (state.value?.id == id) {
+      state = AsyncValue.data(updated);
     }
     ref.invalidate(savedCasesProvider);
   }
@@ -758,8 +776,17 @@ class ActiveCaseController extends Notifier<AsyncValue<CaseModel?>> {
       label: label ?? LabelType.assumption,
     );
 
-    final active = state.value;
-    if (active == null || active.isPausedForSafety) return false;
+    final activePreReply = state.value;
+    if (activePreReply == null || activePreReply.isPausedForSafety) {
+      return false;
+    }
+
+    // Clear stale suggestions cleanly while generating next turn
+    final clearedSuggestions = activePreReply.copyWith(
+      suggestedReplies: const [],
+      clearOfferedCalmExercise: true,
+    );
+    state = AsyncValue.data(clearedSuggestions);
 
     ref.read(aiRuntimeNoticeProvider.notifier).clear();
     ref.read(companionReplyPendingProvider.notifier).setPending(true);
@@ -769,44 +796,95 @@ class ActiveCaseController extends Notifier<AsyncValue<CaseModel?>> {
       final langCode = ref.read(appStringsProvider).languageCode;
       final service = ref.read(investigatorServiceProvider);
       final memories = ref.read(journalMemoryControllerProvider).value ?? [];
-      final window = SessionMemoryWindowManager.partition(active.statements);
+      final window =
+          SessionMemoryWindowManager.partition(clearedSuggestions.statements);
 
-      String reply;
+      CompanionTurnResponse turn;
       try {
-        reply = await service.getNextQuestion(
-          currentCase: active,
+        turn = await service.getAdaptiveTurn(
+          currentCase: clearedSuggestions,
           conversationHistory: window.verbatimStatements,
           includePastCaseSummaries: includePast,
           languageCode: langCode,
           profile: profile,
           journey: journey,
-          conversationMode: active.conversationMode,
           latestTrace: latestTrace,
           historicalTraces: historicalTraces,
           compressedMemories: memories,
-          sessionSummary: window.sessionSummary ?? active.sessionSummary,
+          sessionSummary:
+              window.sessionSummary ?? clearedSuggestions.sessionSummary,
         );
       } catch (_) {
         ref
             .read(aiRuntimeNoticeProvider.notifier)
             .report(AiFallbackReason.offlineOrNetwork);
-        reply = await MockInvestigatorService().getNextQuestion(
-          currentCase: active,
+        turn = await MockInvestigatorService().getAdaptiveTurn(
+          currentCase: clearedSuggestions,
           conversationHistory: window.verbatimStatements,
           includePastCaseSummaries: includePast,
           languageCode: langCode,
           profile: profile,
           journey: journey,
-          conversationMode: active.conversationMode,
           latestTrace: latestTrace,
           historicalTraces: historicalTraces,
           compressedMemories: memories,
-          sessionSummary: window.sessionSummary ?? active.sessionSummary,
+          sessionSummary:
+              window.sessionSummary ?? clearedSuggestions.sessionSummary,
         );
       }
 
-      if (state.value?.id == active.id && reply.trim().isNotEmpty) {
-        await addStatement(reply, StatementSpeaker.investigator);
+      if (state.value?.id == clearedSuggestions.id &&
+          turn.reply.trim().isNotEmpty) {
+        // Silently tag the latest user message with pattern metadata for clinical clarity
+        var latestCase = state.value!;
+        if (label == null &&
+            (turn.silentThoughtType != null ||
+                turn.silentDistortionTheme != null)) {
+          final updatedStmts = List<Statement>.of(latestCase.statements);
+          for (var i = updatedStmts.length - 1; i >= 0; i--) {
+            if (updatedStmts[i].speaker == StatementSpeaker.user) {
+              updatedStmts[i] = updatedStmts[i].copyWith(
+                label: turn.silentThoughtType ?? updatedStmts[i].label,
+                distortionTag:
+                    turn.silentDistortionTheme ?? updatedStmts[i].distortionTag,
+              );
+              break;
+            }
+          }
+          latestCase = latestCase.copyWith(statements: updatedStmts);
+          state = AsyncValue.data(latestCase);
+        }
+
+        await addStatement(turn.reply, StatementSpeaker.investigator);
+
+        final afterAi = state.value;
+        if (afterAi != null && afterAi.id == clearedSuggestions.id) {
+          final mergedChain = _mergeClinicalChain(afterAi.chain, turn, latestText: trimmed);
+          final nextFindings =
+              (turn.clinicalIntakeNote != null &&
+                  turn.clinicalIntakeNote!.isNotEmpty)
+              ? turn.clinicalIntakeNote
+              : ((turn.saveWorthySummary != null &&
+                        turn.saveWorthySummary!.isNotEmpty)
+                    ? turn.saveWorthySummary
+                    : afterAi.findingsSummary);
+          final updated = afterAi.copyWith(
+            conversationMode: turn.chosenPosture.toConversationMode(),
+            suggestedReplies: turn.suggestedReplies,
+            offeredCalmExercise:
+                turn.offerCalmExercise == CalmExerciseOffer.none
+                ? null
+                : turn.offerCalmExercise.wireKey,
+            clearOfferedCalmExercise:
+                turn.offerCalmExercise == CalmExerciseOffer.none,
+            chain: mergedChain ?? afterAi.chain,
+            findingsSummary: nextFindings,
+            updatedAt: DateTime.now(),
+          );
+          await ref.read(caseRepositoryProvider).saveCase(updated);
+          state = AsyncValue.data(updated);
+          ref.invalidate(savedCasesProvider);
+        }
       }
       return true;
     } finally {
@@ -829,38 +907,109 @@ class ActiveCaseController extends Notifier<AsyncValue<CaseModel?>> {
       final langCode = ref.read(appStringsProvider).languageCode;
       final service = ref.read(investigatorServiceProvider);
 
-      String reply;
+      CompanionTurnResponse turn;
       try {
-        reply = await service.getNextQuestion(
+        turn = await service.getAdaptiveTurn(
           currentCase: current,
           conversationHistory: current.statements,
           includePastCaseSummaries: includeProfile,
           languageCode: langCode,
           profile: profile,
-          conversationMode: current.conversationMode,
           sessionSummary: current.sessionSummary,
         );
       } catch (_) {
         ref
             .read(aiRuntimeNoticeProvider.notifier)
             .report(AiFallbackReason.offlineOrNetwork);
-        reply = await MockInvestigatorService().getNextQuestion(
+        turn = await MockInvestigatorService().getAdaptiveTurn(
           currentCase: current,
           conversationHistory: current.statements,
           includePastCaseSummaries: includeProfile,
           languageCode: langCode,
           profile: profile,
-          conversationMode: current.conversationMode,
           sessionSummary: current.sessionSummary,
         );
       }
 
-      if (state.value?.id == current.id && reply.trim().isNotEmpty) {
-        await addStatement(reply, StatementSpeaker.investigator);
+      if (state.value?.id == current.id && turn.reply.trim().isNotEmpty) {
+        await addStatement(turn.reply, StatementSpeaker.investigator);
+        final afterAi = state.value;
+        if (afterAi != null && afterAi.id == current.id) {
+          final mergedChain = _mergeClinicalChain(afterAi.chain, turn);
+          final nextFindings =
+              (turn.clinicalIntakeNote != null &&
+                  turn.clinicalIntakeNote!.isNotEmpty)
+              ? turn.clinicalIntakeNote
+              : ((turn.saveWorthySummary != null &&
+                        turn.saveWorthySummary!.isNotEmpty)
+                    ? turn.saveWorthySummary
+                    : afterAi.findingsSummary);
+          final updated = afterAi.copyWith(
+            conversationMode: turn.chosenPosture.toConversationMode(),
+            suggestedReplies: turn.suggestedReplies,
+            offeredCalmExercise:
+                turn.offerCalmExercise == CalmExerciseOffer.none
+                ? null
+                : turn.offerCalmExercise.wireKey,
+            clearOfferedCalmExercise:
+                turn.offerCalmExercise == CalmExerciseOffer.none,
+            chain: mergedChain ?? afterAi.chain,
+            findingsSummary: nextFindings,
+            updatedAt: DateTime.now(),
+          );
+          await ref.read(caseRepositoryProvider).saveCase(updated);
+          state = AsyncValue.data(updated);
+          ref.invalidate(savedCasesProvider);
+        }
       }
     } finally {
       ref.read(companionReplyPendingProvider.notifier).setPending(false);
     }
+  }
+
+  ForensicChain? _mergeClinicalChain(
+    ForensicChain? existing,
+    CompanionTurnResponse turn, {
+    String? latestText,
+  }) {
+    final hasNew = turn.silentTrigger != null ||
+        turn.silentCoreThought != null ||
+        turn.silentEmotion != null ||
+        turn.silentIntensity != null ||
+        turn.silentCopingBehavior != null ||
+        turn.silentThoughtType != null;
+    if (!hasNew && existing == null) return null;
+
+    final nextTrigger = (turn.silentTrigger ?? '').isNotEmpty
+        ? turn.silentTrigger!
+        : (existing?.trigger ?? '');
+    final nextThought = (turn.silentCoreThought ?? '').isNotEmpty
+        ? turn.silentCoreThought!
+        : ((existing?.thought ?? '').isNotEmpty
+              ? existing!.thought
+              : (latestText ?? ''));
+    final nextEmotion = (turn.silentEmotion ?? '').isNotEmpty
+        ? turn.silentEmotion!
+        : (existing?.emotion ?? 'Distressed');
+    final nextIntensity = turn.silentIntensity ?? existing?.emotionIntensity ?? 5;
+    final nextBehavior = (turn.silentCopingBehavior ?? '').isNotEmpty
+        ? turn.silentCopingBehavior!
+        : (existing?.behavior ?? '');
+    final nextLabel =
+        turn.silentThoughtType ?? existing?.thoughtLabel ?? LabelType.assumption;
+
+    if (nextTrigger.isEmpty && nextThought.isEmpty && nextBehavior.isEmpty) {
+      return existing;
+    }
+
+    return ForensicChain(
+      trigger: nextTrigger,
+      thought: nextThought,
+      thoughtLabel: nextLabel,
+      emotion: nextEmotion,
+      emotionIntensity: nextIntensity.clamp(1, 10),
+      behavior: nextBehavior,
+    );
   }
 }
 

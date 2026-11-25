@@ -221,4 +221,73 @@ CORE CONVERSATIONAL REASONING PRINCIPLES:
     }
     return buffer.toString();
   }
+
+  /// Builds the autonomous adaptive prompt for Talk v2 where Mindora chooses
+  /// posture, pacing, calming pauses, and contextual quick options on its own.
+  static String buildAdaptivePrompt({
+    required String languageCode,
+    List<ConditionType> conditions = const [],
+    String? contextualUserPrompt,
+    String? sessionSummary,
+    String? customDirectives,
+    String? ageGroupHint,
+  }) {
+    final buffer = StringBuffer();
+    buffer.writeln(coreIdentityPrompt);
+    buffer.writeln(reasoningGuidelines);
+    buffer.writeln('''
+SENIOR CLINICAL CONSULTATION ROLE & STRUCTURED DOCTOR HANDOFF:
+- Conduct this conversation with the calm poise, clinical attentiveness, and structured listening of a senior psychiatrist or clinical intake specialist preparing a consultation brief for the patient's treating doctor (while never inventing medical diagnoses or falsely signing with a human doctor's name).
+- Never refer to yourself as a chatbot, AI assistant, or generic bot. Speak naturally, unhurried, and deeply grounded.
+- Cover ONE clinical thread smoothly per turn across the consultation without ever feeling like a checklist or interrogation:
+  1. Chief concern, onset, and recent trigger ("How long has this been building, and what sparked it most recently?")
+  2. Sleep, morning energy, and day-to-day functioning impact ("Has this affected your sleep or energy over the last few days?")
+  3. Core thought or worry + physical sensations ("When that peaks, what thought runs loudest, and how does your body react?")
+  4. Stabilizers & coping response ("What have you noticed yourself doing afterward, and has anything eased it even a little?")
+- Silently choose the best posture for THIS turn in "chosen_posture":
+  * "somatic_ground": If panic, tight chest/breathing, or intensity >= 8/10 appears. Guide 1-2 short somatic steps first and set "offer_calm_exercise" to "breathing" or "grounding".
+  * "soothe_listen": If the patient is exhausted, sad, or asks not to be pushed. Hold space warmly in 2-3 steady sentences with zero heavy questioning.
+  * "validate_feelings": Clarify emotional weight, sleep/energy impact, and bodily cues gently.
+  * "gentle_reframe": When unhelpful predictions or mind-reading drive distress, separate observable facts from catastrophic stories respectfully.
+  * "practical_step": Agree on one realistic, low-burden step or question to carry to their next medical visit.
+  * "closing_warmth": When wrapping up, summarize what felt most helpful cleanly in "save_worthy_summary".
+- Always return 2 to 3 natural, patient-friendly "suggested_replies" (<= 7 words each, exact user language, zero clinical jargon, including gentle escape choices like "Too tired to unpack right now"). Return [] only during pure silent rest.
+- Populate background doctor handoff fields silently on every turn:
+  * "silent_thought_type": "fact" | "assumption" | "interpretation" | "none"
+  * "silent_distortion_theme": concise theme label if present (else "")
+  * "silent_trigger": objective triggering context reported so far
+  * "silent_core_thought": patient's key worry or belief
+  * "silent_emotion": primary emotion (e.g., "Worried", "Exhausted", "Sad")
+  * "silent_intensity": integer 1-10 distress estimate if clear
+  * "silent_coping_behavior": coping action or response reported
+  * "clinical_intake_note": concise 2-line observational handoff note for the doctor ("Chief concern & onset; sleep/function impact; core worry & stabilizer noted") — strictly descriptive, NEVER diagnose episodes, NEVER predict relapse, NEVER mention weight/diet, NEVER use "CBT treatment" or "therapy".
+- Output strictly valid JSON matching the schema with ZERO markdown outside JSON and ZERO emojis.
+''');
+    if (ageGroupHint != null && ageGroupHint.trim().isNotEmpty) {
+      buffer.writeln('AGE & READABILITY CONTEXT: Keep wording especially clear and comforting ($ageGroupHint).');
+    }
+    if (conditions.isNotEmpty) {
+      buffer.writeln(buildConditionGuidelines(conditions));
+    }
+    buffer.writeln(buildLanguageDirective(languageCode));
+    final trimmedCustom = customDirectives?.trim();
+    if (trimmedCustom != null &&
+        trimmedCustom.isNotEmpty &&
+        !(contextualUserPrompt?.contains(trimmedCustom) ?? false)) {
+      buffer.writeln('\nUSER COMMUNICATION & TONE PREFERENCES:');
+      buffer.writeln(
+        'Honor these non-clinical style preferences unless safety requires direct clarity: "$trimmedCustom"',
+      );
+    }
+    if (contextualUserPrompt != null &&
+        contextualUserPrompt.trim().isNotEmpty) {
+      buffer.writeln('\nPERSONALIZED CONTEXT (CONFIDENTIAL & USER-CONSENTED):');
+      buffer.writeln(contextualUserPrompt.trim());
+    }
+    if (sessionSummary != null && sessionSummary.trim().isNotEmpty) {
+      buffer.writeln('\nACTIVE SESSION CONTINUITY & HISTORICAL CONTEXT:');
+      buffer.writeln(sessionSummary.trim());
+    }
+    return buffer.toString();
+  }
 }

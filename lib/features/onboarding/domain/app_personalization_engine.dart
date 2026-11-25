@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../profile/controllers/profile_controller.dart';
+import '../../profile/domain/clinical_condition_catalog.dart';
 import '../../profile/domain/psychological_profile_model.dart';
 
 /// Deterministic, privacy-preserving decision output derived from the user's
@@ -10,7 +11,8 @@ import '../../profile/domain/psychological_profile_model.dart';
 /// Directly tailors:
 /// - Initial workspace routing (`clinician` vs `patient`)
 /// - Accessibility Comfort Mode recommendation (`65+`)
-/// - Which clinical daily pulse questions surface first on `Today`
+/// - Active [ClinicalTrack] care phenotypes covering 300+ conditions
+/// - Which clinical daily ritual questions surface first on `Today`
 /// - Whether Doctor Visit Prep & Routine Anchor prompts are highlighted
 @immutable
 class AppPersonalizationPlan {
@@ -23,6 +25,7 @@ class AppPersonalizationPlan {
     required this.emphasizeCalmTools,
     required this.isMinimalExplorationMode,
     required this.primaryNextActionKey,
+    this.activeTracks = const {ClinicalTrack.generalWellness},
   });
 
   final bool isClinician;
@@ -32,6 +35,7 @@ class AppPersonalizationPlan {
   final bool showRoutineAnchorQuestion;
   final bool emphasizeCalmTools;
   final bool isMinimalExplorationMode;
+  final Set<ClinicalTrack> activeTracks;
 
   /// One of `'clinician_workspace'`, `'doctor_visit_ready'`,
   /// `'morning_sleep_pulse'`, `'calm_breather'`, or `'daily_checkin'`.
@@ -50,9 +54,11 @@ abstract final class AppPersonalizationEngine {
         emphasizeCalmTools: true,
         isMinimalExplorationMode: false,
         primaryNextActionKey: 'daily_checkin',
+        activeTracks: {ClinicalTrack.generalWellness},
       );
     }
 
+    final tracks = ClinicalConditionCatalog.resolveTracks(profile);
     final isClinician = profile.userRole == 'clinician';
     final recommendComfortMode = profile.ageRange.trim() == '65+';
 
@@ -62,6 +68,10 @@ abstract final class AppPersonalizationEngine {
         profile.selectedGoals.contains('doctor_visits');
 
     final prioritizeSleepPulse =
+        tracks.contains(ClinicalTrack.bipolarCycling) ||
+        tracks.contains(ClinicalTrack.sleepWake) ||
+        tracks.contains(ClinicalTrack.depressiveSpectrum) ||
+        tracks.contains(ClinicalTrack.perceptualGrounding) ||
         profile.focusAreas.contains('sleep') ||
         profile.focusAreas.contains('energy') ||
         profile.selectedGoals.contains('track_mood_sleep') ||
@@ -69,18 +79,29 @@ abstract final class AppPersonalizationEngine {
         isDoctorFollowed;
 
     final showRoutineAnchorQuestion =
+        tracks.contains(ClinicalTrack.bipolarCycling) ||
+        tracks.contains(ClinicalTrack.perceptualGrounding) ||
         profile.focusAreas.contains('routine') ||
         profile.careContext == 'regular_doctor';
 
     final emphasizeCalmTools =
+        tracks.contains(ClinicalTrack.anxietyPanic) ||
+        tracks.contains(ClinicalTrack.obsessiveCompulsive) ||
+        tracks.contains(ClinicalTrack.traumaStress) ||
         profile.focusAreas.contains('stress') ||
         profile.focusAreas.contains('overthinking') ||
         profile.selectedGoals.contains('calm_stress');
+
+    final hasExplicitTracks =
+        profile.selectedConditionIds.isNotEmpty ||
+        profile.selectedTrackIds.isNotEmpty ||
+        profile.conditions.isNotEmpty;
 
     final onlyExploring =
         profile.selectedGoals.length == 1 &&
         profile.selectedGoals.contains('just_exploring') &&
         profile.focusAreas.isEmpty &&
+        !hasExplicitTracks &&
         !isDoctorFollowed;
 
     late final String nextAction;
@@ -105,6 +126,7 @@ abstract final class AppPersonalizationEngine {
       emphasizeCalmTools: emphasizeCalmTools,
       isMinimalExplorationMode: onlyExploring,
       primaryNextActionKey: nextAction,
+      activeTracks: tracks,
     );
   }
 }

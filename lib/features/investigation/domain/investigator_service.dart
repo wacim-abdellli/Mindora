@@ -3,6 +3,7 @@ import '../../journey/domain/journey_state_model.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
 import '../../profile/domain/psychological_profile_model.dart';
 import 'case_model.dart';
+import 'companion_turn_response.dart';
 import 'conversation_mode.dart';
 import 'hypothesis.dart';
 import 'statement.dart';
@@ -22,6 +23,37 @@ enum AiFallbackReason {
 /// - Never diagnoses, always speaks in hypotheses and questions.
 /// - Trilingual: Supports English ('en'), Français ('fr'), and authentic Tunisian Arabic ('ar').
 abstract class InvestigatorService {
+  /// Generates an autonomous adaptive turn containing the AI response,
+  /// internally chosen posture, contextual human reply options, and silent
+  /// clinical pattern metadata.
+  Future<CompanionTurnResponse> getAdaptiveTurn({
+    required CaseModel currentCase,
+    required List<Statement> conversationHistory,
+    bool includePastCaseSummaries = true,
+    String? languageCode,
+    PsychologicalProfileModel? profile,
+    JourneyStateModel? journey,
+    MindTraceModel? latestTrace,
+    List<MindTraceModel>? historicalTraces,
+    List<JournalMemoryModel>? compressedMemories,
+    String? sessionSummary,
+  }) async {
+    final text = await getNextQuestion(
+      currentCase: currentCase,
+      conversationHistory: conversationHistory,
+      includePastCaseSummaries: includePastCaseSummaries,
+      languageCode: languageCode,
+      profile: profile,
+      journey: journey,
+      conversationMode: currentCase.conversationMode,
+      latestTrace: latestTrace,
+      historicalTraces: historicalTraces,
+      compressedMemories: compressedMemories,
+      sessionSummary: sessionSummary,
+    );
+    return CompanionTurnResponse(reply: text);
+  }
+
   /// Generates the next investigative question or observation based on current statements.
   Future<String> getNextQuestion({
     required CaseModel currentCase,

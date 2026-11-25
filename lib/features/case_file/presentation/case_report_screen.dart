@@ -14,9 +14,7 @@ import '../../../core/widgets/label_badge.dart';
 import '../../investigation/controllers/investigation_providers.dart';
 import '../../investigation/domain/case_model.dart';
 import '../../investigation/domain/statement.dart';
-import '../domain/clarity_anchor_model.dart';
 import 'clinical_export_preview_sheet.dart';
-import 'widgets/clarity_anchor_card.dart';
 
 /// The official Case File in Report View: Vercel Luxury Dark & Minimalist Precision.
 ///
@@ -240,7 +238,6 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
 
     final c = _case!;
     final chain = c.chain;
-    final clarityAnchor = ClarityAnchorModel.fromCase(c);
 
     return Scaffold(
       backgroundColor: bg,
@@ -410,11 +407,6 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
               ),
 
               const SizedBox(height: 18),
-
-              if (clarityAnchor != null) ...[
-                ClarityAnchorCard(anchor: clarityAnchor, strings: strings),
-                const SizedBox(height: 18),
-              ],
 
               // Section 1: The Incident
               _reportSectionHeader(strings.incidentNarrativeHeader, textSecondary),

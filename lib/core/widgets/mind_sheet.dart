@@ -8,6 +8,7 @@ Future<T?> showMindSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
   bool isScrollControlled = true,
+  bool useRootNavigator = true,
   bool showGrabHandle = true,
   bool showCloseButton = false,
   String? title,
@@ -16,6 +17,7 @@ Future<T?> showMindSheet<T>({
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: isScrollControlled,
+    useRootNavigator: useRootNavigator,
     backgroundColor: Colors.transparent,
     barrierColor: tokens.scrim,
     elevation: 0,

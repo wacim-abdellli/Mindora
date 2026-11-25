@@ -53,7 +53,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text(en.howStrongQuestion), findsOneWidget);
 
-      // Tap 2: Pick A lot -> auto-saves immediately!
+      // Tap 2: Pick A lot -> auto-saves immediately, without duplicate +Add sleep clutter on Today!
       await tester.tap(find.text(en.strengthALot));
       await tester.pumpAndSettle();
 
@@ -61,7 +61,7 @@ void main() {
       expect(saved, isNotNull);
       expect(saved!.overallMood, 'good');
       expect(saved.moodIntensity, 9);
-      expect(find.text(en.addDetailsCta), findsOneWidget);
+      expect(find.text(en.addDetailsCta), findsNothing);
     });
 
     testWidgets('My days opens directly to Month Calendar without duplicate check-in form tab', (

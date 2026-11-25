@@ -120,17 +120,22 @@ class _ProgressiveDetailsSheetState
       updatedAt: DateTime.now(),
     );
 
+    final strings = ref.read(appStringsProvider);
+    final navigator = Navigator.of(context);
+    final rootCtx = Navigator.of(context, rootNavigator: true).context;
+
     await ref
         .read(mindTraceControllerProvider.notifier)
         .updateCheckIn(updated);
 
     if (mounted) {
-      final strings = ref.read(appStringsProvider);
       setState(() => _saving = false);
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop(updated);
+      if (navigator.canPop()) {
+        navigator.pop(updated);
       }
-      showMindToast(context, strings.detailsSavedToast);
+    }
+    if (rootCtx.mounted) {
+      showMindToast(rootCtx, strings.detailsSavedToast);
     }
   }
 
@@ -146,6 +151,7 @@ class _ProgressiveDetailsSheetState
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final strings = ref.watch(appStringsProvider);
+    final textScale = MediaQuery.textScalerOf(context).scale(16.0) / 16.0;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -193,32 +199,52 @@ class _ProgressiveDetailsSheetState
         ),
         const SizedBox(height: 10),
         _buildCardContent(tokens, strings),
-        const SizedBox(height: 20),
-        MindButton(
-          text: _cardIndex >= _totalCards - 1
-              ? strings.saveDetailsBtn
-              : strings.continueBtn,
-          isFullWidth: true,
-          isLoading: _saving,
-          onPressed: _nextOrSave,
-        ),
-        if (_cardIndex < _totalCards - 1) ...[
-          const SizedBox(height: 6),
-          Center(
-            child: TextButton(
-              onPressed: _saveAndClose,
-              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-              child: Text(
-                strings.doneBtn,
-                style: LabTheme.textStyle(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w700,
-                  color: tokens.primary,
-                ),
-              ),
-            ),
+        const SizedBox(height: 22),
+        if (_cardIndex >= _totalCards - 1)
+          MindButton(
+            text: strings.saveDetailsBtn,
+            isFullWidth: true,
+            isLoading: _saving,
+            onPressed: _saveAndClose,
+          )
+        else
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final stack = constraints.maxWidth < 280 || textScale > 1.45;
+              final doneBtn = MindButton(
+                key: const ValueKey('progressive-sheet-done-btn'),
+                text: strings.doneBtn,
+                variant: MindButtonVariant.secondary,
+                isFullWidth: true,
+                isLoading: _saving,
+                onPressed: _saveAndClose,
+              );
+              final continueBtn = MindButton(
+                key: const ValueKey('progressive-sheet-continue-btn'),
+                text: strings.continueBtn,
+                variant: MindButtonVariant.primary,
+                isFullWidth: true,
+                onPressed: _nextOrSave,
+              );
+              if (stack) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    continueBtn,
+                    const SizedBox(height: 10),
+                    doneBtn,
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: doneBtn),
+                  const SizedBox(width: 10),
+                  Expanded(flex: 2, child: continueBtn),
+                ],
+              );
+            },
           ),
-        ],
       ],
     );
   }
