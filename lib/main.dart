@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'app/config/app_edition.dart';
 import 'app/localization/locale_controller.dart';
 import 'app/router/app_router.dart';
 import 'app/theme/display_comfort_controller.dart';
@@ -13,7 +14,14 @@ import 'features/mind_trace/controllers/mind_trace_controller.dart';
 import 'features/mind_trace/domain/mind_trace_model.dart';
 
 Future<void> main() async {
+  await bootstrapMindoraApp();
+}
+
+Future<void> bootstrapMindoraApp({MindoraEdition? edition}) async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (edition != null) {
+    AppEditionConfig.setMainEdition(edition);
+  }
   final initialThemeMode = await ThemeController.loadInitialThemeMode();
   final initialComfortMode = await DisplayComfortController.loadInitial();
   runApp(

@@ -3,10 +3,14 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mind_forensics/app/config/app_edition.dart';
 import 'package:mind_forensics/app/localization/app_strings.dart';
 import 'package:mind_forensics/app/router/app_router.dart';
 import 'package:mind_forensics/app/theme/lab_theme.dart';
 import 'package:mind_forensics/app/theme/mind_tokens.dart';
+import 'package:mind_forensics/features/auth/presentation/auth_screen.dart';
+import 'package:mind_forensics/features/clinician/domain/clinician_models.dart';
+import 'package:mind_forensics/features/clinician/presentation/clinician_shell_screen.dart';
 import 'package:mind_forensics/features/home/presentation/widgets/home_clinical_pulse_card.dart';
 import 'package:mind_forensics/features/mind_trace/domain/mind_trace_model.dart';
 import 'package:mind_forensics/features/onboarding/domain/app_personalization_engine.dart';
@@ -48,16 +52,38 @@ void main() {
     });
   });
 
-  group('Phase B — Onboarding Role Gate Routes Doctor Straight to /clinician', () {
-    testWidgets('tapping I am a Doctor / Psychiatrist navigates to /clinician', (
+  group('Phase B — Two-Sided Editions & Clean Auth Clinician Portal', () {
+    test('Patient edition routes fresh user to /onboarding; Clinician edition boots straight to /clinician', () async {
+      addTearDown(() => AppEditionConfig.configureForTesting(null));
+
+      AppEditionConfig.configureForTesting(MindoraEdition.patient);
+      expect(await AppRouter.resolveRedirectForLocation(AppRouter.home), AppRouter.onboarding);
+
+      AppEditionConfig.configureForTesting(MindoraEdition.clinician);
+      expect(await AppRouter.resolveRedirectForLocation(AppRouter.home), AppRouter.clinician);
+      expect(await AppRouter.resolveRedirectForLocation(AppRouter.onboarding), AppRouter.clinician);
+      expect(await AppRouter.resolveRedirectForLocation(AppRouter.clinician), isNull);
+    });
+
+    test('ClinicianProfile derives stable patient clinic pairing code', () {
+      const profile = ClinicianProfile(
+        displayName: 'Dr. Salma Ben Amor',
+        clinicName: 'Tunis Mindora Practice',
+      );
+      expect(profile.effectiveClinicCode, startsWith('MIND-'));
+      final custom = profile.copyWith(clinicCode: 'CLINIC-99');
+      expect(custom.effectiveClinicCode, 'CLINIC-99');
+    });
+
+    testWidgets('AuthScreen routes Doctor / Psychiatrist directly to /clinician portal without Onboarding gate', (
       tester,
     ) async {
       final router = GoRouter(
-        initialLocation: AppRouter.onboarding,
+        initialLocation: AppRouter.auth,
         routes: [
           GoRoute(
-            path: AppRouter.onboarding,
-            builder: (_, _) => const OnboardingScreen(),
+            path: AppRouter.auth,
+            builder: (_, _) => const AuthScreen(),
           ),
           GoRoute(
             path: AppRouter.clinician,
@@ -77,17 +103,92 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Advance from Step 1 (Language/Theme/Comfort) to Step 2 (Role Gate)
-      await tester.tap(find.text(const AppStrings('en').onboardingStartBtn));
-      await tester.pumpAndSettle();
+      final doctorPortalBtn = find.byKey(
+        const ValueKey<String>('auth-clinician-portal-btn'),
+      );
+      expect(doctorPortalBtn, findsOneWidget);
 
-      final doctorCard = find.byKey(const ValueKey('onboarding-role-clinician'));
-      expect(doctorCard, findsOneWidget);
-
-      await tester.tap(doctorCard);
+      await tester.ensureVisible(doctorPortalBtn);
+      await tester.tap(doctorPortalBtn);
       await tester.pumpAndSettle();
 
       expect(find.text('CLINICIAN_PORTAL_OK'), findsOneWidget);
+    });
+
+    testWidgets('Onboarding Step 4 shows optional clinic pairing code only when seeing a doctor', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(412, 915);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            theme: buildMindTheme(Brightness.light),
+            home: const OnboardingScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      const en = AppStrings('en');
+      await tester.tap(find.text(en.onboardingStartBtn));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(en.skipBtn));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(en.skipBtn));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('onboarding-clinic-code-input')),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('onboarding-care-regular_doctor')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('onboarding-clinic-code-input')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('ClinicianShellScreen search bar filters patients cleanly by name', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(412, 915);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            theme: buildMindTheme(Brightness.light),
+            home: const ClinicianShellScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Nadia B.'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Karim M.'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Karim M.'), findsOneWidget);
+
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('clinician-patient-search-field')),
+        'Nadia',
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Nadia B.'), findsOneWidget);
+      expect(find.text('Karim M.'), findsNothing);
     });
   });
 

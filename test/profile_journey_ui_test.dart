@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mind_forensics/app/localization/app_strings.dart';
 import 'package:mind_forensics/features/journey/data/default_journey_curriculum.dart';
 import 'package:mind_forensics/features/journey/presentation/journey_activity_detail_screen.dart';
 import 'package:mind_forensics/features/profile/presentation/psychological_profile_screen.dart';
@@ -27,9 +28,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // Check header and sections
-      expect(find.text('MY PSYCHOLOGICAL PROFILE'), findsOneWidget);
-      expect(find.text('CONDITIONS & EXPERIENCES'), findsOneWidget);
-      expect(find.text('OPTIONAL CONTEXT & DETAILS'), findsOneWidget);
+      const en = AppStrings('en');
+      expect(find.text(en.myPsychologicalProfileTitle), findsOneWidget);
+      expect(find.text(en.conditionsSectionTitle), findsOneWidget);
+      expect(find.text(en.optionalDetailsTitle), findsOneWidget);
 
       // Verify condition chips are visible
       expect(find.text('Depression'), findsOneWidget);

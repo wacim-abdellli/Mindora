@@ -30,7 +30,8 @@ void main() {
         tester.view.devicePixelRatio = 2.0;
         addTearDown(tester.view.reset);
 
-        final earlier = DateTime.now().subtract(const Duration(minutes: 20));
+        final now = DateTime.now();
+        final earlier = DateTime(now.year, now.month, now.day, 0, 0, 1);
         final container = ProviderContainer();
         addTearDown(container.dispose);
 

@@ -14,6 +14,7 @@ import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/profile/presentation/psychological_profile_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/track/presentation/track_screen.dart';
+import '../config/app_edition.dart';
 import 'scaffold_with_nav_bar.dart';
 
 /// App router configuration using GoRouter with 5 persistent bottom tabs:
@@ -57,37 +58,51 @@ class AppRouter {
   static final GlobalKey<NavigatorState> _shellNavigatorProfileKey =
       GlobalKey<NavigatorState>(debugLabel: 'shellProfile');
 
-  static final GoRouter router = GoRouter(
-    navigatorKey: _rootNavigatorKey,
-    initialLocation: home,
-    redirect: (context, state) async {
-      if (!enableFirstLaunchGating) return null;
+  /// Resolves startup redirect rules cleanly across Patient and Doctor editions.
+  static Future<String?> resolveRedirectForLocation(
+    String matchedLocation,
+  ) async {
+    if (!enableFirstLaunchGating) return null;
 
-      final prefs = await SharedPreferences.getInstance();
-      final hasCompleted = prefs.getBool('mf_onboarding_completed') ?? false;
-      final preferredWorkspace =
-          prefs.getString('mf_preferred_workspace') ?? 'patient';
+    final isGoingToOnboarding = matchedLocation == onboarding;
+    final isGoingToAuth = matchedLocation == auth;
+    final isGoingToClinician = matchedLocation.startsWith(clinician);
 
-      final isGoingToOnboarding = state.matchedLocation == onboarding;
-      final isGoingToAuth = state.matchedLocation == auth;
-      final isGoingToClinician = state.matchedLocation.startsWith(clinician);
-
-      // First-launch gating: if not completed, redirect to /onboarding
-      if (!hasCompleted) {
-        if (!isGoingToOnboarding && !isGoingToAuth && !isGoingToClinician) {
-          return onboarding;
-        }
-      } else {
-        // Completed returning users stay away from onboarding
-        if (isGoingToOnboarding) {
-          return preferredWorkspace == 'clinician' ? clinician : home;
-        }
-        if (state.matchedLocation == home && preferredWorkspace == 'clinician') {
-          return clinician;
-        }
+    // Dedicated Doctor / Admin edition skips patient onboarding entirely and
+    // boots straight into the clinician roster workspace.
+    if (AppEditionConfig.isClinicianApp) {
+      if (!isGoingToClinician && !isGoingToAuth) {
+        return clinician;
       }
       return null;
-    },
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final hasCompleted = prefs.getBool('mf_onboarding_completed') ?? false;
+    final preferredWorkspace =
+        prefs.getString('mf_preferred_workspace') ?? 'patient';
+
+    if (!hasCompleted) {
+      if (!isGoingToOnboarding && !isGoingToAuth && !isGoingToClinician) {
+        return onboarding;
+      }
+    } else {
+      // Completed returning users stay away from onboarding
+      if (isGoingToOnboarding) {
+        return preferredWorkspace == 'clinician' ? clinician : home;
+      }
+      if (matchedLocation == home && preferredWorkspace == 'clinician') {
+        return clinician;
+      }
+    }
+    return null;
+  }
+
+  static final GoRouter router = GoRouter(
+    navigatorKey: _rootNavigatorKey,
+    initialLocation: AppEditionConfig.isClinicianApp ? clinician : home,
+    redirect: (context, state) =>
+        resolveRedirectForLocation(state.matchedLocation),
     routes: [
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,

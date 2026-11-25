@@ -17,6 +17,7 @@ class ImportPatientPacketSheet extends ConsumerStatefulWidget {
   static Future<ClinicianPatientRecord?> show(BuildContext context) {
     return showModalBottomSheet<ClinicianPatientRecord?>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const ImportPatientPacketSheet(),

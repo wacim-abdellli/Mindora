@@ -102,7 +102,7 @@ class PsychologicalProfileView extends ConsumerWidget {
               // Section 2: Psychological Experiences (Conditions & Experiences)
               _buildSectionCard(
                 context: context,
-                title: strings.conditionsSectionTitle.toUpperCase(),
+                title: strings.conditionsSectionTitle,
                 subtitle: strings.conditionsSectionSubtitle,
                 icon: Icons.psychology_outlined,
                 isCompleted: profile.hasExperiences,
@@ -183,7 +183,7 @@ class PsychologicalProfileView extends ConsumerWidget {
               // Section 5: Personal Context (Optional Context & Details)
               _buildSectionCard(
                 context: context,
-                title: strings.optionalDetailsTitle.toUpperCase(),
+                title: strings.optionalDetailsTitle,
                 subtitle: strings.sectionContextDesc,
                 icon: Icons.edit_note_rounded,
                 isCompleted: profile.hasContext,
@@ -327,20 +327,20 @@ class PsychologicalProfileView extends ConsumerWidget {
                 strings.isArabic
                     ? 'نظرة عامة على الملف'
                     : (strings.isFrench
-                          ? 'APERÇU DU PROFIL'
-                          : 'PROFILE OVERVIEW'),
+                          ? 'Aperçu du profil'
+                          : 'Profile overview'),
                 style: TextStyle(
-                  fontSize: 10.5,
+                  fontSize: 13.0,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
+                  letterSpacing: strings.isArabic ? 0 : 0.2,
                   color: context.tokens.ink,
                 ),
               ),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 7,
-                  vertical: 2.5,
+                  horizontal: 9,
+                  vertical: 4,
                 ),
                 decoration: BoxDecoration(
                   color: context.tokens.cardTint,
@@ -353,12 +353,11 @@ class PsychologicalProfileView extends ConsumerWidget {
                   strings.isArabic
                       ? 'حساب محلي آمن'
                       : (strings.isFrench
-                            ? 'COMPTE LOCAL SÉCURISÉ'
-                            : 'SECURE LOCAL ACCOUNT'),
+                            ? 'Compte local sécurisé'
+                            : 'Private on device'),
                   style: TextStyle(
-                    fontSize: 8.5,
+                    fontSize: 12.0,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
                     color: context.tokens.ink,
                   ),
                 ),
@@ -369,15 +368,15 @@ class PsychologicalProfileView extends ConsumerWidget {
           Text(
             strings.profileIntroQuote,
             style: LabTheme.textStyle(
-              fontSize: 13.5,
-              height: 1.4,
+              fontSize: 14.0,
+              height: 1.45,
               color: textPrimary,
             ),
           ),
           const SizedBox(height: 6),
           Text(
             strings.profileSecondaryQuote,
-            style: TextStyle(fontSize: 11, height: 1.35, color: textSecondary),
+            style: TextStyle(fontSize: 12.5, height: 1.4, color: textSecondary),
           ),
         ],
       ),
@@ -434,6 +433,7 @@ class PsychologicalProfileView extends ConsumerWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 7,

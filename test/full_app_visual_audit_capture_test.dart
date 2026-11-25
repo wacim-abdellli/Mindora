@@ -25,6 +25,7 @@ import 'package:mind_forensics/features/investigation/presentation/flash_case_sc
 import 'package:mind_forensics/features/mind_trace/controllers/mind_trace_controller.dart';
 import 'package:mind_forensics/features/mind_trace/domain/mind_trace_model.dart';
 import 'package:mind_forensics/features/onboarding/presentation/onboarding_screen.dart';
+import 'package:mind_forensics/features/profile/presentation/psychological_profile_screen.dart';
 import 'package:mind_forensics/features/settings/presentation/settings_screen.dart';
 import 'package:mind_forensics/features/track/presentation/track_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -260,6 +261,13 @@ void main() {
     );
     await snap(
       tester,
+      filename: '01b_onboarding_ar_dark.png',
+      child: const OnboardingScreen(),
+      brightness: Brightness.dark,
+      locale: const Locale('ar'),
+    );
+    await snap(
+      tester,
       filename: '02_auth_dark.png',
       child: const AuthScreen(),
       brightness: Brightness.dark,
@@ -378,6 +386,11 @@ void main() {
       comfortMode: true,
       textScale: 1.5,
       size: const Size(320, 640),
+    );
+    await snap(
+      tester,
+      filename: '17_psychological_profile_light.png',
+      child: const PsychologicalProfileScreen(),
     );
   });
 }

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/config/app_edition.dart';
 import '../../../app/localization/app_strings.dart';
 import '../../../app/router/app_router.dart';
 import '../../../app/theme/lab_theme.dart';
@@ -67,11 +68,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         : await authCtrl.signInWithEmail(email, password);
 
     if (success && mounted) {
+      if (AppEditionConfig.isClinicianApp) {
+        GoRouter.maybeOf(context)?.go(AppRouter.clinician);
+        return;
+      }
       final authState = ref.read(authControllerProvider);
       if (!authState.hasCompletedOnboarding) {
-        context.go(AppRouter.onboarding);
+        GoRouter.maybeOf(context)?.go(AppRouter.onboarding);
       } else {
-        context.go(AppRouter.home);
+        GoRouter.maybeOf(context)?.go(AppRouter.home);
       }
     }
   }
@@ -83,11 +88,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         .createAnonymousVault();
 
     if (user != null && mounted) {
+      if (AppEditionConfig.isClinicianApp) {
+        GoRouter.maybeOf(context)?.go(AppRouter.clinician);
+        return;
+      }
       final authState = ref.read(authControllerProvider);
       if (!authState.hasCompletedOnboarding) {
-        context.go(AppRouter.onboarding);
+        GoRouter.maybeOf(context)?.go(AppRouter.onboarding);
       } else {
-        context.go(AppRouter.home);
+        GoRouter.maybeOf(context)?.go(AppRouter.home);
       }
     }
   }
@@ -123,6 +132,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     return AmbientScaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         title: Text(
           'Mindora',
           style: LabTheme.textStyle(
@@ -391,46 +402,89 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
                 const SizedBox(height: 18),
 
-                // Onboarding shortcut
-                Center(
-                  child: TextButton(
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      context.go(AppRouter.onboarding);
-                    },
-                    style: TextButton.styleFrom(
-                      minimumSize: const Size(48, 48),
-                    ),
-                    child: Text(
-                      strings.startExplorationBtn,
-                      style: LabTheme.textStyle(
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w700,
-                        color: tokens.primary,
+                // Onboarding shortcut (Patient Edition only)
+                if (!AppEditionConfig.isClinicianApp)
+                  Center(
+                    child: TextButton(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        GoRouter.maybeOf(context)?.go(AppRouter.onboarding);
+                      },
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(48, 48),
+                      ),
+                      child: Text(
+                        strings.startExplorationBtn,
+                        style: LabTheme.textStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w700,
+                          color: tokens.primary,
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                // Psychiatrist / Doctor Portal entry
-                MindButton(
-                  text: strings.clinicianPortalBtnLabel,
-                  leadingIcon: Icons.medical_services_outlined,
-                  variant: MindButtonVariant.soft,
-                  isFullWidth: true,
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    final router = GoRouter.maybeOf(context);
-                    if (router != null) {
-                      router.go(AppRouter.clinician);
-                    } else {
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const ClinicianShellScreen(),
+                const SizedBox(height: 8),
+
+                // Dedicated Psychiatrist / Clinic Admin Portal Card
+                MindCard(
+                  variant: MindCardVariant.flat,
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.medical_services_outlined,
+                            size: 20,
+                            color: tokens.ink,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              strings.clinicPortalAuthBanner,
+                              style: LabTheme.textStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w700,
+                                color: tokens.ink,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        strings.clinicPortalAuthSub,
+                        style: LabTheme.textStyle(
+                          fontSize: 13.0,
+                          height: 1.4,
+                          color: tokens.ink2,
                         ),
-                      );
-                    }
-                  },
+                      ),
+                      const SizedBox(height: 12),
+                      MindButton(
+                        key: const ValueKey<String>('auth-clinician-portal-btn'),
+                        text: strings.clinicianPortalBtnLabel,
+                        leadingIcon: Icons.medical_services_outlined,
+                        variant: MindButtonVariant.soft,
+                        isFullWidth: true,
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          final router = GoRouter.maybeOf(context);
+                          if (router != null) {
+                            router.go(AppRouter.clinician);
+                          } else {
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const ClinicianShellScreen(),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

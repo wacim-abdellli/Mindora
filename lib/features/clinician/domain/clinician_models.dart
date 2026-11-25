@@ -515,24 +515,45 @@ class ClinicianProfile {
     this.specialty = 'Psychiatrist',
     this.clinicName = 'Tunis Mindora Practice',
     this.licenseRef = '',
+    this.clinicCode = '',
   });
 
   final String displayName;
   final String specialty;
   final String clinicName;
   final String licenseRef;
+  final String clinicCode;
+
+  /// Returns a crisp, human-readable clinic pairing code for patients, falling back
+  /// to a stable code derived from the practitioner/clinic name when unset.
+  String get effectiveClinicCode {
+    final trimmed = clinicCode.trim();
+    if (trimmed.isNotEmpty) return trimmed.toUpperCase();
+    final letters = displayName
+        .replaceAll(RegExp(r'^Dr\.?\s*', caseSensitive: false), '')
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .map((w) => w[0].toUpperCase())
+        .take(3)
+        .join();
+    final prefix = letters.isEmpty ? 'CLN' : letters;
+    final hash = (displayName.length * 17 + clinicName.length * 7) % 90 + 10;
+    return 'MIND-$prefix-$hash';
+  }
 
   ClinicianProfile copyWith({
     String? displayName,
     String? specialty,
     String? clinicName,
     String? licenseRef,
+    String? clinicCode,
   }) {
     return ClinicianProfile(
       displayName: displayName ?? this.displayName,
       specialty: specialty ?? this.specialty,
       clinicName: clinicName ?? this.clinicName,
       licenseRef: licenseRef ?? this.licenseRef,
+      clinicCode: clinicCode ?? this.clinicCode,
     );
   }
 
@@ -541,6 +562,7 @@ class ClinicianProfile {
     'specialty': specialty,
     'clinicName': clinicName,
     'licenseRef': licenseRef,
+    'clinicCode': clinicCode,
   };
 
   factory ClinicianProfile.fromJson(Map<String, dynamic> json) {
@@ -549,6 +571,7 @@ class ClinicianProfile {
       specialty: json['specialty'] as String? ?? 'Psychiatrist',
       clinicName: json['clinicName'] as String? ?? 'Tunis Mindora Practice',
       licenseRef: json['licenseRef'] as String? ?? '',
+      clinicCode: json['clinicCode'] as String? ?? '',
     );
   }
 }

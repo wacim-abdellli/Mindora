@@ -133,7 +133,7 @@ void main() {
     });
 
     testWidgets(
-      '3. Step 1 renders Welcome, Normal/Larger text toggle, Sign In link, and live EN/FR/AR RTL switching',
+      '3. Step 1 renders single unified EN/FR/AR language picker (zero duplicate bar), Daylight/Dark theme, comfort toggle & RTL',
       (tester) async {
         tester.view.physicalSize = const Size(412, 915);
         tester.view.devicePixelRatio = 1.0;
@@ -150,12 +150,19 @@ void main() {
 
         expect(find.byType(MoodFace), findsOneWidget);
         expect(find.text(en.onboardingWelcomeBody), findsOneWidget);
+        expect(find.text('Vercel Dark'), findsNothing);
+        expect(find.text(en.themeNight), findsOneWidget);
+        // Zero duplicate top short-code bar alongside full language chips
+        expect(find.text('EN'), findsNothing);
+        expect(find.text(AppLanguage.english.displayName), findsOneWidget);
+        expect(find.text(AppLanguage.french.displayName), findsOneWidget);
+        expect(find.text(AppLanguage.arabic.displayName), findsOneWidget);
         expect(find.text(en.normalTextLabel), findsOneWidget);
         expect(find.text(en.largerTextLabel), findsOneWidget);
         expect(find.text(en.onboardingStartBtn), findsOneWidget);
         expect(find.text(en.signInTab), findsOneWidget);
 
-        // Verify >= 48dp touch target on EN pill and >= 56dp on Start CTA
+        // Verify >= 48dp touch target on French pill and >= 56dp on Start CTA
         final startPressable = find.ancestor(
           of: find.text(en.onboardingStartBtn),
           matching: find.byType(MindPressable),
@@ -163,13 +170,13 @@ void main() {
         expect(tester.getSize(startPressable).height, greaterThanOrEqualTo(56));
 
         // Switch live to French
-        await tester.tap(find.text('FR'));
+        await tester.tap(find.text(AppLanguage.french.displayName));
         await tester.pumpAndSettle();
         expect(find.text(fr.onboardingWelcomeBody), findsOneWidget);
         expect(find.text(fr.onboardingStartBtn), findsOneWidget);
 
         // Switch live to Arabic (RTL)
-        await tester.tap(find.text('AR'));
+        await tester.tap(find.text(AppLanguage.arabic.displayName));
         await tester.pumpAndSettle();
         expect(find.text(ar.onboardingWelcomeBody), findsOneWidget);
         expect(
@@ -180,7 +187,7 @@ void main() {
     );
 
     testWidgets(
-      '4. Step 2 Role Gate routes Patient to Step 3 with Under 18 safeguard and preserves crisis lines',
+      '4. Welcome Start goes directly to Age & Safeguards (no Patient/Doctor Role Gate) with Under 18 safeguard',
       (tester) async {
         tester.view.physicalSize = const Size(412, 915);
         tester.view.devicePixelRatio = 1.0;
@@ -195,13 +202,15 @@ void main() {
         await tester.tap(find.text(en.onboardingStartBtn));
         await tester.pumpAndSettle();
 
-        expect(find.text(en.stepProgressOf(2, 6)), findsOneWidget);
-        expect(find.text(en.onboardingRoleTitle), findsOneWidget);
-
-        await tester.tap(find.byKey(const ValueKey('onboarding-role-patient')));
-        await tester.pumpAndSettle();
-
-        expect(find.text(en.stepProgressOf(3, 6)), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('onboarding-role-clinician')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const ValueKey('onboarding-role-patient')),
+          findsNothing,
+        );
+        expect(find.text(en.stepProgressOf(2, 5)), findsOneWidget);
         expect(find.text(en.minorSupportNotice), findsNothing);
 
         await tester.tap(find.text(en.ageUnder18));
@@ -218,7 +227,7 @@ void main() {
     );
 
     testWidgets(
-      '5. Skip flows through Steps 3-6 cleanly without forcing a check-in',
+      '5. Skip flows through Steps 2-5 cleanly without forcing a check-in',
       (tester) async {
         tester.view.physicalSize = const Size(412, 915);
         tester.view.devicePixelRatio = 1.0;
@@ -238,21 +247,20 @@ void main() {
         const en = AppStrings('en');
         await tester.tap(find.text(en.onboardingStartBtn));
         await tester.pumpAndSettle();
-        await tester.tap(find.byKey(const ValueKey('onboarding-role-patient')));
-        await tester.pumpAndSettle();
+        expect(find.text(en.stepProgressOf(2, 5)), findsOneWidget);
 
-        // Skip Step 3 (Age), Step 4 (Goals), Step 5 (Care/Focus)
+        // Skip Step 2 (Age), Step 3 (Goals), Step 4 (Care/Focus), Step 5 (First mood)
         await tester.tap(find.text(en.skipBtn));
         await tester.pumpAndSettle();
-        expect(find.text(en.stepProgressOf(4, 6)), findsOneWidget);
-
-        await tester.tap(find.text(en.skipBtn));
-        await tester.pumpAndSettle();
-        expect(find.text(en.stepProgressOf(5, 6)), findsOneWidget);
+        expect(find.text(en.stepProgressOf(3, 5)), findsOneWidget);
 
         await tester.tap(find.text(en.skipBtn));
         await tester.pumpAndSettle();
-        expect(find.text(en.stepProgressOf(6, 6)), findsOneWidget);
+        expect(find.text(en.stepProgressOf(4, 5)), findsOneWidget);
+
+        await tester.tap(find.text(en.skipBtn));
+        await tester.pumpAndSettle();
+        expect(find.text(en.stepProgressOf(5, 5)), findsOneWidget);
 
         await tester.tap(find.text(en.skipBtn));
         await tester.pumpAndSettle();
@@ -263,7 +271,7 @@ void main() {
         );
         expect(
           container.read(profileControllerProvider).value?.onboardingStep,
-          6,
+          5,
         );
         expect(
           container.read(mindTraceControllerProvider).value ?? [],
@@ -273,7 +281,7 @@ void main() {
     );
 
     testWidgets(
-      '6. Step 6 MoodFace + strength saves Trace #1 and hands off to HomeScreen',
+      '6. Step 5 MoodFace + strength saves Trace #1 and hands off to HomeScreen',
       (tester) async {
         tester.view.physicalSize = const Size(430, 932);
         tester.view.devicePixelRatio = 1.0;
@@ -311,8 +319,6 @@ void main() {
         const en = AppStrings('en');
         await tester.tap(find.text(en.onboardingStartBtn));
         await tester.pumpAndSettle();
-        await tester.tap(find.byKey(const ValueKey('onboarding-role-patient')));
-        await tester.pumpAndSettle();
         await tester.tap(find.text(en.skipBtn));
         await tester.pumpAndSettle();
         await tester.tap(find.text(en.skipBtn));
@@ -346,7 +352,7 @@ void main() {
       final draftProfile = PsychologicalProfileModel(
         userId: 'local_user',
         ageRange: '25-44',
-        onboardingStep: 2,
+        onboardingStep: 1,
         updatedAt: DateTime.now(),
       );
 
@@ -367,7 +373,7 @@ void main() {
       await tester.pumpAndSettle();
 
       const en = AppStrings('en');
-      expect(find.text(en.stepProgressOf(3, 6)), findsOneWidget);
+      expect(find.text(en.stepProgressOf(2, 5)), findsOneWidget);
       expect(find.text(en.onboardingAboutYouTitle), findsOneWidget);
     });
   });

@@ -110,7 +110,7 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
               setState(() => _case = updated);
               if (ctx.mounted) Navigator.of(ctx).pop();
             },
-            child: Text(strings.saveVerdictBtn, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11, letterSpacing: 0.5)),
+            child: Text(strings.saveVerdictBtn, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, letterSpacing: 0.2)),
           ),
         ],
       ),
@@ -165,7 +165,7 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                   ),
                 ),
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: Text(strings.closeBtn, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11)),
+                child: Text(strings.closeBtn, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
               ),
             ],
           );

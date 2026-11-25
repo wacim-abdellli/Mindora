@@ -348,6 +348,11 @@ void main() {
         expect(find.text('Practice'), findsOneWidget);
 
         expect(find.text('Nadia B.'), findsOneWidget);
+        await tester.scrollUntilVisible(
+          find.text('Karim M.'),
+          150,
+          scrollable: find.byType(Scrollable).first,
+        );
         expect(find.text('Karim M.'), findsOneWidget);
         await tester.scrollUntilVisible(
           find.text('Lina S.'),
@@ -357,15 +362,21 @@ void main() {
         expect(find.text('Lina S.'), findsOneWidget);
 
         // Filter to Shifts Noted: Lina S. (steady baseline) is filtered out
-        await tester.ensureVisible(find.text('Shifts Noted'));
-        await tester.pumpAndSettle();
+        await tester.scrollUntilVisible(
+          find.text('Shifts Noted'),
+          -150,
+          scrollable: find.byType(Scrollable).first,
+        );
         await tester.tap(find.text('Shifts Noted'));
         await tester.pumpAndSettle();
         expect(find.text('Nadia B.'), findsOneWidget);
         expect(find.text('Lina S.'), findsNothing);
 
-        await tester.ensureVisible(find.text('All'));
-        await tester.pumpAndSettle();
+        await tester.scrollUntilVisible(
+          find.text('All'),
+          -150,
+          scrollable: find.byType(Scrollable).first,
+        );
         await tester.tap(find.text('All'));
         await tester.pumpAndSettle();
         await tester.scrollUntilVisible(

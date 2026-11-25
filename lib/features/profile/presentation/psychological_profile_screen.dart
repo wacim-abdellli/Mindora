@@ -19,11 +19,11 @@ class PsychologicalProfileScreen extends ConsumerWidget {
       backgroundColor: tokens.bg,
       appBar: AppBar(
         title: Text(
-          strings.myPsychologicalProfileTitle.toUpperCase(),
+          strings.myPsychologicalProfileTitle,
           style: TextStyle(
             fontWeight: FontWeight.w800,
-            fontSize: 13.5,
-            letterSpacing: 1.0,
+            fontSize: 18,
+            letterSpacing: strings.isArabic ? 0 : -0.2,
             color: tokens.ink,
           ),
         ),

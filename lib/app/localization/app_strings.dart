@@ -737,7 +737,7 @@ class AppStrings {
   String get themeDaylight =>
       isArabic ? 'نهاري' : (isFrench ? 'Clair' : 'Daylight');
   String get themeNight =>
-      isArabic ? 'داكن' : (isFrench ? 'Sombre' : 'Vercel Dark');
+      isArabic ? 'داكن' : (isFrench ? 'Sombre' : 'Dark');
   String get themeSystem =>
       isArabic ? 'النظام' : (isFrench ? 'Système' : 'System');
   String get languageTitle => isArabic
@@ -1236,10 +1236,10 @@ class AppStrings {
             ? 'Notez votre humeur en deux gestes et voyez ce qui vous fait du bien.'
             : 'Check in with two taps and see what helps you feel good.');
   String get onboardingPrivacyPromise => isArabic
-      ? 'محفوظ في تليفونك بخصوصية. مستوحى من CBT وموش علاج طبي.'
+      ? 'محفوظ بخصوصية في تليفونك · مستوحى من CBT لوضوح يومي.'
       : (isFrench
-            ? 'Privé sur votre téléphone. Inspiré des TCC — pas une thérapie médicale.'
-            : 'Private on your phone. Inspired by CBT — not medical therapy.');
+            ? 'Privé sur votre téléphone · Inspiré des TCC pour votre clarté.'
+            : 'Private on your phone · Inspired by CBT for daily clarity.');
 
   // Step 2: Focus (1–3 Options)
   String get onboardingFocusTitle => isArabic
@@ -1667,7 +1667,7 @@ class AppStrings {
             ? 'Tout est facultatif et reste sur votre téléphone.'
             : 'Everything is optional and stays on your phone.');
   String get sectionAboutMe =>
-      isArabic ? 'عني (About Me)' : (isFrench ? 'À propos de moi' : 'About Me');
+      isArabic ? 'عني' : (isFrench ? 'À propos de moi' : 'About Me');
   String get sectionAboutMeDesc => isArabic
       ? 'الاسم المفضل، الفئة العمرية، اللغة المفضلة، ومقدمة شخصية.'
       : (isFrench
@@ -5631,7 +5631,7 @@ class AppStrings {
       isArabic ? 'نهار دافي' : (isFrench ? 'Clair doux' : 'Daylight');
 
   String get twilightStyleLabel =>
-      isArabic ? 'داكن نظيف' : (isFrench ? 'Sombre épuré' : 'Vercel Dark');
+      isArabic ? 'داكن نظيف' : (isFrench ? 'Sombre épuré' : 'Dark');
 
   // Theme & Reading Comfort Plain Labels
   String get lookAndReadingSection => isArabic
@@ -6433,6 +6433,101 @@ class AppStrings {
   String get yourDailyQuestionsPreviewLabel => isArabic
       ? 'الأسئلة اليومية اللي باش نركّزو عليها:'
       : (isFrench ? 'Vos repères quotidiens adaptés :' : 'Daily check-ins tailored for you:');
+
+  // Two-Sided Product Edition, Roster Search & Clinic Pairing
+  String get searchPatientsHint => isArabic
+      ? 'ابحث بالاسم أو رمز المريض...'
+      : (isFrench
+            ? 'Rechercher un patient par nom ou ID...'
+            : 'Search patient by name or ID...');
+
+  String get clinicInviteCodeTitle => isArabic
+      ? 'رمز العيادة لدعوة المرضى'
+      : (isFrench
+            ? 'Code clinique pour vos patients'
+            : 'Clinic pairing code for patients');
+
+  String get clinicInviteCodeSub => isArabic
+      ? 'شارك هذا الرمز مع مرضاك باش يتواصلوا مع ملف العيادة'
+      : (isFrench
+            ? 'Donnez ce code à vos patients pour recevoir leur suivi'
+            : 'Share this code with your patients so they link their updates to you');
+
+  String get copyInviteMsgBtn => isArabic
+      ? 'نسخ دعوة المريض'
+      : (isFrench ? 'Copier l’invitation patient' : 'Copy patient invite');
+
+  String get patientInviteCopiedToast => isArabic
+      ? 'تم نسخ دعوة المريض ورمز العيادة'
+      : (isFrench
+            ? 'Invitation patient et code clinique copiés'
+            : 'Patient invite & clinic code copied');
+
+  String get clinicCodeOptionalTitle => isArabic
+      ? 'عندك رمز عيادة من طبيبك؟ (اختياري)'
+      : (isFrench
+            ? 'Code clinique de votre médecin ? (facultatif)'
+            : 'Have a clinic code from your doctor? (optional)');
+
+  String get clinicCodeFieldHint => isArabic
+      ? 'مثال: MIND-SBA-42'
+      : (isFrench ? 'Ex : MIND-SBA-42' : 'e.g. MIND-SBA-42');
+
+  String clinicInviteShareMessage(String doctor, String clinic, String code) {
+    if (isArabic) {
+      return 'مرحباً، استعمل تطبيق Mindora لمتابعة حالتك اليومية مع $doctor ($clinic). رمز العيادة: $code';
+    }
+    if (isFrench) {
+      return 'Bonjour, suivez votre rythme quotidien sur Mindora avec $doctor ($clinic). Code clinique : $code';
+    }
+    return 'Welcome to Mindora for your daily follow-up with $doctor ($clinic). Clinic code: $code';
+  }
+
+  String get privacyBadgeTitle => isArabic
+      ? 'خصوصية على تليفونك'
+      : (isFrench ? 'Privé sur votre téléphone' : 'Private on device');
+
+  String get clinicPortalAuthBanner => isArabic
+      ? 'فضاء الأطباء والإدارة'
+      : (isFrench
+            ? 'Accès Médecin / Administration'
+            : 'Doctor / Clinic Admin Access');
+
+  String get clinicPortalAuthSub => isArabic
+      ? 'إدارة قائمة مرضاك ومتابعة حالاتهم اليومية.'
+      : (isFrench
+            ? 'Accédez à votre liste de patients et à leur suivi clinique.'
+            : 'Open your patient roster and follow up on shared logs.');
+
+  String get addOrImportPatientBtn => isArabic
+      ? 'إضافة / استيراد مريض'
+      : (isFrench ? 'Ajouter / Importer' : 'Add / Import');
+
+  String get invitePatientBtn => isArabic
+      ? 'دعوة مريض'
+      : (isFrench ? 'Inviter patient' : 'Invite patient');
+
+  String get doctorEditionBadge => isArabic
+      ? 'فضاء الطبيب والإدارة'
+      : (isFrench ? 'Édition Médecin' : 'Doctor Edition');
+
+  String get noSearchMatchPatients => isArabic
+      ? 'ما لقيناش مريض يطابق بحثك.'
+      : (isFrench
+            ? 'Aucun patient ne correspond à cette recherche.'
+            : 'No patients match this search.');
+
+  String get clearFilterBtn =>
+      isArabic ? 'مسح' : (isFrench ? 'Effacer' : 'Clear');
+
+  String get filterSampleShort =>
+      isArabic ? 'نماذج' : (isFrench ? 'Exemples' : 'Samples');
+
+  String patientTrackCountLabel(int count) {
+    if (isArabic) return '$count محاور';
+    if (isFrench) return '$count suivis';
+    return '$count tracked';
+  }
 
   // Helper factory
   static AppStrings of(BuildContext context) {
