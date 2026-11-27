@@ -557,7 +557,7 @@ void main() {
     );
 
     testWidgets(
-      '8. Existing Settings & Insights screens preserve MindSegmented invariants while exposing Psychiatrist entries',
+      '8. Minimal Settings & Insights screens preserve MindSegmented invariants without manual export or clinician clutter',
       (tester) async {
         final container = ProviderContainer();
         addTearDown(container.dispose);
@@ -574,17 +574,15 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byType(MindSegmented), findsNWidgets(2));
-        final advAccordion = find.byKey(const ValueKey('me-advanced-accordion'));
-        await tester.ensureVisible(advAccordion);
-        await tester.tap(advAccordion);
-        await tester.pumpAndSettle();
-        expect(find.text('Psychiatrist Workspace'), findsOneWidget);
+        expect(find.byKey(const ValueKey('me-advanced-accordion')), findsNothing);
+        expect(find.text('Psychiatrist Workspace'), findsNothing);
+        expect(find.text('Share with Psychiatrist'), findsNothing);
         await tester.scrollUntilVisible(
-          find.text('Share with Psychiatrist'),
+          find.text('Log out'),
           200,
           scrollable: find.byType(Scrollable).first,
         );
-        expect(find.text('Share with Psychiatrist'), findsOneWidget);
+        expect(find.text('Log out'), findsOneWidget);
 
         await tester.pumpWidget(
           UncontrolledProviderScope(
@@ -602,12 +600,7 @@ void main() {
         await tester.tap(moreDetailsBtn);
         await tester.pumpAndSettle();
         expect(find.byType(MindSegmented), findsOneWidget);
-        await tester.scrollUntilVisible(
-          find.text('Share with Psychiatrist'),
-          200,
-          scrollable: find.byType(Scrollable).first,
-        );
-        expect(find.text('Share with Psychiatrist'), findsOneWidget);
+        expect(find.text('Share with Psychiatrist'), findsNothing);
       },
     );
   });

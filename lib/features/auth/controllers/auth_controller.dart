@@ -2,8 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../clinic_sync/controllers/clinic_sync_providers.dart';
 import '../../clinic_sync/domain/clinic_account_models.dart';
-import '../../clinician/controllers/clinician_providers.dart';
-import '../../profile/controllers/profile_controller.dart';
 import '../data/auth_service.dart';
 import '../domain/auth_state.dart';
 import '../domain/auth_user.dart';
@@ -25,7 +23,7 @@ class AuthController extends Notifier<AuthState> {
       final user = await _service.getCurrentUser();
       final onboardingDone = await _service.hasCompletedOnboarding();
 
-      if (!ref.mounted) return;
+      if (!ref.mounted || state.status != AuthStatus.initial) return;
       if (user != null) {
         state = AuthState(
           status: AuthStatus.authenticated,
@@ -40,7 +38,7 @@ class AuthController extends Notifier<AuthState> {
         );
       }
     } catch (e) {
-      if (!ref.mounted) return;
+      if (!ref.mounted || state.status != AuthStatus.initial) return;
       state = AuthState(
         status: AuthStatus.unauthenticated,
         errorMessage: e.toString(),
@@ -216,8 +214,6 @@ class AuthController extends Notifier<AuthState> {
 
     final coordinator = ref.read(clinicAutoSyncCoordinatorProvider);
     await coordinator.applyProvisionedPreferences(account);
-    ref.invalidate(profileControllerProvider);
-    ref.invalidate(postVisitFocusControllerProvider);
 
     state = AuthState(
       status: AuthStatus.authenticated,

@@ -392,13 +392,33 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  moodLabel,
-                  style: LabTheme.textStyle(
-                    fontSize: 16.5,
-                    fontWeight: FontWeight.w800,
-                    color: tokens.ink,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        moodLabel,
+                        style: LabTheme.textStyle(
+                          fontSize: 16.5,
+                          fontWeight: FontWeight.w800,
+                          color: tokens.ink,
+                        ),
+                      ),
+                    ),
+                    if (trace.isPrivate) ...[
+                      const SizedBox(width: 6),
+                      Semantics(
+                        label: strings.keepJustForMeLabel,
+                        child: Tooltip(
+                          message: strings.keepJustForMeLabel,
+                          child: Icon(
+                            Icons.lock_outline_rounded,
+                            size: 16,
+                            color: tokens.ink2,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Text(

@@ -6839,6 +6839,58 @@ class AppStrings {
       ? 'ابدأ نهاري'
       : (isFrench ? 'Commencer ma journée' : 'Start my day');
 
+  // --- Phase 3: Patient Minimalism, Privacy Lock & Clean Account ---
+  String get keepJustForMeLabel => isArabic
+      ? 'خلّيه ليا وحدي'
+      : (isFrench ? 'Garder rien que pour moi' : 'Keep just for me');
+
+  String get keepJustForMeDesc => isArabic
+      ? 'سري على تليفونك · ما يتبعثش لطبيبك'
+      : (isFrench
+            ? 'Privé sur ce téléphone · non envoyé au médecin'
+            : 'Private on this phone · not sent to your doctor');
+
+  String get sharedWithDoctorStatus => isArabic
+      ? 'يتشارك مع طبيبك تلقائيا'
+      : (isFrench
+            ? 'Inclus dans le suivi du médecin'
+            : 'Included in doctor care view');
+
+  String get syncedQuietLabel =>
+      isArabic ? 'مزامن' : (isFrench ? 'Synchronisé' : 'Synced');
+
+  String get savedOnPhoneLabel => isArabic
+      ? 'محفوظ هنا'
+      : (isFrench ? 'Sur cet appareil' : 'Saved on phone');
+
+  String connectedToDoctorBadge(String doctorName) => isArabic
+      ? 'مربوط مع $doctorName · مزامنة تلقائية'
+      : (isFrench
+            ? 'Suivi par $doctorName · Synchronisé'
+            : 'Connected to $doctorName · Auto-synced');
+
+  String get privacyAccountSection => isArabic
+      ? 'الخصوصية والحساب'
+      : (isFrench ? 'Confidentialité & compte' : 'Privacy & account');
+
+  String get changePinBtn => isArabic
+      ? 'تبديل الكود PIN'
+      : (isFrench ? 'Changer mon code PIN' : 'Change my PIN');
+
+  String get logOutBtn => isArabic
+      ? 'خروج من الحساب'
+      : (isFrench ? 'Se déconnecter' : 'Log out');
+
+  String get logOutConfirmTitle => isArabic
+      ? 'تحب تخرج من الحساب؟'
+      : (isFrench ? 'Se déconnecter de Mindora ?' : 'Log out of Mindora?');
+
+  String get logOutConfirmBody => isArabic
+      ? 'معطياتك تبقى في أمان عند طبيبك، وتنجم ترجع وقت ما تحب بالكود أو بالـ QR.'
+      : (isFrench
+            ? 'Votre suivi reste en sécurité chez votre médecin. Vous pourrez vous reconnecter avec votre code PIN ou le QR du médecin.'
+            : 'Your clinical connection stays safe with your doctor. You can sign back in anytime with your PIN or doctor QR.');
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);

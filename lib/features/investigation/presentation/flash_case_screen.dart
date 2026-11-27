@@ -16,7 +16,6 @@ import '../controllers/investigation_providers.dart';
 import '../domain/case_model.dart';
 import '../domain/statement.dart';
 import 'ai_companion_hub_view.dart';
-import 'widgets/ai_engine_config_sheet.dart';
 import 'widgets/custom_ai_instructions_sheet.dart';
 import 'widgets/live_dialogue_view.dart';
 
@@ -115,16 +114,10 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
   }
 
   Future<void> _openMoreSheet(BuildContext context, AppStrings strings) async {
-    final aiConfig = ref.read(aiConfigProvider);
     final activeCase = ref.read(activeCaseControllerProvider).value;
     final hasUserMessages = activeCase != null &&
         activeCase.statements.any((s) => s.speaker == StatementSpeaker.user);
     final isPrivate = activeCase?.isPrivate ?? false;
-    final engineLabel = aiConfig.isMockKey
-        ? strings.engineBadgeOffline
-        : (aiConfig.provider == AiEngineProvider.groq
-              ? strings.engineBadgeGroq
-              : strings.engineBadgeGemini);
 
     await showMindSheet<void>(
       context: context,
@@ -230,12 +223,6 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
               title: strings.memoryVaultTitle,
               onTap: () => JournalMemorySheet.show(context),
             ),
-            row(
-              icon: Icons.bolt_outlined,
-              title: strings.aiEngineTooltip,
-              subtitle: engineLabel,
-              onTap: () => AiEngineConfigSheet.show(context),
-            ),
           ],
         );
       },
@@ -315,6 +302,18 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
                     : tokens.ink2.withValues(alpha: 0.45),
               ),
             ),
+            if (caseModel?.isPrivate ?? false) ...[
+              const SizedBox(width: 8),
+              Tooltip(
+                message: strings.keepJustForMeLabel,
+                child: Icon(
+                  Icons.lock_outline_rounded,
+                  key: const ValueKey('talk-private-lock-badge'),
+                  size: 16,
+                  color: tokens.ink2,
+                ),
+              ),
+            ],
           ],
         ),
         actions: [

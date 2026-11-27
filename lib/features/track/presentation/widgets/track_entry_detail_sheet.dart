@@ -9,6 +9,7 @@ import '../../../../core/safety/safety_interceptor.dart';
 import '../../../../core/safety/support_button.dart';
 import '../../../../core/widgets/mind_button.dart';
 import '../../../../core/widgets/mind_pressable.dart';
+import '../../../../core/widgets/mind_switch.dart';
 import '../../../../core/widgets/mind_undo_banner.dart';
 import '../../../../core/widgets/mood_face.dart';
 import '../../../mind_trace/controllers/mind_trace_controller.dart';
@@ -85,12 +86,18 @@ class TrackEntryDetailSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.tokens;
     final strings = ref.watch(appStringsProvider);
-    final moodStyle = trackMoodOptionFor(trace.overallMood);
-    final moodText = trackMoodLabel(trace.overallMood, strings);
-    final ts = trace.effectiveTimestamp;
+    final liveTrace =
+        (ref.watch(mindTraceControllerProvider).value ??
+                const <MindTraceModel>[])
+            .cast<MindTraceModel?>()
+            .firstWhere((t) => t?.id == trace.id, orElse: () => trace) ??
+        trace;
+    final moodStyle = trackMoodOptionFor(liveTrace.overallMood);
+    final moodText = trackMoodLabel(liveTrace.overallMood, strings);
+    final ts = liveTrace.effectiveTimestamp;
     final hour = ts.hour.toString().padLeft(2, '0');
     final minute = ts.minute.toString().padLeft(2, '0');
-    final nuanced = trace.nuancedEmotions;
+    final nuanced = liveTrace.nuancedEmotions;
 
     return Container(
       decoration: BoxDecoration(
@@ -297,7 +304,72 @@ class TrackEntryDetailSheet extends ConsumerWidget {
                       .toList(),
                 ),
               ],
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
+              Container(
+                key: const ValueKey('track-detail-privacy-card'),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: tokens.surface2,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: liveTrace.isPrivate ? tokens.ink : tokens.line,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      liveTrace.isPrivate
+                          ? Icons.lock_outline_rounded
+                          : Icons.health_and_safety_outlined,
+                      size: 20,
+                      color: liveTrace.isPrivate ? tokens.ink : tokens.m1,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            strings.keepJustForMeLabel,
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                              color: tokens.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            liveTrace.isPrivate
+                                ? strings.keepJustForMeDesc
+                                : strings.sharedWithDoctorStatus,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: tokens.ink2,
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    MindSwitch(
+                      value: liveTrace.isPrivate,
+                      semanticLabel: strings.keepJustForMeLabel,
+                      onChanged: (val) async {
+                        if (val == liveTrace.isPrivate) return;
+                        HapticFeedback.selectionClick();
+                        await ref
+                            .read(mindTraceControllerProvider.notifier)
+                            .toggleTracePrivacy(liveTrace.id);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
               MindButton(
                 text: strings.exploreWithAiGuideBtn,
                 isFullWidth: true,

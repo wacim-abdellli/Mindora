@@ -18,7 +18,6 @@ import '../../controllers/investigation_providers.dart';
 import '../../domain/case_model.dart';
 import '../../domain/investigator_service.dart';
 import '../../domain/statement.dart';
-import 'ai_engine_config_sheet.dart';
 import 'companion_context_bridge_card.dart';
 
 /// Calm, minimalist, options-first dialogue sanctuary.
@@ -323,21 +322,6 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
                 fontSize: 12,
                 color: tokens.ink,
                 height: 1.35,
-              ),
-            ),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(
-              minimumSize: const Size(48, 48),
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-            ),
-            onPressed: () => AiEngineConfigSheet.show(context),
-            child: Text(
-              strings.aiEngineSettingsAction,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: tokens.ink,
               ),
             ),
           ),

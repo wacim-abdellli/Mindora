@@ -330,9 +330,11 @@ void main() {
         const en = AppStrings('en');
         expect(find.text(en.lookAndReadingSection), findsOneWidget);
         expect(find.text(en.aboutMeAndRemindersSection), findsOneWidget);
-        expect(find.text(en.doctorVisitSection), findsOneWidget);
-        expect(find.text(en.privacyLockBackupSection), findsOneWidget);
-        expect(find.byKey(const ValueKey('me-advanced-accordion')), findsOneWidget);
+        expect(find.text(en.privacyAccountSection), findsOneWidget);
+        expect(find.text(en.logOutBtn), findsOneWidget);
+        expect(find.text(en.doctorVisitSection), findsNothing);
+        expect(find.text(en.backupNowBtn), findsNothing);
+        expect(find.byKey(const ValueKey('me-advanced-accordion')), findsNothing);
         expect(find.byType(MindSegmented), findsNWidgets(2));
 
         await expectLater(tester, meetsGuideline(androidTapTargetGuideline));

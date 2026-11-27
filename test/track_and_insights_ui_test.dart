@@ -248,7 +248,7 @@ void main() {
 
       expect(find.text(en.personalBaselineTitle), findsOneWidget);
       expect(find.text(en.weeklySummaryTitle), findsOneWidget);
-      expect(find.text(en.exportSummaryButton), findsOneWidget);
+      expect(find.text(en.exportSummaryButton), findsNothing);
       expect(find.text(en.fullProgressTrendsTitle), findsOneWidget);
     });
   });

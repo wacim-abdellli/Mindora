@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../app/config/app_edition.dart';
 import '../../../app/localization/app_strings.dart';
 import '../../../app/localization/locale_controller.dart';
 import '../../../app/router/app_router.dart';
@@ -21,20 +22,15 @@ import '../../../core/widgets/mind_button.dart';
 import '../../../core/widgets/mind_card.dart';
 import '../../../core/widgets/mind_pressable.dart';
 import '../../../core/widgets/mind_segmented.dart';
-import '../../../core/widgets/mind_sheet.dart';
 import '../../../core/widgets/mind_switch.dart';
 import '../../../core/widgets/mind_toast.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../backup/data/unified_backup_service.dart';
-import '../../case_file/presentation/clinical_export_preview_sheet.dart';
+import '../../clinic_sync/controllers/clinic_sync_providers.dart';
+import '../../clinic_sync/domain/clinic_account_models.dart';
 import '../../clinician/presentation/clinician_shell_screen.dart';
-import '../../clinician/presentation/widgets/import_care_focus_sheet.dart';
-import '../../clinician/presentation/widgets/pre_visit_brief_sheet.dart';
-import '../../clinician/presentation/widgets/share_with_psychiatrist_sheet.dart';
 import '../../investigation/controllers/investigation_providers.dart';
-import '../../investigation/presentation/widgets/ai_engine_config_sheet.dart';
 import '../../journal/controllers/journal_memory_controller.dart';
-import '../../journal/presentation/widgets/journal_memory_sheet.dart';
 import '../../journey/controllers/journey_controller.dart';
 import '../../mind_trace/controllers/mind_trace_controller.dart';
 import '../../observatory/controllers/observatory_controllers.dart';
@@ -42,15 +38,13 @@ import '../../observatory/data/local_symptom_repository.dart';
 import '../../observatory/presentation/inner_observatory_screen.dart';
 import '../../profile/controllers/profile_controller.dart';
 import '../../profile/presentation/psychological_profile_screen.dart';
-import 'clinical_sharing_history_sheet.dart';
 
 /// Me & Preferences Screen.
 ///
-/// Organized into 5 calm grouped cards (Look & reading, About me & reminders,
-/// Doctor visit, Privacy, lock & backup, and collapsed For clinicians &
-/// advanced) built with MindTokens, >= 48dp interactive targets, >= 12.5px
-/// typography, reminder pre-permission, dry-run restore preview, and a
-/// double-confirm local reset.
+/// Minimalist, age-inclusive 3-card settings layout:
+/// 1. Look & reading (Theme swatches, Language, Reading Comfort, Larger Text)
+/// 2. About me & reminders (Preferred name, Care focus, Symptoms, Reminders)
+/// 3. Privacy & account (App lock, PIN, Privacy guarantees, Emergency help, Log out, Delete data)
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -59,13 +53,10 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  static const String _prefAiHistory = 'mf_settings_ai_history';
   static const String _prefGentleNotif = 'mf_gentle_notifications';
   static const String _prefNotifFreq = 'mf_notification_freq';
 
-  bool _aiHistoryAccess = true;
   bool _gentleNotifications = false;
-  bool _showAdvanced = false;
   String _notificationFrequency = 'daily';
 
   @override
@@ -77,11 +68,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _loadPersistedSettings() async {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
-      final profileConsent =
-          ref.read(profileControllerProvider).value?.shareWithAiCompanion;
       setState(() {
-        _aiHistoryAccess =
-            profileConsent ?? (prefs.getBool(_prefAiHistory) ?? true);
         _gentleNotifications = prefs.getBool(_prefGentleNotif) ?? false;
         _notificationFrequency = prefs.getString(_prefNotifFreq) ?? 'daily';
       });
@@ -128,295 +115,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-  Future<void> _setAiHistory(bool val) async {
-    HapticFeedback.lightImpact();
-    setState(() => _aiHistoryAccess = val);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_prefAiHistory, val);
-    await ref.read(profileControllerProvider.notifier).setAiPersonalization(val);
-  }
-
-  Future<void> _promptEncryptedVaultExport(
-    BuildContext context,
-    AppStrings strings,
-    MindTokens tokens,
-  ) async {
-    final passCtrl = TextEditingController();
-    final confirmCtrl = TextEditingController();
-    String? errorMsg;
-
-    final password = await showDialog<String>(
-      context: context,
-      builder: (dialogCtx) => StatefulBuilder(
-        builder: (dialogCtx, setDialogState) => AlertDialog(
-          backgroundColor: tokens.surface,
-          title: Text(
-            strings.exportEncryptedVaultTitle,
-            style: TextStyle(
-              color: tokens.ink,
-              fontSize: 16.5,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  strings.exportEncryptedVaultDesc,
-                  style: TextStyle(color: tokens.ink2, fontSize: 13.5),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: passCtrl,
-                  obscureText: true,
-                  style: TextStyle(color: tokens.ink, fontSize: 14),
-                  decoration: InputDecoration(
-                    labelText: strings.passphraseFieldLabel,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(tokens.buttonRadius),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: confirmCtrl,
-                  obscureText: true,
-                  style: TextStyle(color: tokens.ink, fontSize: 14),
-                  decoration: InputDecoration(
-                    labelText: strings.confirmPassphraseLabel,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(tokens.buttonRadius),
-                    ),
-                  ),
-                ),
-                if (errorMsg != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    errorMsg!,
-                    style: TextStyle(
-                      color: tokens.safety,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(),
-              child: Text(strings.cancelBtn),
-            ),
-            FilledButton(
-              onPressed: () {
-                final p1 = passCtrl.text;
-                final p2 = confirmCtrl.text;
-                if (p1.length < 6) {
-                  setDialogState(() {
-                    errorMsg = strings.passphraseTooShortError;
-                  });
-                  return;
-                }
-                if (p1 != p2) {
-                  setDialogState(() {
-                    errorMsg = strings.passphraseMismatchError;
-                  });
-                  return;
-                }
-                Navigator.of(dialogCtx).pop(p1);
-              },
-              child: Text(strings.exportVaultBtn),
-            ),
-          ],
-        ),
-      ),
-    );
-    passCtrl.dispose();
-    confirmCtrl.dispose();
-
-    if (password == null || !mounted) return;
-    HapticFeedback.lightImpact();
-    final result = await ref
-        .read(unifiedBackupServiceProvider)
-        .createPasswordEncryptedBackup(password);
-    if (!result.success || result.rawJson == null) {
-      if (context.mounted) {
-        showMindToast(context, result.message);
-      }
-      return;
-    }
-
-    await Clipboard.setData(ClipboardData(text: result.rawJson!));
-    if (context.mounted) {
-      showMindToast(context, strings.vaultCopiedToast);
-    }
-  }
-
-  Future<void> _promptEncryptedVaultRestore(
-    BuildContext context,
-    AppStrings strings,
-    MindTokens tokens,
-  ) async {
-    final jsonCtrl = TextEditingController();
-    final passCtrl = TextEditingController();
-    String? errorMsg;
-
-    final payload = await showDialog<({String json, String password})>(
-      context: context,
-      builder: (dialogCtx) => StatefulBuilder(
-        builder: (dialogCtx, setDialogState) => AlertDialog(
-          backgroundColor: tokens.surface,
-          title: Text(
-            strings.restoreBackupBtn,
-            style: TextStyle(
-              color: tokens.ink,
-              fontSize: 16.5,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  strings.restoreEncryptedVaultDesc,
-                  style: TextStyle(color: tokens.ink2, fontSize: 13.5),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: jsonCtrl,
-                  minLines: 3,
-                  maxLines: 5,
-                  style: TextStyle(color: tokens.ink, fontSize: 13),
-                  decoration: InputDecoration(
-                    labelText: strings.backupJsonLabel,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(tokens.buttonRadius),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: passCtrl,
-                  obscureText: true,
-                  style: TextStyle(color: tokens.ink, fontSize: 14),
-                  decoration: InputDecoration(
-                    labelText: strings.passphraseFieldLabel,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(tokens.buttonRadius),
-                    ),
-                  ),
-                ),
-                if (errorMsg != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    errorMsg!,
-                    style: TextStyle(
-                      color: tokens.safety,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(),
-              child: Text(strings.cancelBtn),
-            ),
-            FilledButton(
-              onPressed: () {
-                final raw = jsonCtrl.text.trim();
-                final pwd = passCtrl.text;
-                if (raw.isEmpty) {
-                  setDialogState(() {
-                    errorMsg = strings.pasteBackupFirstError;
-                  });
-                  return;
-                }
-                Navigator.of(dialogCtx).pop((json: raw, password: pwd));
-              },
-              child: Text(strings.continueBtn),
-            ),
-          ],
-        ),
-      ),
-    );
-    jsonCtrl.dispose();
-    passCtrl.dispose();
-
-    if (payload == null || !mounted) return;
-
-    final backupSvc = ref.read(unifiedBackupServiceProvider);
-    final preview = await backupSvc.previewPasswordEncryptedBackup(
-      payload.json,
-      payload.password,
-    );
-    if (!context.mounted) return;
-    if (!preview.success || preview.rawJson == null) {
-      showMindToast(context, preview.message);
-      return;
-    }
-
-    final confirmed = await showMindSheet<bool>(
-      context: context,
-      title: strings.restoreBackupPreviewTitle,
-      builder: (sheetCtx) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            strings.restorePreviewSummary(
-              preview.tracesCount,
-              preview.sessionsCount,
-            ),
-            style: TextStyle(
-              fontSize: 14.5,
-              color: tokens.ink2,
-              height: 1.45,
-            ),
-          ),
-          const SizedBox(height: 18),
-          MindButton(
-            text: strings.restoreBackupBtn,
-            isFullWidth: true,
-            onPressed: () => Navigator.of(sheetCtx).pop(true),
-          ),
-          const SizedBox(height: 8),
-          MindButton(
-            text: strings.cancelBtn,
-            variant: MindButtonVariant.ghost,
-            isFullWidth: true,
-            onPressed: () => Navigator.of(sheetCtx).pop(false),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true || !mounted) return;
-    HapticFeedback.mediumImpact();
-    final result = await backupSvc.restoreFromBackupJson(preview.rawJson!);
-    if (result.success) {
-      ref.invalidate(savedCasesProvider);
-      ref.invalidate(activeCaseControllerProvider);
-      ref.invalidate(mindTraceControllerProvider);
-      ref.invalidate(journalMemoryControllerProvider);
-      ref.invalidate(profileControllerProvider);
-      ref.invalidate(symptomReportsControllerProvider);
-      ref.invalidate(symptomListControllerProvider);
-      ref.invalidate(journeyControllerProvider);
-    }
-    if (context.mounted) {
-      showMindToast(context, result.message);
-    }
-  }
-
   Future<void> _showEditPreferredNameDialog(
     BuildContext context,
     AppStrings strings,
@@ -436,151 +134,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           .read(profileControllerProvider.notifier)
           .updateAboutMe(preferredName: result);
     }
-  }
-
-  void _showUpgradeVaultSheet(
-    BuildContext context,
-    AppStrings strings,
-    MindTokens tokens,
-  ) {
-    HapticFeedback.lightImpact();
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
-    final codenameController = TextEditingController();
-
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useRootNavigator: true,
-      backgroundColor: tokens.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(tokens.sheetRadius)),
-      ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.cloud_upload_outlined, size: 20, color: tokens.ink),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    strings.linkEmailTitle,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: tokens.ink,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  tooltip: strings.closeBtn,
-                  icon: Icon(
-                    Icons.close_rounded,
-                    size: 20,
-                    color: tokens.ink2,
-                  ),
-                  onPressed: () => Navigator.of(ctx).pop(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              strings.linkEmailSubtitle,
-              style: TextStyle(
-                fontSize: 12,
-                color: tokens.ink2,
-                height: 1.35,
-              ),
-            ),
-            const SizedBox(height: 18),
-            TextFormField(
-              controller: codenameController,
-              style: TextStyle(color: tokens.ink, fontSize: 13),
-              decoration: InputDecoration(
-                hintText: strings.codenameFieldHint,
-                labelText: strings.codenameFieldLabel,
-                filled: true,
-                fillColor: tokens.surface2,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: emailController,
-              keyboardType: TextInputType.emailAddress,
-              style: TextStyle(color: tokens.ink, fontSize: 13),
-              decoration: InputDecoration(
-                hintText: strings.emailFieldHint,
-                labelText: strings.emailFieldLabel,
-                filled: true,
-                fillColor: tokens.surface2,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: passwordController,
-              obscureText: true,
-              style: TextStyle(color: tokens.ink, fontSize: 13),
-              decoration: InputDecoration(
-                hintText: strings.passwordFieldHint,
-                labelText: strings.passwordFieldLabel,
-                filled: true,
-                fillColor: tokens.surface2,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            MindButton(
-              text: strings.linkEmailBtn,
-              isFullWidth: true,
-              onPressed: () async {
-                final email = emailController.text.trim();
-                final password = passwordController.text.trim();
-                final codename = codenameController.text.trim();
-
-                final success = await ref
-                    .read(authControllerProvider.notifier)
-                    .linkEmail(
-                      email,
-                      password,
-                      codename: codename.isNotEmpty ? codename : null,
-                    );
-
-                if (ctx.mounted) {
-                  Navigator.of(ctx).pop();
-                  if (mounted) {
-                    showMindToast(
-                      context,
-                      success
-                          ? strings.vaultStatusCloud
-                          : strings.localizeAuthError(
-                              ref.read(authControllerProvider).errorMessage ?? '',
-                            ),
-                    );
-                  }
-                }
-              },
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   void _startDoubleConfirmReset(AppStrings strings, MindTokens tokens) {
@@ -721,7 +274,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     await ref.read(secureKeyManagerProvider).wipeAllKeys();
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_prefAiHistory);
+    await prefs.remove('mf_settings_ai_history');
     await prefs.remove(_prefGentleNotif);
     await prefs.remove(_prefNotifFreq);
     await prefs.remove(BiometricSecurityService.prefKeyBiometric);
@@ -735,7 +288,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     if (mounted) {
       setState(() {
-        _aiHistoryAccess = true;
         _gentleNotifications = false;
         _notificationFrequency = 'daily';
       });
@@ -744,213 +296,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         router.go(AppRouter.auth);
       }
     }
-  }
-
-  Future<void> _openSharePacketBuilder(
-    BuildContext context,
-    AppStrings strings,
-  ) async {
-    final allCases = await ref.read(savedCasesProvider.future);
-    if (!context.mounted) return;
-    final tokens = context.tokens;
-    final shareableCases = allCases.where((c) => !c.isPrivate).toList();
-    final privateCount = allCases.length - shareableCases.length;
-    final selectedIds = <String>{};
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useRootNavigator: true,
-      backgroundColor: tokens.bg.withValues(alpha: 0.0),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) {
-          final selectedCases =
-              shareableCases.where((c) => selectedIds.contains(c.id)).toList();
-          return Container(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(ctx).size.height * 0.82,
-            ),
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-            decoration: BoxDecoration(
-              color: tokens.surface,
-              borderRadius: BorderRadius.vertical(
-                top: Radius.circular(tokens.sheetRadius),
-              ),
-              border: Border(top: BorderSide(color: tokens.line)),
-            ),
-            child: SafeArea(
-              top: false,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 36,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: tokens.line,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    strings.sharePacketTitle,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: tokens.ink,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    strings.sharePacketSub,
-                    style: TextStyle(fontSize: 12.5, color: tokens.ink2),
-                  ),
-                  if (privateCount > 0) ...[
-                    const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: tokens.surface2,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: tokens.line),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.lock_outline_rounded,
-                            size: 15,
-                            color: tokens.ink,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              strings.privateCasesExcludedBanner(privateCount),
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                color: tokens.ink2,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 14),
-                  if (shareableCases.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 20),
-                      child: Text(
-                        strings.noShareableTalksYet,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          color: tokens.ink2,
-                        ),
-                      ),
-                    )
-                  else
-                    Flexible(
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        itemCount: shareableCases.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 8),
-                        itemBuilder: (_, idx) {
-                          final item = shareableCases[idx];
-                          final checked = selectedIds.contains(item.id);
-                          final label = item.title.trim().isNotEmpty
-                              ? item.title.trim()
-                              : (item.incidentDescription.trim().isNotEmpty
-                                  ? item.incidentDescription.trim()
-                                  : item.caseNumber);
-                          return InkWell(
-                            borderRadius: BorderRadius.circular(14),
-                            onTap: () => setSheetState(() {
-                              if (checked) {
-                                selectedIds.remove(item.id);
-                              } else {
-                                selectedIds.add(item.id);
-                              }
-                            }),
-                            child: Container(
-                              constraints: const BoxConstraints(minHeight: 48),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: checked
-                                    ? tokens.cardTint
-                                    : tokens.surface2,
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                  color: checked ? tokens.primary : tokens.line,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Checkbox(
-                                    value: checked,
-                                    activeColor: tokens.primary,
-                                    onChanged: (_) => setSheetState(() {
-                                      if (checked) {
-                                        selectedIds.remove(item.id);
-                                      } else {
-                                        selectedIds.add(item.id);
-                                      }
-                                    }),
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      label,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 13.5,
-                                        fontWeight: checked
-                                            ? FontWeight.w600
-                                            : FontWeight.w500,
-                                        color: tokens.ink,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  if (shareableCases.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    MindButton(
-                      text: strings.previewSharePacketBtn(selectedCases.length),
-                      leadingIcon: Icons.visibility_outlined,
-                      isFullWidth: true,
-                      onPressed: selectedCases.isEmpty
-                          ? null
-                          : () {
-                              Navigator.of(ctx).pop();
-                              ClinicalExportPreviewSheet.show(
-                                context,
-                                selectedCases,
-                              );
-                            },
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
   }
 
   void _showPrivacyDialog(
@@ -998,6 +343,206 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  Future<void> _confirmLogOut(
+    BuildContext context,
+    AppStrings strings,
+    MindTokens tokens,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: tokens.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: tokens.line),
+        ),
+        title: Text(
+          strings.logOutConfirmTitle,
+          style: TextStyle(
+            color: tokens.ink,
+            fontSize: 16.5,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          strings.logOutConfirmBody,
+          style: TextStyle(color: tokens.ink2, fontSize: 14, height: 1.45),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+            child: Text(
+              strings.cancelBtn,
+              style: TextStyle(
+                color: tokens.ink2,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(48, 48),
+              backgroundColor: tokens.primary,
+              foregroundColor: tokens.onPrimary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(tokens.buttonRadius),
+              ),
+            ),
+            onPressed: () => Navigator.of(dialogCtx).pop(true),
+            child: Text(
+              strings.logOutBtn,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 13.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await ref.read(authControllerProvider.notifier).signOut();
+    if (!context.mounted) return;
+    GoRouter.maybeOf(context)?.go(AppRouter.auth);
+  }
+
+  Future<void> _showChangePinDialog(
+    BuildContext context,
+    AppStrings strings,
+    MindTokens tokens,
+  ) async {
+    final user = ref.read(authControllerProvider).user;
+    if (user == null) return;
+    final currentCtrl = TextEditingController();
+    final newCtrl = TextEditingController();
+    String? errorMsg;
+    var saving = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (dialogCtx, setDialogState) => AlertDialog(
+          backgroundColor: tokens.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: tokens.line),
+          ),
+          title: Text(
+            strings.changePinBtn,
+            style: TextStyle(
+              color: tokens.ink,
+              fontSize: 16.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: currentCtrl,
+                  obscureText: true,
+                  keyboardType: TextInputType.number,
+                  style: TextStyle(color: tokens.ink, fontSize: 14),
+                  decoration: InputDecoration(
+                    labelText: strings.currentPinLabel,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(tokens.buttonRadius),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: newCtrl,
+                  obscureText: true,
+                  keyboardType: TextInputType.number,
+                  style: TextStyle(color: tokens.ink, fontSize: 14),
+                  decoration: InputDecoration(
+                    labelText: strings.newPinLabel,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(tokens.buttonRadius),
+                    ),
+                  ),
+                ),
+                if (errorMsg != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    errorMsg!,
+                    style: TextStyle(
+                      color: tokens.safety,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: saving ? null : () => Navigator.of(dialogCtx).pop(),
+              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+              child: Text(strings.cancelBtn),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                backgroundColor: tokens.primary,
+                foregroundColor: tokens.onPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(tokens.buttonRadius),
+                ),
+              ),
+              onPressed: saving
+                  ? null
+                  : () async {
+                      final next = newCtrl.text.trim();
+                      if (next.length < 4) {
+                        setDialogState(() {
+                          errorMsg = strings.pinFieldHint;
+                        });
+                        return;
+                      }
+                      setDialogState(() {
+                        saving = true;
+                        errorMsg = null;
+                      });
+                      try {
+                        await ref
+                            .read(clinicAuthRepositoryProvider)
+                            .changePatientPin(
+                              patientId: user.id,
+                              currentPin: currentCtrl.text.trim(),
+                              newPin: next,
+                            );
+                        if (dialogCtx.mounted) {
+                          Navigator.of(dialogCtx).pop();
+                        }
+                        if (context.mounted) {
+                          showMindToast(context, strings.pinChangedToast);
+                        }
+                      } on ClinicAuthException catch (e) {
+                        if (dialogCtx.mounted) {
+                          setDialogState(() {
+                            saving = false;
+                            errorMsg = e.message;
+                          });
+                        }
+                      }
+                    },
+              child: Text(strings.saveNewPinBtn),
+            ),
+          ],
+        ),
+      ),
+    );
+    currentCtrl.dispose();
+    newCtrl.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
@@ -1007,17 +552,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final authState = ref.watch(authControllerProvider);
     final appLock = ref.watch(appLockProvider);
     final profileAsync = ref.watch(profileControllerProvider);
-    final cases = ref.watch(savedCasesProvider).value ?? [];
     final profile = profileAsync.value;
-    final aiHistoryEnabled =
-        profile?.shareWithAiCompanion ?? _aiHistoryAccess;
 
     final preferredName = profile?.preferredName.trim() ?? '';
     final authUser = authState.user;
+    final isClinicConnected = authUser?.isClinicAccount == true;
     final isCloudLinked = authUser != null && !authUser.isAnonymous;
-    final accountValue = isCloudLinked
-        ? (authUser.email ?? strings.vaultStatusCloud)
-        : strings.localDeviceOnlyLabel;
 
     final themeIndex = currentThemeMode == ThemeMode.light
         ? 0
@@ -1094,13 +634,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
                         const SizedBox(height: 8),
                         MindBadge(
-                          label: isCloudLinked
-                              ? strings.vaultStatusCloud
-                              : strings.vaultStatusAnonymous,
-                          icon: isCloudLinked
+                          label: isClinicConnected
+                              ? strings.connectedToDoctorBadge(
+                                  authUser!.doctorName ?? 'Mindora',
+                                )
+                              : (isCloudLinked
+                                    ? strings.vaultStatusCloud
+                                    : strings.vaultStatusAnonymous),
+                          icon: isClinicConnected || isCloudLinked
                               ? Icons.cloud_done_outlined
                               : Icons.phonelink_lock_outlined,
-                          backgroundColor: isCloudLinked
+                          backgroundColor: isClinicConnected || isCloudLinked
                               ? tokens.primarySoft
                               : tokens.surface2,
                           textColor: tokens.ink,
@@ -1112,8 +656,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
 
-            // Doctor quick shortcut when registered in clinician role
-            if (profile?.userRole == 'clinician') ...[
+            if (AppEditionConfig.isClinicianApp &&
+                profile?.userRole == 'clinician') ...[
               const SizedBox(height: 14),
               MindButton(
                 text: strings.openDoctorWorkspaceBtn,
@@ -1364,58 +908,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
             const SizedBox(height: 22),
 
-            // Card 3: Doctor visit (optional)
-            _sectionLabel(strings.doctorVisitSection, tokens),
-            MindCard(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  _buildNavRow(
-                    tokens: tokens,
-                    icon: Icons.assignment_outlined,
-                    title: strings.preVisitBriefTitle,
-                    subtitle: strings.preVisitBriefSubtitle,
-                    onTap: () => PreVisitBriefSheet.show(context),
-                  ),
-                  Divider(height: 1, thickness: 1, color: tokens.line),
-                  _buildNavRow(
-                    tokens: tokens,
-                    icon: Icons.health_and_safety_outlined,
-                    title: strings.shareWithPsychiatristTitle,
-                    subtitle: strings.shareWithPsychiatristSub,
-                    onTap: () => ShareWithPsychiatristSheet.show(context),
-                  ),
-                  Divider(height: 1, thickness: 1, color: tokens.line),
-                  _buildNavRow(
-                    tokens: tokens,
-                    icon: Icons.assignment_returned_outlined,
-                    title: strings.importCareFocusTitle,
-                    subtitle: strings.importCareFocusSub,
-                    onTap: () => ImportCareFocusSheet.show(context),
-                  ),
-                  Divider(height: 1, thickness: 1, color: tokens.line),
-                  _buildNavRow(
-                    tokens: tokens,
-                    icon: Icons.description_outlined,
-                    title: strings.exportSummaryButton,
-                    onTap: () => ClinicalExportPreviewSheet.show(context, cases),
-                  ),
-                  Divider(height: 1, thickness: 1, color: tokens.line),
-                  _buildNavRow(
-                    tokens: tokens,
-                    icon: Icons.inventory_2_outlined,
-                    title: strings.sharePacketTitle,
-                    subtitle: strings.sharePacketSub,
-                    onTap: () => _openSharePacketBuilder(context, strings),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 22),
-
-            // Card 4: Privacy, lock & backup
-            _sectionLabel(strings.privacyLockBackupSection, tokens),
+            // Card 3: Minimalist Privacy, Safety & Account
+            _sectionLabel(strings.privacyAccountSection, tokens),
             MindCard(
               padding: EdgeInsets.zero,
               child: Column(
@@ -1438,66 +932,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       }
                     },
                   ),
-                  Divider(height: 1, thickness: 1, color: tokens.line),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: MindButton(
-                                text: strings.backupNowBtn,
-                                variant: MindButtonVariant.soft,
-                                leadingIcon: Icons.cloud_upload_outlined,
-                                onPressed: () async {
-                                  HapticFeedback.mediumImpact();
-                                  final result = await ref
-                                      .read(unifiedBackupServiceProvider)
-                                      .createFullBackup();
-                                  if (context.mounted) {
-                                    showMindToast(
-                                      context,
-                                      strings.backupCompleteToast(
-                                        result.tracesCount,
-                                        result.sessionsCount,
-                                        result.memoriesCount,
-                                      ),
-                                    );
-                                  }
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: MindButton(
-                                text: strings.exportVaultBtn,
-                                variant: MindButtonVariant.secondary,
-                                leadingIcon: Icons.enhanced_encryption_outlined,
-                                onPressed: () => _promptEncryptedVaultExport(
-                                  context,
-                                  strings,
-                                  tokens,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        MindButton(
-                          text: strings.restoreBackupBtn,
-                          variant: MindButtonVariant.secondary,
-                          isFullWidth: true,
-                          leadingIcon: Icons.restore_page_outlined,
-                          onPressed: () => _promptEncryptedVaultRestore(
-                            context,
-                            strings,
-                            tokens,
-                          ),
-                        ),
-                      ],
+                  if (isClinicConnected) ...[
+                    Divider(height: 1, thickness: 1, color: tokens.line),
+                    _buildNavRow(
+                      tokens: tokens,
+                      icon: Icons.pin_outlined,
+                      title: strings.changePinBtn,
+                      onTap: () => _showChangePinDialog(context, strings, tokens),
                     ),
-                  ),
+                  ],
                   Divider(height: 1, thickness: 1, color: tokens.line),
                   _buildNavRow(
                     tokens: tokens,
@@ -1516,6 +959,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   Divider(height: 1, thickness: 1, color: tokens.line),
                   _buildNavRow(
                     tokens: tokens,
+                    icon: Icons.logout_rounded,
+                    title: strings.logOutBtn,
+                    onTap: () => _confirmLogOut(context, strings, tokens),
+                  ),
+                  Divider(height: 1, thickness: 1, color: tokens.line),
+                  _buildNavRow(
+                    tokens: tokens,
                     icon: Icons.delete_forever_outlined,
                     iconColor: tokens.safety,
                     title: strings.wipeDataTitle,
@@ -1523,135 +973,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     subtitle: strings.wipeDataDesc,
                     onTap: () => _startDoubleConfirmReset(strings, tokens),
                   ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 22),
-
-            // Card 5: Collapsed For clinicians & advanced accordion
-            MindCard(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  Semantics(
-                    button: true,
-                    expanded: _showAdvanced,
-                    label: strings.advancedCliniciansSection,
-                    child: MindPressable(
-                      key: const ValueKey('me-advanced-accordion'),
-                      onPressed: () {
-                        HapticFeedback.selectionClick();
-                        setState(() => _showAdvanced = !_showAdvanced);
-                      },
-                      child: Container(
-                        constraints: const BoxConstraints(minHeight: 56),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.tune_rounded,
-                              size: 20,
-                              color: tokens.ink2,
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Text(
-                                strings.advancedCliniciansSection,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                  color: tokens.ink,
-                                ),
-                              ),
-                            ),
-                            Icon(
-                              _showAdvanced
-                                  ? Icons.expand_less_rounded
-                                  : Icons.expand_more_rounded,
-                              size: 22,
-                              color: tokens.ink2,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (_showAdvanced) ...[
-                    Divider(height: 1, thickness: 1, color: tokens.line),
-                    _buildNavRow(
-                      tokens: tokens,
-                      icon: Icons.medical_services_outlined,
-                      title: strings.psychiatristWorkspaceTitle,
-                      subtitle: strings.psychiatristWorkspaceSub,
-                      onTap: () {
-                        final router = GoRouter.maybeOf(context);
-                        if (router != null) {
-                          router.go(AppRouter.clinician);
-                        } else {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const ClinicianShellScreen(),
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                    Divider(height: 1, thickness: 1, color: tokens.line),
-                    _buildNavRow(
-                      tokens: tokens,
-                      icon: Icons.smart_toy_outlined,
-                      title: strings.mindAssistantEngineTitle,
-                      subtitle: strings.mindAssistantEngineSub,
-                      onTap: () => AiEngineConfigSheet.show(context),
-                    ),
-                    Divider(height: 1, thickness: 1, color: tokens.line),
-                    _buildSwitchRow(
-                      tokens: tokens,
-                      icon: Icons.memory_rounded,
-                      title: strings.aiHistoryTitle,
-                      subtitle: strings.aiHistoryDesc,
-                      value: aiHistoryEnabled,
-                      onChanged: _setAiHistory,
-                    ),
-                    Divider(height: 1, thickness: 1, color: tokens.line),
-                    _buildNavRow(
-                      tokens: tokens,
-                      icon: Icons.auto_stories_outlined,
-                      title: strings.memoryVaultTitle,
-                      onTap: () => JournalMemorySheet.show(context),
-                    ),
-                    Divider(height: 1, thickness: 1, color: tokens.line),
-                    _buildNavRow(
-                      tokens: tokens,
-                      icon: Icons.history_edu_outlined,
-                      title: strings.clinicalSharingHistoryTitle,
-                      subtitle: strings.clinicalSharingHistoryDesc,
-                      onTap: () => ClinicalSharingHistorySheet.show(context),
-                    ),
-                    Divider(height: 1, thickness: 1, color: tokens.line),
-                    _buildNavRow(
-                      tokens: tokens,
-                      icon: isCloudLinked
-                          ? Icons.logout_rounded
-                          : Icons.cloud_upload_outlined,
-                      title: strings.accountStatusLabel,
-                      subtitle: accountValue,
-                      trailingText: isCloudLinked
-                          ? strings.signOutBtn
-                          : strings.linkEmailBtn,
-                      onTap: () {
-                        if (isCloudLinked) {
-                          ref.read(authControllerProvider.notifier).signOut();
-                        } else {
-                          _showUpgradeVaultSheet(context, strings, tokens);
-                        }
-                      },
-                    ),
-                  ],
                 ],
               ),
             ),

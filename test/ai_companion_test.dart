@@ -10,7 +10,6 @@ import 'package:mind_forensics/features/investigation/domain/case_stage.dart';
 import 'package:mind_forensics/features/investigation/domain/conversation_mode.dart';
 import 'package:mind_forensics/features/investigation/presentation/ai_companion_hub_view.dart';
 import 'package:mind_forensics/features/investigation/presentation/flash_case_screen.dart';
-import 'package:mind_forensics/features/investigation/presentation/widgets/ai_engine_config_sheet.dart';
 import 'package:mind_forensics/features/mind_trace/domain/mind_trace_model.dart';
 import 'package:mind_forensics/features/profile/domain/condition_type.dart';
 import 'package:mind_forensics/features/profile/domain/diagnostic_status.dart';
@@ -338,7 +337,7 @@ void main() {
     );
 
     testWidgets(
-      'FlashCaseScreen header exposes More sheet (Engine + Instructions) and sends doorway cleanly',
+      'FlashCaseScreen header exposes calm More sheet (Instructions, Privacy lock, Memory) without AI engine clutter',
       (WidgetTester tester) async {
         tester.view.physicalSize = const Size(800, 1600);
         tester.view.devicePixelRatio = 1.0;
@@ -350,21 +349,23 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // More button opens calm options sheet exposing AI engine settings
+        // More button opens calm options sheet without technical API key clutter
+        const en = AppStrings('en');
         await tester.tap(find.byKey(const ValueKey('talk-more-btn')));
         await tester.pumpAndSettle();
-        await tester.tap(find.text(const AppStrings('en').aiEngineTooltip));
-        await tester.pumpAndSettle();
-        expect(find.byType(AiEngineConfigSheet), findsOneWidget);
+        expect(find.text(en.listeningPrefsLabel), findsOneWidget);
+        expect(find.text(en.talkPrivateToggleTitle), findsOneWidget);
+        expect(find.text(en.memoryVaultTitle), findsOneWidget);
+        expect(find.text(en.aiEngineTooltip), findsNothing);
 
-        Navigator.of(tester.element(find.byType(AiEngineConfigSheet))).pop();
+        // Dismiss More bottom sheet cleanly
+        Navigator.of(tester.element(find.text(en.listeningPrefsLabel))).pop();
         await tester.pumpAndSettle();
 
         // No manual Mode Chooser bar sits above chat
         expect(find.text('Explore a Thought'), findsNothing);
 
         // Tapping warm human doorway starts adaptive conversation & renders AI options
-        const en = AppStrings('en');
         await tester.tap(find.text(en.talkDoorwaySpinning));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 500));

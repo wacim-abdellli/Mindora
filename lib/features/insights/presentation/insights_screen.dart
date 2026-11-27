@@ -16,10 +16,7 @@ import '../../../core/widgets/mind_segmented.dart';
 import '../../../core/widgets/mood_face.dart';
 import '../../../core/widgets/smooth_spline_chart.dart';
 import 'widgets/mood_aura_poster_sheet.dart';
-import '../../case_file/presentation/clinical_export_preview_sheet.dart';
-import '../../clinician/presentation/widgets/share_with_psychiatrist_sheet.dart';
 import '../../investigation/controllers/investigation_providers.dart';
-import '../../investigation/domain/case_model.dart';
 import '../../mind_trace/controllers/mind_trace_controller.dart';
 import '../../mind_trace/domain/adaptive_tracking_engine.dart';
 import '../../mind_trace/domain/affect_taxonomy.dart';
@@ -177,20 +174,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
             onPressed: () {
               HapticFeedback.lightImpact();
               _showRangeOverviewSheet(context, traces, tokens, strings);
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.share_outlined, size: 20, color: tokens.ink),
-            tooltip: strings.exportSummaryButton,
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              ClinicalExportPreviewSheet.show(
-                context,
-                cases,
-                baseline: baseline,
-                weeklySummary: weeklySummary,
-                traces: allTraces,
-              );
             },
           ),
           const SupportButton(),
@@ -543,65 +526,15 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                 const SizedBox(height: 18),
               ],
 
-              // 7. Weekly Summary & Doctor Handoff
+              // 7. Weekly Summary
               _buildWeeklyTherapistSummaryCard(
                 context,
                 weeklySummary,
-                cases,
                 tokens,
                 strings,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 18),
             ],
-
-            // Consent-Scoped Care Handoff to Psychiatrist
-            MindCard(
-              padding: const EdgeInsets.all(16),
-              onTap: () => ShareWithPsychiatristSheet.show(context),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: tokens.cardTint,
-                      borderRadius: BorderRadius.circular(tokens.chipRadius),
-                    ),
-                    child: Icon(
-                      Icons.health_and_safety_outlined,
-                      size: 20,
-                      color: tokens.ink,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          strings.shareWithPsychiatristTitle,
-                          style: TextStyle(
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w700,
-                            color: tokens.ink,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          strings.shareWithPsychiatristSub,
-                          style: TextStyle(fontSize: 12, color: tokens.ink2),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 15,
-                    color: tokens.ink3,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 18),
 
             // 8. Detailed Analytics Deep-Dive Button (Preserved Core)
             MindCard(
@@ -1869,7 +1802,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
   Widget _buildWeeklyTherapistSummaryCard(
     BuildContext context,
     WeeklySummaryReport report,
-    List<CaseModel> cases,
     MindTokens tokens,
     AppStrings strings,
   ) {
@@ -1936,23 +1868,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                   ],
                 ),
               )),
-          const SizedBox(height: 12),
-          MindButton(
-            text: strings.exportSummaryButton,
-            variant: MindButtonVariant.secondary,
-            isFullWidth: true,
-            leadingIcon: Icons.description_outlined,
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              ClinicalExportPreviewSheet.show(
-                context,
-                cases,
-                baseline: ref.read(personalBaselineProvider),
-                weeklySummary: report,
-                traces: ref.read(mindTraceControllerProvider).value ?? const [],
-              );
-            },
-          ),
         ],
       ),
     );

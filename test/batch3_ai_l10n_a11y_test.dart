@@ -308,7 +308,7 @@ void main() {
 
       const enStrings = AppStrings('en');
       expect(find.text(enStrings.aiNoticeDailyLimit), findsOneWidget);
-      expect(find.text(enStrings.aiEngineSettingsAction), findsOneWidget);
+      expect(find.text(enStrings.aiEngineSettingsAction), findsNothing);
 
       await tester.tap(find.byIcon(Icons.close_rounded));
       await tester.pumpAndSettle();

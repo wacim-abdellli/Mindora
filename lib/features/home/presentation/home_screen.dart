@@ -21,8 +21,9 @@ import '../../../core/widgets/ambient_scaffold.dart';
 import '../../../core/widgets/mind_card.dart';
 import '../../../core/widgets/mind_toast.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../clinic_sync/controllers/clinic_sync_providers.dart';
+import '../../clinic_sync/domain/clinic_account_models.dart';
 import '../../clinician/controllers/clinician_providers.dart';
-import '../../clinician/presentation/widgets/pre_visit_brief_sheet.dart';
 import '../../investigation/controllers/investigation_providers.dart';
 import '../../investigation/domain/conversation_mode.dart';
 import '../../mind_trace/controllers/mind_trace_controller.dart';
@@ -223,12 +224,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final activeFocusPlan = ref.watch(postVisitFocusControllerProvider).value;
     final profile = ref.watch(profileControllerProvider).value;
+    final authUser = ref.watch(authControllerProvider).user;
+    final syncStatus = ref.watch(clinicSyncStatusProvider);
     final plan = ref.watch(appPersonalizationPlanProvider);
     final traceAsync = ref.watch(mindTraceControllerProvider);
     final traces = traceAsync.value ?? [];
     final todayTraces = traces.todayTraces;
     final todayTrace = todayTraces.isNotEmpty ? todayTraces.last : null;
-    final distinctLoggedDays = {for (final t in traces) t.dateKey}.length;
     final weekCutoff = DateTime.now().subtract(const Duration(days: 6));
     final weekDaysLogged = {
       for (final t in traces)
@@ -259,13 +261,68 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Mindora',
-                            style: LabTheme.textStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              color: tokens.primary,
-                            ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Mindora',
+                                style: LabTheme.textStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: tokens.primary,
+                                ),
+                              ),
+                              if (authUser?.isClinicAccount == true) ...[
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Container(
+                                    key: const ValueKey('home-quiet-sync-pill'),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: tokens.surface2,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: tokens.line),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          syncStatus.phase ==
+                                                      ClinicSyncPhase.synced ||
+                                                  syncStatus.lastSyncedAt !=
+                                                      null
+                                              ? Icons.cloud_done_outlined
+                                              : Icons.check_circle_outline_rounded,
+                                          size: 13,
+                                          color: tokens.m1,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Flexible(
+                                          child: Text(
+                                            syncStatus.phase ==
+                                                        ClinicSyncPhase.synced ||
+                                                    syncStatus.lastSyncedAt !=
+                                                        null
+                                                ? strings.syncedQuietLabel
+                                                : strings.savedOnPhoneLabel,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: LabTheme.textStyle(
+                                              fontSize: 12.0,
+                                              fontWeight: FontWeight.w600,
+                                              color: tokens.ink2,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                           const SizedBox(height: 2),
                           Text(
@@ -338,70 +395,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   onUpdateTrace: _updateTodayClinicalPulse,
                 ),
 
-                if (plan.isDoctorFollowed) ...[
-                  const SizedBox(height: 14),
-                  MindCard(
-                    key: const ValueKey('home-doctor-readiness-card'),
-                    variant: MindCardVariant.tint,
-                    padding: const EdgeInsets.all(16),
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      PreVisitBriefSheet.show(context);
-                    },
-                    semanticLabel: strings.doctorVisitReadyTitle(
-                      distinctLoggedDays,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: tokens.primary,
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Icon(
-                            Icons.medical_information_outlined,
-                            size: 22,
-                            color: tokens.onPrimary,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                strings.doctorVisitReadyTitle(
-                                  distinctLoggedDays,
-                                ),
-                                style: LabTheme.textStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w800,
-                                  color: tokens.ink,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                strings.doctorVisitReadySub,
-                                style: LabTheme.textStyle(
-                                  fontSize: 13,
-                                  color: tokens.ink2,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          size: 16,
-                          color: tokens.ink2,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-
                 const SizedBox(height: 14),
 
                 // 3. Gentle 7-Day Colored MoodFace Strip
@@ -417,7 +410,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   },
                 ),
 
-                // 3. Optional Doctor's Plan (only shown when active)
+                // 4. Optional Doctor's Plan (auto-synced from doctor, only shown when active)
                 if (activeFocusPlan != null &&
                     !activeFocusPlan.isDismissed) ...[
                   const SizedBox(height: 14),
@@ -429,7 +422,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     onDismiss: () => ref
                         .read(postVisitFocusControllerProvider.notifier)
                         .dismissPlan(),
-                    onPrepareVisit: () => PreVisitBriefSheet.show(context),
                   ),
                 ],
 

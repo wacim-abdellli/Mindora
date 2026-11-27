@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mind_forensics/app/localization/app_strings.dart';
 import 'package:mind_forensics/app/localization/locale_controller.dart';
 import 'package:mind_forensics/app/theme/display_comfort_controller.dart';
 import 'package:mind_forensics/app/theme/lab_theme.dart';
@@ -178,7 +179,7 @@ void main() {
       expect(find.byType(MoodFace), findsAtLeastNWidgets(6));
     });
 
-    testWidgets('SettingsScreen collapses For clinicians & advanced by default', (
+    testWidgets('SettingsScreen stays minimalist without clinician or JSON clutter', (
       tester,
     ) async {
       await _pumpAndAssertClean(
@@ -193,15 +194,12 @@ void main() {
         ),
       );
 
-      final accordion = find.byKey(const ValueKey('me-advanced-accordion'));
-      expect(accordion, findsOneWidget);
+      const en = AppStrings('en');
+      expect(find.byKey(const ValueKey('me-advanced-accordion')), findsNothing);
       expect(find.text('Psychiatrist Workspace'), findsNothing);
-
-      await tester.ensureVisible(accordion);
-      await tester.tap(accordion);
-      await tester.pumpAndSettle();
-
-      expect(find.text('Psychiatrist Workspace'), findsOneWidget);
+      expect(find.text(en.backupNowBtn), findsNothing);
+      expect(find.text(en.privacyAccountSection), findsOneWidget);
+      expect(find.text(en.logOutBtn), findsOneWidget);
     });
   });
 }
