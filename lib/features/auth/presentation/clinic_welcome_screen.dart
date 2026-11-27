@@ -100,7 +100,10 @@ class _ClinicWelcomeScreenState extends ConsumerState<ClinicWelcomeScreen> {
     final strings = ref.watch(appStringsProvider);
     final user = ref.watch(authControllerProvider).user;
     final patientName = user?.codename ?? '';
-    final doctorName = user?.doctorName ?? 'your doctor';
+    final doctorName = user?.doctorName ??
+        (strings.isArabic
+            ? 'طبيبك'
+            : (strings.isFrench ? 'votre médecin' : 'your doctor'));
 
     return AmbientScaffold(
       appBar: AppBar(

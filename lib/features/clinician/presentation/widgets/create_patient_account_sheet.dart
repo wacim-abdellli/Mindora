@@ -433,9 +433,10 @@ class _CreatePatientAccountSheetState
                 ),
               ),
               const SizedBox(height: 6),
-              SelectableText(
+              Text(
                 result.temporaryPin,
                 key: const ValueKey('admin-handover-pin-text'),
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
@@ -508,12 +509,16 @@ class _CreatePatientAccountSheetState
                 Icon(Icons.check_rounded, size: 15, color: tokens.ink),
                 const SizedBox(width: 6),
               ],
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected ? tokens.ink : tokens.ink2,
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    color: selected ? tokens.ink : tokens.ink2,
+                  ),
                 ),
               ),
             ],

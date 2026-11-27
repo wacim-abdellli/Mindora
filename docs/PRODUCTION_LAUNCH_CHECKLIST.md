@@ -19,9 +19,10 @@
 
 | Subsystem | Development Mode | Pre-Launch / Production Boundary |
 | :--- | :--- | :--- |
-| **Daily Check-In, Insights, Loop Map, Recovery Ledger** | 100% local on-device | Zero cloud database required (`SharedPreferences` + encrypted local store) |
-| **In-Room Patient -> Psychiatrist Sync (`MF-CLINIC-V1:`)** | 100% offline / QR / copy | Zero server transmission; gzip + PBKDF2-SHA256 + AES-256-GCM + SHA-256 check |
-| **Post-Visit Focus Plan (`MF-CAREPLAN-V1:`)** | 100% offline / QR / copy | Zero server transmission; verbal in-room passphrase only |
+| **Daily Check-In, Insights, Loop Map, Recovery Ledger** | 100% local on-device | Zero cloud database required (`SharedPreferences` + encrypted local store) unless synced via clinic tenant |
+| **Clinic Provisioning, Auth & Auto-Sync (`ClinicAuthRepository` / `ClinicSyncRepository`)** | `LocalClinicSimulatorRepository` (PBKDF2 PINs, single-use hashed QR tokens, AES-GCM vault, multi-tenant `doctorId` firewall, `isPrivate` exclusion) | Swap to Firebase Auth + Cloud Functions + Firestore (Blaze plan) with strict `clinicId`/`doctorId` tenant rules and zero server-side visibility of `isPrivate == true` entries |
+| **In-Room Patient -> Psychiatrist Handoff (`MF-CLINIC-V1:`)** | 100% offline / QR / copy | Zero server transmission; gzip + PBKDF2-SHA256 + AES-256-GCM + SHA-256 check |
+| **Post-Visit Focus Plan (`MF-CAREPLAN-V1:` & Clinic Inbox Push)** | Auto-pushed into Clinic Inbox + optional offline QR | Delivered automatically upon Patient sync (`pullInboxUpdates`) without manual code copy/paste |
 | **Printable A4 Brief PDF & Native Share Sheet** | Offline PDF 1.4 synthesis | Local temp/file write + OS share sheet (`SharePlus.instance.share`) |
 | **Live AI Companion / Deconstruction** | Local `MockInvestigatorService` | Paid-tier backend proxy (`AI_PROXY_URL`), gated by explicit consent & `isPrivate` block |
 
@@ -29,10 +30,11 @@
 
 ## 3. Privacy, Consent & Regulatory Posture (Tunisia INPDP / EU GDPR)
 
-- [ ] **Hard Vault Isolation (`isPrivate == true`):** Confirm private investigation cases are excluded across `ClinicianSyncService.buildPatientPacket`, `ClinicianSyncPacket.fromJson`, `ForensicLoopLink.synthesize(excludePrivateCases: true)`, `generateEhrClinicalNote`, and `ClinicalBriefPdfService`.
-- [ ] **Granular Patient Consent Scope:** Verify `ClinicalConsentScope` independently gates mood metrics, sleep/energy/anxiety + context tags, symptom reports, shared cases, personal notes, psychological profile snapshot, and pre-visit agenda.
+- [ ] **Hard Vault Isolation (`isPrivate == true`):** Confirm private check-ins and Talk sessions are excluded across `ClinicianSyncService.buildPatientPacket`, `LocalClinicSimulatorRepository.syncPatientSnapshot`, `ClinicianSyncPacket.fromJson`, `ForensicLoopLink.synthesize(excludePrivateCases: true)`, `generateEhrClinicalNote`, and `ClinicalBriefPdfService`.
+- [ ] **Doctor Admin Multi-Tenant Isolation:** Confirm Doctor A cannot query, reset PINs for, pause, or read dossiers belonging to Doctor B (`ClinicAuthErrorCode.unauthorizedDoctor`), and signed-out patients wipe cached session tokens (`mf_signed_out` + `mf_last_checkin_cache_v1`).
+- [ ] **Patient App Minimalism Gate:** Verify Patient UI contains zero manual JSON backup buttons, zero AI API/proxy settings (`AiEngineConfigSheet`), zero public self-signup/anonymous bypasses, and zero clinician workspace toggles.
 - [ ] **Observational Non-Diagnostic Language Audit:** Verify all UI copy, PDF briefs, and EHR exports stay strictly descriptive (`inspired by CBT`), with zero medical diagnoses, zero diet/weight advice, and zero predictions of relapse.
-- [ ] **Local Key Rotation & Purge:** Test biometric app lock (`local_auth`), encrypted local backup restore, and one-tap vault purge flows.
+- [ ] **Local Key Rotation & Purge:** Test biometric app lock (`local_auth`), PIN rotation (`changePatientPin` + Doctor `resetPatientAccess`), and double-confirmed local wipe flows.
 
 ---
 
@@ -56,9 +58,9 @@ Match submission metadata directly to verified manifest declarations:
 
 ---
 
-## 6. 60-Second Two-Phone In-Room Clinic Demo Script
+## 6. Clinic v2 End-to-End Demo Script (Doctor Admin + Patient Auto-Sync)
 
-1. **Seconds 0–15 (Patient Preparation):** Open **Patient Sanctuary -> Home / Insights**, review **Observed Stabilizers** and **Observed Forensic Loop** (`4/4` non-diagnostic nodes), tap **2-Minute Visit Brief**, pick 1–2 topics + focus completion status, and tap **Continue to Share with Psychiatrist**.
-2. **Seconds 15–30 (Encrypted QR Handoff):** Choose consent toggles, enter a 6+ character verbal room PIN, generate the compressed `MF-CLINIC-V1:...` code, and tap **Show In-Room QR**.
-3. **Seconds 30–45 (Psychiatrist Review):** Switch workspace to **Psychiatrist Workspace** (Phone 2 or tablet split-pane), tap **Import Packet -> Scan In-Room QR** (or inspect pre-seeded `Nadia B.` dossier), enter the verbal PIN, and review **Since Last Visit** deltas + **Observed Forensic Loop** + **A4 Consultation Brief** preview / native PDF Share Sheet.
-4. **Seconds 45–60 (Closing the Loop):** Tap **Post-Visit Focus**, pick 1–2 collaborative observation cues, enter a room PIN, display the `MF-CAREPLAN-V1:` QR, scan into **Patient Sanctuary**, and confirm the focus card updates live on Patient Home.
+1. **Seconds 0–15 (Doctor Provisions Account):** Launch **Mindora Doctor Edition** (`lib/main_clinician.dart`) -> tap **+ Add patient** -> enter Name, Phone/Username, Age group (e.g., `65+` auto-enables Larger Text & Daylight clarity), and Care Tracks -> tap **Create account & QR** to display the single-use `MF-INVITE-V1:` QR and one-time 6-digit PIN.
+2. **Seconds 15–30 (Patient Scans & Enters Sanctuary):** On **Mindora Patient Edition** (`lib/main.dart`), tap **Scan doctor's QR** (or enter PIN) -> review the one-time connected doctor & safety banner (`Not a 24/7 emergency monitor`) -> tap **Start my day**.
+3. **Seconds 30–45 (Effortless Daily Tracking + `Keep just for me`):** Tap a MoodFace mood chip -> log Sleep/Energy or a quiet Talk -> optionally toggle **Keep just for me** on any private Track entry or Talk session so it stays strictly on the patient's phone while everything else auto-syncs quietly (`Synced`).
+4. **Seconds 45–60 (Doctor Dossier Review & Automatic Care Plan Push):** Open the patient's dossier in Doctor Edition (`Reset PIN & QR`, `Pause / Resume access`, `Edit focus areas`) -> compose a Between-Session Focus Plan and tap **Send to patient** so it arrives automatically on Patient Home.

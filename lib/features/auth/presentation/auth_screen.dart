@@ -194,27 +194,24 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Accessible Language + Larger Text strip before anything else
-                Row(
-                  children: [
-                    Expanded(
-                      child: MindSegmented(
-                        index: langIndex,
-                        labels: const ['EN', 'FR', 'AR'],
-                        onChanged: (idx) {
-                          HapticFeedback.selectionClick();
-                          final lang = switch (idx) {
-                            1 => AppLanguage.french,
-                            2 => AppLanguage.arabic,
-                            _ => AppLanguage.english,
-                          };
-                          ref
-                              .read(localeControllerProvider.notifier)
-                              .setLanguage(lang);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Semantics(
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final langControl = MindSegmented(
+                      index: langIndex,
+                      labels: const ['EN', 'FR', 'AR'],
+                      onChanged: (idx) {
+                        HapticFeedback.selectionClick();
+                        final lang = switch (idx) {
+                          1 => AppLanguage.french,
+                          2 => AppLanguage.arabic,
+                          _ => AppLanguage.english,
+                        };
+                        ref
+                            .read(localeControllerProvider.notifier)
+                            .setLanguage(lang);
+                      },
+                    );
+                    final comfortChip = Semantics(
                       button: true,
                       toggled: comfortMode,
                       label: strings.largerTextToggleLabel,
@@ -261,20 +258,47 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                 ),
                               ),
                               const SizedBox(width: 4),
-                              Text(
-                                strings.largerTextToggleLabel,
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: tokens.ink,
+                              Flexible(
+                                child: Text(
+                                  strings.largerTextToggleLabel,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: tokens.ink,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    );
+
+                    final stackVertically = constraints.maxWidth < 330 ||
+                        MediaQuery.textScalerOf(context).scale(14) > 16.5;
+                    if (stackVertically) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          langControl,
+                          const SizedBox(height: 10),
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: comfortChip,
+                          ),
+                        ],
+                      );
+                    }
+                    return Row(
+                      children: [
+                        Expanded(child: langControl),
+                        const SizedBox(width: 10),
+                        comfortChip,
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 18),
 
