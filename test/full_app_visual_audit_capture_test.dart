@@ -59,8 +59,7 @@ class _SeededRoster extends ClinicianRosterNotifier {
 }
 
 void main() {
-  const outDir =
-      r'C:\Users\pc\.gemini\antigravity\brain\a4ea709b-c435-4760-9e37-1f5a1d16d793\screenshots\audit_v3_vercel';
+  const outDir = String.fromEnvironment('VQA_OUT_DIR');
 
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
@@ -233,6 +232,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
+    if (outDir.isEmpty) return;
     await tester.runAsync(() async {
       final boundary =
           key.currentContext!.findRenderObject() as RenderRepaintBoundary;

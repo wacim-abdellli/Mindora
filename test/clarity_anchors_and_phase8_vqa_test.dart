@@ -30,9 +30,7 @@ import 'package:mind_forensics/features/support/presentation/widgets/grounding_e
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  final projectOutDir = Directory('screenshots/vqa_phase8').absolute.path;
-  const artifactsOutDir =
-      r'C:\Users\pc\.gemini\antigravity\brain\a4ea709b-c435-4760-9e37-1f5a1d16d793\screenshots\vqa_phase8';
+  const vqaOutDir = String.fromEnvironment('VQA_OUT_DIR');
 
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
@@ -87,6 +85,7 @@ void main() {
     String filename,
     double pixelRatio,
   ) async {
+    if (vqaOutDir.isEmpty) return;
     await tester.runAsync(() async {
       final boundary =
           repaintKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
@@ -94,11 +93,9 @@ void main() {
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       final pngBytes = byteData!.buffer.asUint8List();
 
-      for (final dir in [projectOutDir, artifactsOutDir]) {
-        final outFile = File('$dir${Platform.pathSeparator}$filename');
-        await outFile.parent.create(recursive: true);
-        await outFile.writeAsBytes(pngBytes);
-      }
+      final outFile = File('$vqaOutDir${Platform.pathSeparator}$filename');
+      await outFile.parent.create(recursive: true);
+      await outFile.writeAsBytes(pngBytes);
     });
   }
 

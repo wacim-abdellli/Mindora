@@ -5,14 +5,16 @@ Welcome to the **Mindora** codebase. This file provides immediate operational ru
 ---
 
 ## 📌 Critical Reference Files
-- **Autonomous Agent Master Guide:** [`agent/PROJECT_GUIDE.md`](file:///c:/Users/HAJER/Desktop/mind%20forensics/agent/PROJECT_GUIDE.md)
-- **OpenSpec Configuration & Specs:** [`openspec/config.yaml`](file:///c:/Users/HAJER/Desktop/mind%20forensics/openspec/config.yaml), [`openspec/specs/`](file:///c:/Users/HAJER/Desktop/mind%20forensics/openspec/specs/)
-- **OpenSpec SDD Skill:** [`.agent/skills/openspec/SKILL.md`](file:///c:/Users/HAJER/Desktop/mind%20forensics/.agent/skills/openspec/SKILL.md)
-- **Mindora Skill:** [`.agent/skills/mind-forensics/SKILL.md`](file:///c:/Users/HAJER/Desktop/mind%20forensics/.agent/skills/mind-forensics/SKILL.md)
-- **Palette & Tokens:** [`lib/app/theme/lab_colors.dart`](file:///c:/Users/HAJER/Desktop/mind%20forensics/lib/app/theme/lab_colors.dart)
-- **Localization Dictionary:** [`lib/app/localization/app_strings.dart`](file:///c:/Users/HAJER/Desktop/mind%20forensics/lib/app/localization/app_strings.dart)
-- **Safety Interceptor:** [`lib/core/safety/safety_interceptor.dart`](file:///c:/Users/HAJER/Desktop/mind%20forensics/lib/core/safety/safety_interceptor.dart)
-- **Investigation Controller:** [`lib/features/investigation/controllers/investigation_providers.dart`](file:///c:/Users/HAJER/Desktop/mind%20forensics/lib/features/investigation/controllers/investigation_providers.dart)
+- **Production Architecture & Master Plan:** [`docs/production_roadmap/PRODUCTION_AUDIT_AND_MASTER_PLAN.md`](file:///d:/Projects/mind_forensics/docs/production_roadmap/PRODUCTION_AUDIT_AND_MASTER_PLAN.md)
+- **Production Launch & Billing Gate:** [`docs/PRODUCTION_LAUNCH_CHECKLIST.md`](file:///d:/Projects/mind_forensics/docs/PRODUCTION_LAUNCH_CHECKLIST.md)
+- **OpenSpec Configuration & Specs:** [`openspec/config.yaml`](file:///d:/Projects/mind_forensics/openspec/config.yaml), [`openspec/specs/`](file:///d:/Projects/mind_forensics/openspec/specs/)
+- **OpenSpec SDD Skill:** [`.agent/skills/openspec/SKILL.md`](file:///d:/Projects/mind_forensics/.agent/skills/openspec/SKILL.md)
+- **Mindora Skill:** [`.agent/skills/mind-forensics/SKILL.md`](file:///d:/Projects/mind_forensics/.agent/skills/mind-forensics/SKILL.md)
+- **Palette & Tokens:** [`lib/app/theme/mind_tokens.dart`](file:///d:/Projects/mind_forensics/lib/app/theme/mind_tokens.dart), [`lib/app/theme/lab_theme.dart`](file:///d:/Projects/mind_forensics/lib/app/theme/lab_theme.dart)
+- **Navigation & Dual Editions:** [`lib/app/router/app_router.dart`](file:///d:/Projects/mind_forensics/lib/app/router/app_router.dart), [`lib/app/router/scaffold_with_nav_bar.dart`](file:///d:/Projects/mind_forensics/lib/app/router/scaffold_with_nav_bar.dart)
+- **Localization Dictionary:** [`lib/app/localization/app_strings.dart`](file:///d:/Projects/mind_forensics/lib/app/localization/app_strings.dart)
+- **Safety Interceptor:** [`lib/core/safety/safety_interceptor.dart`](file:///d:/Projects/mind_forensics/lib/core/safety/safety_interceptor.dart)
+- **Investigation Controller:** [`lib/features/investigation/controllers/investigation_providers.dart`](file:///d:/Projects/mind_forensics/lib/features/investigation/controllers/investigation_providers.dart)
 
 ---
 
@@ -21,13 +23,13 @@ Welcome to the **Mindora** codebase. This file provides immediate operational ru
 1. **COST AND DATA RULES:**
    - Develop entirely on the free Firebase Spark plan, with billing NOT linked.
    - Use the Gemini free tier ONLY with fictional test text, never with real personal data.
-   - Default to the fake "test mode" in `AiService` (`MockAiService`).
+   - Default to the local offline test mode (`MockInvestigatorService` / `MockAiService`).
    - The Gemini free tier lets Google use submitted content to improve its products and allows human review. Therefore, before ANY real user, the project must move to the paid tier (billing linked), with budget alerts and spend caps.
    - Remind the user of this at **Steps 10 and 14**, and check CURRENT official pricing and data terms then.
 
 2. **BOTTOM TABS & NAVIGATION ARCHITECTURE:**
-   - Bottom tabs: `Home`, `Journal`, `Investigator`, `Toolkit (placeholder in v1)`, `Profile`.
-   - `Insights` lives inside Home until v2.
+   - Patient bottom tabs (`ScaffoldWithNavBar`): `Today` (`/`), `My days` (`/track`), `Talk` (`/investigator`), `Patterns` (`/insights`), `Me` (`/profile`).
+   - Separate Doctor / Psychiatrist edition (`main_clinician.dart`) and `/clinician` workspace route for clinician roster, patient dossier, post-visit focus plans, and printable A4 briefs.
 
 3. **STEP 6 SPECIFICATION (Daily Check-in):**
    - 6. Daily check-in with a daily note: emotion (from an emotion library), self-reported intensity 1-10, optional free-text "today's note", and a simple Home (check-in card, last mood, open cases, recent entries).

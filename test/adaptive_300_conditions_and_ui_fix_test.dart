@@ -27,8 +27,7 @@ import 'package:mind_forensics/features/profile/presentation/widgets/clinical_co
 import 'package:mind_forensics/features/track/presentation/widgets/progressive_details_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const String _vqaOutDir =
-    'C:/Users/pc/.gemini/antigravity/brain/a4ea709b-c435-4760-9e37-1f5a1d16d793/screenshots/daily_ritual_v3';
+const String _vqaOutDir = String.fromEnvironment('VQA_OUT_DIR');
 
 Future<void> _loadTestFonts() async {
   try {
@@ -53,6 +52,7 @@ Future<void> _saveShot(
   GlobalKey key,
   String filename,
 ) async {
+  if (_vqaOutDir.isEmpty) return;
   await tester.runAsync(() async {
     final boundary =
         key.currentContext?.findRenderObject() as RenderRepaintBoundary?;

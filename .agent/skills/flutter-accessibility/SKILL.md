@@ -15,7 +15,7 @@ Treat accessibility failures that block core tasks as release blockers.
 4. Test system text scaling up to the supported maximum without clipping or hiding critical actions.
 5. Verify contrast, non-color cues, touch targets, error association, disabled-state clarity, and motion preferences.
 6. Test long translations, pluralization, bidirectional content, mirrored navigation, and directional icon correctness.
-7. Read `references/accessibility-and-localization.md` and relevant platform guidance already present in the project.
+7. Read `references/accessibility-and-localization.md`, `references/recipes.md` (Semantics/MergeSemantics/TextScaler/`meetsGuideline` snippets), and relevant platform guidance already present in the project.
    For multi-domain dashboards, read `references/connected-product-workflows.md` and align semantic order with cross-domain visual priority.
 
 ## Implement

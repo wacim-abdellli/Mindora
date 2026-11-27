@@ -7,7 +7,10 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  const String vqaOutDir = String.fromEnvironment('VQA_OUT_DIR');
+
   test('Generate Contact Sheet for 8 Verified Screens', () async {
+    if (vqaOutDir.isEmpty) return;
     // Load local font for labels
     final fontLoader = FontLoader('Inter');
     final boldFont = File('assets/fonts/Inter-Bold.ttf');
@@ -147,19 +150,11 @@ void main() {
     );
     final pngBytes = byteData!.buffer.asUint8List();
 
-    // Save contact sheet to verified project destinations
-    final dests = [
-      'screenshots/vqa_phase2/contact_sheet.png',
-      r'C:\Users\pc\.gemini\antigravity\brain\a4ea709b-c435-4760-9e37-1f5a1d16d793\contact_sheet.png',
-      r'C:\Users\pc\.gemini\antigravity\brain\a4ea709b-c435-4760-9e37-1f5a1d16d793\screenshots\contact_sheet.png',
-    ];
-
-    for (final dest in dests) {
-      try {
-        final file = File(dest);
-        await file.parent.create(recursive: true);
-        await file.writeAsBytes(pngBytes);
-      } catch (_) {}
-    }
+    // Save contact sheet only when VQA_OUT_DIR is explicitly provided
+    try {
+      final file = File('$vqaOutDir${Platform.pathSeparator}contact_sheet.png');
+      await file.parent.create(recursive: true);
+      await file.writeAsBytes(pngBytes);
+    } catch (_) {}
   });
 }

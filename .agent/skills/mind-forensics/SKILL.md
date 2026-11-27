@@ -1,6 +1,6 @@
 ---
 name: mind-forensics
-description: Comprehensive architecture, clinical guidelines, Vercel dark styling, and development runbook for the Mindora mobile application. Use whenever reading or modifying screens, cognitive workflows, translations (EN, FR, AR), or safety interceptors.
+description: Comprehensive architecture, clinical guidelines, Warm Alabaster Daylight & Vercel Obsidian styling, and development runbook for the Mindora mobile application. Use whenever reading or modifying screens, cognitive workflows, translations (EN, FR, AR), or safety interceptors.
 ---
 
 # Mindora Agent Skill — Neuro-Cognitive Deconstruction
@@ -14,10 +14,10 @@ This skill defines the technical and clinical architecture of the **Mindora** ap
 | Layer | Implementation | Key Files |
 | :--- | :--- | :--- |
 | **Framework** | Flutter 3.x / Dart 3.x | `pubspec.yaml` |
-| **State Management** | `flutter_riverpod: ^2.5.1` | `lib/features/investigation/controllers/investigation_providers.dart` |
-| **Navigation** | `go_router: ^14.2.0` | `lib/app/router/app_router.dart`, `scaffold_with_nav_bar.dart` |
-| **Persistence** | `shared_preferences: ^2.2.3` | `lib/features/investigation/data/local_case_repository.dart` |
-| **Theme / Design** | Vercel Luxury Dark & Minimalist | `lib/app/theme/lab_colors.dart`, `lab_theme.dart` |
+| **State Management** | `flutter_riverpod` | `lib/features/investigation/controllers/investigation_providers.dart` |
+| **Navigation** | `go_router` | `lib/app/router/app_router.dart`, `scaffold_with_nav_bar.dart` |
+| **Persistence** | `shared_preferences` + encrypted vault | `lib/features/investigation/data/local_case_repository.dart` |
+| **Theme / Design** | `Warm Alabaster` Daylight & `Vercel Obsidian-Zinc` Dark | `lib/app/theme/mind_tokens.dart`, `lib/app/theme/lab_theme.dart` |
 | **Localization** | Trilingual Medical (EN, FR, Tunisian AR) | `lib/app/localization/app_strings.dart` |
 | **Safety Engine** | Dual-Layer Keyword & Triage | `lib/core/safety/safety_interceptor.dart`, `crisis_keywords.dart` |
 
@@ -27,16 +27,16 @@ This skill defines the technical and clinical architecture of the **Mindora** ap
 
 * **Spark Plan Discipline:** Develop entirely on the free Firebase Spark plan, with billing NOT linked.
 * **Gemini Free Tier Restriction:** Use the Gemini free tier ONLY with fictional test text, never with real personal data.
-* **Default Fake Mode:** Default to the fake "test mode" in `AiService` (`MockAiService`).
+* **Default Fake Mode:** Default to the local offline test mode (`MockInvestigatorService` / `MockAiService`).
 * **Paid Tier Prerequisite:** The Gemini free tier allows human review and content training. Before ANY real user, the project must move to the paid tier (billing linked) with budget alerts and spend caps. Remind at **Steps 10 and 14**, checking current pricing and terms then.
 
 ---
 
 ## 3. Navigation & Screen Taxonomy
 
-* **Bottom Tabs:** `Home`, `Journal`, `Investigator`, `Toolkit (placeholder in v1)`, `Profile`.
-* **Insights:** Lives inside `Home` until v2.
-* **Step 6 (Daily Check-in):** Emotion (from emotion library), self-reported intensity 1-10, optional free-text "today's note", and a simple Home (check-in card, last mood, open cases, recent entries).
+* **Patient Bottom Tabs:** `Today` (`/`), `My days` (`/track`), `Talk` (`/investigator`), `Patterns` (`/insights`), `Me` (`/profile`).
+* **Doctor / Clinician Edition:** Dedicated entry (`lib/main_clinician.dart`) and `/clinician` workspace (`ClinicianShellScreen`, patient dossier, post-visit focus plans, A4 brief PDF).
+* **Daily Check-in:** 2-tap mood (`MoodFace`) + intensity (1–10), adaptive sleep/energy/stress pulse, optional daily note and context tags.
 
 ---
 

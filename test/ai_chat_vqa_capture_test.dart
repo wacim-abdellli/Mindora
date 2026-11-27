@@ -23,8 +23,7 @@ import 'package:mind_forensics/features/mind_trace/domain/mind_trace_model.dart'
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  const outDir =
-      r'C:\Users\pc\.gemini\antigravity\brain\a4ea709b-c435-4760-9e37-1f5a1d16d793\screenshots\ai_talk_v2';
+  const outDir = String.fromEnvironment('VQA_OUT_DIR');
 
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
@@ -70,6 +69,7 @@ void main() {
     String filename, {
     double pixelRatio = 2.0,
   }) async {
+    if (outDir.isEmpty) return;
     await tester.runAsync(() async {
       final boundary =
           repaintKey.currentContext!.findRenderObject() as RenderRepaintBoundary;

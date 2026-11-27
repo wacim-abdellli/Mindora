@@ -23,8 +23,7 @@ import 'package:mind_forensics/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  final outputDirProject = Directory('screenshots/vqa_phase2').absolute.path;
-  const currentArtifactsDir = r'C:\Users\pc\.gemini\antigravity\brain\a4ea709b-c435-4760-9e37-1f5a1d16d793\screenshots';
+  const vqaOutDir = String.fromEnvironment('VQA_OUT_DIR');
 
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
@@ -62,20 +61,19 @@ void main() {
   });
 
   Future<void> saveScreenshot(WidgetTester tester, GlobalKey repaintKey, String filename) async {
+    if (vqaOutDir.isEmpty) return;
     await tester.runAsync(() async {
       final boundary = repaintKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
       final image = await boundary.toImage(pixelRatio: 2.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       final pngBytes = byteData!.buffer.asUint8List();
 
-      for (final dir in [outputDirProject, currentArtifactsDir]) {
-        try {
-          final outPath = '$dir\\$filename';
-          final file = File(outPath);
-          await file.parent.create(recursive: true);
-          await file.writeAsBytes(pngBytes);
-        } catch (_) {}
-      }
+      try {
+        final outPath = '$vqaOutDir${Platform.pathSeparator}$filename';
+        final file = File(outPath);
+        await file.parent.create(recursive: true);
+        await file.writeAsBytes(pngBytes);
+      } catch (_) {}
     });
   }
 

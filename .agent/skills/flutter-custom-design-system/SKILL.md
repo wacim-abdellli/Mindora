@@ -20,7 +20,7 @@ metadata:
 
 Stock Material/Cupertino skills are the wrong default here. If this repo already named colors, type, radius, motion, or a pressable, **use those names and values**. Do not restyle the app toward `FilledButton` / `NavigationBar` / `ColorScheme.fromSeed` unless the user asked to throw the system away.
 
-Companion skill: `flutter-native-ui` — only for apps that actually want Material 3 or Cupertino chrome.
+If this repo already has `MindTokens` / a `*Pressable`, do not restyle toward stock Material 3 or Cupertino chrome.
 
 ## References
 
