@@ -66,13 +66,6 @@ class _LockOverlayState extends ConsumerState<LockOverlay>
         body: SafeArea(
           child: Column(
             children: [
-              const Padding(
-                padding: EdgeInsets.fromLTRB(20, 10, 12, 0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [SupportButton()],
-                ),
-              ),
               Expanded(
                 child: Center(
                   child: SingleChildScrollView(
@@ -135,6 +128,8 @@ class _LockOverlayState extends ConsumerState<LockOverlay>
                       }
                     },
                   ),
+                  const SizedBox(height: 18),
+                  const EmergencyHelpLink(),
                 ],
               ),
             ),

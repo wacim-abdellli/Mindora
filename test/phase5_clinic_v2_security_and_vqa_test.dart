@@ -15,6 +15,7 @@ import 'package:mind_forensics/app/localization/app_strings.dart';
 import 'package:mind_forensics/app/localization/locale_controller.dart';
 import 'package:mind_forensics/app/router/app_router.dart';
 import 'package:mind_forensics/app/theme/mind_tokens.dart';
+import 'package:mind_forensics/core/safety/support_button.dart';
 import 'package:mind_forensics/core/security/secure_key_manager.dart';
 import 'package:mind_forensics/features/auth/controllers/auth_controller.dart';
 import 'package:mind_forensics/features/auth/presentation/auth_screen.dart';
@@ -236,6 +237,8 @@ void main() {
           child: const AuthScreen(),
           captureFilename: '02_auth_clinic_ar_rtl_320.png',
         );
+        expect(find.byType(SupportButton), findsNothing);
+        expect(find.byType(EmergencyHelpLink), findsOneWidget);
       },
     );
 

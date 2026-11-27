@@ -207,7 +207,8 @@ void main() {
       await _settleFrame(tester);
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(SupportButton), findsOneWidget);
+      expect(find.byType(SupportButton), findsNothing);
+      expect(find.byType(EmergencyHelpLink), findsOneWidget);
       expect(find.text('Crisis Support'), findsNothing);
       await _maybeCapture(tester, repaintKey, 'qa_01_shell_home_light_en.png');
 

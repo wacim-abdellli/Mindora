@@ -60,6 +60,61 @@ class SupportButton extends ConsumerWidget {
   }
 }
 
+/// Calm, non-intrusive footer link opening [SupportModalSheet] without
+/// crowding top navigation bars or stealing visual breathing room.
+class EmergencyHelpLink extends ConsumerWidget {
+  const EmergencyHelpLink({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final strings = ref.watch(appStringsProvider);
+    final tokens = context.tokens;
+
+    return Semantics(
+      button: true,
+      label: strings.supportCrisisRowTitle,
+      child: MindPressable(
+        key: const ValueKey<String>('emergency-help-link'),
+        onPressed: () => SupportModalSheet.show(context),
+        borderRadius: BorderRadius.circular(tokens.chipRadius),
+        child: Container(
+          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: tokens.surface2,
+            borderRadius: BorderRadius.circular(tokens.chipRadius),
+            border: Border.all(color: tokens.line),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.health_and_safety_outlined,
+                size: 18,
+                color: tokens.safety,
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  strings.supportCrisisRowTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LabTheme.textStyle(
+                    fontSize: 13.0,
+                    fontWeight: FontWeight.w600,
+                    color: tokens.ink2,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Modal bottom sheet presenting Tunisian crisis & supportive resources
 /// (`80 10 50 50`, `190`, `198`) with >= 48dp 1-tap call buttons.
 class SupportModalSheet extends ConsumerWidget {

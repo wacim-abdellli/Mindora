@@ -581,10 +581,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             color: tokens.ink,
           ),
         ),
-        actions: const [
-          SupportButton(),
-          SizedBox(width: 8),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 48),

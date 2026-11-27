@@ -8,7 +8,6 @@ import '../../../app/router/app_router.dart';
 import '../../../app/theme/mind_tokens.dart';
 import '../../../core/safety/crisis_keywords.dart';
 import '../../../core/safety/safety_interceptor.dart';
-import '../../../core/safety/support_button.dart';
 import '../../../core/widgets/mind_undo_banner.dart';
 import '../../../core/widgets/label_badge.dart';
 import '../../investigation/controllers/investigation_providers.dart';
@@ -247,7 +246,6 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, letterSpacing: 0.5, color: textPrimary),
         ),
         actions: [
-          const SupportButton(),
           IconButton(
             icon: Icon(
               c.isPrivate ? Icons.lock_rounded : Icons.lock_open_outlined,

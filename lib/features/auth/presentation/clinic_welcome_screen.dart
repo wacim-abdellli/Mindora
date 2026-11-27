@@ -118,7 +118,6 @@ class _ClinicWelcomeScreenState extends ConsumerState<ClinicWelcomeScreen> {
             color: tokens.ink,
           ),
         ),
-        actions: const [SupportButton(), SizedBox(width: 8)],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -303,6 +302,8 @@ class _ClinicWelcomeScreenState extends ConsumerState<ClinicWelcomeScreen> {
                 isLoading: _isCompleting,
                 onPressed: _continueToHome,
               ),
+              const SizedBox(height: 16),
+              const Center(child: EmergencyHelpLink()),
             ],
           ),
         ),

@@ -379,15 +379,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     Locale activeLocale,
   ) {
     if (_currentStep == 0) {
-      return const Padding(
-        padding: EdgeInsets.fromLTRB(20, 10, 12, 0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            SupportButton(),
-          ],
-        ),
-      );
+      return const SizedBox(height: 8);
     }
 
     return Padding(

@@ -7,7 +7,6 @@ import '../../../app/localization/app_strings.dart';
 import '../../../app/router/app_router.dart';
 import '../../../app/theme/lab_theme.dart';
 import '../../../app/theme/mind_tokens.dart';
-import '../../../core/safety/support_button.dart';
 import '../../../core/widgets/mind_badge.dart';
 import '../../../core/widgets/mind_button.dart';
 import '../../../core/widgets/mind_card.dart';
@@ -176,7 +175,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
               _showRangeOverviewSheet(context, traces, tokens, strings);
             },
           ),
-          const SupportButton(),
           const SizedBox(width: 8),
         ],
       ),

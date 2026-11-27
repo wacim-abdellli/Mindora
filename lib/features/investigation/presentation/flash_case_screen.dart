@@ -223,6 +223,11 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
               title: strings.memoryVaultTitle,
               onTap: () => JournalMemorySheet.show(context),
             ),
+            row(
+              icon: Icons.health_and_safety_outlined,
+              title: strings.supportCrisisRowTitle,
+              onTap: () => SupportModalSheet.show(context),
+            ),
           ],
         );
       },
@@ -414,7 +419,6 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             onPressed: () => _openMoreSheet(context, strings),
           ),
-          const SupportButton(compact: true),
           const SizedBox(width: 4),
         ],
       ),

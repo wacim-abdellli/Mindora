@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/localization/app_strings.dart';
 import '../../../app/theme/mind_tokens.dart';
-import '../../../core/safety/support_button.dart';
 import 'psychological_profile_view.dart';
 
 /// Top-level Screen wrapper for [PsychologicalProfileView].
@@ -27,10 +26,6 @@ class PsychologicalProfileScreen extends ConsumerWidget {
             color: tokens.ink,
           ),
         ),
-        actions: const [
-          SupportButton(),
-          SizedBox(width: 8),
-        ],
       ),
       body: const SafeArea(
         child: PsychologicalProfileView(),

@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/localization/app_strings.dart';
 import '../../../app/theme/mind_tokens.dart';
 import '../../../core/widgets/mind_undo_banner.dart';
-import '../../../core/safety/support_button.dart';
 import '../../../core/widgets/mind_pressable.dart';
 import '../../journey/controllers/journey_controller.dart';
 import '../../journey/domain/journey_activity.dart';
@@ -78,7 +77,6 @@ class _InnerObservatoryScreenState extends ConsumerState<InnerObservatoryScreen>
             ),
             onPressed: () => ContextualSupportSheet.show(context),
           ),
-          const SupportButton(),
           const SizedBox(width: 8),
         ],
       ),

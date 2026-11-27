@@ -339,7 +339,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ],
                       ),
                     ),
-                    const SupportButton(),
                   ],
                 ),
 
@@ -481,6 +480,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
+                const Center(child: EmergencyHelpLink()),
               ],
             ),
           ),

@@ -10,7 +10,6 @@ import '../../../app/router/app_router.dart';
 import '../../../app/theme/lab_theme.dart';
 import '../../../app/theme/mind_tokens.dart';
 import '../../../app/theme/theme_controller.dart';
-import '../../../core/safety/support_button.dart';
 import '../../../core/widgets/ambient_scaffold.dart';
 import '../../../core/widgets/mind_button.dart';
 import '../../../core/widgets/mind_card.dart';
@@ -233,24 +232,15 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Clean Single-Job Header (Wraps gracefully at 320px 2.0x textScale)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Text(
-                      strings.navMyDays,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: LabTheme.textStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: tokens.ink,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const SupportButton(),
-                ],
+              Text(
+                strings.navMyDays,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: LabTheme.textStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: tokens.ink,
+                ),
               ),
               const SizedBox(height: 10),
               Align(

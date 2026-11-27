@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/localization/app_strings.dart';
 import '../../../app/theme/mind_tokens.dart';
-import '../../../core/safety/support_button.dart';
 import '../../../core/widgets/bouncing_widget.dart';
 import '../controllers/journey_controller.dart';
 import '../domain/journey_activity.dart';
@@ -132,10 +131,6 @@ class _JourneyActivityDetailScreenState
             color: textSecondary,
           ),
         ),
-        actions: const [
-          SupportButton(),
-          SizedBox(width: 8),
-        ],
       ),
       body: SafeArea(
         child: ListView(

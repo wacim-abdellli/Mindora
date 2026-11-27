@@ -182,7 +182,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             color: tokens.ink,
           ),
         ),
-        actions: const [SupportButton(), SizedBox(width: 8)],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -530,6 +529,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 18),
+                const Center(child: EmergencyHelpLink()),
               ],
             ),
           ),
