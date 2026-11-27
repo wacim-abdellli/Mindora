@@ -239,12 +239,15 @@ class _HomeClinicalPulseCardState extends State<HomeClinicalPulseCard> {
                   ),
                 )
               else
-                MindBadge(
-                  key: const ValueKey('pulse-progress-indicator'),
-                  label: strings.ritualProgressLabel(completed, total),
-                  backgroundColor: tokens.surface,
-                  borderColor: tokens.lineStrong,
-                  textColor: tokens.ink2,
+                Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: MindBadge(
+                    key: const ValueKey('pulse-progress-indicator'),
+                    label: strings.ritualProgressLabel(completed, total),
+                    backgroundColor: tokens.surface,
+                    borderColor: tokens.lineStrong,
+                    textColor: tokens.ink2,
+                  ),
                 ),
             ],
           ),

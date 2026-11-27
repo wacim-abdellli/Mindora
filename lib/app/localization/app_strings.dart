@@ -6553,8 +6553,7 @@ class AppStrings {
   String get ritualOptionalTag => isArabic
       ? 'اختياري · النوم والطاقة في 10 ثواني'
       : (isFrench ? 'Optionnel · sommeil et énergie' : 'Optional · sleep & energy');
-  String ritualProgressLabel(int completed, int total) =>
-      '\u2066$completed / $total\u2069';
+  String ritualProgressLabel(int completed, int total) => '$completed / $total';
   String get ritualMorningTag => isArabic
       ? 'روتين الصباح · 10 ثواني'
       : (isFrench ? 'Rituel du matin · 10 s' : 'Morning check-in · 10 sec');
