@@ -111,7 +111,7 @@ class _EditCommunicationSheetState extends ConsumerState<EditCommunicationSheet>
               const SizedBox(height: 4),
               Text(
                 strings.sectionCommunicationDesc,
-                style: TextStyle(fontSize: 11.5, color: textSecondary),
+                style: TextStyle(fontSize: 12.5, color: textSecondary),
               ),
 
               const SizedBox(height: 12),
@@ -124,16 +124,14 @@ class _EditCommunicationSheetState extends ConsumerState<EditCommunicationSheet>
                   children: [
                     // 1. Tone
                     Text(
-                      (strings.isArabic
-                              ? 'النبرة وأسلوب الحوار'
-                              : (strings.isFrench
-                                  ? 'TON DU COMPAGNON'
-                                  : 'COMPANION TONE'))
-                          .toUpperCase(),
+                      strings.isArabic
+                          ? 'النبرة وأسلوب الحوار'
+                          : (strings.isFrench
+                              ? 'Ton du compagnon'
+                              : 'Companion tone'),
                       style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
                         color: context.tokens.ink,
                       ),
                     ),
@@ -171,9 +169,9 @@ class _EditCommunicationSheetState extends ConsumerState<EditCommunicationSheet>
                                   child: Text(
                                     tone.localized(strings),
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 13.0,
                                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                      color: isSelected ? textPrimary : textPrimary,
+                                      color: textPrimary,
                                     ),
                                   ),
                                 ),
@@ -190,16 +188,14 @@ class _EditCommunicationSheetState extends ConsumerState<EditCommunicationSheet>
 
                     // 2. Response Length
                     Text(
-                      (strings.isArabic
-                              ? 'طول الشروحات والردود'
-                              : (strings.isFrench
-                                  ? 'LONGUEUR DES RÉPONSES'
-                                  : 'RESPONSE LENGTH'))
-                          .toUpperCase(),
+                      strings.isArabic
+                          ? 'طول الشروحات والردود'
+                          : (strings.isFrench
+                              ? 'Longueur des réponses'
+                              : 'Response length'),
                       style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
                         color: context.tokens.ink,
                       ),
                     ),
@@ -231,9 +227,9 @@ class _EditCommunicationSheetState extends ConsumerState<EditCommunicationSheet>
                                 child: Text(
                                   len.localized(strings),
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 10.5,
-                                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                style: TextStyle(
+                                  fontSize: 12.0,
+                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                                     color: isSelected ? context.tokens.ink : textSecondary,
                                   ),
                                 ),
@@ -248,16 +244,14 @@ class _EditCommunicationSheetState extends ConsumerState<EditCommunicationSheet>
 
                     // 3. When distressed
                     Text(
-                      (strings.isArabic
-                              ? 'عندما أشعر بالتوتر أو الضيق، أفضّل'
-                              : (strings.isFrench
-                                  ? 'EN CAS DE DÉTRESSE, JE PRÉFÈRE'
-                                  : 'WHEN I FEEL DISTRESSED, I PREFER'))
-                          .toUpperCase(),
+                      strings.isArabic
+                          ? 'عندما أشعر بالتوتر أو الضيق، أفضّل'
+                          : (strings.isFrench
+                              ? 'En cas de détresse, je préfère'
+                              : 'When I feel distressed, I prefer'),
                       style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
                         color: context.tokens.ink,
                       ),
                     ),
@@ -302,7 +296,7 @@ class _EditCommunicationSheetState extends ConsumerState<EditCommunicationSheet>
                                 Text(
                                   pref.localized(strings),
                                   style: TextStyle(
-                                    fontSize: 11,
+                                    fontSize: 12.5,
                                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                                     color: isSelected ? context.tokens.ink : textSecondary,
                                   ),
@@ -318,16 +312,14 @@ class _EditCommunicationSheetState extends ConsumerState<EditCommunicationSheet>
 
                     // 4. What I dislike
                     Text(
-                      (strings.isArabic
-                              ? 'أساليب أنفر منها ولا تناسبني'
-                              : (strings.isFrench
-                                  ? 'CE QUE JE PRÉFÈRE ÉVITER'
-                                  : 'WHAT I DISLIKE / AVOID'))
-                          .toUpperCase(),
+                      strings.isArabic
+                          ? 'أساليب أنفر منها ولا تناسبني'
+                          : (strings.isFrench
+                              ? 'Ce que je préfère éviter'
+                              : 'What I dislike or avoid'),
                       style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
                         color: context.tokens.safety,
                       ),
                     ),
@@ -372,7 +364,7 @@ class _EditCommunicationSheetState extends ConsumerState<EditCommunicationSheet>
                                 Text(
                                   item.localized(strings),
                                   style: TextStyle(
-                                    fontSize: 11,
+                                    fontSize: 12.5,
                                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                                     color: isSelected ? context.tokens.safety : textSecondary,
                                   ),
@@ -395,23 +387,21 @@ class _EditCommunicationSheetState extends ConsumerState<EditCommunicationSheet>
                 onTap: _save,
                 child: Container(
                   width: double.infinity,
-                  height: 46,
+                  height: 48,
                   decoration: BoxDecoration(
                     color: context.tokens.ink,
                     borderRadius: BorderRadius.circular(context.tokens.buttonRadius),
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    (strings.isArabic
-                            ? 'حفظ تفضيلات التواصل'
-                            : (strings.isFrench
-                                ? 'ENREGISTRER LES PRÉFÉRENCES'
-                                : 'SAVE PREFERENCES'))
-                        .toUpperCase(),
+                    strings.isArabic
+                        ? 'حفظ تفضيلات التواصل'
+                        : (strings.isFrench
+                            ? 'Enregistrer les préférences'
+                            : 'Save preferences'),
                     style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.6,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
                       color: context.tokens.bg,
                     ),
                   ),

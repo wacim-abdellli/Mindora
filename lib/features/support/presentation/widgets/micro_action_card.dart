@@ -154,27 +154,26 @@ class _MicroActionCardState extends ConsumerState<MicroActionCard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                strings.needActionTitle.toUpperCase(),
+                strings.needActionTitle,
                 style: TextStyle(
-                  fontSize: 10.5,
+                  fontSize: 13.5,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
                   color: textSecondary,
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: tokens.selectedTintFor(tokens.m1),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   isAr
                       ? '2 دقائق فقط'
-                      : (isFr ? '2 MINUTES SEULEMENT' : '2 MINUTES ONLY'),
+                      : (isFr ? '2 minutes seulement' : '2 minutes only'),
                   style: TextStyle(
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
                     color: tokens.m1,
                   ),
                 ),
@@ -207,7 +206,7 @@ class _MicroActionCardState extends ConsumerState<MicroActionCard> {
                 label: Text(
                   label,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 12.5,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     color: isSelected ? tokens.bg : textPrimary,
                   ),
@@ -344,7 +343,7 @@ class _MicroActionCardState extends ConsumerState<MicroActionCard> {
                             ? 'Bravo. Un petit pas suffit à relancer l’élan sans pression.'
                             : 'Well done. One tiny step breaks inertia with zero pressure.'),
                     style: TextStyle(
-                      fontSize: 11.5,
+                      fontSize: 12.5,
                       color: tokens.m1,
                       fontWeight: FontWeight.w600,
                     ),
@@ -366,7 +365,7 @@ class _MicroActionCardState extends ConsumerState<MicroActionCard> {
                     isAr
                         ? 'حفظ كاكتشاف'
                         : (isFr ? 'Enregistrer' : 'Save to Discoveries'),
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
                   ),
                   style: TextButton.styleFrom(
                     foregroundColor: tokens.m1,

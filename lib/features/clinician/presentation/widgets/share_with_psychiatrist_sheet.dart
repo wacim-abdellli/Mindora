@@ -10,7 +10,9 @@ import '../../../../core/widgets/mind_badge.dart';
 import '../../../../core/widgets/mind_button.dart';
 import '../../../../core/widgets/mind_card.dart';
 import '../../../../core/widgets/mind_pill.dart';
+import '../../../../core/widgets/mind_pressable.dart';
 import '../../../../core/widgets/mind_qr_code.dart';
+import '../../../../core/widgets/mind_switch.dart';
 import '../../../auth/controllers/auth_controller.dart';
 import '../../../case_file/data/clinical_export_log_service.dart';
 import '../../../investigation/controllers/investigation_providers.dart';
@@ -407,9 +409,8 @@ class _ShareWithPsychiatristSheetState
                       Text(
                         strings.timeWindowLabel,
                         style: TextStyle(
-                          fontSize: 11.5,
+                          fontSize: 12.5,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: strings.isArabic ? 0 : 0.8,
                           color: tokens.ink2,
                         ),
                       ),
@@ -434,9 +435,8 @@ class _ShareWithPsychiatristSheetState
                       Text(
                         strings.whatToShareLabel,
                         style: TextStyle(
-                          fontSize: 11.5,
+                          fontSize: 12.5,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: strings.isArabic ? 0 : 0.8,
                           color: tokens.ink2,
                         ),
                       ),
@@ -528,9 +528,8 @@ class _ShareWithPsychiatristSheetState
                               child: Text(
                                 strings.preVisitAgendaSectionTitle,
                                 style: TextStyle(
-                                  fontSize: 11.5,
+                                  fontSize: 12.5,
                                   fontWeight: FontWeight.w700,
-                                  letterSpacing: strings.isArabic ? 0 : 0.8,
                                   color: tokens.ink2,
                                 ),
                               ),
@@ -655,7 +654,7 @@ class _ShareWithPsychiatristSheetState
                                 _generatedCode!,
                                 maxLines: 4,
                                 style: TextStyle(
-                                  fontSize: 11.5,
+                                  fontSize: 12.0,
                                   color: tokens.ink2,
                                 ),
                               ),
@@ -693,7 +692,7 @@ class _ShareWithPsychiatristSheetState
                                   strings.inRoomQrPinReminder,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    fontSize: 11.5,
+                                    fontSize: 12.0,
                                     color: tokens.ink2,
                                     height: 1.35,
                                   ),
@@ -744,22 +743,33 @@ class _ShareWithPsychiatristSheetState
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 52),
-      child: SwitchListTile.adaptive(
-        value: value,
-        onChanged: onChanged,
-        activeThumbColor: tokens.ink,
-        activeTrackColor: tokens.m1,
-        title: Text(
-          title,
-          style: TextStyle(
-            fontSize: 13.5,
-            fontWeight: FontWeight.w500,
-            color: tokens.ink,
+    return MindPressable(
+      onPressed: () => onChanged(!value),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 52),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w500,
+                    color: tokens.ink,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              MindSwitch(
+                value: value,
+                semanticLabel: title,
+                onChanged: onChanged,
+              ),
+            ],
           ),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
       ),
     );
   }

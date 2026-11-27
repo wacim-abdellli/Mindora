@@ -7,6 +7,7 @@ import 'package:mind_forensics/app/localization/locale_controller.dart';
 import 'package:mind_forensics/app/theme/lab_theme.dart';
 import 'package:mind_forensics/core/security/secure_key_manager.dart';
 import 'package:mind_forensics/core/widgets/mind_segmented.dart';
+import 'package:mind_forensics/core/widgets/mind_switch.dart';
 import 'package:mind_forensics/features/clinician/controllers/clinician_providers.dart';
 import 'package:mind_forensics/features/clinician/data/clinician_sync_service.dart';
 import 'package:mind_forensics/features/clinician/data/demo_clinical_cohort.dart';
@@ -367,6 +368,8 @@ void main() {
           -150,
           scrollable: find.byType(Scrollable).first,
         );
+        await tester.ensureVisible(find.text('Shifts Noted'));
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Shifts Noted'));
         await tester.pumpAndSettle();
         expect(find.text('Nadia B.'), findsOneWidget);
@@ -377,6 +380,8 @@ void main() {
           -150,
           scrollable: find.byType(Scrollable).first,
         );
+        await tester.ensureVisible(find.text('All'));
+        await tester.pumpAndSettle();
         await tester.tap(find.text('All'));
         await tester.pumpAndSettle();
         await tester.scrollUntilVisible(
@@ -402,11 +407,11 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('Demo Clinical Dataset'), findsOneWidget);
 
-        await tester.tap(find.byType(Switch).first);
+        await tester.tap(find.byType(MindSwitch).first);
         await tester.pumpAndSettle();
         expect(await container.read(clinicianDemoEnabledProvider.future), isFalse);
 
-        await tester.tap(find.byType(Switch).first);
+        await tester.tap(find.byType(MindSwitch).first);
         await tester.pumpAndSettle();
         expect(await container.read(clinicianDemoEnabledProvider.future), isTrue);
       },

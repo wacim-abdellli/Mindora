@@ -162,30 +162,28 @@ class _EditAboutMeSheetState extends ConsumerState<EditAboutMeSheet> {
                 const SizedBox(height: 4),
                 Text(
                   strings.sectionAboutMeDesc,
-                  style: TextStyle(fontSize: 11.5, color: textSecondary),
+                  style: TextStyle(fontSize: 12.5, color: textSecondary),
                 ),
 
                 const SizedBox(height: 20),
 
                 // Preferred Name
                 Text(
-                  (strings.isArabic
-                          ? 'الاسم أو اللقب المفضل'
-                          : (strings.isFrench
-                                ? 'PRÉNOM OU SURNOM'
-                                : 'PREFERRED NAME'))
-                      .toUpperCase(),
+                  strings.isArabic
+                      ? 'الاسم أو اللقب المفضل'
+                      : (strings.isFrench
+                            ? 'Prénom ou surnom'
+                            : 'Preferred name'),
                   style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
                     color: textSecondary,
                   ),
                 ),
                 const SizedBox(height: 6),
                 TextField(
                   controller: _nameController,
-                  style: TextStyle(fontSize: 12.5, color: textPrimary),
+                  style: TextStyle(fontSize: 13.0, color: textPrimary),
                   decoration: InputDecoration(
                     hintText: strings.isArabic
                         ? 'كيف تحب أن نناديك؟'
@@ -193,7 +191,7 @@ class _EditAboutMeSheetState extends ConsumerState<EditAboutMeSheet> {
                               ? 'Comment souhaitez-vous être appelé(e) ?'
                               : 'How should we address you?'),
                     hintStyle: TextStyle(
-                      fontSize: 11.5,
+                      fontSize: 12.5,
                       color: textSecondary.withValues(alpha: 0.6),
                     ),
                     filled: true,
@@ -221,16 +219,14 @@ class _EditAboutMeSheetState extends ConsumerState<EditAboutMeSheet> {
 
                 // Age Range
                 Text(
-                  (strings.isArabic
-                          ? 'الفئة العمرية (اختياري)'
-                          : (strings.isFrench
-                                ? 'TRANCHE D’ÂGE (OPTIONNEL)'
-                                : 'AGE RANGE (OPTIONAL)'))
-                      .toUpperCase(),
+                  strings.isArabic
+                      ? 'الفئة العمرية (اختياري)'
+                      : (strings.isFrench
+                            ? 'Tranche d’âge (optionnel)'
+                            : 'Age range (optional)'),
                   style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
                     color: textSecondary,
                   ),
                 ),
@@ -268,7 +264,7 @@ class _EditAboutMeSheetState extends ConsumerState<EditAboutMeSheet> {
                         child: Text(
                           strings.ageRangeDisplayName(range),
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 12.5,
                             fontWeight: isSelected
                                 ? FontWeight.w700
                                 : FontWeight.w500,
@@ -286,16 +282,14 @@ class _EditAboutMeSheetState extends ConsumerState<EditAboutMeSheet> {
 
                 // Personal Introduction
                 Text(
-                  (strings.isArabic
-                          ? 'مقدمة شخصية قصيرة'
-                          : (strings.isFrench
-                                ? 'PRÉSENTATION PERSONNELLE'
-                                : 'PERSONAL INTRODUCTION'))
-                      .toUpperCase(),
+                  strings.isArabic
+                      ? 'مقدمة شخصية قصيرة'
+                      : (strings.isFrench
+                            ? 'Présentation personnelle'
+                            : 'Personal introduction'),
                   style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
                     color: textSecondary,
                   ),
                 ),
@@ -303,7 +297,7 @@ class _EditAboutMeSheetState extends ConsumerState<EditAboutMeSheet> {
                 TextField(
                   controller: _introController,
                   maxLines: 3,
-                  style: TextStyle(fontSize: 12.5, color: textPrimary),
+                  style: TextStyle(fontSize: 13.0, color: textPrimary),
                   decoration: InputDecoration(
                     hintText: strings.isArabic
                         ? 'مقدمة حرة ومريحة عن نفسك وتجربتك...'
@@ -311,7 +305,7 @@ class _EditAboutMeSheetState extends ConsumerState<EditAboutMeSheet> {
                               ? 'Quelques mots simples que vous souhaitez partager...'
                               : 'Brief introductory thoughts you feel comfortable sharing...'),
                     hintStyle: TextStyle(
-                      fontSize: 11.5,
+                      fontSize: 12.5,
                       color: textSecondary.withValues(alpha: 0.6),
                     ),
                     filled: true,
@@ -339,7 +333,7 @@ class _EditAboutMeSheetState extends ConsumerState<EditAboutMeSheet> {
                   onTap: _save,
                   child: Container(
                     width: double.infinity,
-                    height: 46,
+                    height: 48,
                     decoration: BoxDecoration(
                       color: context.tokens.ink,
                       borderRadius: BorderRadius.circular(
@@ -348,16 +342,14 @@ class _EditAboutMeSheetState extends ConsumerState<EditAboutMeSheet> {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      (strings.isArabic
-                              ? 'حفظ المعلومات'
-                              : (strings.isFrench
-                                    ? 'ENREGISTRER'
-                                    : 'SAVE CHANGES'))
-                          .toUpperCase(),
+                      strings.isArabic
+                          ? 'حفظ المعلومات'
+                          : (strings.isFrench
+                                ? 'Enregistrer'
+                                : 'Save changes'),
                       style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.6,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
                         color: context.tokens.bg,
                       ),
                     ),

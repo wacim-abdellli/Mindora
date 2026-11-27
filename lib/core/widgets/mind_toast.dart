@@ -21,7 +21,7 @@ void showMindToast(
         behavior: SnackBarBehavior.floating,
         backgroundColor: tokens.ink,
         elevation: 0,
-        margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 24),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(tokens.inputRadius),

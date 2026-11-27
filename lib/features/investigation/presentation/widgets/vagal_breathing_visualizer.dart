@@ -183,13 +183,12 @@ class _VagalBreathingVisualizerState extends State<VagalBreathingVisualizer>
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
                             child: Text(
-                              widget.phaseText.toUpperCase(),
+                              widget.phaseText,
                               maxLines: 2,
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                fontSize: 9.5,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w700,
-                                letterSpacing: 0.5,
                                 color: accent.withValues(alpha: 0.9),
                               ),
                             ),

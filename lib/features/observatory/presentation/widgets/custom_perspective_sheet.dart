@@ -174,7 +174,7 @@ class _CustomPerspectiveSheetState extends ConsumerState<CustomPerspectiveSheet>
                   ),
                   child: Text(
                     '${_step + 1} / 3',
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: textSecondary),
+                    style: TextStyle(fontSize: 12.0, fontWeight: FontWeight.w700, color: textSecondary),
                   ),
                 ),
               ],
@@ -422,7 +422,7 @@ class _CustomPerspectiveSheetState extends ConsumerState<CustomPerspectiveSheet>
                         : (strings.isFrench
                             ? 'Étape précédente'
                             : 'Back to previous step'),
-                    style: TextStyle(fontSize: 11.5, color: textSecondary),
+                    style: TextStyle(fontSize: 12.5, color: textSecondary),
                   ),
                 ),
               ),

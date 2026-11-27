@@ -200,11 +200,10 @@ class _AddDiscoverySheetState extends ConsumerState<AddDiscoverySheet> {
             Text(
               isAr
                   ? 'تصنيف الملاحظة'
-                  : (strings.isFrench ? 'CATÉGORIE' : 'CATEGORY'),
+                  : (strings.isFrench ? 'Catégorie' : 'Category'),
               style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.6,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
                 color: textSecondary,
               ),
             ),
@@ -221,7 +220,7 @@ class _AddDiscoverySheetState extends ConsumerState<AddDiscoverySheet> {
                       selected: isSelected,
                       onSelected: (_) => setState(() => _selectedCategory = c.key),
                       labelStyle: TextStyle(
-                        fontSize: 11,
+                        fontSize: 12.5,
                         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                         color: isSelected ? textPrimary : textSecondary,
                       ),
@@ -247,12 +246,11 @@ class _AddDiscoverySheetState extends ConsumerState<AddDiscoverySheet> {
               isAr
                   ? 'أفكار مقترحة بنقرة واحدة'
                   : (strings.isFrench
-                      ? 'SUGGESTIONS EN UN CLIC'
-                      : 'OPTIONS-FIRST SUGGESTIONS'),
+                      ? 'Suggestions en un clic'
+                      : 'Quick suggestions'),
               style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.6,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
                 color: textSecondary,
               ),
             ),
@@ -268,7 +266,7 @@ class _AddDiscoverySheetState extends ConsumerState<AddDiscoverySheet> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(tokens.chipRadius)),
                   label: Text(
                     label,
-                    style: TextStyle(fontSize: 11, color: textSecondary),
+                    style: TextStyle(fontSize: 12.5, color: textSecondary),
                   ),
                   onPressed: () => _applySuggestion(s, strings),
                 );
@@ -280,25 +278,24 @@ class _AddDiscoverySheetState extends ConsumerState<AddDiscoverySheet> {
             Text(
               isAr
                   ? 'الخلاصة الأساسية'
-                  : (strings.isFrench ? 'IDÉE CLÉ' : 'CORE TAKEAWAY'),
+                  : (strings.isFrench ? 'Idée clé' : 'Core takeaway'),
               style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.6,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
                 color: textSecondary,
               ),
             ),
             const SizedBox(height: 6),
             TextField(
               controller: _titleController,
-              style: TextStyle(fontSize: 13, color: textPrimary, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 13.5, color: textPrimary, fontWeight: FontWeight.w600),
               decoration: InputDecoration(
                 hintText: isAr
                     ? 'مثال: التوقف ليس كسلاً...'
                     : (strings.isFrench
                         ? 'ex. Faire une pause est un choix conscient...'
                         : 'e.g., Pausing is intentional...'),
-                hintStyle: TextStyle(fontSize: 12, color: tokens.ink3),
+                hintStyle: TextStyle(fontSize: 12.5, color: tokens.ink3),
                 filled: true,
                 fillColor: tokens.surface2,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -323,12 +320,11 @@ class _AddDiscoverySheetState extends ConsumerState<AddDiscoverySheet> {
               isAr
                   ? 'ملاحظة أو سياق إضافي (اختياري)'
                   : (strings.isFrench
-                      ? 'RÉFLEXION PERSONNELLE (OPTIONNEL)'
-                      : 'PERSONAL REFLECTION (OPTIONAL)'),
+                      ? 'Réflexion personnelle (optionnel)'
+                      : 'Personal reflection (optional)'),
               style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.6,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
                 color: textSecondary,
               ),
             ),
@@ -337,14 +333,14 @@ class _AddDiscoverySheetState extends ConsumerState<AddDiscoverySheet> {
               controller: _notesController,
               minLines: 2,
               maxLines: 4,
-              style: TextStyle(fontSize: 12.5, color: textPrimary),
+              style: TextStyle(fontSize: 13.0, color: textPrimary),
               decoration: InputDecoration(
                 hintText: isAr
                     ? 'كيف غيّرت هذه الفكرة شعورك بالراحة؟'
                     : (strings.isFrench
                         ? 'En quoi ce recadrage vous apaise-t-il aujourd’hui ?'
                         : 'How does this shift support your ease today?'),
-                hintStyle: TextStyle(fontSize: 11.5, color: tokens.ink3),
+                hintStyle: TextStyle(fontSize: 12.5, color: tokens.ink3),
                 filled: true,
                 fillColor: tokens.surface2,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),

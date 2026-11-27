@@ -216,9 +216,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final preferredName = ref.watch(
       profileControllerProvider.select((p) => p.value?.preferredName),
     );
-    final userName = (preferredName != null && preferredName.isNotEmpty)
-        ? preferredName
-        : strings.defaultFriendName;
+    final rawName = (preferredName ?? '').trim();
+    final greetingText = rawName.isNotEmpty
+        ? '${_getLocalizedGreeting(strings)}${strings.isArabic ? '،' : ','} $rawName'
+        : _getLocalizedGreeting(strings);
 
     final activeFocusPlan = ref.watch(postVisitFocusControllerProvider).value;
     final profile = ref.watch(profileControllerProvider).value;
@@ -268,7 +269,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '${_getLocalizedGreeting(strings)}${strings.isArabic ? '،' : ','} $userName',
+                            greetingText,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: LabTheme.textStyle(
@@ -325,7 +326,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                 const SizedBox(height: 14),
 
-                // 2. Playful, condition-aware Daily Ritual (max 2-3 visual taps)
+                // 2. Playful, condition-aware Daily Ritual (collapsed softly before mood check-in)
                 HomeClinicalPulseCard(
                   tokens: tokens,
                   strings: strings,
@@ -333,6 +334,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   profile: profile,
                   loggedDaysThisWeek: weekDaysLogged,
                   todayTrace: todayTrace,
+                  initiallyCollapsed: todayTrace == null,
                   onUpdateTrace: _updateTodayClinicalPulse,
                 ),
 
@@ -433,16 +435,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                 const SizedBox(height: 14),
 
-                // 4. One Calm Quick-Breather Card
+                // 4. Calm Support Card (opens direct breathing before check-in; full calming toolkit after)
                 MindCard(
                   onTap: () {
                     HapticFeedback.mediumImpact();
                     ContextualSupportSheet.show(
                       context,
-                      initialChoice: SupportChoice.settle,
+                      initialChoice: todayTrace == null
+                          ? SupportChoice.settle
+                          : null,
                     );
                   },
-                  semanticLabel: strings.takeOneMinuteBreather,
+                  semanticLabel: todayTrace == null
+                      ? strings.takeOneMinuteBreather
+                      : strings.contextualSupportTitle,
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
@@ -453,7 +459,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              strings.takeOneMinuteBreather,
+                              todayTrace == null
+                                  ? strings.takeOneMinuteBreather
+                                  : strings.contextualSupportTitle,
                               style: LabTheme.textStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
@@ -462,7 +470,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              strings.breathingTitle,
+                              todayTrace == null
+                                  ? strings.breathingTitle
+                                  : strings.homeSupportCardSub,
                               style: LabTheme.textStyle(
                                 fontSize: 13.5,
                                 color: tokens.ink2,

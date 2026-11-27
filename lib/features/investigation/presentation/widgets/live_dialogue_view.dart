@@ -634,55 +634,56 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
     required MindTokens tokens,
     required List<String> options,
   }) {
+    final visibleOptions = options.take(3).toList(growable: false);
+    final maxOptionWidth = MediaQuery.sizeOf(context).width - 32;
     return Container(
       key: const ValueKey('talk-dynamic-options-bar'),
       width: double.infinity,
-      padding: const EdgeInsets.only(top: 6, bottom: 8),
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
       decoration: BoxDecoration(
         color: tokens.bg,
         border: Border(top: BorderSide(color: tokens.line, width: 0.8)),
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        child: Row(
-          children: [
-            for (var i = 0; i < options.length; i++) ...[
-              if (i > 0) const SizedBox(width: 8),
-              MindPressable(
-                key: ValueKey('talk-dynamic-option-$i'),
-                semanticLabel: options[i],
-                borderRadius: BorderRadius.circular(20),
-                onPressed: _isInvestigatorTyping
-                    ? null
-                    : () => _sendMessage(options[i]),
-                child: Container(
-                  constraints: const BoxConstraints(minHeight: 48),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: tokens.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: tokens.line),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    options[i],
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13.0,
-                      fontWeight: FontWeight.w600,
-                      color: tokens.ink,
-                    ),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          for (var i = 0; i < visibleOptions.length; i++)
+            MindPressable(
+              key: ValueKey('talk-dynamic-option-$i'),
+              semanticLabel: visibleOptions[i],
+              borderRadius: BorderRadius.circular(20),
+              onPressed: _isInvestigatorTyping
+                  ? null
+                  : () => _sendMessage(visibleOptions[i]),
+              child: Container(
+                constraints: BoxConstraints(
+                  minHeight: 48,
+                  maxWidth: maxOptionWidth,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: tokens.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: tokens.line),
+                ),
+                child: Text(
+                  visibleOptions[i],
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13.0,
+                    height: 1.3,
+                    fontWeight: FontWeight.w600,
+                    color: tokens.ink,
                   ),
                 ),
               ),
-            ],
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }

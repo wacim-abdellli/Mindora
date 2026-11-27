@@ -60,10 +60,10 @@ class _InnerObservatoryScreenState extends ConsumerState<InnerObservatoryScreen>
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
-          strings.observatoryTitle.toUpperCase(),
+          strings.observatoryTitle,
           style: TextStyle(
             fontWeight: FontWeight.w800,
-            fontSize: 13.5,
+            fontSize: 15,
             letterSpacing: 1.0,
             color: textPrimary,
           ),
@@ -221,8 +221,8 @@ class _InnerObservatoryScreenState extends ConsumerState<InnerObservatoryScreen>
               ),
             ),
             Icon(
-              Icons.chevron_right_rounded,
-              size: 18,
+              Icons.arrow_forward_ios_rounded,
+              size: 15,
               color: tokens.ink3,
             ),
           ],
@@ -574,7 +574,7 @@ class _InnerObservatoryScreenState extends ConsumerState<InnerObservatoryScreen>
                 Text(
                   '${activity.completedAt!.day}/${activity.completedAt!.month}',
                   style: TextStyle(
-                    fontSize: 11.5,
+                    fontSize: 12.5,
                     fontFamily: 'Inter',
                     fontFeatures: const [FontFeature.tabularFigures()],
                     color: textSecondary,
@@ -628,7 +628,7 @@ class _InnerObservatoryScreenState extends ConsumerState<InnerObservatoryScreen>
           Text(
             activity.shortExplanation,
             style: TextStyle(
-              fontSize: 11.5,
+              fontSize: 12.5,
               color: textSecondary,
               height: 1.35,
             ),
@@ -700,7 +700,7 @@ class _InnerObservatoryScreenState extends ConsumerState<InnerObservatoryScreen>
                       ),
                       Text(
                         strings.sectionSymptomExploration,
-                        style: TextStyle(fontSize: 11.5, color: textSecondary),
+                        style: TextStyle(fontSize: 12.5, color: textSecondary),
                       ),
                     ],
                   ),

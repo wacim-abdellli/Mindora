@@ -17,6 +17,7 @@ import '../../../core/widgets/mind_button.dart';
 import '../../../core/widgets/mind_card.dart';
 import '../../../core/widgets/mind_pill.dart';
 import '../../../core/widgets/mind_pressable.dart';
+import '../../../core/widgets/mind_switch.dart';
 import '../../mind_trace/domain/affect_taxonomy.dart';
 import '../../track/presentation/widgets/track_mood_utils.dart';
 import '../controllers/clinician_providers.dart';
@@ -780,56 +781,6 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                     ),
                   ),
                 ),
-                if (!AppEditionConfig.isClinicianApp)
-                  Semantics(
-                    button: true,
-                    label: strings.patientViewChipLabel,
-                    child: MindPressable(
-                      onPressed: () => _switchToPatientWorkspace(context),
-                      borderRadius: BorderRadius.circular(tokens.chipRadius),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          minWidth: 48,
-                          minHeight: 48,
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: tokens.surface2,
-                            borderRadius:
-                                BorderRadius.circular(tokens.chipRadius),
-                            border: Border.all(color: tokens.line),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.swap_horiz_rounded,
-                                size: 16,
-                                color: tokens.ink,
-                              ),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  strings.patientViewChipLabel,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w600,
-                                    color: tokens.ink,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
               ],
             ),
           ],
@@ -919,27 +870,31 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
 
         // Filter Pills
         Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          spacing: 6,
+          runSpacing: 6,
           children: [
             MindPill(
               label: strings.filterAll,
               isSelected: _filter == _RosterFilter.all,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               onTap: () => setState(() => _filter = _RosterFilter.all),
             ),
             MindPill(
               label: strings.filterShiftsNoted,
               isSelected: _filter == _RosterFilter.shifts,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               onTap: () => setState(() => _filter = _RosterFilter.shifts),
             ),
             MindPill(
               label: strings.filterNewUpdates,
               isSelected: _filter == _RosterFilter.unreviewed,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               onTap: () => setState(() => _filter = _RosterFilter.unreviewed),
             ),
             MindPill(
               label: strings.filterSampleShort,
               isSelected: _filter == _RosterFilter.demo,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               onTap: () => setState(() => _filter = _RosterFilter.demo),
             ),
           ],
@@ -1073,7 +1028,6 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
     bool isSelected = false,
   }) {
     final latest = record.latestTrace;
-    final baseline = record.baseline;
     final recent = record.recentBaseline;
     final shifts = record.divergences(strings);
     final moodKey = latest?.overallMood ?? 'calm';
@@ -1130,8 +1084,8 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                 ),
               const SizedBox(width: 6),
               Icon(
-                Icons.chevron_right_rounded,
-                size: 18,
+                Icons.arrow_forward_ios_rounded,
+                size: 15,
                 color: tokens.ink3,
               ),
             ],
@@ -1178,16 +1132,6 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                   borderColor: tokens.safety,
                   textColor: tokens.safety,
                 ),
-              if (baseline.averageIntraDaySwing != null &&
-                  baseline.averageIntraDaySwing! > 0)
-                MindBadge(
-                  icon: Icons.swap_vert_rounded,
-                  label:
-                      '+/-${baseline.averageIntraDaySwing!.toStringAsFixed(1)}',
-                ),
-              MindBadge(
-                label: strings.momentsLoggedLabel(record.latestPacket.traces.length),
-              ),
             ],
           ),
           if (agenda != null &&
@@ -1405,8 +1349,8 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                           ),
                         ),
                         Icon(
-                          Icons.chevron_right_rounded,
-                          size: 18,
+                          Icons.arrow_forward_ios_rounded,
+                          size: 15,
                           color: tokens.ink3,
                         ),
                       ],
@@ -1559,50 +1503,80 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
           padding: EdgeInsets.zero,
           child: Column(
             children: [
-              SwitchListTile.adaptive(
-                value: demoEnabled,
-                onChanged: (v) {
-                  HapticFeedback.selectionClick();
-                  ref
-                      .read(clinicianDemoEnabledProvider.notifier)
-                      .setEnabled(v);
-                },
-                activeThumbColor: tokens.ink,
-                activeTrackColor: tokens.m1,
-                title: Text(
-                  strings.demoCohortToggleTitle,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: tokens.ink,
-                  ),
-                ),
-                subtitle: Text(
-                  strings.demoCohortToggleSub,
-                  style: TextStyle(fontSize: 12, color: tokens.ink2),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            strings.demoCohortToggleTitle,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: tokens.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            strings.demoCohortToggleSub,
+                            style: TextStyle(fontSize: 12.5, color: tokens.ink2),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    MindSwitch(
+                      value: demoEnabled,
+                      semanticLabel: strings.demoCohortToggleTitle,
+                      onChanged: (v) {
+                        HapticFeedback.selectionClick();
+                        ref
+                            .read(clinicianDemoEnabledProvider.notifier)
+                            .setEnabled(v);
+                      },
+                    ),
+                  ],
                 ),
               ),
               Divider(height: 1, color: tokens.line),
-              SwitchListTile.adaptive(
-                value: appLock.isEnabled,
-                onChanged: (v) async {
-                  await ref
-                      .read(appLockProvider.notifier)
-                      .toggleBiometrics(v);
-                },
-                activeThumbColor: tokens.ink,
-                activeTrackColor: tokens.m1,
-                title: Text(
-                  strings.clinicBiometricLockTitle,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: tokens.ink,
-                  ),
-                ),
-                subtitle: Text(
-                  strings.biometricLockSub,
-                  style: TextStyle(fontSize: 12, color: tokens.ink2),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            strings.clinicBiometricLockTitle,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: tokens.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            strings.biometricLockSub,
+                            style: TextStyle(fontSize: 12.5, color: tokens.ink2),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    MindSwitch(
+                      value: appLock.isEnabled,
+                      semanticLabel: strings.clinicBiometricLockTitle,
+                      onChanged: (v) async {
+                        await ref
+                            .read(appLockProvider.notifier)
+                            .toggleBiometrics(v);
+                      },
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -1723,7 +1697,7 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                   ),
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, size: 18, color: tokens.ink3),
+              Icon(Icons.arrow_forward_ios_rounded, size: 15, color: tokens.ink3),
             ],
           ),
         ),

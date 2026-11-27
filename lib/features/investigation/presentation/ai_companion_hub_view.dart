@@ -264,13 +264,12 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
             children: [
               Expanded(
                 child: Text(
-                  strings.recentConversationsTitle.toUpperCase(),
+                  strings.recentConversationsTitle,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: strings.isArabic ? 0 : 0.7,
                     color: tokens.ink,
                   ),
                 ),
@@ -281,14 +280,14 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
                     ? TextButton(
                         onPressed: () => _showClearAllDialog(context),
                         style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                          minimumSize: const Size(48, 36),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          minimumSize: const Size(48, 48),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                         child: Text(
                           strings.clearAllConversationsBtn,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 12.5,
                             fontWeight: FontWeight.w700,
                             color: tokens.safety,
                           ),

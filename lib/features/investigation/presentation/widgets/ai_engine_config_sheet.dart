@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/localization/app_strings.dart';
 import '../../../../app/theme/mind_tokens.dart';
+import '../../../../core/widgets/mind_switch.dart';
 import '../../controllers/investigation_providers.dart';
 import '../../data/direct_gemini_investigator_service.dart';
 import '../../data/direct_groq_investigator_service.dart';
@@ -238,9 +239,8 @@ class _AiEngineConfigSheetState extends ConsumerState<AiEngineConfigSheet> {
                             : strings.aiEngineLiveGeminiBadge)
                         : strings.aiEngineTestModeBadge,
                     style: TextStyle(
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.4,
+                      fontSize: 12.0,
+                      fontWeight: FontWeight.w700,
                       color: aiConfig.isLiveActive
                           ? tokens.m1
                           : tokens.ink2,
@@ -252,7 +252,7 @@ class _AiEngineConfigSheetState extends ConsumerState<AiEngineConfigSheet> {
             const SizedBox(height: 8),
             Text(
               strings.aiEngineSheetSubtitle,
-              style: TextStyle(fontSize: 12, color: textSecondary, height: 1.4),
+              style: TextStyle(fontSize: 12.5, color: textSecondary, height: 1.4),
             ),
             const SizedBox(height: 14),
 
@@ -265,7 +265,7 @@ class _AiEngineConfigSheetState extends ConsumerState<AiEngineConfigSheet> {
                     label: Center(
                       child: Text(
                         strings.aiEngineGroqOption,
-                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
+                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
                       ),
                     ),
                     onSelected: (_) => _switchProvider(AiEngineProvider.groq),
@@ -278,7 +278,7 @@ class _AiEngineConfigSheetState extends ConsumerState<AiEngineConfigSheet> {
                     label: Center(
                       child: Text(
                         strings.aiEngineGeminiOption,
-                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
+                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
                       ),
                     ),
                     onSelected: (_) => _switchProvider(AiEngineProvider.gemini),
@@ -305,7 +305,7 @@ class _AiEngineConfigSheetState extends ConsumerState<AiEngineConfigSheet> {
                         Text(
                           strings.aiEngineDevTestModeTitle,
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 13.5,
                             fontWeight: FontWeight.w600,
                             color: textPrimary,
                           ),
@@ -313,18 +313,18 @@ class _AiEngineConfigSheetState extends ConsumerState<AiEngineConfigSheet> {
                         const SizedBox(height: 2),
                         Text(
                           strings.aiEngineDevTestModeSubtitle,
-                          style: TextStyle(fontSize: 11, color: textSecondary),
+                          style: TextStyle(fontSize: 12.0, color: textSecondary),
                         ),
                       ],
                     ),
                   ),
-                  Switch.adaptive(
+                  MindSwitch(
                     value: !aiConfig.useLiveAi || aiConfig.isMockKey,
+                    semanticLabel: strings.aiEngineDevTestModeTitle,
                     onChanged: (isTestMode) async {
                       HapticFeedback.lightImpact();
                       await ref.read(aiConfigProvider.notifier).toggleLiveMode(!isTestMode);
                     },
-                    activeThumbColor: tokens.m1,
                   ),
                 ],
               ),
@@ -337,9 +337,8 @@ class _AiEngineConfigSheetState extends ConsumerState<AiEngineConfigSheet> {
                   ? strings.aiEngineGroqKeyLabel
                   : strings.aiEngineGeminiKeyLabel,
               style: TextStyle(
-                fontSize: 10.5,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.0,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
                 color: textSecondary,
               ),
             ),
@@ -373,9 +372,8 @@ class _AiEngineConfigSheetState extends ConsumerState<AiEngineConfigSheet> {
               Text(
                 strings.aiEngineProxyLabel,
                 style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.0,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
                   color: textSecondary,
                 ),
               ),
@@ -383,10 +381,10 @@ class _AiEngineConfigSheetState extends ConsumerState<AiEngineConfigSheet> {
               TextField(
                 controller: _proxyController,
                 keyboardType: TextInputType.url,
-                style: TextStyle(fontSize: 13, color: textPrimary),
+                style: TextStyle(fontSize: 13.5, color: textPrimary),
                 decoration: InputDecoration(
                   hintText: strings.aiEngineProxyHint,
-                  hintStyle: TextStyle(fontSize: 11.5, color: textSecondary.withValues(alpha: 0.6)),
+                  hintStyle: TextStyle(fontSize: 12.5, color: textSecondary.withValues(alpha: 0.6)),
                   filled: true,
                   fillColor: tokens.surface2,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: border)),
@@ -426,7 +424,7 @@ class _AiEngineConfigSheetState extends ConsumerState<AiEngineConfigSheet> {
                         child: Text(
                           _testResult!,
                           style: TextStyle(
-                            fontSize: 11.5,
+                            fontSize: 12.5,
                             fontWeight: FontWeight.w600,
                             color: statusColor,
                             height: 1.3,
@@ -457,9 +455,8 @@ class _AiEngineConfigSheetState extends ConsumerState<AiEngineConfigSheet> {
                         : Text(
                             strings.aiEngineTestConnBtn,
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: 12.5,
                               fontWeight: FontWeight.w700,
-                              letterSpacing: 0.5,
                               color: textPrimary,
                             ),
                           ),
@@ -478,7 +475,7 @@ class _AiEngineConfigSheetState extends ConsumerState<AiEngineConfigSheet> {
                     onPressed: _saveKey,
                     child: Text(
                       strings.aiEngineSaveActivateBtn,
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -496,7 +493,7 @@ class _AiEngineConfigSheetState extends ConsumerState<AiEngineConfigSheet> {
                   onPressed: _clearKey,
                   child: Text(
                     strings.aiEngineRevertMockBtn,
-                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
+                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),

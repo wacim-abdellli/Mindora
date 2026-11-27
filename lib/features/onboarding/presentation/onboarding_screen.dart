@@ -17,7 +17,6 @@ import '../../../core/widgets/mind_badge.dart';
 import '../../../core/widgets/mind_button.dart';
 import '../../../core/widgets/mind_card.dart';
 import '../../../core/widgets/mind_pressable.dart';
-import '../../../core/widgets/mind_segmented.dart';
 import '../../../core/widgets/mind_strength_picker.dart';
 import '../../../core/widgets/mood_face.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -380,42 +379,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     Locale activeLocale,
   ) {
     if (_currentStep == 0) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(20, 10, 12, 0),
+      return const Padding(
+        padding: EdgeInsets.fromLTRB(20, 10, 12, 0),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Flexible(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                decoration: BoxDecoration(
-                  color: tokens.surface2,
-                  borderRadius: BorderRadius.circular(tokens.chipRadius),
-                  border: Border.all(color: tokens.line),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.lock_outline_rounded, size: 14, color: tokens.ink),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        strings.privacyBadgeTitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: LabTheme.textStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: tokens.ink,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            const SupportButton(),
+            SupportButton(),
           ],
         ),
       );
@@ -606,15 +575,88 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          MindSegmented(
-            index: isDarkActive ? 1 : 0,
-            labels: [strings.themeDaylight, strings.themeNight],
-            onChanged: (idx) {
-              HapticFeedback.selectionClick();
-              ref
-                  .read(themeControllerProvider.notifier)
-                  .setTheme(idx == 1 ? ThemeMode.dark : ThemeMode.light);
-            },
+          Row(
+            children: [
+              for (final option in [
+                (
+                  dark: false,
+                  icon: Icons.wb_sunny_outlined,
+                  label: strings.themeDaylight,
+                ),
+                (
+                  dark: true,
+                  icon: Icons.dark_mode_outlined,
+                  label: strings.themeNight,
+                ),
+              ]) ...[
+                Expanded(
+                  child: Semantics(
+                    button: true,
+                    selected: isDarkActive == option.dark,
+                    label: option.label,
+                    child: MindPressable(
+                      onPressed: () {
+                        HapticFeedback.selectionClick();
+                        ref
+                            .read(themeControllerProvider.notifier)
+                            .setTheme(
+                              option.dark ? ThemeMode.dark : ThemeMode.light,
+                            );
+                      },
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        constraints: const BoxConstraints(minHeight: 48),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDarkActive == option.dark
+                              ? tokens.primary
+                              : tokens.surface,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isDarkActive == option.dark
+                                ? tokens.primary
+                                : tokens.lineStrong,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              option.icon,
+                              size: 18,
+                              color: isDarkActive == option.dark
+                                  ? tokens.onPrimary
+                                  : tokens.ink,
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  option.label,
+                                  maxLines: 1,
+                                  style: LabTheme.textStyle(
+                                    fontSize: 14.0,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDarkActive == option.dark
+                                        ? tokens.onPrimary
+                                        : tokens.ink,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                if (!option.dark) const SizedBox(width: 10),
+              ],
+            ],
           ),
           const SizedBox(height: 14),
           Text(
@@ -1371,23 +1413,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             onPressed: _nextStep,
           ),
           if (_currentStep == 0) ...[
-            const SizedBox(height: 6),
-            Center(
-              child: TextButton(
-                onPressed: () => GoRouter.maybeOf(context)?.push(AppRouter.auth),
-                style: TextButton.styleFrom(
-                  minimumSize: const Size(48, 48),
-                  foregroundColor: tokens.ink2,
-                ),
-                child: Text(
-                  strings.signInTab,
-                  style: LabTheme.textStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w600,
-                    color: tokens.ink2,
-                  ),
-                ),
-              ),
+            const SizedBox(height: 10),
+            MindButton(
+              text: strings.signInTab,
+              variant: MindButtonVariant.soft,
+              isFullWidth: true,
+              onPressed: () => GoRouter.maybeOf(context)?.push(AppRouter.auth),
             ),
           ],
         ],

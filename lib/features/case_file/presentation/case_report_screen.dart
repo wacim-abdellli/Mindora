@@ -304,9 +304,8 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                             strings.formatSessionNumber(c.caseNumber),
                             style: TextStyle(
                               color: textPrimary,
-                              fontSize: 10,
+                              fontSize: 12.0,
                               fontWeight: FontWeight.w800,
-                              letterSpacing: strings.isArabic ? 0 : 0.5,
                             ),
                           ),
                         ),
@@ -354,9 +353,8 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                                           color: c.isPrivate
                                               ? context.tokens.safety
                                               : textSecondary,
-                                          fontSize: 9.5,
+                                          fontSize: 12.0,
                                           fontWeight: FontWeight.w700,
-                                          letterSpacing: strings.isArabic ? 0 : 0.3,
                                         ),
                                       ),
                                     ),
@@ -367,9 +365,9 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                           ),
                         ),
                         Text(
-                          '${c.createdAt.day}/${c.createdAt.month}/${c.createdAt.year}',
+                          strings.formatHumanDate(c.createdAt),
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 12.0,
                             color: textSecondary,
                           ),
                         ),
@@ -394,9 +392,8 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                         child: Text(
                           strings.emotionTag(chain.emotion, chain.emotionIntensity),
                           style: TextStyle(
-                            fontSize: 10.5,
+                            fontSize: 12.0,
                             fontWeight: FontWeight.w700,
-                            letterSpacing: 0.4,
                             color: tokens.safety,
                           ),
                         ),
@@ -483,7 +480,7 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                         Text(
                           '• ${strings.whyItFitsPrefix} ${h.whyItMightFit}',
                           style: TextStyle(
-                            fontSize: 11.5,
+                            fontSize: 12.5,
                             color: MindTokens.moodAnxious,
                           ),
                         ),
@@ -491,7 +488,7 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                         Text(
                           '• ${strings.whatDoesNotFitPrefix} ${h.whatDoesNotFit}',
                           style: TextStyle(
-                            fontSize: 11.5,
+                            fontSize: 12.5,
                             color: MindTokens.moodRestless,
                           ),
                         ),
@@ -614,9 +611,8 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    fontSize: 10,
+                                    fontSize: 12.5,
                                     fontWeight: FontWeight.w800,
-                                    letterSpacing: strings.isArabic ? 0 : 0.6,
                                     color: tokens.m1,
                                   ),
                                 ),
@@ -640,9 +636,8 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                                 child: Text(
                                   strings.editBtn,
                                   style: TextStyle(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.5,
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
                                     color: tokens.m1,
                                   ),
                                 ),
@@ -689,8 +684,8 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                     }
                   },
                   child: Text(
-                    strings.navHome.toUpperCase(),
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, letterSpacing: 0.5),
+                    strings.navHome,
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
                   ),
                 ),
               ),
@@ -709,9 +704,8 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
       child: Text(
         title,
         style: TextStyle(
-          fontSize: 11,
+          fontSize: 13,
           fontWeight: FontWeight.w800,
-          letterSpacing: 0.8,
           color: textSecondary,
         ),
       ),

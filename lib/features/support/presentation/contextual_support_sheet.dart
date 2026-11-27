@@ -121,48 +121,64 @@ class _ContextualSupportSheetState
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   if (_activeChoice != null)
-                    InkWell(
-                      onTap: _backToMenu,
-                      borderRadius: BorderRadius.circular(6),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 4,
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              isAr
-                                  ? Icons.arrow_forward_ios_rounded
-                                  : Icons.arrow_back_ios_rounded,
-                              size: 14,
-                              color: textSecondary,
+                    Expanded(
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: InkWell(
+                          onTap: _backToMenu,
+                          borderRadius: BorderRadius.circular(6),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 4,
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              isAr
-                                  ? 'الخيارات'
-                                  : (strings.isFrench ? 'Choix' : 'Choices'),
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: textSecondary,
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  isAr
+                                      ? Icons.arrow_forward_ios_rounded
+                                      : Icons.arrow_back_ios_rounded,
+                                  size: 14,
+                                  color: textSecondary,
+                                ),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    isAr
+                                        ? 'الخيارات'
+                                        : (strings.isFrench
+                                            ? 'Choix'
+                                            : 'Choices'),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     )
                   else
-                    Text(
-                      strings.contextualSupportTitle.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
-                        color: textSecondary,
+                    Expanded(
+                      child: Text(
+                        strings.contextualSupportTitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                          color: textSecondary,
+                        ),
                       ),
                     ),
+                  const SizedBox(width: 8),
                   IconButton(
                     tooltip: strings.closeBtn,
                     icon: Icon(
@@ -387,7 +403,7 @@ class _ContextualSupportSheetState
                               Text(
                                 strings.emergencyCallDirect,
                                 style: TextStyle(
-                                  fontSize: 11,
+                                  fontSize: 12.5,
                                   color: textSecondary,
                                 ),
                               ),
@@ -475,19 +491,22 @@ class _ContextualSupportSheetState
                             const SizedBox(width: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 5,
-                                vertical: 1.5,
+                                horizontal: 8,
+                                vertical: 3,
                               ),
                               decoration: BoxDecoration(
                                 color: accentColor.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(3),
+                                borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                'SUGGESTED',
+                                Localizations.localeOf(context).languageCode == 'ar'
+                                    ? 'مقترح'
+                                    : (Localizations.localeOf(context).languageCode == 'fr'
+                                          ? 'Suggéré'
+                                          : 'Suggested'),
                                 style: TextStyle(
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.4,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
                                   color: accentColor,
                                 ),
                               ),
@@ -499,7 +518,7 @@ class _ContextualSupportSheetState
                       Text(
                         subtitle,
                         style: TextStyle(
-                          fontSize: 11.5,
+                          fontSize: 12.5,
                           color: textSecondary,
                           height: 1.35,
                         ),

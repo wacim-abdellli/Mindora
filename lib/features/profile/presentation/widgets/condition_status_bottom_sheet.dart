@@ -139,7 +139,7 @@ class _ConditionStatusBottomSheetState
                       },
                       child: Text(
                         strings.isArabic ? 'إزالة من الملف' : (strings.isFrench ? 'Retirer' : 'Remove'),
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
                       ),
                     ),
                 ],
@@ -148,7 +148,7 @@ class _ConditionStatusBottomSheetState
               Text(
                 strings.conditionsSectionSubtitle,
                 style: TextStyle(
-                  fontSize: 11.5,
+                  fontSize: 12.5,
                   color: textSecondary,
                   height: 1.35,
                 ),
@@ -158,11 +158,10 @@ class _ConditionStatusBottomSheetState
 
               // Status Selector
               Text(
-                strings.statusTitle.toUpperCase(),
+                strings.statusTitle,
                 style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
                   color: textSecondary,
                 ),
               ),
@@ -228,18 +227,17 @@ class _ConditionStatusBottomSheetState
 
               // Optional note input
               Text(
-                strings.conditionNoteLabel.toUpperCase(),
+                strings.conditionNoteLabel,
                 style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
                   color: textSecondary,
                 ),
               ),
               const SizedBox(height: 6),
               TextField(
                 controller: _noteController,
-                style: TextStyle(fontSize: 12.5, color: textPrimary),
+                style: TextStyle(fontSize: 13.0, color: textPrimary),
                 maxLines: 2,
                 decoration: InputDecoration(
                   hintText: strings.isArabic
@@ -248,7 +246,7 @@ class _ConditionStatusBottomSheetState
                           ? 'Note personnelle (ex: principalement en public)...'
                           : 'Personal nuance (e.g., primarily in social contexts)...'),
                   hintStyle: TextStyle(
-                    fontSize: 11.5,
+                    fontSize: 12.5,
                     color: textSecondary.withValues(alpha: 0.6),
                   ),
                   filled: true,

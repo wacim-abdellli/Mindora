@@ -126,7 +126,7 @@ class TrackEntryDetailSheet extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${trace.dateKey} • $hour:$minute',
+                          '${strings.formatHumanDate(trace.effectiveTimestamp)} • $hour:$minute',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -263,9 +263,9 @@ class TrackEntryDetailSheet extends ConsumerWidget {
                   strings.triggersContextHeader,
                   style: TextStyle(
                     fontFamily: 'Inter',
-                    fontSize: 11.5,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: strings.isArabic ? 0 : 0.6,
+                    letterSpacing: strings.isArabic ? 0 : 0.2,
                     color: tokens.ink2,
                   ),
                 ),
@@ -355,7 +355,7 @@ class TrackEntryDetailSheet extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: MindPressable(
                       semanticLabel: strings.deleteEntryBtn,
@@ -531,7 +531,7 @@ class _EditPastTraceSheetState extends ConsumerState<EditPastTraceSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${strings.editEntryTitle} (${widget.trace.dateKey})',
+                  '${strings.editEntryTitle} · ${strings.formatHumanDate(widget.trace.effectiveTimestamp)}',
                   style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 17,

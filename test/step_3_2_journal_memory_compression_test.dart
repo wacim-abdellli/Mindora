@@ -591,9 +591,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify Header and Card
-      expect(find.text('MEMORY LOG'), findsOneWidget);
+      expect(find.text('Memory Log'), findsOneWidget);
       expect(find.text('Work deadline pressure noted across entries'), findsOneWidget);
-      expect(find.text('RECURRING THEME'), findsOneWidget);
+      expect(find.text('Recurring Theme'), findsOneWidget);
       expect(find.text('Confirm'), findsOneWidget);
       expect(find.text('Dismiss'), findsOneWidget);
 

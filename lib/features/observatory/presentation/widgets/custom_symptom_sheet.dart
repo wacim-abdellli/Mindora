@@ -131,7 +131,7 @@ class _CustomSymptomSheetState extends ConsumerState<CustomSymptomSheet> {
                 isAr
                     ? 'المجال:'
                     : (strings.isFrench ? 'Domaine :' : 'Category Domain:'),
-                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: textSecondary),
+                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: textSecondary),
               ),
               const SizedBox(height: 6),
               Wrap(
@@ -144,7 +144,7 @@ class _CustomSymptomSheetState extends ConsumerState<CustomSymptomSheet> {
                     selected: isSelected,
                     onSelected: (_) => setState(() => _selectedDomain = d),
                     labelStyle: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12.5,
                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                       color: isSelected ? textPrimary : textSecondary,
                     ),
@@ -170,19 +170,19 @@ class _CustomSymptomSheetState extends ConsumerState<CustomSymptomSheet> {
                     : (strings.isFrench
                         ? 'Nom du ressenti / symptôme :'
                         : 'Symptom / Experience Name:'),
-                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: textSecondary),
+                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: textSecondary),
               ),
               const SizedBox(height: 6),
               TextField(
                 controller: _titleController,
-                style: TextStyle(color: textPrimary, fontSize: 13),
+                style: TextStyle(color: textPrimary, fontSize: 13.5),
                 decoration: InputDecoration(
                   hintText: isAr
                       ? 'مثلاً: ثقل غير معتاد في الرأس بعد الغداء'
                       : (strings.isFrench
                           ? 'ex. Brouillard mental l’après-midi'
                           : 'e.g., Afternoon mental fog'),
-                  hintStyle: TextStyle(color: tokens.ink3, fontSize: 12),
+                  hintStyle: TextStyle(color: tokens.ink3, fontSize: 12.5),
                   filled: true,
                   fillColor: tokens.surface2,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -209,7 +209,7 @@ class _CustomSymptomSheetState extends ConsumerState<CustomSymptomSheet> {
                     : (strings.isFrench
                         ? 'Contexte ou nuance (optionnel) :'
                         : 'Optional Context / Cue:'),
-                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: textSecondary),
+                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: textSecondary),
               ),
               const SizedBox(height: 6),
               TextField(

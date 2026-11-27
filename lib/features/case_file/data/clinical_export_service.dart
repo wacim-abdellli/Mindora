@@ -291,7 +291,7 @@ class ClinicalExportService {
         '======================================================================',
       );
       buffer.writeln(
-        '${isAr ? "الجلسة" : (isFr ? "SESSION" : "SESSION")}: ${strings.formatSessionNumber(c.caseNumber)} — "${c.title}"',
+        '${strings.formatSessionNumber(c.caseNumber)} — "${c.title}"',
       );
       buffer.writeln(
         '${isAr ? "التاريخ" : (isFr ? "Date" : "Recorded")}: $sessionDate | ${isAr ? "الحالة" : (isFr ? "Statut" : "Status")}: ${c.isCompleted ? (isAr ? "مكتملة" : (isFr ? "Complétée" : "Completed")) : (isAr ? "قيد التفكيك" : (isFr ? "En cours" : "In Progress"))}',

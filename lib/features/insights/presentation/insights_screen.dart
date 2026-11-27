@@ -594,8 +594,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                     ),
                   ),
                   Icon(
-                    Icons.chevron_right_rounded,
-                    size: 18,
+                    Icons.arrow_forward_ios_rounded,
+                    size: 15,
                     color: tokens.ink3,
                   ),
                 ],
@@ -633,14 +633,14 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                         const SizedBox(height: 2),
                         Text(
                           strings.fullProgressTrendsSub,
-                          style: TextStyle(color: tokens.ink2, fontSize: 11.5),
+                          style: TextStyle(color: tokens.ink2, fontSize: 12.5),
                         ),
                       ],
                     ),
                   ),
                   Icon(
-                    Icons.chevron_right_rounded,
-                    size: 18,
+                    Icons.arrow_forward_ios_rounded,
+                    size: 15,
                     color: tokens.ink3,
                   ),
                 ],
@@ -920,7 +920,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                       Text(
                         strings.chartHighLabel,
                         style: TextStyle(
-                          fontSize: 11.5,
+                          fontSize: 12.0,
                           fontWeight: FontWeight.w600,
                           color: tokens.ink3,
                         ),
@@ -928,7 +928,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                       Text(
                         strings.chartMidLabel,
                         style: TextStyle(
-                          fontSize: 11.5,
+                          fontSize: 12.0,
                           fontWeight: FontWeight.w600,
                           color: tokens.ink3,
                         ),
@@ -936,7 +936,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                       Text(
                         strings.chartLowLabel,
                         style: TextStyle(
-                          fontSize: 11.5,
+                          fontSize: 12.0,
                           fontWeight: FontWeight.w600,
                           color: tokens.ink3,
                         ),
@@ -1054,7 +1054,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                     '±${baseline.averageIntraDaySwing!.toStringAsFixed(1)}',
                     style: TextStyle(
                       fontFamily: 'Inter',
-                      fontSize: 11.5,
+                      fontSize: 12.0,
                       fontWeight: FontWeight.w700,
                       color: tokens.ink,
                       fontFeatures: const [FontFeature.tabularFigures()],
@@ -1183,10 +1183,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
           Text(
             strings.dailyContextSectionTitle,
             style: TextStyle(
-              fontSize: 11.5,
+              fontSize: 13.0,
               fontWeight: FontWeight.w700,
-              letterSpacing: strings.isArabic ? 0 : 0.7,
-              color: tokens.ink2,
+              color: tokens.ink,
             ),
           ),
           const SizedBox(height: 4),
@@ -1481,15 +1480,15 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                             item.description,
                             style: TextStyle(
                               color: tokens.ink2,
-                              fontSize: 11.5,
+                              fontSize: 12.5,
                             ),
                           ),
                         ],
                       ),
                     ),
                     Icon(
-                      Icons.chevron_right_rounded,
-                      size: 18,
+                      Icons.arrow_forward_ios_rounded,
+                      size: 15,
                       color: tokens.ink3,
                     ),
                   ],
@@ -1518,7 +1517,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 11.5,
+                  fontSize: 12.5,
                   fontWeight: FontWeight.w600,
                   color: tokens.ink2,
                 ),
@@ -1596,7 +1595,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
           const SizedBox(height: 6),
           Text(
             strings.triggerMoodCorrelationsSub,
-            style: TextStyle(fontSize: 11.5, color: tokens.ink2, height: 1.35),
+            style: TextStyle(fontSize: 12.5, color: tokens.ink2, height: 1.35),
           ),
           if (topTriggers.isNotEmpty) ...[
             const SizedBox(height: 12),
@@ -1653,12 +1652,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
-                        strings.personalBaselineTitle.toUpperCase(),
+                        strings.personalBaselineTitle,
                         style: TextStyle(
                           color: tokens.ink,
-                          fontSize: 11.5,
+                          fontSize: 13.5,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: 0.8,
                         ),
                       ),
                     ),
@@ -1735,7 +1733,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
               Divider(height: 24, thickness: 0.5, color: tokens.line),
               Text(
                 '${strings.frequentEmotionsLabel}: ${baseline.commonEmotions.map((e) => trackMoodLabel(e, strings)).join(', ')}',
-                style: TextStyle(color: tokens.ink3, fontSize: 11.5, fontWeight: FontWeight.w600),
+                style: TextStyle(color: tokens.ink3, fontSize: 12.0, fontWeight: FontWeight.w600),
               ),
             ],
           ],
@@ -1762,7 +1760,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: tokens.ink3,
-                fontSize: 11,
+                fontSize: 12.0,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -1848,7 +1846,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                   const SizedBox(height: 4),
                   Text(
                     d.supportPlanPrompt,
-                    style: TextStyle(color: tokens.ink2, fontSize: 11.5),
+                    style: TextStyle(color: tokens.ink2, fontSize: 12.5),
                   ),
                 ],
               ),
@@ -1858,7 +1856,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
               d.uncertaintyStatement,
               style: TextStyle(
                 color: tokens.ink3,
-                fontSize: 11.5,
+                fontSize: 12.0,
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -1884,12 +1882,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
             children: [
               Expanded(
                 child: Text(
-                  strings.weeklySummaryTitle.toUpperCase(),
+                  strings.weeklySummaryTitle,
                   style: TextStyle(
-                    color: tokens.ink2,
-                    fontSize: 11.5,
+                    color: tokens.ink,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 1.1,
                   ),
                 ),
               ),
@@ -1900,7 +1897,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
           const SizedBox(height: 12),
           Text(
             report.whatChangedSummary,
-            style: TextStyle(color: tokens.ink, fontSize: 13, height: 1.4),
+            style: TextStyle(color: tokens.ink, fontSize: 13.5, height: 1.4),
           ),
           const SizedBox(height: 8),
           Text(
@@ -1911,7 +1908,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
             const SizedBox(height: 8),
             Text(
               '${strings.recordedSymptomsPrefix}: ${report.topSymptoms.join(', ')}',
-              style: TextStyle(color: tokens.ink3, fontSize: 11.5),
+              style: TextStyle(color: tokens.ink3, fontSize: 12.0),
             ),
           ],
           const SizedBox(height: 14),
@@ -1919,9 +1916,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
             strings.suggestedTherapyLabel,
             style: TextStyle(
               color: tokens.ink,
-              fontSize: 11.5,
+              fontSize: 12.5,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
             ),
           ),
           const SizedBox(height: 6),

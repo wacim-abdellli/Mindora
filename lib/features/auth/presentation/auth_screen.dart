@@ -230,7 +230,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
                 const SizedBox(height: 22),
 
-                // Card 2: Optional Email Sign-In / New Account
+                // Card 2: Optional Local Profile Sign-In / Creation
                 MindCard(
                   padding: const EdgeInsets.all(18),
                   child: Column(
@@ -246,7 +246,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                               .clearError();
                         },
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 10),
+                      Text(
+                        strings.localProfileOnlyNote,
+                        style: LabTheme.textStyle(
+                          fontSize: 13.0,
+                          height: 1.4,
+                          color: tokens.ink2,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
 
                       if (authState.errorMessage != null) ...[
                         Container(
@@ -404,24 +413,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
                 // Onboarding shortcut (Patient Edition only)
                 if (!AppEditionConfig.isClinicianApp)
-                  Center(
-                    child: TextButton(
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        GoRouter.maybeOf(context)?.go(AppRouter.onboarding);
-                      },
-                      style: TextButton.styleFrom(
-                        minimumSize: const Size(48, 48),
-                      ),
-                      child: Text(
-                        strings.startExplorationBtn,
-                        style: LabTheme.textStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w700,
-                          color: tokens.primary,
-                        ),
-                      ),
-                    ),
+                  MindButton(
+                    text: strings.startExplorationBtn,
+                    variant: MindButtonVariant.soft,
+                    leadingIcon: Icons.tune_rounded,
+                    isFullWidth: true,
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      GoRouter.maybeOf(context)?.go(AppRouter.onboarding);
+                    },
                   ),
 
                 const SizedBox(height: 8),

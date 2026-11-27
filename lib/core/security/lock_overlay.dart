@@ -5,14 +5,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/localization/app_strings.dart';
 import '../../app/theme/lab_theme.dart';
 import '../../app/theme/mind_tokens.dart';
+import '../safety/support_button.dart';
 import '../widgets/mind_button.dart';
 import '../widgets/mind_toast.dart';
 import 'app_lock_provider.dart';
 
-/// Full-screen warm lock overlay protecting private Mindora sessions.
+/// Full-screen privacy lock overlay protecting private Mindora sessions.
 ///
-/// Uses Sunrise / Twilight tokens, friendly sentence-case copy, and a 56dp
-/// primary violet Unlock button so both seniors and Gen Z feel welcomed back.
+/// Always preserves top-end [SupportButton] crisis access even while locked,
+/// uses Warm Alabaster / Vercel Obsidian tokens, and provides a 56dp Unlock CTA.
 class LockOverlay extends ConsumerStatefulWidget {
   const LockOverlay({super.key, required this.child});
 
@@ -63,12 +64,25 @@ class _LockOverlayState extends ConsumerState<LockOverlay>
       child: Scaffold(
         backgroundColor: tokens.bg,
         body: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+          child: Column(
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(20, 10, 12, 0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [SupportButton()],
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 28,
+                      vertical: 24,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
                   Container(
                     width: 80,
                     height: 80,
@@ -124,6 +138,9 @@ class _LockOverlayState extends ConsumerState<LockOverlay>
                 ],
               ),
             ),
+          ),
+        ),
+            ],
           ),
         ),
       ),

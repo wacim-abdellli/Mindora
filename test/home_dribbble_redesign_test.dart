@@ -33,7 +33,7 @@ void main() {
 
       const strings = AppStrings('en');
       expect(find.text('Mindora'), findsOneWidget);
-      expect(find.textContaining(strings.defaultFriendName), findsOneWidget);
+      expect(find.textContaining(strings.defaultFriendName), findsNothing);
 
       // Hero 2-tap MoodFace grid + Clinical Pulse + Breather card
       expect(find.byType(MoodFaceTile), findsNWidgets(6));

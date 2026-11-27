@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mind_forensics/app/localization/app_strings.dart';
+import 'package:mind_forensics/core/widgets/mind_switch.dart';
 import 'package:mind_forensics/features/journey/data/default_journey_curriculum.dart';
 import 'package:mind_forensics/features/journey/presentation/journey_activity_detail_screen.dart';
 import 'package:mind_forensics/features/profile/presentation/psychological_profile_screen.dart';
@@ -33,17 +34,17 @@ void main() {
       expect(find.text(en.conditionsSectionTitle), findsOneWidget);
       expect(find.text(en.optionalDetailsTitle), findsOneWidget);
 
-      // Verify condition chips are visible
-      expect(find.text('Depression'), findsOneWidget);
-      expect(find.text('ADHD'), findsOneWidget);
-      expect(find.text('OCD (Obsessive-Compulsive Disorder)'), findsOneWidget);
+      // Empty profile should not show fake unchosen clinical diagnoses
+      expect(find.text('Depression'), findsNothing);
+      expect(find.text('ADHD'), findsNothing);
+      expect(find.textContaining('tap to choose focus areas'), findsOneWidget);
 
-      // Verify AI Companion toggle exists
+      // Verify AI Companion MindSwitch toggle exists
       expect(find.text('Share profile with AI companion'), findsOneWidget);
-      expect(find.byType(Switch), findsOneWidget);
+      expect(find.byType(MindSwitch), findsOneWidget);
 
-      // Verify Save button exists
-      expect(find.text('SAVE PROFILE'), findsOneWidget);
+      // Verify Save button uses sentence case
+      expect(find.text('Save profile'), findsOneWidget);
     });
 
     testWidgets('JourneyActivityDetailScreen allows writing reflection and completing',

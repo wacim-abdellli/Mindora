@@ -82,7 +82,7 @@ class EditExperiencesSheet extends ConsumerWidget {
                       const SizedBox(height: 2),
                       Text(
                         strings.conditionsSectionSubtitle,
-                        style: TextStyle(fontSize: 11, color: textSecondary),
+                        style: TextStyle(fontSize: 12.5, color: textSecondary),
                       ),
                     ],
                   ),
@@ -190,11 +190,10 @@ class EditExperiencesSheet extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          catTitle.toUpperCase(),
+                          catTitle,
                           style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.8,
+                            fontSize: 13.0,
+                            fontWeight: FontWeight.w700,
                             color: context.tokens.ink,
                           ),
                         ),
@@ -243,7 +242,7 @@ class EditExperiencesSheet extends ConsumerWidget {
                                     Text(
                                       strings.conditionName(cond),
                                       style: TextStyle(
-                                        fontSize: 11,
+                                        fontSize: 12.5,
                                         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                                         color: isSelected
                                             ? context.tokens.ink
@@ -253,7 +252,7 @@ class EditExperiencesSheet extends ConsumerWidget {
                                     if (isSelected && entry.status != DiagnosticStatus.preferNotToSay) ...[
                                       const SizedBox(width: 6),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                         decoration: BoxDecoration(
                                           color: context.tokens.surface,
                                           borderRadius: BorderRadius.circular(6),
@@ -262,7 +261,7 @@ class EditExperiencesSheet extends ConsumerWidget {
                                         child: Text(
                                           strings.statusName(entry.status),
                                           style: TextStyle(
-                                            fontSize: 8.5,
+                                            fontSize: 12.0,
                                             fontWeight: FontWeight.w600,
                                             color: textSecondary,
                                           ),

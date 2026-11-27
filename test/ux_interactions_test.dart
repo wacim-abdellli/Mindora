@@ -107,7 +107,7 @@ void main() {
       );
 
       expect(find.text('4'), findsOneWidget);
-      expect(find.text('INHALE'), findsOneWidget);
+      expect(find.text('Inhale'), findsOneWidget);
     });
   });
 }

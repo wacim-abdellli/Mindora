@@ -14,6 +14,7 @@ import 'package:mind_forensics/app/theme/display_comfort_controller.dart';
 import 'package:mind_forensics/app/theme/lab_theme.dart';
 import 'package:mind_forensics/app/theme/mind_tokens.dart';
 import 'package:mind_forensics/core/security/secure_key_manager.dart';
+import 'package:mind_forensics/core/widgets/mind_switch.dart';
 import 'package:mind_forensics/core/widgets/mood_face.dart';
 import 'package:mind_forensics/features/home/presentation/home_screen.dart';
 import 'package:mind_forensics/features/insights/domain/discovery_milestones_model.dart';
@@ -294,7 +295,7 @@ void main() {
         const enStrings = AppStrings('en');
         expect(find.text(enStrings.comfortModeTitle), findsOneWidget);
         await tester.ensureVisible(find.text(enStrings.comfortModeTitle));
-        await tester.tap(find.byType(Switch).first);
+        await tester.tap(find.byType(MindSwitch).first);
         await tester.pumpAndSettle();
         expect(container.read(displayComfortProvider), isFalse);
         expect(tester.takeException(), isNull);

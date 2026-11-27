@@ -235,8 +235,8 @@ class SupportModalSheet extends ConsumerWidget {
                               Text(
                                 res.localizedDescription(strings),
                                 style: LabTheme.textStyle(
-                                  fontSize: 13.0,
-                                  height: 1.35,
+                                  fontSize: 13.5,
+                                  height: 1.4,
                                   color: tokens.ink2,
                                 ),
                               ),
@@ -245,34 +245,38 @@ class SupportModalSheet extends ConsumerWidget {
                         ),
                         const SizedBox(width: 10),
                         if (hasPhone)
-                          FilledButton.icon(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: tokens.safety,
-                              foregroundColor: tokens.isDark
-                                  ? tokens.bg
-                                  : MindTokens.pureWhiteConstant,
-                              minimumSize: const Size(48, 48),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 10,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-                            icon: const Icon(Icons.phone_outlined, size: 16),
-                            label: Text(
-                              _formatPhone(res.phone),
-                              style: LabTheme.textStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 13.5,
-                                color: tokens.isDark
+                          Semantics(
+                            button: true,
+                            label: '${res.localizedName(strings)} ${_formatPhone(res.phone)}',
+                            child: FilledButton.icon(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: tokens.safety,
+                                foregroundColor: tokens.isDark
                                     ? tokens.bg
                                     : MindTokens.pureWhiteConstant,
+                                minimumSize: const Size(56, 52),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
                               ),
+                              icon: const Icon(Icons.phone_outlined, size: 17),
+                              label: Text(
+                                _formatPhone(res.phone),
+                                style: LabTheme.textStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14.0,
+                                  color: tokens.isDark
+                                      ? tokens.bg
+                                      : MindTokens.pureWhiteConstant,
+                                ),
+                              ),
+                              onPressed: () =>
+                                  _makeCall(context, strings, res.phone),
                             ),
-                            onPressed: () =>
-                                _makeCall(context, strings, res.phone),
                           )
                         else if (res.website != null)
                           OutlinedButton(

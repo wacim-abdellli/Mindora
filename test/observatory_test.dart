@@ -30,7 +30,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Header
-      expect(find.text('SELF-CARE TOOLS'), findsOneWidget);
+      expect(find.text('Self-Care Tools'), findsOneWidget);
 
       // Section tabs (2x2 wrapped grid)
       expect(find.text('Reframe Thought'), findsAtLeastNWidgets(1));

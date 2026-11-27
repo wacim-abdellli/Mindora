@@ -123,7 +123,7 @@ class _EditSymptomsSheetState extends ConsumerState<EditSymptomsSheet> {
               const SizedBox(height: 4),
               Text(
                 strings.sectionSymptomsDesc,
-                style: TextStyle(fontSize: 11.5, color: textSecondary),
+                style: TextStyle(fontSize: 12.5, color: textSecondary),
               ),
 
               const SizedBox(height: 12),
@@ -143,14 +143,13 @@ class _EditSymptomsSheetState extends ConsumerState<EditSymptomsSheet> {
                           children: [
                             Row(
                               children: [
-                                Icon(cat.icon, size: 13, color: context.tokens.ink),
+                                Icon(cat.icon, size: 14, color: context.tokens.ink),
                                 const SizedBox(width: 6),
                                 Text(
-                                  cat.localized(strings).toUpperCase(),
+                                  cat.localized(strings),
                                   style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.8,
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
                                     color: context.tokens.ink,
                                   ),
                                 ),
@@ -206,7 +205,7 @@ class _EditSymptomsSheetState extends ConsumerState<EditSymptomsSheet> {
                                         Text(
                                           label,
                                           style: TextStyle(
-                                            fontSize: 11,
+                                            fontSize: 12.5,
                                             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                                             color: isSelected
                                                 ? context.tokens.ink
@@ -237,7 +236,7 @@ class _EditSymptomsSheetState extends ConsumerState<EditSymptomsSheet> {
                                   : (strings.isFrench
                                       ? '+ Ajouter une expérience personnalisée...'
                                       : '+ Add custom experience...'),
-                              hintStyle: TextStyle(fontSize: 11, color: textSecondary.withValues(alpha: 0.6)),
+                              hintStyle: TextStyle(fontSize: 12.5, color: textSecondary.withValues(alpha: 0.6)),
                               filled: true,
                               fillColor: context.tokens.surface2,
                               contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -261,16 +260,14 @@ class _EditSymptomsSheetState extends ConsumerState<EditSymptomsSheet> {
 
                     // Free-text field: "What has been difficult for you lately?"
                     Text(
-                      (strings.isArabic
-                              ? 'ما الذي كان صعباً أو مؤلماً مؤخراً؟'
-                              : (strings.isFrench
-                                  ? 'QU’EST-CE QUI A ÉTÉ DIFFICILE RÉCEMMENT ?'
-                                  : 'WHAT HAS BEEN DIFFICULT LATELY?'))
-                          .toUpperCase(),
+                      strings.isArabic
+                          ? 'ما الذي كان صعباً أو مؤلماً مؤخراً؟'
+                          : (strings.isFrench
+                              ? 'Qu’est-ce qui a été difficile récemment ?'
+                              : 'What has been difficult lately?'),
                       style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
                         color: textSecondary,
                       ),
                     ),
@@ -278,14 +275,14 @@ class _EditSymptomsSheetState extends ConsumerState<EditSymptomsSheet> {
                     TextField(
                       controller: _notesController,
                       maxLines: 4,
-                      style: TextStyle(fontSize: 12.5, color: textPrimary),
+                      style: TextStyle(fontSize: 13.0, color: textPrimary),
                       decoration: InputDecoration(
                         hintText: strings.isArabic
                             ? 'دوّن بحرية أي تفاصيل أو صعوبات تود توثيقها...'
                             : (strings.isFrench
                                 ? 'Décrivez vos déclencheurs ou défis sans pression...'
                                 : 'Describe any patterns, triggers, or challenges without pressure...'),
-                        hintStyle: TextStyle(fontSize: 11.5, color: textSecondary.withValues(alpha: 0.6)),
+                        hintStyle: TextStyle(fontSize: 12.5, color: textSecondary.withValues(alpha: 0.6)),
                         filled: true,
                         fillColor: context.tokens.surface2,
                         contentPadding: const EdgeInsets.all(12),
@@ -307,23 +304,21 @@ class _EditSymptomsSheetState extends ConsumerState<EditSymptomsSheet> {
                 onTap: _save,
                 child: Container(
                   width: double.infinity,
-                  height: 46,
+                  height: 48,
                   decoration: BoxDecoration(
                     color: context.tokens.ink,
                     borderRadius: BorderRadius.circular(context.tokens.buttonRadius),
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    (strings.isArabic
-                            ? 'حفظ الصعوبات والأعراض'
-                            : (strings.isFrench
-                                ? 'ENREGISTRER LES DIFFICULTÉS'
-                                : 'SAVE SYMPTOMS & DIFFICULTIES'))
-                        .toUpperCase(),
+                    strings.isArabic
+                        ? 'حفظ الصعوبات والأعراض'
+                        : (strings.isFrench
+                            ? 'Enregistrer les difficultés'
+                            : 'Save symptoms & difficulties'),
                     style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.6,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
                       color: context.tokens.bg,
                     ),
                   ),

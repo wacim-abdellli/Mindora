@@ -453,7 +453,7 @@ class _ProgressiveDetailsSheetState
           children: [
             for (final item in _helpedOptions)
               MindChip(
-                label: item,
+                label: strings.helpedOptionLabel(item),
                 selected: _helped.contains(item),
                 onTap: () {
                   setState(() {

@@ -187,9 +187,12 @@ class TrackMonthCalendar extends StatelessWidget {
               Border? circleBorder;
 
               if (isSelected) {
-                circleBg = isLogged ? moodColor : tokens.primary;
-                textColor = isLogged ? tokens.onMood : tokens.onPrimary;
-                circleBorder = null;
+                circleBg = isLogged ? moodFill : tokens.primary;
+                textColor = isLogged ? tokens.ink : tokens.onPrimary;
+                circleBorder = Border.all(
+                  color: isLogged ? tokens.ink : tokens.primary,
+                  width: 2.2,
+                );
               } else if (isLogged) {
                 circleBg = moodFill;
                 textColor = tokens.ink;
@@ -243,7 +246,7 @@ class TrackMonthCalendar extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            if (isLogged && !isSelected) ...[
+                            if (isLogged) ...[
                               const SizedBox(height: 2),
                               if (dayList.length == 1)
                                 Container(
@@ -384,7 +387,7 @@ class _SelectedDayBanner extends StatelessWidget {
               semanticLabel: strings.showAllEntriesBtn,
               borderRadius: BorderRadius.circular(10),
               child: Container(
-                constraints: const BoxConstraints(minHeight: 40, maxWidth: 96),
+                constraints: const BoxConstraints(minHeight: 48, maxWidth: 108),
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: tokens.surface,

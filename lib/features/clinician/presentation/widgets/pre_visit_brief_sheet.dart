@@ -223,9 +223,8 @@ class _PreVisitBriefSheetState extends ConsumerState<PreVisitBriefSheet> {
                         Text(
                           strings.focusPlanProgressLabel,
                           style: TextStyle(
-                            fontSize: 11.5,
+                            fontSize: 12.5,
                             fontWeight: FontWeight.w700,
-                            letterSpacing: strings.isArabic ? 0 : 0.8,
                             color: tokens.ink2,
                           ),
                         ),
@@ -274,9 +273,8 @@ class _PreVisitBriefSheetState extends ConsumerState<PreVisitBriefSheet> {
                       Text(
                         strings.preVisitTopicsLabel,
                         style: TextStyle(
-                          fontSize: 11.5,
+                          fontSize: 12.5,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: strings.isArabic ? 0 : 0.8,
                           color: tokens.ink2,
                         ),
                       ),

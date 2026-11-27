@@ -7,7 +7,7 @@ import '../../domain/recovery_ledger_model.dart';
 
 /// Overflow-safe Empirical Recovery Ledger card shared by Insights (Patient)
 /// and Clinician Dossier (Psychiatrist) views.
-class ObservedStabilizersCard extends StatelessWidget {
+class ObservedStabilizersCard extends StatefulWidget {
   const ObservedStabilizersCard({
     super.key,
     required this.ledger,
@@ -18,10 +18,20 @@ class ObservedStabilizersCard extends StatelessWidget {
   final AppStrings strings;
 
   @override
+  State<ObservedStabilizersCard> createState() =>
+      _ObservedStabilizersCardState();
+}
+
+class _ObservedStabilizersCardState extends State<ObservedStabilizersCard> {
+  bool _showAll = false;
+
+  @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final items = ledger.stabilizers.take(5).toList(growable: false);
-    if (items.isEmpty) return const SizedBox.shrink();
+    final strings = widget.strings;
+    final allItems = widget.ledger.stabilizers.take(5).toList(growable: false);
+    if (allItems.isEmpty) return const SizedBox.shrink();
+    final items = _showAll ? allItems : allItems.take(3).toList(growable: false);
 
     return MindCard(
       padding: const EdgeInsets.all(16),
@@ -31,8 +41,8 @@ class ObservedStabilizersCard extends StatelessWidget {
           Row(
             children: [
               Icon(
-                Icons.healing_outlined,
-                size: 16,
+                Icons.spa_outlined,
+                size: 18,
                 color: tokens.ink,
               ),
               const SizedBox(width: 8),
@@ -40,10 +50,9 @@ class ObservedStabilizersCard extends StatelessWidget {
                 child: Text(
                   strings.observedStabilizersTitle,
                   style: TextStyle(
-                    fontSize: 11.5,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: strings.isArabic ? 0 : 0.7,
-                    color: tokens.ink2,
+                    color: tokens.ink,
                   ),
                 ),
               ),
@@ -52,7 +61,7 @@ class ObservedStabilizersCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             strings.observedStabilizersSub,
-            style: TextStyle(fontSize: 12, color: tokens.ink3, height: 1.35),
+            style: TextStyle(fontSize: 12.5, color: tokens.ink2, height: 1.35),
           ),
           const SizedBox(height: 12),
           ...items.map((item) {
@@ -90,7 +99,7 @@ class ObservedStabilizersCard extends StatelessWidget {
                           child: Text(
                             item.localizedLabel(strings),
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: 13.5,
                               fontWeight: FontWeight.w600,
                               color: tokens.ink,
                             ),
@@ -104,7 +113,7 @@ class ObservedStabilizersCard extends StatelessWidget {
                       child: Text(
                         detailParts.join(' · '),
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 12.5,
                           fontWeight: FontWeight.w500,
                           color: tokens.ink2,
                           fontFeatures: const [FontFeature.tabularFigures()],
@@ -116,11 +125,31 @@ class ObservedStabilizersCard extends StatelessWidget {
               ),
             );
           }),
+          if (allItems.length > 3)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton(
+                onPressed: () => setState(() => _showAll = !_showAll),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(48, 48),
+                  foregroundColor: tokens.ink,
+                ),
+                child: Text(
+                  _showAll
+                      ? strings.showLessLabel
+                      : strings.showAllCountLabel(allItems.length),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
           const SizedBox(height: 4),
           Text(
             strings.stabilizerDisclaimer,
             style: TextStyle(
-              fontSize: 11.5,
+              fontSize: 12.0,
               color: tokens.ink3,
               height: 1.35,
             ),

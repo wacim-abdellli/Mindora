@@ -115,29 +115,28 @@ class _RoutineAnchorCardState extends ConsumerState<RoutineAnchorCard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                strings.needRoutineTitle.toUpperCase(),
+                strings.needRoutineTitle,
                 style: TextStyle(
-                  fontSize: 10.5,
+                  fontSize: 13.5,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
                   color: textSecondary,
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: tokens.selectedTintFor(tokens.m1),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   isAr
                       ? 'نقطة توازن واحدة'
                       : (isFr
-                            ? 'UN POINT D’ANCRAGE DOUX'
-                            : 'ONE GENTLE ANCHOR'),
+                            ? 'Un point d’ancrage doux'
+                            : 'One gentle anchor'),
                   style: TextStyle(
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
                     color: tokens.m1,
                   ),
                 ),
@@ -177,7 +176,7 @@ class _RoutineAnchorCardState extends ConsumerState<RoutineAnchorCard> {
                   });
                 },
                 labelStyle: TextStyle(
-                  fontSize: 11,
+                  fontSize: 12.5,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   color: isSelected ? tokens.bg : textSecondary,
                 ),
@@ -308,7 +307,7 @@ class _RoutineAnchorCardState extends ConsumerState<RoutineAnchorCard> {
                             ? 'Enregistrer dans mes découvertes'
                             : 'Save Anchor to Discoveries'),
                   style: const TextStyle(
-                    fontSize: 11.5,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

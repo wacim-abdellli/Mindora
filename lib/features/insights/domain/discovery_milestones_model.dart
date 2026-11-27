@@ -101,7 +101,7 @@ class DiscoveryMilestonesService {
         id: DiscoveryMilestoneId.stabilizerSpotted,
         title: strings.milestoneStabilizerTitle,
         subtitle: strings.milestoneStabilizerSub,
-        icon: Icons.healing_outlined,
+        icon: Icons.spa_outlined,
         isUnlocked: ledger.hasEvidence,
       ),
       DiscoveryMilestone(

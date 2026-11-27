@@ -110,11 +110,10 @@ class _ClinicalSharingHistorySheetState extends ConsumerState<ClinicalSharingHis
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          strings.clinicalSharingHistoryTitle.toUpperCase(),
+                          strings.clinicalSharingHistoryTitle,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 14,
                             fontWeight: FontWeight.w800,
-                            letterSpacing: 0.8,
                             color: textPrimary,
                           ),
                         ),
@@ -123,7 +122,7 @@ class _ClinicalSharingHistorySheetState extends ConsumerState<ClinicalSharingHis
                           strings.clinicalSharingHistoryDesc,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 11, color: textSecondary),
+                          style: TextStyle(fontSize: 12.5, color: textSecondary),
                         ),
                       ],
                     ),
@@ -167,7 +166,7 @@ class _ClinicalSharingHistorySheetState extends ConsumerState<ClinicalSharingHis
                           itemBuilder: (ctx, i) {
                             final r = _records[i];
                             final d = r.exportedAt;
-                            final dateFormatted = '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year} ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+                            final dateFormatted = '${strings.formatHumanDate(d)} · ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
 
                             return Container(
                               padding: const EdgeInsets.all(14),
@@ -185,7 +184,7 @@ class _ClinicalSharingHistorySheetState extends ConsumerState<ClinicalSharingHis
                                       Text(
                                         dateFormatted,
                                         style: TextStyle(
-                                          fontSize: 11,
+                                          fontSize: 12.5,
                                           fontWeight: FontWeight.w700,
                                           fontFamily: 'Inter',
                                           fontFeatures: const [FontFeature.tabularFigures()],
@@ -199,11 +198,10 @@ class _ClinicalSharingHistorySheetState extends ConsumerState<ClinicalSharingHis
                                           borderRadius: BorderRadius.circular(tokens.chipRadius),
                                         ),
                                         child: Text(
-                                          '${r.sessionNumbers.length} SESSIONS',
+                                          strings.sessionsCountLabel(r.sessionNumbers.length),
                                           style: TextStyle(
-                                            fontSize: 9.5,
-                                            fontWeight: FontWeight.w800,
-                                            letterSpacing: 0.5,
+                                            fontSize: 12.0,
+                                            fontWeight: FontWeight.w700,
                                             color: textPrimary,
                                           ),
                                         ),
@@ -213,19 +211,19 @@ class _ClinicalSharingHistorySheetState extends ConsumerState<ClinicalSharingHis
                                   const SizedBox(height: 8),
                                   Text(
                                     r.sessionNumbers.join(', '),
-                                    style: TextStyle(fontSize: 12, color: textSecondary),
+                                    style: TextStyle(fontSize: 12.5, color: textSecondary),
                                   ),
                                   if (r.recipientOrNote.isNotEmpty) ...[
                                     const SizedBox(height: 6),
                                     Row(
                                       children: [
-                                        Icon(Icons.person_outline_rounded, size: 12, color: textSecondary),
+                                        Icon(Icons.person_outline_rounded, size: 14, color: textSecondary),
                                         const SizedBox(width: 4),
                                         Expanded(
                                           child: Text(
                                             r.recipientOrNote,
                                             style: TextStyle(
-                                              fontSize: 11,
+                                              fontSize: 12.5,
                                               fontStyle: FontStyle.italic,
                                               color: textSecondary,
                                             ),
@@ -249,6 +247,7 @@ class _ClinicalSharingHistorySheetState extends ConsumerState<ClinicalSharingHis
                   width: double.infinity,
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 48),
                       foregroundColor: tokens.safety,
                       side: BorderSide(color: border, width: 1),
                       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -259,7 +258,7 @@ class _ClinicalSharingHistorySheetState extends ConsumerState<ClinicalSharingHis
                     onPressed: _clearHistory,
                     child: Text(
                       strings.clearSharingHistoryBtn,
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11, letterSpacing: 0.5),
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
                     ),
                   ),
                 ),

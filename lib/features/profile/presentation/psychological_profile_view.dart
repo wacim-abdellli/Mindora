@@ -7,9 +7,9 @@ import '../../../app/theme/lab_theme.dart';
 import '../../../app/theme/mind_tokens.dart';
 import '../../../core/widgets/bouncing_widget.dart';
 import '../../../core/widgets/fingerprint_thread_signature.dart';
+import '../../../core/widgets/mind_switch.dart';
 import '../controllers/profile_controller.dart';
 import '../domain/communication_preferences_catalog.dart';
-import '../domain/condition_type.dart';
 import '../domain/diagnostic_status.dart';
 import '../domain/psychological_profile_model.dart';
 import 'widgets/edit_about_me_sheet.dart';
@@ -464,12 +464,12 @@ class PsychologicalProfileView extends ConsumerWidget {
                             ),
                             const SizedBox(width: 4),
                           ],
-                          Text(
+                      Text(
                             isCompleted
                                 ? strings.profileCompletedBadge
                                 : strings.profileNotCompletedBadge,
                             style: TextStyle(
-                              fontSize: 11.5,
+                              fontSize: 12.0,
                               fontWeight: FontWeight.w700,
                               color: isCompleted
                                   ? context.tokens.ink
@@ -524,11 +524,11 @@ class PsychologicalProfileView extends ConsumerWidget {
     if (!profile.hasAboutMe) {
       return Text(
         strings.isArabic
-            ? 'انقر لتحديد اسمك المفضل، فئتك العمرية، ونبذة قصيرة عنك.'
+            ? 'ما زلت ما زدتش اسمك أو نبذة قصيرة.'
             : (strings.isFrench
-                  ? 'Touchez pour définir votre prénom, votre tranche d’âge et une courte présentation.'
-                  : 'Tap to set your preferred name, age range, and brief self-introduction.'),
-        style: TextStyle(fontSize: 11.5, color: textSecondary),
+                  ? 'Pas encore rempli · touchez pour ajouter.'
+                  : 'Not set yet · tap to add.'),
+        style: TextStyle(fontSize: 12.5, color: textSecondary),
       );
     }
 
@@ -541,7 +541,7 @@ class PsychologicalProfileView extends ConsumerWidget {
               Text(
                 profile.preferredName,
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 13.5,
                   fontWeight: FontWeight.w700,
                   color: textPrimary,
                 ),
@@ -550,7 +550,7 @@ class PsychologicalProfileView extends ConsumerWidget {
             ],
             if (profile.ageRange.isNotEmpty)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: context.tokens.surface2,
                   borderRadius: BorderRadius.circular(6),
@@ -558,7 +558,7 @@ class PsychologicalProfileView extends ConsumerWidget {
                 child: Text(
                   profile.ageRange,
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 12.0,
                     fontWeight: FontWeight.w600,
                     color: textSecondary,
                   ),
@@ -573,7 +573,7 @@ class PsychologicalProfileView extends ConsumerWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: LabTheme.textStyle(
-              fontSize: 11.5,
+              fontSize: 12.5,
               fontStyle: FontStyle.italic,
               color: textSecondary,
             ),
@@ -596,43 +596,13 @@ class PsychologicalProfileView extends ConsumerWidget {
     AppStrings strings,
   ) {
     if (!profile.hasExperiences) {
-      // Show default preview chips matching existing tests (Depression, ADHD, OCD)
-      final defaults = [
-        ConditionType.depression,
-        ConditionType.adhd,
-        ConditionType.ocd,
-      ];
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: defaults.map((c) {
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: context.tokens.surface2,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: borderColor),
-                ),
-                child: Text(
-                  strings.conditionName(c),
-                  style: TextStyle(fontSize: 11, color: textSecondary),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            strings.isArabic
-                ? 'انقر لإضافة وتخصيص تجاربك وحالاتك...'
-                : (strings.isFrench
-                      ? 'Touchez pour sélectionner et personnaliser vos expériences...'
-                      : 'Tap to select and customize your experiences...'),
-            style: TextStyle(fontSize: 11, color: textSecondary),
-          ),
-        ],
+      return Text(
+        strings.isArabic
+            ? 'ما فماش اختيارات حالياً · انقر لاختيار المجالات اللي تهمّك.'
+            : (strings.isFrench
+                  ? 'Aucune sélection pour l’instant · touchez pour choisir.'
+                  : 'None selected yet · tap to choose focus areas.'),
+        style: TextStyle(fontSize: 12.5, color: textSecondary),
       );
     }
 
@@ -653,7 +623,7 @@ class PsychologicalProfileView extends ConsumerWidget {
                 TextSpan(
                   text: strings.conditionName(entry.condition),
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                     color: context.tokens.ink,
                   ),
@@ -662,7 +632,7 @@ class PsychologicalProfileView extends ConsumerWidget {
                   TextSpan(
                     text: ' • ${strings.statusName(entry.status)}',
                     style: TextStyle(
-                      fontSize: 9.5,
+                      fontSize: 12.0,
                       fontWeight: FontWeight.w500,
                       color: context.tokens.ink2,
                     ),
@@ -691,11 +661,11 @@ class PsychologicalProfileView extends ConsumerWidget {
     if (!profile.hasSymptoms) {
       return Text(
         strings.isArabic
-            ? 'انقر لتدوين الصعوبات الشعورية أو الفكرية أو السلوكية الحالية.'
+            ? 'ما فماش اختيارات حالياً · انقر للإضافة.'
             : (strings.isFrench
-                  ? 'Touchez pour noter vos difficultés émotionnelles, de pensée ou de comportement actuelles.'
-                  : 'Tap to record current emotional, thought, or behavioral difficulties.'),
-        style: TextStyle(fontSize: 11.5, color: textSecondary),
+                  ? 'Pas encore rempli · touchez pour ajouter.'
+                  : 'Not set yet · tap to add.'),
+        style: TextStyle(fontSize: 12.5, color: textSecondary),
       );
     }
 
@@ -714,7 +684,7 @@ class PsychologicalProfileView extends ConsumerWidget {
             runSpacing: 5,
             children: symptomsList.take(6).map((sym) {
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: context.tokens.surface2,
                   borderRadius: BorderRadius.circular(8),
@@ -723,7 +693,7 @@ class PsychologicalProfileView extends ConsumerWidget {
                 child: Text(
                   sym,
                   style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 12.0,
                     fontWeight: FontWeight.w600,
                     color: textPrimary,
                   ),
@@ -739,7 +709,7 @@ class PsychologicalProfileView extends ConsumerWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: LabTheme.textStyle(
-              fontSize: 11.5,
+              fontSize: 12.5,
               fontStyle: FontStyle.italic,
               color: textSecondary,
             ),
@@ -764,11 +734,11 @@ class PsychologicalProfileView extends ConsumerWidget {
     if (!profile.hasGoals) {
       return Text(
         strings.isArabic
-            ? 'انقر لاختيار الرؤى الشخصية والأنماط التي ترغب في استكشافها.'
+            ? 'ما زلت ما خترتش أهداف · انقر للإضافة.'
             : (strings.isFrench
-                  ? 'Touchez pour choisir les pistes personnelles et schémas à explorer.'
-                  : 'Tap to select the personal insights and patterns you want to explore.'),
-        style: TextStyle(fontSize: 11.5, color: textSecondary),
+                  ? 'Pas encore rempli · touchez pour ajouter.'
+                  : 'Not set yet · tap to add.'),
+        style: TextStyle(fontSize: 12.5, color: textSecondary),
       );
     }
 
@@ -783,7 +753,7 @@ class PsychologicalProfileView extends ConsumerWidget {
       runSpacing: 5,
       children: goalsList.take(5).map((goal) {
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             color: context.tokens.surface2,
             borderRadius: BorderRadius.circular(8),
@@ -792,7 +762,7 @@ class PsychologicalProfileView extends ConsumerWidget {
           child: Text(
             goal,
             style: TextStyle(
-              fontSize: 10.5,
+              fontSize: 12.0,
               fontWeight: FontWeight.w600,
               color: textPrimary,
             ),
@@ -819,11 +789,11 @@ class PsychologicalProfileView extends ConsumerWidget {
     if (contextText.isEmpty) {
       return Text(
         strings.isArabic
-            ? 'انقر لكتابة ما ترغب أن يفهمه Mindora عن مسارك.'
+            ? 'ما فماش ملاحظات بعد · انقر إذا تحب تزيد ملاحظة.'
             : (strings.isFrench
-                  ? 'Touchez pour écrire ce que vous souhaitez partager sur votre parcours.'
-                  : 'Tap to write what you would like Mindora to understand about your journey.'),
-        style: TextStyle(fontSize: 11.5, color: textSecondary),
+                  ? 'Rien d’ajouté pour l’instant · touchez pour écrire.'
+                  : 'Not set yet · tap to share if helpful.'),
+        style: TextStyle(fontSize: 12.5, color: textSecondary),
       );
     }
 
@@ -832,7 +802,7 @@ class PsychologicalProfileView extends ConsumerWidget {
       maxLines: 3,
       overflow: TextOverflow.ellipsis,
       style: LabTheme.textStyle(
-        fontSize: 12,
+        fontSize: 12.5,
         fontStyle: FontStyle.italic,
         height: 1.35,
         color: textPrimary,
@@ -877,7 +847,7 @@ class PsychologicalProfileView extends ConsumerWidget {
           child: Text(
             toneLabel,
             style: TextStyle(
-              fontSize: 11.5,
+              fontSize: 12.5,
               fontWeight: FontWeight.w700,
               color: textPrimary,
             ),
@@ -893,7 +863,7 @@ class PsychologicalProfileView extends ConsumerWidget {
           child: Text(
             lengthLabel,
             style: TextStyle(
-              fontSize: 11.5,
+              fontSize: 12.5,
               fontWeight: FontWeight.w700,
               color: textSecondary,
             ),
@@ -967,7 +937,7 @@ class PsychologicalProfileView extends ConsumerWidget {
           const SizedBox(height: 4),
           Text(
             strings.sectionPrivacyDesc,
-            style: TextStyle(fontSize: 11, color: textSecondary),
+            style: TextStyle(fontSize: 12.5, color: textSecondary),
           ),
           const SizedBox(height: 12),
           Divider(color: borderColor, height: 1),
@@ -986,9 +956,9 @@ class PsychologicalProfileView extends ConsumerWidget {
                   ),
                 ),
               ),
-              Switch.adaptive(
+              MindSwitch(
                 value: profile.shareWithAiCompanion,
-                activeTrackColor: context.tokens.ink,
+                semanticLabel: strings.shareWithAiToggle,
                 onChanged: (val) {
                   HapticFeedback.lightImpact();
                   ref
@@ -998,10 +968,10 @@ class PsychologicalProfileView extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             strings.shareWithAiDesc,
-            style: TextStyle(fontSize: 11, height: 1.35, color: textSecondary),
+            style: TextStyle(fontSize: 12.5, height: 1.4, color: textSecondary),
           ),
         ],
       ),

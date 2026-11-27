@@ -298,10 +298,10 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
 
               const SizedBox(height: 18),
 
-              // 2. Selected Day Timeline
-              if (_selectedDateKey != null) ...[
+              // 2. Selected Day Timeline (when Show-all is active, anchor with concise title)
+              if (_selectedDateKey == null) ...[
                 Text(
-                  _selectedDateKey!,
+                  strings.navMyDays,
                   style: LabTheme.textStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
@@ -373,13 +373,16 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
     final ts = trace.effectiveTimestamp;
     final timeStr =
         '${ts.hour.toString().padLeft(2, '0')}:${ts.minute.toString().padLeft(2, '0')}';
+    final subtitleText = _selectedDateKey == null
+        ? '${strings.formatHumanDate(ts)} · $strengthLabel · $timeStr'
+        : '$strengthLabel · $timeStr';
 
     return MindCard(
       onTap: () {
         HapticFeedback.selectionClick();
         _inspectTrace(trace, strings);
       },
-      semanticLabel: '$moodLabel · $strengthLabel · $timeStr',
+      semanticLabel: '$moodLabel · $subtitleText',
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
@@ -399,7 +402,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '$strengthLabel · $timeStr',
+                  subtitleText,
                   style: LabTheme.textStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w600,
@@ -424,8 +427,8 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
             ),
           ),
           Icon(
-            Icons.chevron_right_rounded,
-            size: 22,
+            Icons.arrow_forward_ios_rounded,
+            size: 16,
             color: tokens.ink2,
           ),
         ],

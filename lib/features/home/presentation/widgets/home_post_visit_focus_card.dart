@@ -68,9 +68,9 @@ class HomePostVisitFocusCard extends ConsumerWidget {
                     Text(
                       strings.betweenSessionFocusTitle,
                       style: TextStyle(
-                        fontSize: 11.5,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: strings.isArabic ? 0 : 0.8,
+                        letterSpacing: strings.isArabic ? 0 : 0.2,
                         color: tokens.ink2,
                       ),
                     ),
@@ -187,7 +187,7 @@ class HomePostVisitFocusCard extends ConsumerWidget {
                   Text(
                     strings.observationCueBadge,
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12.5,
                       fontWeight: FontWeight.w700,
                       color: tokens.ink2,
                     ),

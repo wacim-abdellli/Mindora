@@ -42,10 +42,9 @@ class DiscoveryMilestonesCard extends StatelessWidget {
                   strings.discoveryMilestonesTitle,
                   style: TextStyle(
                     fontFamily: 'Inter',
-                    fontSize: 11.5,
+                    fontSize: 13.0,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: strings.isArabic ? 0 : 0.7,
-                    color: tokens.ink2,
+                    color: tokens.ink,
                   ),
                 ),
               ),
@@ -126,7 +125,7 @@ class DiscoveryMilestonesCard extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontFamily: 'Inter',
-                                fontSize: 10.5,
+                                fontSize: 12.0,
                                 color: tokens.ink3,
                               ),
                             ),

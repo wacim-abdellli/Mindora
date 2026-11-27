@@ -145,14 +145,13 @@ class _PerspectiveExplorationCardState
             children: [
               Expanded(
                 child: Text(
-                  strings.sectionPerspectiveExploration.toUpperCase(),
+                  strings.sectionPerspectiveExploration,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontFamily: 'Inter',
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: isAr ? 0 : 0.7,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
                     color: textSecondary,
                   ),
                 ),
@@ -214,13 +213,12 @@ class _PerspectiveExplorationCardState
               children: [
                 Text(
                   isAr
-                      ? 'الواقعة الملموسة (FACT)'
-                      : (isFr ? 'FAIT OBSERVABLE' : 'OBSERVABLE FACT'),
+                      ? 'الواقعة الملموسة'
+                      : (isFr ? 'Fait observable' : 'Observable fact'),
                   style: TextStyle(
                     fontFamily: 'Inter',
-                    fontSize: 11.5,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: isAr ? 0 : 0.5,
                     color: MindTokens.moodAnxious,
                   ),
                 ),
@@ -253,15 +251,14 @@ class _PerspectiveExplorationCardState
               children: [
                 Text(
                   isAr
-                      ? 'ما قفز إليه العقل (THOUGHT)'
+                      ? 'ما قفز إليه العقل'
                       : (isFr
-                            ? 'INTERPRÉTATION AUTOMATIQUE'
-                            : 'AUTOMATIC INTERPRETATION'),
+                            ? 'Interprétation automatique'
+                            : 'Automatic interpretation'),
                   style: TextStyle(
                     fontFamily: 'Inter',
-                    fontSize: 11.5,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: isAr ? 0 : 0.5,
                     color: MindTokens.moodRestless,
                   ),
                 ),

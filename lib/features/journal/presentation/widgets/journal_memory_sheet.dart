@@ -73,11 +73,10 @@ class JournalMemorySheet extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      strings.memoryVaultTitle.toUpperCase(),
+                      strings.memoryVaultTitle,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 15,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: 1.1,
                         color: textPrimary,
                       ),
                     ),
@@ -89,7 +88,7 @@ class JournalMemorySheet extends ConsumerWidget {
                               ? 'Contexte condensé généré localement sur votre appareil'
                               : 'Compact context synthesized locally on-device'),
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 12.5,
                         color: textSecondary,
                       ),
                     ),
@@ -128,7 +127,7 @@ class JournalMemorySheet extends ConsumerWidget {
                         : (strings.isFrench
                             ? 'Ces résumés aident le compagnon IA à suivre votre parcours sans envoyer vos textes complets. Vous gardez le contrôle pour confirmer ou ignorer chaque élément.'
                             : 'These summaries help the AI Companion understand your trajectory without transmitting raw journal texts. You have full sovereignty to affirm or dismiss any item.'),
-                    style: TextStyle(fontSize: 11, height: 1.4, color: textSecondary),
+                    style: TextStyle(fontSize: 12.5, height: 1.4, color: textSecondary),
                   ),
                 ),
               ],
@@ -166,7 +165,7 @@ class JournalMemorySheet extends ConsumerWidget {
                                     ? 'Les thèmes récurrents seront synthétisés au fil de vos bilans quotidiens.'
                                     : 'Recurring themes and context will be synthesized as you log daily check-ins.'),
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 11, color: textSecondary),
+                            style: TextStyle(fontSize: 12.5, color: textSecondary),
                           ),
                         ],
                       ),
@@ -234,28 +233,26 @@ class JournalMemorySheet extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  item.category.localized(strings).toUpperCase(),
+                  item.category.localized(strings),
                   style: TextStyle(
-                    fontSize: 9,
+                    fontSize: 12.0,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 0.6,
                     color: textPrimary,
                   ),
                 ),
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  item.confirmationStatus.localized(strings).toUpperCase(),
+                  item.confirmationStatus.localized(strings),
                   style: TextStyle(
-                    fontSize: 9,
+                    fontSize: 12.0,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 0.4,
                     color: statusColor,
                   ),
                 ),
@@ -266,7 +263,7 @@ class JournalMemorySheet extends ConsumerWidget {
           Text(
             item.summary,
             style: TextStyle(
-              fontSize: 12.5,
+              fontSize: 13.0,
               height: 1.4,
               fontWeight: FontWeight.w600,
               color: item.isRejected ? textSecondary : textPrimary,
@@ -276,7 +273,7 @@ class JournalMemorySheet extends ConsumerWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(Icons.history_toggle_off_rounded, size: 12, color: textSecondary),
+              Icon(Icons.history_toggle_off_rounded, size: 14, color: textSecondary),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
@@ -284,7 +281,7 @@ class JournalMemorySheet extends ConsumerWidget {
                     item.observationCount,
                     item.sourceEntryIds.length,
                   ),
-                  style: TextStyle(fontSize: 10, color: textSecondary),
+                  style: TextStyle(fontSize: 12.0, color: textSecondary),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -302,7 +299,7 @@ class JournalMemorySheet extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         child: Text(
                           strings.confirmAction,
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: accent),
+                          style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: accent),
                         ),
                       ),
                     ),
@@ -321,7 +318,7 @@ class JournalMemorySheet extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         child: Text(
                           strings.dismissAction,
-                          style: TextStyle(fontSize: 11, color: textSecondary),
+                          style: TextStyle(fontSize: 12.5, color: textSecondary),
                         ),
                       ),
                     ),

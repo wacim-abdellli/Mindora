@@ -22,6 +22,7 @@ import '../../../core/widgets/mind_card.dart';
 import '../../../core/widgets/mind_pressable.dart';
 import '../../../core/widgets/mind_segmented.dart';
 import '../../../core/widgets/mind_sheet.dart';
+import '../../../core/widgets/mind_switch.dart';
 import '../../../core/widgets/mind_toast.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../backup/data/unified_backup_service.dart';
@@ -1770,7 +1771,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         trailingText,
                         maxLines: 1,
                         style: TextStyle(
-                          fontSize: 11.5,
+                          fontSize: 12.5,
                           fontWeight: FontWeight.w700,
                           color: tokens.ink,
                         ),
@@ -1781,8 +1782,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ],
               const SizedBox(width: 6),
               Icon(
-                Icons.chevron_right_rounded,
-                size: 18,
+                Icons.arrow_forward_ios_rounded,
+                size: 15,
                 color: tokens.ink3,
               ),
             ],
@@ -2044,13 +2045,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          Semantics(
-            label: title,
-            child: Switch.adaptive(
-              value: value,
-              activeTrackColor: tokens.m1,
-              onChanged: onChanged,
-            ),
+          MindSwitch(
+            value: value,
+            semanticLabel: title,
+            onChanged: onChanged,
           ),
         ],
       ),

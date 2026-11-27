@@ -34,6 +34,7 @@ Future<void> _loadTestFonts() async {
     final fontPaths = <String, String>{
       'Inter': 'C:/Windows/Fonts/segoeui.ttf',
       'Noto Sans Arabic': 'C:/Windows/Fonts/tahoma.ttf',
+      'MaterialIcons': 'assets/fonts/MaterialIcons-Regular.otf',
     };
     for (final entry in fontPaths.entries) {
       final f = File(entry.value);

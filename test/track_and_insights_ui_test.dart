@@ -246,8 +246,8 @@ void main() {
       await tester.tap(moreBtn);
       await tester.pumpAndSettle();
 
-      expect(find.text(en.personalBaselineTitle.toUpperCase()), findsOneWidget);
-      expect(find.text(en.weeklySummaryTitle.toUpperCase()), findsOneWidget);
+      expect(find.text(en.personalBaselineTitle), findsOneWidget);
+      expect(find.text(en.weeklySummaryTitle), findsOneWidget);
       expect(find.text(en.exportSummaryButton), findsOneWidget);
       expect(find.text(en.fullProgressTrendsTitle), findsOneWidget);
     });

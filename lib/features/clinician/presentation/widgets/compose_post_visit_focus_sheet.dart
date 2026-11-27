@@ -289,9 +289,8 @@ class _ComposePostVisitFocusSheetState
                       Text(
                         strings.followUpWindowLabel,
                         style: TextStyle(
-                          fontSize: 11.5,
+                          fontSize: 12.5,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: strings.isArabic ? 0 : 0.7,
                           color: tokens.ink2,
                         ),
                       ),
@@ -318,9 +317,8 @@ class _ComposePostVisitFocusSheetState
                       Text(
                         strings.focusItemsSectionLabel,
                         style: TextStyle(
-                          fontSize: 11.5,
+                          fontSize: 12.5,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: strings.isArabic ? 0 : 0.7,
                           color: tokens.ink2,
                         ),
                       ),
@@ -359,9 +357,8 @@ class _ComposePostVisitFocusSheetState
                       Text(
                         strings.observationCueLabel,
                         style: TextStyle(
-                          fontSize: 11.5,
+                          fontSize: 12.5,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: strings.isArabic ? 0 : 0.7,
                           color: tokens.ink2,
                         ),
                       ),
@@ -430,7 +427,7 @@ class _ComposePostVisitFocusSheetState
                                 _generatedCode!,
                                 maxLines: 4,
                                 style: TextStyle(
-                                  fontSize: 11.5,
+                                  fontSize: 12.0,
                                   color: tokens.ink2,
                                 ),
                               ),
@@ -454,7 +451,7 @@ class _ComposePostVisitFocusSheetState
                                 strings.inRoomQrPinReminder,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  fontSize: 11.5,
+                                  fontSize: 12.0,
                                   color: tokens.ink2,
                                   height: 1.35,
                                 ),

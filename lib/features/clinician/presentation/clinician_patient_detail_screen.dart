@@ -389,9 +389,8 @@ class _ClinicianPatientDetailScreenState
               Text(
                 strings.consentScopeBannerTitle,
                 style: TextStyle(
-                  fontSize: 11.5,
+                  fontSize: 12.5,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: strings.isArabic ? 0 : 0.7,
                   color: tokens.ink2,
                 ),
               ),
@@ -472,9 +471,8 @@ class _ClinicianPatientDetailScreenState
         Text(
           strings.recentVsBaselineTitle,
           style: TextStyle(
-            fontSize: 11.5,
+            fontSize: 12.5,
             fontWeight: FontWeight.w700,
-            letterSpacing: strings.isArabic ? 0 : 0.7,
             color: tokens.ink2,
           ),
         ),
@@ -639,9 +637,8 @@ class _ClinicianPatientDetailScreenState
         Text(
           strings.cohortObservationsTitle,
           style: TextStyle(
-            fontSize: 11.5,
+            fontSize: 12.5,
             fontWeight: FontWeight.w700,
-            letterSpacing: strings.isArabic ? 0 : 0.7,
             color: tokens.ink2,
           ),
         ),
@@ -696,7 +693,7 @@ class _ClinicianPatientDetailScreenState
                     Text(
                       d.uncertaintyStatement,
                       style: TextStyle(
-                        fontSize: 11.5,
+                        fontSize: 12.0,
                         color: tokens.ink3,
                         height: 1.35,
                       ),
@@ -772,9 +769,8 @@ class _ClinicianPatientDetailScreenState
                 Text(
                   strings.dailyContextSectionTitle,
                   style: TextStyle(
-                    fontSize: 11.5,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: strings.isArabic ? 0 : 0.7,
                     color: tokens.ink2,
                   ),
                 ),
@@ -915,7 +911,7 @@ class _ClinicianPatientDetailScreenState
       bool isHeader = false,
     }) {
       final style = TextStyle(
-        fontSize: isHeader ? 11.5 : 13,
+        fontSize: isHeader ? 12.0 : 13,
         fontWeight: isHeader ? FontWeight.w700 : FontWeight.w500,
         color: isHeader ? tokens.ink2 : tokens.ink,
         fontFeatures: const [FontFeature.tabularFigures()],
@@ -1019,9 +1015,8 @@ class _ClinicianPatientDetailScreenState
                 child: Text(
                   strings.sinceLastVisitTitle,
                   style: TextStyle(
-                    fontSize: 11.5,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: strings.isArabic ? 0 : 0.7,
                     color: tokens.ink2,
                   ),
                 ),
@@ -1031,9 +1026,9 @@ class _ClinicianPatientDetailScreenState
           ),
           const SizedBox(height: 6),
           Text(
-            '${_formatDate(diff.previousGeneratedAt)} -> ${_formatDate(diff.currentGeneratedAt)}',
+            '${strings.formatHumanDate(diff.previousGeneratedAt)} -> ${strings.formatHumanDate(diff.currentGeneratedAt)}',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 12.5,
               color: tokens.ink3,
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
@@ -1150,9 +1145,9 @@ class _ClinicianPatientDetailScreenState
                           ),
                         ),
                         Text(
-                          '${_formatDate(t.date)} · ${t.formattedTime} (${_dayBucketLabel(t.timeBucket, strings)})',
+                          '${strings.formatHumanDate(t.date)} · ${t.formattedTime} (${_dayBucketLabel(t.timeBucket, strings)})',
                           style: TextStyle(
-                            fontSize: 11.5,
+                            fontSize: 12.0,
                             color: tokens.ink3,
                             fontFeatures: const [FontFeature.tabularFigures()],
                           ),
@@ -1274,9 +1269,8 @@ class _ClinicianPatientDetailScreenState
         Text(
           strings.sharedCasesTitle,
           style: TextStyle(
-            fontSize: 11.5,
+            fontSize: 12.5,
             fontWeight: FontWeight.w700,
-            letterSpacing: strings.isArabic ? 0 : 0.7,
             color: tokens.ink2,
           ),
         ),
@@ -1377,9 +1371,8 @@ class _ClinicianPatientDetailScreenState
         Text(
           strings.sharedSymptomsTitle,
           style: TextStyle(
-            fontSize: 11.5,
+            fontSize: 12.5,
             fontWeight: FontWeight.w700,
-            letterSpacing: strings.isArabic ? 0 : 0.7,
             color: tokens.ink2,
           ),
         ),
@@ -1502,9 +1495,9 @@ class _ClinicianPatientDetailScreenState
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            _formatDate(note.createdAt),
+                            strings.formatHumanDate(note.createdAt),
                             style: TextStyle(
-                              fontSize: 11.5,
+                              fontSize: 12.0,
                               color: tokens.ink3,
                             ),
                           ),

@@ -34,8 +34,8 @@ class AppStrings {
 
   // Contextual Support
   String get contextualSupportTitle => isArabic
-      ? 'دعم فوري'
-      : (isFrench ? 'Soutien contextuel' : 'Contextual Support');
+      ? 'أدوات التهدئة والدعم'
+      : (isFrench ? 'Outils d’apaisement' : 'Calm & grounding tools');
   String get whatWouldHelpPrompt => isArabic
       ? 'شنوة يعاونك توا؟'
       : (isFrench
@@ -460,16 +460,16 @@ class AppStrings {
             ? 'Aucune session pour le moment — commencez une réflexion ci-dessus.'
             : 'No sessions yet — pick a topic or start a reflection above.');
   String stageNumberLabel(int step) => isArabic
-      ? 'المرحلة $step/6'
-      : (isFrench ? 'PHASE $step/6' : 'PHASE $step/6');
+      ? 'الخطوة $step من 6'
+      : (isFrench ? 'Étape $step/6' : 'Step $step/6');
   String get inProgressLabel =>
-      isArabic ? 'قيد المعالجة' : (isFrench ? 'EN COURS' : 'IN PROGRESS');
+      isArabic ? 'قيد المتابعة' : (isFrench ? 'En cours' : 'In progress');
   String get quickTriageLabel => isArabic
       ? 'فرز سريع 60 ثانية'
-      : (isFrench ? 'TRIAGE RAPIDE 60s' : '60s QUICK TRIAGE');
+      : (isFrench ? 'Tri rapide 60 s' : '60s quick check');
   String get groundedAnchorTag => isArabic
-      ? 'مرسى التعافي'
-      : (isFrench ? 'ANCRAGE RECADRÉ' : 'GROUNDED ANCHOR');
+      ? 'خطوة التثبيت'
+      : (isFrench ? 'Point d’ancrage' : 'Grounded view');
 
   // Moods & States (Plain 1-Word Human Affect Labeling — Zero Clinical Jargon)
   String get moodCalm => isArabic ? 'هادئ' : (isFrench ? 'Calme' : 'Calm');
@@ -754,23 +754,23 @@ class AppStrings {
             ? 'Croiser les sessions pour détecter les schémas récurrents'
             : 'Cross-reference sessions to identify recurring cognitive schemas');
   String get biometricLockTitle => isArabic
-      ? 'قفل الأمان البيومتري'
-      : (isFrench ? 'Verrouillage biométrique' : 'Biometric Security');
+      ? 'قفل الأمان بالبصمة'
+      : (isFrench ? 'Verrouillage biométrique' : 'Biometric lock');
   String get biometricLockDesc => isArabic
-      ? 'المصادقة بالبصمة لحماية سرية السجلات المعرفية'
+      ? 'التثبّت بالبصمة أو رمز الهاتف لحماية خصوصيتك'
       : (isFrench
-            ? 'Empreinte requise pour accéder aux dossiers cliniques'
-            : 'Require biometrics to access sensitive cognitive records');
+            ? 'Empreinte ou code requis pour protéger vos notes'
+            : 'Require fingerprint or passcode to protect your private space');
   String get biometricVaultLockedTitle => isArabic
       ? 'الجلسة مقفلة'
-      : (isFrench ? 'SESSION SÉCURISÉE' : 'SESSION LOCKED');
+      : (isFrench ? 'Espace verrouillé' : 'Session locked');
   String get biometricVaultLockedDesc => isArabic
-      ? 'يلزم التحقق بالبصمة للوصول إلى سجلات وتفكيكات أفكارك الخاصة.'
+      ? 'تثبّت بالبصمة أو رمز التليفون باش تكمل لخصوصياتك.'
       : (isFrench
-            ? 'Authentification requise pour déverrouiller vos dossiers de déconstruction.'
-            : 'Biometric authentication required to access your private cognitive session records.');
+            ? 'Confirmez avec votre empreinte ou code pour retrouver vos notes.'
+            : 'Verify with biometrics or device passcode to keep your notes private.');
   String get unlockWithBiometricsBtn =>
-      isArabic ? 'فتح القفل بالبصمة' : (isFrench ? 'DÉVERROUILLER' : 'UNLOCK');
+      isArabic ? 'فتح القفل' : (isFrench ? 'Déverrouiller' : 'Unlock');
   String get biometricFailedSnackbar => isArabic
       ? 'فشلت المصادقة البيومترية'
       : (isFrench
@@ -860,10 +860,10 @@ class AppStrings {
       : (isFrench ? 'Recadrage Adaptatif' : 'Adaptive Reframe');
 
   String stepBadgeText(int step, String stageTitle) => isArabic
-      ? 'المرحلة $step من 6  •  $stageTitle'
+      ? 'الخطوة $step من 6 · $stageTitle'
       : (isFrench
-            ? 'PHASE $step SUR 6  •  ${stageTitle.toUpperCase()}'
-            : 'PHASE $step OF 6  •  ${stageTitle.toUpperCase()}');
+            ? 'Étape $step sur 6 · $stageTitle'
+            : 'Step $step of 6 · $stageTitle');
 
   String get whatHappenedQuestion => isArabic
       ? 'شنوة المحفز اللي أثار التوتر؟'
@@ -1038,10 +1038,10 @@ class AppStrings {
             ? 'Veuillez sélectionner un recadrage avant d’archiver.'
             : 'Please select or enter an adaptive reframe before filing.');
   String get previousStepBtn => isArabic
-      ? 'المرحلة السابقة'
-      : (isFrench ? 'PHASE PRÉCÉDENTE' : 'PREVIOUS PHASE');
+      ? 'الخطوة السابقة'
+      : (isFrench ? 'Étape précédente' : 'Previous step');
 
-  /// Formats an internal session identifier (e.g. "SESSION 01" or legacy "CASE 001") into localized display format.
+  /// Formats an internal session identifier into sentence-case display format.
   String formatSessionNumber(String rawNumber) {
     final digitsMatch = RegExp(r'\d+').firstMatch(rawNumber);
     final num = digitsMatch != null
@@ -1051,7 +1051,7 @@ class AppStrings {
     if (isArabic) {
       return 'جلسة $formatted';
     }
-    return 'SESSION $formatted';
+    return 'Session $formatted';
   }
 
   // Case Report View
@@ -1064,19 +1064,19 @@ class AppStrings {
       ? 'الجلسة غير موجودة.'
       : (isFrench ? 'Session introuvable.' : 'Session record not found.');
   String get editVerdictTitle => isArabic
-      ? 'تعديل إعادة التوجيه'
-      : (isFrench ? 'MODIFIER LE RECADRAGE' : 'EDIT REFRAME');
+      ? 'تعديل خلاصة التوازن'
+      : (isFrench ? 'Modifier votre mise au point' : 'Edit takeaway');
   String get yourUpdatedTakeaway => isArabic
       ? 'صيغتك المعدلة...'
-      : (isFrench ? 'Votre recadrage révisé...' : 'Your updated reframe...');
+      : (isFrench ? 'Votre recadrage révisé...' : 'Your updated takeaway...');
   String get saveVerdictBtn =>
-      isArabic ? 'حفظ التعديل' : (isFrench ? 'ENREGISTRER' : 'SAVE REFRAME');
+      isArabic ? 'حفظ التعديل' : (isFrench ? 'Enregistrer' : 'Save takeaway');
   String get deleteCaseFileTitle => isArabic
-      ? 'حذف سجل الجلسة'
-      : (isFrench ? 'PURGER LA SESSION' : 'PURGE SESSION RECORD');
+      ? 'حذف سجل الحوار'
+      : (isFrench ? 'Supprimer cet échange' : 'Delete talk record');
   String get deleteCase => isArabic
       ? 'حذف الجلسة'
-      : (isFrench ? 'Supprimer la session' : 'Delete Session');
+      : (isFrench ? 'Supprimer la session' : 'Delete session');
   String get deleteCaseWarning => isArabic
       ? 'تحب تفسخ الحوار هذا من تليفونك؟'
       : (isFrench
@@ -1084,7 +1084,7 @@ class AppStrings {
             : 'Remove this talk from your phone?');
   String get deletePermanentlyBtn => isArabic
       ? 'حذف نهائي'
-      : (isFrench ? 'PURGER DÉFINITIVEMENT' : 'PURGE PERMANENTLY');
+      : (isFrench ? 'Supprimer définitivement' : 'Delete permanently');
   String get cancelBtn =>
       isArabic ? 'إلغاء' : (isFrench ? 'Annuler' : 'Cancel');
   String get incidentNarrativeHeader => isArabic
@@ -1094,26 +1094,26 @@ class AppStrings {
             : '1. What happened');
   String get noNarrativeRecorded => isArabic
       ? 'لم يتم تسجيل محفز.'
-      : (isFrench ? 'Aucun stimulus enregistré.' : 'No stimulus recorded.');
+      : (isFrench ? 'Aucun déclencheur noté.' : 'No situation recorded.');
   String get observableChainHeader => isArabic
       ? '2. الإحساس وأول فكرة'
       : (isFrench
             ? '2. Ressenti et première pensée'
             : '2. How it felt & first thought');
   String get hypothesesExaminedHeader => isArabic
-      ? '3. النماذج التفسيرية المفحوصة'
+      ? '3. زوايا نظر بديلة'
       : (isFrench
-            ? '3. MODÈLES CLINIQUES ALTERNATIFS'
-            : '3. COGNITIVE MODELS EXAMINED');
+            ? '3. Pistes envisagées'
+            : '3. Other ways to see it');
   String get groundedVerdictHeader => isArabic
-      ? '4. إعادة التوجيه المعتمدة (Adaptive Anchor)'
+      ? '4. خطوة التثبيت المعتمدة'
       : (isFrench
-            ? '4. RECADRAGE ADAPTATIF ANCRÉ'
-            : '4. ADAPTIVE REFRAME ANCHOR');
+            ? '4. Point d’appui retenu'
+            : '4. Grounded takeaway');
   String get finalTakeawayUserHeader => isArabic
-      ? 'الركيزة المعرفية المعتمدة'
-      : (isFrench ? 'RECADRAGE ANCRÉ' : 'ADOPTED REFRAME ANCHOR');
-  String get editBtn => isArabic ? 'تعديل' : (isFrench ? 'MODIFIER' : 'EDIT');
+      ? 'الفكرة المريحة المعتمدة'
+      : (isFrench ? 'Point d’appui retenu' : 'Chosen takeaway');
+  String get editBtn => isArabic ? 'تعديل' : (isFrench ? 'Modifier' : 'Edit');
   String get noConclusionYet => isArabic
       ? 'لم يُعتمد توجيه بعد.'
       : (isFrench
@@ -1236,10 +1236,10 @@ class AppStrings {
             ? 'Notez votre humeur en deux gestes et voyez ce qui vous fait du bien.'
             : 'Check in with two taps and see what helps you feel good.');
   String get onboardingPrivacyPromise => isArabic
-      ? 'محفوظ بخصوصية في تليفونك · مستوحى من CBT لوضوح يومي.'
+      ? 'محفوظ بخصوصية في تليفونك · خطوات مستوحاة من علم النفس لصفاء بالك.'
       : (isFrench
-            ? 'Privé sur votre téléphone · Inspiré des TCC pour votre clarté.'
-            : 'Private on your phone · Inspired by CBT for daily clarity.');
+            ? 'Privé sur votre téléphone · Outils doux pour votre clarté au quotidien.'
+            : 'Private on your phone · Calm psychology tools for daily clarity.');
 
   // Step 2: Focus (1–3 Options)
   String get onboardingFocusTitle => isArabic
@@ -1790,7 +1790,7 @@ class AppStrings {
             : 'Lets Talk tailor replies to your goals while staying on your phone.');
   String get saveProfileBtn => isArabic
       ? 'حفظ الملف النفسي'
-      : (isFrench ? 'ENREGISTRER LE PROFIL' : 'SAVE PROFILE');
+      : (isFrench ? 'Enregistrer le profil' : 'Save profile');
   String get profileSavedSnackbar => isArabic
       ? 'تم حفظ الملف النفسي وتحديث سياق المرافق بنجاح'
       : (isFrench
@@ -1887,20 +1887,25 @@ class AppStrings {
   String get emailFieldLabel => isArabic
       ? 'البريد الإلكتروني'
       : (isFrench ? 'Adresse email' : 'Email Address');
-  String get emailFieldHint => 'user@domain.com';
+  String get emailFieldHint => 'name@example.com';
   String get passwordFieldLabel =>
       isArabic ? 'كلمة السر' : (isFrench ? 'Mot de passe' : 'Password');
   String get passwordFieldHint => isArabic
       ? '6 أحرف على الأقل'
       : (isFrench ? '6 caractères minimum' : 'At least 6 characters');
   String get codenameFieldLabel => isArabic
-      ? 'الاسم المفضل أو المستعار (اختياري)'
+      ? 'الاسم المفضل (اختياري)'
       : (isFrench
-            ? 'Nom ou alias (facultatif)'
-            : 'Preferred Name or Alias (Optional)');
+            ? 'Prénom ou pseudo (facultatif)'
+            : 'Preferred name (optional)');
   String get codenameFieldHint => isArabic
-      ? 'مثال: باحث'
-      : (isFrench ? 'ex: Observateur' : 'e.g. Observer');
+      ? 'مثال: أمال'
+      : (isFrench ? 'ex : Yassine' : 'e.g. Yassine');
+  String get localProfileOnlyNote => isArabic
+      ? 'اختياري: يتخزّن على هذا التليفون فقط. صدّر نسخة احتياطية قبل تبديل الهاتف.'
+      : (isFrench
+            ? 'Optionnel : enregistré sur ce téléphone uniquement. Exportez une sauvegarde avant de changer d’appareil.'
+            : 'Optional: saved on this phone only. Export a backup before switching devices.');
   String get createVaultBtn => isArabic
       ? 'إنشاء حساب'
       : (isFrench ? 'Créer un compte' : 'Create account');
@@ -2511,12 +2516,12 @@ class AppStrings {
       isArabic ? 'متابعة' : (isFrench ? 'Reprendre' : 'Resume');
   String get recentConversationsTitle => isArabic
       ? 'المحادثات السابقة'
-      : (isFrench ? 'Conversations récentes' : 'Recent Conversations');
+      : (isFrench ? 'Échanges récents' : 'Recent talks');
   String get noRecentConversations => isArabic
-      ? 'ما فمّاش استشارات محفوظة بعد — تنجم تبدأ وقت ما تحب.'
+      ? 'ما فمّاش محادثات محفوظة بعد — تنجم تبدأ وقت ما تحب.'
       : (isFrench
-            ? 'Aucune consultation enregistrée pour le moment.'
-            : 'No saved consultations yet — begin whenever you feel ready.');
+            ? 'Aucun échange enregistré pour le moment.'
+            : 'No saved talks yet — begin whenever you feel ready.');
   String get suggestedStartersTitle => isArabic
       ? 'مقترحات للمحادثة'
       : (isFrench ? 'Idées de départ' : 'Suggested Starters');
@@ -2847,9 +2852,7 @@ class AppStrings {
       isArabic ? 'سجّل اليوم' : (isFrench ? 'Noter aujourd’hui' : 'Log Today');
   String get showAllEntriesBtn =>
       isArabic ? 'عرض الكل' : (isFrench ? 'Tout voir' : 'Show all');
-  String filteredByDateLabel(String dateKey) => isArabic
-      ? 'التاريخ المحدد: $dateKey'
-      : (isFrench ? 'Filtre : $dateKey' : 'Selected: $dateKey');
+  String filteredByDateLabel(String dateKey) => formatHumanDateKey(dateKey);
   String get noEntriesForDayNote => isArabic
       ? 'ما فماش تسجيل في النهار هذا.'
       : (isFrench
@@ -3082,10 +3085,7 @@ class AppStrings {
   String formattedDateOverline(DateTime dt) {
     final dayLabel = weekdayName(dt.weekday);
     final mLabel = monthName(dt.month);
-    if (isArabic) {
-      return '$dayLabel ${dt.day} $mLabel';
-    }
-    return '${dayLabel.toUpperCase()} ${dt.day} ${mLabel.toUpperCase()}';
+    return '$dayLabel ${dt.day} $mLabel';
   }
 
   String get observatoryHeroSubtitle => isArabic
@@ -3548,20 +3548,20 @@ class AppStrings {
       ? 'تأكيد المسح النهائي؟'
       : (isFrench ? 'Confirmation finale ?' : 'Final confirmation?');
   String get resetConfirmStep2Body => isArabic
-      ? 'كل التدوينات، الاستشارات، الذكريات والملف الشخصي على هذا الجهاز باش يتمسحو نهائياً. ما فماش رجوع.'
+      ? 'كل التدوينات، المحادثات، الذكريات والملف الشخصي على هذا الجهاز باش يتمسحو نهائياً. ما فماش رجوع.'
       : (isFrench
-            ? 'Toutes vos traces, consultations et données de profil seront supprimées de façon irréversible.'
-            : 'All check-ins, consultation sessions, memories, and profile records on this device will be permanently removed.');
+            ? 'Toutes vos traces, échanges et données de profil seront supprimés de façon irréversible.'
+            : 'All check-ins, talks, memories, and profile records on this device will be permanently removed.');
   String get confirmResetBtn => isArabic
       ? 'نعم، امسح كل شيء'
       : (isFrench ? 'Tout effacer' : 'Erase Everything');
 
   // Slice 3A: Clinical Engine Config & Non-Silent Runtime Notice
   String get aiEngineSheetTitle => isArabic
-      ? 'إعدادات محرك المتابعة'
+      ? 'إعدادات محرك الحوار'
       : (isFrench
-            ? 'MOTEUR DE SUIVI CLINIQUE'
-            : 'CLINICAL ENGINE SETTINGS');
+            ? 'Paramètres du compagnon IA'
+            : 'Companion engine settings');
   String get aiEngineLiveGroqBadge =>
       isArabic ? 'GROQ مباشر' : (isFrench ? 'GROQ EN DIRECT' : 'LIVE GROQ');
   String get aiEngineLiveGeminiBadge => isArabic
@@ -4309,7 +4309,7 @@ class AppStrings {
             : 'Copy EHR Consultation Summary');
 
   String get metricMoodLabel =>
-      isArabic ? 'شدة المزاج' : (isFrench ? 'Humeur' : 'Mood');
+      isArabic ? 'قوة المشاعر (1–10)' : (isFrench ? 'Intensité (1–10)' : 'Mood (1–10)');
 
   String get metricSleepLabel =>
       isArabic ? 'النوم (س)' : (isFrench ? 'Sommeil (h)' : 'Sleep (h)');
@@ -4621,7 +4621,7 @@ class AppStrings {
 
   String get sinceLastVisitTitle => isArabic
       ? 'مقارنة منذ آخر زيارة'
-      : (isFrench ? 'ÉVOLUTION DEPUIS LA DERNIÈRE VISITE' : 'SINCE LAST VISIT');
+      : (isFrench ? 'Depuis la dernière visite' : 'Since last visit');
 
   String visitIntervalBadge(int days) {
     if (isArabic) return 'خلال $days ي';
@@ -4951,12 +4951,15 @@ class AppStrings {
 
   String microMirrorWeeklyRhythm(int daysCount) {
     if (isArabic) {
-      return '$daysCount أيام مسجّلة هذا الأسبوع — إيقاعك الشخصي بدأ يتوضّح.';
+      if (daysCount == 1) return 'يوم واحد مسجّل هذا الأسبوع — خطوة أولى هادية نحو الوضوح.';
+      if (daysCount == 2) return 'يومان مسجّلان هذا الأسبوع — إيقاعك الشخصي بدأ يتوضّح.';
+      if (daysCount <= 10) return '$daysCount أيام مسجّلة هذا الأسبوع — إيقاعك الشخصي بدأ يتوضّح.';
+      return '$daysCount يوماً مسجّلة هذا الأسبوع — إيقاعك الشخصي بدأ يتوضّح.';
     }
     if (isFrench) {
-      return '$daysCount jours observés cette semaine — votre rythme personnel se dessine.';
+      return '$daysCount ${daysCount == 1 ? 'jour observé' : 'jours observés'} cette semaine — votre rythme personnel se dessine.';
     }
-    return '$daysCount days observed this week — your personal rhythm is taking shape.';
+    return '$daysCount ${daysCount == 1 ? 'day' : 'days'} observed this week — your personal rhythm is taking shape.';
   }
 
   String get microMirrorFirstMoment => isArabic
@@ -4971,7 +4974,7 @@ class AppStrings {
 
   String get discoveryMilestonesTitle => isArabic
       ? 'محطات الاكتشاف الشخصية'
-      : (isFrench ? 'REPÈRES DE DÉCOUVERTE' : 'DISCOVERY MILESTONES');
+      : (isFrench ? 'Repères de découverte' : 'Discovery milestones');
 
   String get discoveryMilestonesSub => isArabic
       ? 'تقدّم تراكمي لا يضيع أبداً حتى لو غبت أياماً.'
@@ -5375,9 +5378,88 @@ class AppStrings {
   }
 
   String daysThisWeekCount(int count) {
-    if (isArabic) return '$count أيام';
-    if (isFrench) return '$count jours';
+    if (isArabic) {
+      if (count == 1) return 'يوم واحد';
+      if (count == 2) return 'يومان';
+      if (count >= 3 && count <= 10) return '$count أيام';
+      return '$count يوم';
+    }
+    if (isFrench) return '$count ${count == 1 ? 'jour' : 'jours'}';
     return '$count ${count == 1 ? 'day' : 'days'}';
+  }
+
+  /// Formats [dt] into calm, human-readable text without raw database ISO codes.
+  String formatHumanDate(DateTime dt, {DateTime? now}) {
+    final ref = now ?? DateTime.now();
+    final today = DateTime(ref.year, ref.month, ref.day);
+    final target = DateTime(dt.year, dt.month, dt.day);
+    final mLabel = monthName(dt.month);
+    final shortDate = isArabic ? '${dt.day} $mLabel' : '${dt.day} $mLabel';
+    final withYear = dt.year == ref.year ? shortDate : '$shortDate ${dt.year}';
+
+    if (target == today) {
+      return '$navToday · $shortDate';
+    }
+    if (target == today.subtract(const Duration(days: 1))) {
+      final yday = isArabic ? 'البارح' : (isFrench ? 'Hier' : 'Yesterday');
+      return '$yday · $shortDate';
+    }
+    return withYear;
+  }
+
+  /// Parses an ISO `YYYY-MM-DD` dateKey into friendly localized text.
+  String formatHumanDateKey(String dateKey, {DateTime? now}) {
+    final parsed = DateTime.tryParse(dateKey);
+    if (parsed == null) return dateKey;
+    return formatHumanDate(parsed, now: now);
+  }
+
+  /// Localized plain label for quick "what helped" chips stored by canonical key.
+  String helpedOptionLabel(String key) {
+    switch (key) {
+      case 'Walk':
+        return isArabic ? 'مشي خفيف' : (isFrench ? 'Marche' : 'Walk');
+      case 'Breathing':
+        return isArabic ? 'تنفّس' : (isFrench ? 'Respiration' : 'Breathing');
+      case 'Quiet time':
+        return isArabic ? 'وقت هادي' : (isFrench ? 'Temps calme' : 'Quiet time');
+      case 'Talked':
+        return isArabic ? 'حكيت مع حد' : (isFrench ? 'Parlé à quelqu’un' : 'Talked');
+      case 'Rest':
+        return isArabic ? 'راحة' : (isFrench ? 'Repos' : 'Rest');
+      default:
+        return key;
+    }
+  }
+
+  String showAllCountLabel(int total) => isArabic
+      ? 'عرض الكل ($total)'
+      : (isFrench ? 'Voir tout ($total)' : 'Show all ($total)');
+
+  String get showLessLabel =>
+      isArabic ? 'عرض أقل' : (isFrench ? 'Voir moins' : 'Show less');
+
+  String sessionsCountLabel(int n) {
+    if (isArabic) {
+      if (n == 1) return 'محادثة واحدة';
+      if (n == 2) return 'محادثتان';
+      if (n >= 3 && n <= 10) return '$n محادثات';
+      return '$n محادثة';
+    }
+    if (isFrench) return '$n ${n == 1 ? 'échange' : 'échanges'}';
+    return '$n ${n == 1 ? 'talk' : 'talks'}';
+  }
+
+  String get chooseFocusAreaHint => isArabic
+      ? 'اختار موضوع أو لوج بالبحث على أي موضوع يهمّك'
+      : (isFrench
+            ? 'Choisissez un thème ou cherchez librement ci-dessus'
+            : 'Pick a broad area below or search above');
+
+  String selectedItemsCountLabel(int count) {
+    if (isArabic) return '$count محدد';
+    if (isFrench) return '$count sélectionné${count > 1 ? 's' : ''}';
+    return '$count selected';
   }
 
   String get thisWeekHeader =>
@@ -5655,10 +5737,10 @@ class AppStrings {
       : (isFrench ? 'Pour cliniciens et avancé' : 'For clinicians & advanced');
 
   String get themeSunriseLabel =>
-      isArabic ? 'شروق' : (isFrench ? 'Clair' : 'Sunrise');
+      isArabic ? 'نهاري' : (isFrench ? 'Clair' : 'Daylight');
 
   String get themeNightLabel =>
-      isArabic ? 'ليل' : (isFrench ? 'Nuit' : 'Night');
+      isArabic ? 'داكن' : (isFrench ? 'Sombre' : 'Dark');
 
   String get themeAutoLabel =>
       isArabic ? 'تلقائي' : (isFrench ? 'Auto' : 'Auto');
@@ -5670,8 +5752,8 @@ class AppStrings {
       isArabic ? 'كتابة كبيرة' : (isFrench ? 'Grand texte' : 'Larger text');
 
   String get toolboxAndBodyNotesLabel => isArabic
-      ? 'أدوات الهدوء وملاحظات البدن'
-      : (isFrench ? 'Boîte à outils et corps' : 'Toolbox & body notes');
+      ? 'أدوات الهدوء والجسم'
+      : (isFrench ? 'Outils de calme et corps' : 'Calm & body tools');
 
   String get myStoryAndGoalsLabel => isArabic
       ? 'قصّتي وأهدافي'
@@ -6235,9 +6317,18 @@ class AppStrings {
   String get helperQuiet => isArabic ? 'هدوء / قرآن / موسيقى' : (isFrench ? 'Moment calme' : 'Quiet time');
 
   String doctorVisitReadyTitle(int loggedDays) {
-    if (isArabic) return 'ملخص طبيبك فيه $loggedDays أيام مسجّلة';
-    if (isFrench) return '$loggedDays jours prêts pour votre médecin';
-    return '$loggedDays days ready for your doctor visit';
+    if (isArabic) {
+      if (loggedDays == 1) return 'ملخص طبيبك فيه يوم واحد مسجّل';
+      if (loggedDays == 2) return 'ملخص طبيبك فيه يومان مسجّلان';
+      if (loggedDays >= 3 && loggedDays <= 10) {
+        return 'ملخص طبيبك فيه $loggedDays أيام مسجّلة';
+      }
+      return 'ملخص طبيبك فيه $loggedDays يوماً مسجّلاً';
+    }
+    if (isFrench) {
+      return '$loggedDays ${loggedDays == 1 ? 'jour prêt' : 'jours prêts'} pour votre médecin';
+    }
+    return '$loggedDays ${loggedDays == 1 ? 'day' : 'days'} ready for your doctor visit';
   }
 
   String get doctorVisitReadySub => isArabic
@@ -6307,15 +6398,15 @@ class AppStrings {
       ? 'مستشار المتابعة'
       : (isFrench ? 'Spécialiste de suivi' : 'Care Specialist');
   String get talkWelcomeHeadline => isArabic
-      ? 'مرحباً بك. شنوة أكثر حاجة مقلقتك في حالتك اليوم؟'
+      ? 'مرحباً بك. شنوة اللي شاغل بالك اليوم؟'
       : (isFrench
-            ? 'Bonjour. Qu’est-ce qui pèse le plus sur votre état aujourd’hui ?'
-            : 'Welcome. What is affecting you most right now?');
+            ? 'Bonjour. Qu’est-ce qui pèse le plus sur vous aujourd’hui ?'
+            : 'Welcome. What is weighing on you right now?');
   String get talkWelcomeSub => isArabic
-      ? 'فضاء متابعة سرّي؛ ننظّمو فيه أعراضك وتفاصيلك لطبيبك وقت ما تختار تشاركها.'
+      ? 'مساحة هادية وسرّية ترتّب فيها أفكارك — وما تتشارك مع الطبيب كان وقت ما تختار إنت.'
       : (isFrench
-            ? 'Échange confidentiel structuré clairement pour votre médecin dès que vous choisissez de partager.'
-            : 'Confidential check-in structured clearly for your doctor whenever you choose to share.');
+            ? 'Un espace calme et privé pour faire le point — partagé avec votre médecin uniquement si vous le souhaitez.'
+            : 'A quiet, private space to sort through what is on your mind — shared with a doctor only if you choose.');
   String get talkDoorwaySpinning => isArabic
       ? 'أفكار متسارعة تقلقني وتؤثّر على راحتي ونومي'
       : (isFrench
@@ -6332,13 +6423,88 @@ class AppStrings {
             ? 'Je suis épuisé aujourd’hui — gardons l’échange court et doux'
             : 'Drained today — keep questions brief and gentle');
   String get talkComposerHint => isArabic
-      ? 'اوصف شنوة تحسّ، الأعراض ولا النوم...'
+      ? 'اكتب أو اختار ردّ...'
       : (isFrench
-            ? 'Décrivez ce que vous ressentez, votre sommeil...'
-            : 'Describe how you feel, sleep, or worries...');
+            ? 'Écrivez ou choisissez...'
+            : 'Write or tap a reply...');
   String get talkHistoryTooltip => isArabic
-      ? 'سجل الاستشارات السابقة'
-      : (isFrench ? 'Consultations passées' : 'Past consultations');
+      ? 'محادثاتك السابقة'
+      : (isFrench ? 'Échanges passés' : 'Past talks');
+  String get talkHistoryShortBtn =>
+      isArabic ? 'السجل' : (isFrench ? 'Passés' : 'History');
+
+  List<({String label, String directive})> get aiInstructionPresets {
+    if (isArabic) {
+      return const [
+        (
+          label: 'قصير وهادي',
+          directive:
+              'خلّي الردود أقل من 3 جمل، وركّز على التنفّس وخطوات بسيطة للحظة الحالية.',
+        ),
+        (
+          label: 'دافئ ولطيف',
+          directive:
+              'جاوب بلطف وصبر قبل ما تقترح طريقة ثانية للنظر في الأمور.',
+        ),
+        (
+          label: 'وضوح خطوة بخطوة',
+          directive:
+              'اسأل سؤال واحد هادي في كل مرّة باش نفرقو بين الواقع والوساوس.',
+        ),
+        (
+          label: 'مباشر وعملي',
+          directive:
+              'كون واضح وودود وعملي، واقترح خطوة صغيرة نجم نجرّبها توا.',
+        ),
+      ];
+    }
+    if (isFrench) {
+      return const [
+        (
+          label: 'Court et apaisant',
+          directive:
+              'Garde des réponses de moins de 3 phrases. Mets l’accent sur la respiration et des gestes simples.',
+        ),
+        (
+          label: 'Doux et chaleureux',
+          directive:
+              'Réponds avec chaleur et patience avant de proposer une autre perspective.',
+        ),
+        (
+          label: 'Clarté étape par étape',
+          directive:
+              'Pose une seule question douce à la fois pour séparer les faits des inquiétudes.',
+        ),
+        (
+          label: 'Direct et pratique',
+          directive:
+              'Sois clair, bienveillant et concret avec une petite action faisable tout de suite.',
+        ),
+      ];
+    }
+    return const [
+      (
+        label: 'Short & calm',
+        directive:
+            'Keep replies under 3 sentences. Focus on breathing and simple present-moment steps.',
+      ),
+      (
+        label: 'Gentle & warm',
+        directive:
+            'Respond with warmth and patience before suggesting another way to look at things.',
+      ),
+      (
+        label: 'Step-by-step clarity',
+        directive:
+            'Ask one gentle question at a time to help separate facts from worry stories.',
+      ),
+      (
+        label: 'Direct & practical',
+        directive:
+            'Be clear, friendly, and practical with one small action I can try right now.',
+      ),
+    ];
+  }
   String get talkKeepInsightAction => isArabic
       ? 'احفظ الجملة هذي'
       : (isFrench ? 'Garder cette idée' : 'Keep this insight');
@@ -6382,6 +6548,13 @@ class AppStrings {
       isArabic ? 'تم · حفظ' : (isFrench ? 'Terminé' : 'Done');
   String get ritualSavedCompactBtn =>
       isArabic ? 'محفوظ · تعديل' : (isFrench ? 'Enregistré · Modifier' : 'Saved · Edit');
+  String get ritualOpenOptionalBtn =>
+      isArabic ? 'إضافة' : (isFrench ? 'Ajouter' : 'Open');
+  String get ritualOptionalTag => isArabic
+      ? 'اختياري · النوم والطاقة في 10 ثواني'
+      : (isFrench ? 'Optionnel · sommeil et énergie' : 'Optional · sleep & energy');
+  String ritualProgressLabel(int completed, int total) =>
+      '\u2066$completed / $total\u2069';
   String get ritualMorningTag => isArabic
       ? 'روتين الصباح · 10 ثواني'
       : (isFrench ? 'Rituel du matin · 10 s' : 'Morning check-in · 10 sec');
@@ -6396,9 +6569,18 @@ class AppStrings {
   String get ritualCompletedSummaryTitle => isArabic
       ? 'تم تسجيل نقاط اليوم'
       : (isFrench ? 'Repères du jour enregistrés' : 'Today’s focus logged');
-  String ritualStreakPill(int days) => isArabic
-      ? '$days أيام هذا الأسبوع'
-      : (isFrench ? '$days jours cette semaine' : '$days days this week');
+  String ritualStreakPill(int days) {
+    if (isArabic) {
+      if (days == 1) return 'يوم واحد هذا الأسبوع';
+      if (days == 2) return 'يومان هذا الأسبوع';
+      if (days >= 3 && days <= 10) return '$days أيام هذا الأسبوع';
+      return '$days يوماً هذا الأسبوع';
+    }
+    if (isFrench) {
+      return '$days ${days == 1 ? 'jour' : 'jours'} cette semaine';
+    }
+    return '$days ${days == 1 ? 'day' : 'days'} this week';
+  }
   String get pickWhatYouNavigateQuestion => isArabic
       ? 'شنوة المجالات اللي تحب نركّزو عليها معاك؟ (اختياري)'
       : (isFrench

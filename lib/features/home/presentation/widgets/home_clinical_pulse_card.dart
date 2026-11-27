@@ -29,6 +29,7 @@ class HomeClinicalPulseCard extends StatefulWidget {
     this.profile,
     this.loggedDaysThisWeek = 0,
     this.overrideHour,
+    this.initiallyCollapsed = false,
   });
 
   final MindTokens tokens;
@@ -42,13 +43,22 @@ class HomeClinicalPulseCard extends StatefulWidget {
   final PsychologicalProfileModel? profile;
   final int loggedDaysThisWeek;
   final int? overrideHour;
+  final bool initiallyCollapsed;
 
   @override
   State<HomeClinicalPulseCard> createState() => _HomeClinicalPulseCardState();
 }
 
 class _HomeClinicalPulseCardState extends State<HomeClinicalPulseCard> {
-  bool _collapsed = false;
+  late bool _collapsed = widget.initiallyCollapsed;
+
+  @override
+  void didUpdateWidget(covariant HomeClinicalPulseCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.todayTrace == null && widget.todayTrace != null) {
+      _collapsed = false;
+    }
+  }
 
   bool get _isMorning {
     final hour = widget.overrideHour ?? DateTime.now().hour;
@@ -157,9 +167,11 @@ class _HomeClinicalPulseCardState extends State<HomeClinicalPulseCard> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      _isMorning
-                          ? strings.ritualMorningTag
-                          : strings.ritualEveningTag,
+                      _collapsed && widget.todayTrace == null
+                          ? strings.ritualOptionalTag
+                          : (_isMorning
+                                ? strings.ritualMorningTag
+                                : strings.ritualEveningTag),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: LabTheme.textStyle(
@@ -175,14 +187,16 @@ class _HomeClinicalPulseCardState extends State<HomeClinicalPulseCard> {
                 Semantics(
                   button: true,
                   label: _collapsed
-                      ? strings.ritualSavedCompactBtn
+                      ? (completed == 0
+                            ? strings.ritualOpenOptionalBtn
+                            : strings.ritualSavedCompactBtn)
                       : strings.ritualSaveCollapseBtn,
                   child: MindPressable(
                     key: const ValueKey('pulse-done-toggle-btn'),
                     onPressed: () => _handleDonePressed(context, specs),
                     borderRadius: BorderRadius.circular(tokens.chipRadius),
                     child: Container(
-                      constraints: const BoxConstraints(minHeight: 42),
+                      constraints: const BoxConstraints(minHeight: 48),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 8,
@@ -199,15 +213,19 @@ class _HomeClinicalPulseCardState extends State<HomeClinicalPulseCard> {
                         children: [
                           Icon(
                             _collapsed
-                                ? Icons.edit_outlined
+                                ? (completed == 0
+                                      ? Icons.keyboard_arrow_down_rounded
+                                      : Icons.edit_outlined)
                                 : Icons.check_circle_rounded,
-                            size: 15,
+                            size: 16,
                             color: _collapsed ? tokens.ink : tokens.onPrimary,
                           ),
                           const SizedBox(width: 5),
                           Text(
                             _collapsed
-                                ? strings.ritualSavedCompactBtn
+                                ? (completed == 0
+                                      ? strings.ritualOpenOptionalBtn
+                                      : strings.ritualSavedCompactBtn)
                                 : strings.ritualSaveCollapseBtn,
                             style: LabTheme.textStyle(
                               fontSize: 13,
@@ -223,7 +241,7 @@ class _HomeClinicalPulseCardState extends State<HomeClinicalPulseCard> {
               else
                 MindBadge(
                   key: const ValueKey('pulse-progress-indicator'),
-                  label: '$completed / $total',
+                  label: strings.ritualProgressLabel(completed, total),
                   backgroundColor: tokens.surface,
                   borderColor: tokens.lineStrong,
                   textColor: tokens.ink2,
@@ -236,16 +254,20 @@ class _HomeClinicalPulseCardState extends State<HomeClinicalPulseCard> {
                 ? Duration.zero
                 : const Duration(milliseconds: 220),
             child: _collapsed
-                ? Padding(
-                    key: const ValueKey('pulse-collapsed-view'),
-                    padding: const EdgeInsets.only(top: 12),
-                    child: _buildCollapsedSummary(
-                      specs,
-                      todayTrace,
-                      tokens,
-                      strings,
-                    ),
-                  )
+                ? (completed == 0
+                      ? const SizedBox.shrink(
+                          key: ValueKey('pulse-collapsed-empty'),
+                        )
+                      : Padding(
+                          key: const ValueKey('pulse-collapsed-view'),
+                          padding: const EdgeInsets.only(top: 12),
+                          child: _buildCollapsedSummary(
+                            specs,
+                            todayTrace,
+                            tokens,
+                            strings,
+                          ),
+                        ))
                 : Column(
                     key: const ValueKey('pulse-expanded-view'),
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -300,30 +322,61 @@ class _HomeClinicalPulseCardState extends State<HomeClinicalPulseCard> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: tokens.cardTint,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: tokens.line),
       ),
-      child: Row(
-        children: [
-          Icon(Icons.check_circle_outline_rounded, size: 18, color: tokens.primary),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              chosenLabels.isNotEmpty
-                  ? chosenLabels.join(' · ')
-                  : strings.ritualCompletedSummaryTitle,
-              style: LabTheme.textStyle(
-                fontSize: 13.5,
-                fontWeight: FontWeight.w600,
-                color: tokens.ink,
-              ),
+      child: chosenLabels.isEmpty
+          ? Row(
+              children: [
+                Icon(
+                  Icons.check_circle_outline_rounded,
+                  size: 18,
+                  color: tokens.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    strings.ritualCompletedSummaryTitle,
+                    style: LabTheme.textStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: tokens.ink,
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: chosenLabels
+                  .map(
+                    (label) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: tokens.surface,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: tokens.line),
+                      ),
+                      child: Text(
+                        label,
+                        style: LabTheme.textStyle(
+                          fontSize: 13.0,
+                          fontWeight: FontWeight.w600,
+                          color: tokens.ink,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(growable: false),
             ),
-          ),
-        ],
-      ),
     );
   }
 

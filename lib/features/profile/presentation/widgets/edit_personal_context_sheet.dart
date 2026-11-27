@@ -124,7 +124,7 @@ class _EditPersonalContextSheetState
                             ? 'Partagez tout ce qui donne du sens à votre suivi : votre parcours, vos défis actuels, ce qui vous aide ou ce qui compte pour vous.'
                             : 'You can share anything that might help make your experience more meaningful. Your personal history, current challenges, what helps you, or anything you feel is important.'),
                   style: TextStyle(
-                    fontSize: 11.5,
+                    fontSize: 12.5,
                     height: 1.4,
                     color: textSecondary,
                   ),
@@ -174,7 +174,7 @@ class _EditPersonalContextSheetState
                   onTap: _save,
                   child: Container(
                     width: double.infinity,
-                    height: 46,
+                    height: 48,
                     decoration: BoxDecoration(
                       color: context.tokens.ink,
                       borderRadius: BorderRadius.circular(
@@ -183,16 +183,14 @@ class _EditPersonalContextSheetState
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      (strings.isArabic
-                              ? 'حفظ السياق الشخصي'
-                              : (strings.isFrench
-                                    ? 'ENREGISTRER LE CONTEXTE'
-                                    : 'SAVE PERSONAL CONTEXT'))
-                          .toUpperCase(),
+                      strings.isArabic
+                          ? 'حفظ السياق الشخصي'
+                          : (strings.isFrench
+                                ? 'Enregistrer le contexte'
+                                : 'Save personal context'),
                       style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.6,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
                         color: context.tokens.bg,
                       ),
                     ),

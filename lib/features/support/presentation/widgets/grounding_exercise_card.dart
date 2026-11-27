@@ -118,13 +118,12 @@ class _GroundingExerciseCardState extends ConsumerState<GroundingExerciseCard> {
             children: [
               Expanded(
                 child: Text(
-                  strings.sensoryGroundingTitle.toUpperCase(),
+                  strings.sensoryGroundingTitle,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
                     color: textSecondary,
                   ),
                 ),
@@ -134,6 +133,7 @@ class _GroundingExerciseCardState extends ConsumerState<GroundingExerciseCard> {
                 child: TextButton(
                   onPressed: widget.onSwitchToBreathing,
                   style: TextButton.styleFrom(
+                    minimumSize: const Size(48, 48),
                     visualDensity: VisualDensity.compact,
                     foregroundColor: tokens.m1,
                     padding: EdgeInsets.zero,
@@ -143,7 +143,7 @@ class _GroundingExerciseCardState extends ConsumerState<GroundingExerciseCard> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 11,
+                      fontSize: 12.5,
                       fontWeight: FontWeight.w700,
                     ),
                   ),

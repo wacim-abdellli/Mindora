@@ -34,29 +34,6 @@ class _CustomAiInstructionsSheetState
   late final TextEditingController _instructionsController;
   bool _isSaving = false;
 
-  static const List<({String label, String directive})> _presets = [
-    (
-      label: 'Short & calm',
-      directive:
-          'Keep replies under 3 sentences. Focus on breathing and simple present-moment steps.',
-    ),
-    (
-      label: 'Gentle & warm',
-      directive:
-          'Respond with warmth and patience before suggesting another way to look at things.',
-    ),
-    (
-      label: 'Step-by-step clarity',
-      directive:
-          'Ask one gentle question at a time to help separate facts from worry stories.',
-    ),
-    (
-      label: 'Direct & practical',
-      directive:
-          'Be clear, friendly, and practical with one small action I can try right now.',
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -127,7 +104,7 @@ class _CustomAiInstructionsSheetState
             spacing: 8,
             runSpacing: 8,
             children: [
-              for (final preset in _presets)
+              for (final preset in strings.aiInstructionPresets)
                 MindChip(
                   label: preset.label,
                   selected:

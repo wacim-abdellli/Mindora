@@ -39,7 +39,7 @@ void main() {
 
       // Verify title & prompt
       expect(find.text('What would help right now?'), findsOneWidget);
-      expect(find.text('CONTEXTUAL SUPPORT'), findsOneWidget);
+      expect(find.text('Calm & grounding tools'), findsOneWidget);
 
       // Verify the 5 curated starting points
       expect(find.text('I need to settle myself'), findsOneWidget);
@@ -89,7 +89,7 @@ void main() {
 
       // Grounding card is rendered
       expect(find.byType(GroundingExerciseCard), findsOneWidget);
-      expect(find.text('5-4-3-2-1 SENSORY GROUNDING'), findsOneWidget);
+      expect(find.text('5-4-3-2-1 Sensory Grounding'), findsOneWidget);
       expect(find.text('5 things you see around you'), findsOneWidget);
     });
 
@@ -116,9 +116,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.byType(PerspectiveExplorationCard), findsOneWidget);
-      expect(find.text('REFRAME THOUGHT'), findsOneWidget);
-      expect(find.text('OBSERVABLE FACT'), findsOneWidget);
-      expect(find.text('AUTOMATIC INTERPRETATION'), findsOneWidget);
+      expect(find.text('Reframe Thought'), findsOneWidget);
+      expect(find.text('Observable fact'), findsOneWidget);
+      expect(find.text('Automatic interpretation'), findsOneWidget);
       expect(find.text('Alternative grounded possibilities:'), findsOneWidget);
     });
 
@@ -145,7 +145,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.byType(MicroActionCard), findsOneWidget);
-      expect(find.text('2 MINUTES ONLY'), findsOneWidget);
+      expect(find.text('2 minutes only'), findsOneWidget);
       expect(find.text('Start 2 Minutes'), findsOneWidget);
     });
 
@@ -172,7 +172,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.byType(RoutineAnchorCard), findsOneWidget);
-      expect(find.text('ONE GENTLE ANCHOR'), findsOneWidget);
+      expect(find.text('One gentle anchor'), findsOneWidget);
       expect(find.text('Daylight & Hydration'), findsAtLeastNWidgets(1));
     });
 

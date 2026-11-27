@@ -196,6 +196,10 @@ class MoodFaceTile extends StatelessWidget {
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     final moodColor = MindTokens.moodColor(mood);
     final selectedBg = tokens.tint(moodColor, tokens.isDark ? 0.24 : 0.22);
+    final width = MediaQuery.sizeOf(context).width;
+    final scaledFont = MediaQuery.textScalerOf(context).scale(14.0);
+    final compact = width <= 345 || scaledFont > 16.5;
+    final effectiveFaceSize = compact && faceSize >= 50.0 ? 44.0 : faceSize;
 
     return Semantics(
       button: true,
@@ -212,10 +216,13 @@ class MoodFaceTile extends StatelessWidget {
               ? Duration.zero
               : const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
-          constraints: const BoxConstraints(minHeight: 96, minWidth: 72),
+          constraints: BoxConstraints(
+            minHeight: compact ? 80 : 96,
+            minWidth: 72,
+          ),
           padding: EdgeInsets.symmetric(
             horizontal: isSelected ? 7 : 8,
-            vertical: isSelected ? 11 : 12,
+            vertical: compact ? (isSelected ? 7 : 8) : (isSelected ? 11 : 12),
           ),
           decoration: BoxDecoration(
             color: isSelected ? selectedBg : tokens.surface,
@@ -232,10 +239,10 @@ class MoodFaceTile extends StatelessWidget {
             children: [
               MoodFace(
                 mood: mood,
-                size: faceSize,
+                size: effectiveFaceSize,
                 isSelected: isSelected,
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: compact ? 5 : 8),
               Text(
                 label,
                 textAlign: TextAlign.center,
@@ -244,7 +251,7 @@ class MoodFaceTile extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: LabTheme.fontFamily,
                   fontFamilyFallback: LabTheme.fontFallback,
-                  fontSize: 14.0,
+                  fontSize: compact ? 13.0 : 14.0,
                   height: 1.2,
                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                   color: tokens.ink,

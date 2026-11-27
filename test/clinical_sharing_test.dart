@@ -134,14 +134,14 @@ void main() {
       expect(brief, contains('never predicts relapse'));
 
       // Verify shareable case is included
-      expect(brief, contains('SESSION 01 — "Late reply catastrophe"'));
+      expect(brief, contains('Session 01 — "Late reply catastrophe"'));
       expect(brief, contains('They resent working with me'));
       expect(brief, contains('ASSUMPTION'));
       expect(brief, contains('Deep Focus Work'));
       expect(brief, contains('Decided to wait until tomorrow'));
 
       // Verify private case is strictly excluded
-      expect(brief, isNot(contains('SESSION 02')));
+      expect(brief, isNot(contains('Session 02')));
       expect(brief, isNot(contains('Family conflict')));
       expect(brief, isNot(contains('Private sensitive matter')));
     });

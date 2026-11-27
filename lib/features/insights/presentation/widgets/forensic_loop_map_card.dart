@@ -55,7 +55,7 @@ class ForensicLoopMapCard extends StatelessWidget {
           title: strings.forensicLoopNodeStabilizer,
           body: loop.observedStabilizer!,
           dotColor: tokens.m1,
-          icon: Icons.healing_outlined,
+          icon: Icons.spa_outlined,
         ),
     ];
 
@@ -76,10 +76,9 @@ class ForensicLoopMapCard extends StatelessWidget {
                 child: Text(
                   strings.forensicLoopMapTitle,
                   style: TextStyle(
-                    fontSize: 11.5,
+                    fontSize: 13.0,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: strings.isArabic ? 0 : 0.7,
-                    color: tokens.ink2,
+                    color: tokens.ink,
                   ),
                 ),
               ),
@@ -151,9 +150,8 @@ class ForensicLoopMapCard extends StatelessWidget {
                                   child: Text(
                                     node.title,
                                     style: TextStyle(
-                                      fontSize: 11,
+                                      fontSize: 12.5,
                                       fontWeight: FontWeight.w700,
-                                      letterSpacing: strings.isArabic ? 0 : 0.4,
                                       color: tokens.ink2,
                                     ),
                                   ),
@@ -189,7 +187,7 @@ class ForensicLoopMapCard extends StatelessWidget {
           Text(
             strings.forensicLoopDisclaimer,
             style: TextStyle(
-              fontSize: 11.5,
+              fontSize: 12.0,
               color: tokens.ink3,
               height: 1.35,
             ),

@@ -485,7 +485,7 @@ void main() {
         await container.read(localeControllerProvider.notifier).setLanguage(AppLanguage.french);
         await tester.pumpAndSettle();
 
-        expect(find.text('THÈME RÉCURRENT'), findsOneWidget);
+        expect(find.text('Thème récurrent'), findsOneWidget);
         expect(find.text('Confirmer'), findsOneWidget);
         expect(find.text('Ignorer'), findsOneWidget);
 

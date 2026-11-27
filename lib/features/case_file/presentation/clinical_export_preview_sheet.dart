@@ -166,11 +166,10 @@ class _ClinicalExportPreviewSheetState extends ConsumerState<ClinicalExportPrevi
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          strings.exportSessionBriefTitle.toUpperCase(),
+                          strings.exportSessionBriefTitle,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 14.5,
                             fontWeight: FontWeight.w800,
-                            letterSpacing: 0.8,
                             color: textPrimary,
                           ),
                         ),
@@ -179,7 +178,7 @@ class _ClinicalExportPreviewSheetState extends ConsumerState<ClinicalExportPrevi
                           strings.sessionBriefSubtitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 11, color: textSecondary),
+                          style: TextStyle(fontSize: 12.5, color: textSecondary),
                         ),
                       ],
                     ),
@@ -219,7 +218,7 @@ class _ClinicalExportPreviewSheetState extends ConsumerState<ClinicalExportPrevi
                         Expanded(
                           child: Text(
                             strings.clinicalDisclaimerNotice,
-                            style: TextStyle(fontSize: 11.5, color: textSecondary, height: 1.4),
+                            style: TextStyle(fontSize: 12.5, color: textSecondary, height: 1.4),
                           ),
                         ),
                       ],
@@ -248,7 +247,7 @@ class _ClinicalExportPreviewSheetState extends ConsumerState<ClinicalExportPrevi
                             child: Text(
                               strings.privateCasesExcludedNote(_excludedPrivateCount),
                               style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 12.0,
                                 fontWeight: FontWeight.w700,
                                 color: tokens.safety,
                               ),
@@ -269,13 +268,13 @@ class _ClinicalExportPreviewSheetState extends ConsumerState<ClinicalExportPrevi
                         _refreshBrief();
                       });
                     },
-                    style: TextStyle(fontSize: 12.5, color: textPrimary),
+                    style: TextStyle(fontSize: 13.5, color: textPrimary),
                     decoration: InputDecoration(
                       labelText: strings.recipientOrNoteLabel,
-                      labelStyle: TextStyle(fontSize: 11.5, color: textSecondary),
+                      labelStyle: TextStyle(fontSize: 12.5, color: textSecondary),
                       hintText: strings.recipientOrNoteHint,
                       hintStyle: TextStyle(
-                        fontSize: 11.5,
+                        fontSize: 12.5,
                         color: context.tokens.ink3,
                       ),
                       filled: true,
@@ -301,7 +300,7 @@ class _ClinicalExportPreviewSheetState extends ConsumerState<ClinicalExportPrevi
                   // Live Preview Box
                   Text(
                     strings.isArabic ? 'معاينة المستند الصادر:' : (strings.isFrench ? 'Aperçu du document exporté :' : 'Export Document Preview:'),
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5, color: textSecondary),
+                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: textSecondary),
                   ),
                   const SizedBox(height: 6),
                   Container(
@@ -317,7 +316,7 @@ class _ClinicalExportPreviewSheetState extends ConsumerState<ClinicalExportPrevi
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontFeatures: const [FontFeature.tabularFigures()],
-                        fontSize: 11,
+                        fontSize: 12.0,
                         height: 1.45,
                         color: textPrimary,
                       ),

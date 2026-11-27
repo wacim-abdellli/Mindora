@@ -6,6 +6,7 @@ import '../../../../app/localization/app_strings.dart';
 import '../../../../app/theme/lab_theme.dart';
 import '../../../../app/theme/mind_tokens.dart';
 import '../../../../core/widgets/bouncing_widget.dart';
+import '../../../../core/widgets/mind_switch.dart';
 import '../../controllers/profile_controller.dart';
 import '../../domain/psychological_profile_model.dart';
 import '../../../journal/presentation/widgets/journal_memory_sheet.dart';
@@ -210,7 +211,7 @@ class _PrivacyManagementSheetState extends ConsumerState<PrivacyManagementSheet>
                 const SizedBox(height: 4),
                 Text(
                   strings.sectionPrivacyDesc,
-                  style: TextStyle(fontSize: 11.5, color: textSecondary),
+                  style: TextStyle(fontSize: 12.5, color: textSecondary),
                 ),
 
                 const SizedBox(height: 20),
@@ -245,9 +246,8 @@ class _PrivacyManagementSheetState extends ConsumerState<PrivacyManagementSheet>
                               ),
                             ),
                           ),
-                          Switch.adaptive(
+                          MindSwitch(
                             value: _allowAi,
-                            activeTrackColor: context.tokens.ink,
                             onChanged: _toggleAi,
                           ),
                         ],
@@ -261,7 +261,7 @@ class _PrivacyManagementSheetState extends ConsumerState<PrivacyManagementSheet>
                             : (strings.isArabic
                                 ? 'معطل: لن يتم تزويد المساعد الذكي بأي تفاصيل من ملفك النفسي. التطبيق يظل يعمل بكامل وظائفه.'
                                 : 'Disabled: Profile context is strictly excluded from AI inquiries. All app features remain fully functional.'),
-                        style: TextStyle(fontSize: 11, height: 1.35, color: textSecondary),
+                        style: TextStyle(fontSize: 12.5, height: 1.4, color: textSecondary),
                       ),
                     ],
                   ),
@@ -286,7 +286,7 @@ class _PrivacyManagementSheetState extends ConsumerState<PrivacyManagementSheet>
                           strings.isArabic
                               ? 'بياناتك مشفرة ومحفوظة محلياً فقط في خزينة جهازك (Offline-First). لا توجد مزامنة سحابية غير مصرح بها.'
                               : 'Your profile is encrypted and stored locally on this device (Offline-First). Zero unauthorized cloud exposure.',
-                          style: TextStyle(fontSize: 11, height: 1.35, color: textSecondary),
+                          style: TextStyle(fontSize: 12.5, height: 1.4, color: textSecondary),
                         ),
                       ),
                     ],
@@ -321,7 +321,7 @@ class _PrivacyManagementSheetState extends ConsumerState<PrivacyManagementSheet>
                               Text(
                                 strings.memoryVaultTitle,
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 13.5,
                                   fontWeight: FontWeight.w700,
                                   color: textPrimary,
                                 ),
@@ -333,12 +333,12 @@ class _PrivacyManagementSheetState extends ConsumerState<PrivacyManagementSheet>
                                     : (strings.isFrench
                                         ? 'Consulter ce que le compagnon IA retient'
                                         : 'Review what the AI companion remembers'),
-                                style: TextStyle(fontSize: 10.5, color: textSecondary),
+                                style: TextStyle(fontSize: 12.0, color: textSecondary),
                               ),
                             ],
                           ),
                         ),
-                        Icon(Icons.chevron_right, size: 18, color: textSecondary),
+                        Icon(Icons.arrow_forward_ios_rounded, size: 15, color: textSecondary),
                       ],
                     ),
                   ),
@@ -348,16 +348,14 @@ class _PrivacyManagementSheetState extends ConsumerState<PrivacyManagementSheet>
 
                 // Management & Reset Actions
                 Text(
-                  (strings.isArabic
-                          ? 'إدارة البيانات وحذفها'
-                          : (strings.isFrench
-                              ? 'GESTION DES DONNÉES'
-                              : 'DATA MANAGEMENT'))
-                      .toUpperCase(),
+                  strings.isArabic
+                      ? 'إدارة البيانات وحذفها'
+                      : (strings.isFrench
+                            ? 'Gestion des données'
+                            : 'Data management'),
                   style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
                     color: textSecondary,
                   ),
                 ),
@@ -368,7 +366,8 @@ class _PrivacyManagementSheetState extends ConsumerState<PrivacyManagementSheet>
                   onTap: () => _confirmClearNotes(strings, isDark),
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 11),
+                    constraints: const BoxConstraints(minHeight: 48),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
                       color: surfaceColor,
                       borderRadius: BorderRadius.circular(8),
@@ -381,7 +380,7 @@ class _PrivacyManagementSheetState extends ConsumerState<PrivacyManagementSheet>
                           : (strings.isFrench
                               ? 'Effacer uniquement les notes libres'
                               : 'Clear Free-Text Notes Only'),
-                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: textPrimary),
+                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: textPrimary),
                     ),
                   ),
                 ),
@@ -393,7 +392,8 @@ class _PrivacyManagementSheetState extends ConsumerState<PrivacyManagementSheet>
                   onTap: () => _confirmDeleteProfile(strings, isDark),
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 11),
+                    constraints: const BoxConstraints(minHeight: 48),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
                       color: tokens.surface2,
                       borderRadius: BorderRadius.circular(8),
@@ -407,7 +407,7 @@ class _PrivacyManagementSheetState extends ConsumerState<PrivacyManagementSheet>
                               ? 'Supprimer le profil psychologique'
                               : 'Delete Psychological Profile'),
                       style: TextStyle(
-                        fontSize: 11.5,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w700,
                         color: tokens.ink,
                       ),

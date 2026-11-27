@@ -177,52 +177,37 @@ class _ClinicalConditionSearchSheetState
             constraints: BoxConstraints(
               maxHeight: MediaQuery.sizeOf(context).height * 0.34,
             ),
-            child: matches.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Text(
-                        strings.noMatchingConditionsLabel,
-                        textAlign: TextAlign.center,
-                        style: LabTheme.textStyle(
-                          fontSize: 14,
-                          color: tokens.ink2,
-                        ),
-                      ),
-                    ),
-                  )
-                : ListView.separated(
+            child: (_query.trim().isEmpty && _filterTrack == null)
+                ? ListView.separated(
                     shrinkWrap: true,
-                    itemCount: matches.length,
+                    itemCount: ClinicalTrack.values.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 8),
                     itemBuilder: (ctx, idx) {
-                      final item = matches[idx];
-                      final selected = _conditionIds.contains(item.id);
+                      final track = ClinicalTrack.values[idx];
+                      final isTrackSelected = _trackIds.contains(track.id);
+                      final selectedConditionCount = ClinicalConditionCatalog.byTrack(track)
+                          .where((c) => _conditionIds.contains(c.id))
+                          .length;
+                      final highlighted = isTrackSelected || selectedConditionCount > 0;
                       return MindPressable(
-                        key: ValueKey('condition-item-${item.id}'),
+                        key: ValueKey('track-card-${track.id}'),
                         onPressed: () {
                           HapticFeedback.selectionClick();
-                          setState(() {
-                            if (selected) {
-                              _conditionIds.remove(item.id);
-                            } else {
-                              _conditionIds.add(item.id);
-                            }
-                          });
+                          setState(() => _filterTrack = track);
                         },
                         borderRadius: BorderRadius.circular(14),
                         child: Container(
-                          constraints: const BoxConstraints(minHeight: 54),
+                          constraints: const BoxConstraints(minHeight: 58),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 14,
                             vertical: 10,
                           ),
                           decoration: BoxDecoration(
-                            color: selected ? tokens.cardTint : tokens.surface2,
+                            color: highlighted ? tokens.cardTint : tokens.surface2,
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: selected ? tokens.primary : tokens.line,
-                              width: selected ? 1.5 : 1.0,
+                              color: highlighted ? tokens.primary : tokens.line,
+                              width: highlighted ? 1.5 : 1.0,
                             ),
                           ),
                           child: Row(
@@ -231,17 +216,31 @@ class _ClinicalConditionSearchSheetState
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      item.localized(strings),
-                                      style: LabTheme.textStyle(
-                                        fontSize: 14.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: tokens.ink,
-                                      ),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            track.localizedTitle(strings),
+                                            style: LabTheme.textStyle(
+                                              fontSize: 14.5,
+                                              fontWeight: FontWeight.w700,
+                                              color: tokens.ink,
+                                            ),
+                                          ),
+                                        ),
+                                        if (selectedConditionCount > 0) ...[
+                                          const SizedBox(width: 6),
+                                          MindBadge(
+                                            label: strings.selectedItemsCountLabel(
+                                              selectedConditionCount,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
                                     ),
                                     const SizedBox(height: 3),
                                     Text(
-                                      item.track.localizedTitle(strings),
+                                      track.localizedSubtitle(strings),
                                       style: LabTheme.textStyle(
                                         fontSize: 12.5,
                                         color: tokens.ink2,
@@ -250,20 +249,123 @@ class _ClinicalConditionSearchSheetState
                                   ],
                                 ),
                               ),
-                              const SizedBox(width: 10),
-                              Icon(
-                                selected
-                                    ? Icons.check_circle_rounded
-                                    : Icons.add_circle_outline_rounded,
-                                size: 22,
-                                color: selected ? tokens.primary : tokens.ink3,
+                              const SizedBox(width: 8),
+                              IconButton(
+                                key: ValueKey('track-toggle-${track.id}'),
+                                tooltip: track.localizedTitle(strings),
+                                constraints: const BoxConstraints(
+                                  minWidth: 48,
+                                  minHeight: 48,
+                                ),
+                                icon: Icon(
+                                  isTrackSelected
+                                      ? Icons.check_circle_rounded
+                                      : Icons.add_circle_outline_rounded,
+                                  size: 22,
+                                  color: isTrackSelected ? tokens.primary : tokens.ink3,
+                                ),
+                                onPressed: () {
+                                  HapticFeedback.selectionClick();
+                                  setState(() {
+                                    if (!_trackIds.remove(track.id)) {
+                                      _trackIds.add(track.id);
+                                    }
+                                  });
+                                },
                               ),
                             ],
                           ),
                         ),
                       );
                     },
-                  ),
+                  )
+                : (matches.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Text(
+                            strings.noMatchingConditionsLabel,
+                            textAlign: TextAlign.center,
+                            style: LabTheme.textStyle(
+                              fontSize: 14,
+                              color: tokens.ink2,
+                            ),
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: matches.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 8),
+                        itemBuilder: (ctx, idx) {
+                          final item = matches[idx];
+                          final selected = _conditionIds.contains(item.id);
+                          return MindPressable(
+                            key: ValueKey('condition-item-${item.id}'),
+                            onPressed: () {
+                              HapticFeedback.selectionClick();
+                              setState(() {
+                                if (selected) {
+                                  _conditionIds.remove(item.id);
+                                } else {
+                                  _conditionIds.add(item.id);
+                                }
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(14),
+                            child: Container(
+                              constraints: const BoxConstraints(minHeight: 54),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: selected ? tokens.cardTint : tokens.surface2,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: selected ? tokens.primary : tokens.line,
+                                  width: selected ? 1.5 : 1.0,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item.localized(strings),
+                                          style: LabTheme.textStyle(
+                                            fontSize: 14.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: tokens.ink,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 3),
+                                        Text(
+                                          item.track.localizedTitle(strings),
+                                          style: LabTheme.textStyle(
+                                            fontSize: 12.5,
+                                            color: tokens.ink2,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Icon(
+                                    selected
+                                        ? Icons.check_circle_rounded
+                                        : Icons.add_circle_outline_rounded,
+                                    size: 22,
+                                    color: selected ? tokens.primary : tokens.ink3,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      )),
           ),
           const SizedBox(height: 12),
           Container(

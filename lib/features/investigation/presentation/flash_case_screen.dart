@@ -180,7 +180,7 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
                       ],
                     ),
                   ),
-                  Icon(Icons.chevron_right_rounded, color: tokens.ink2),
+                  Icon(Icons.arrow_forward_ios_rounded, size: 16, color: tokens.ink2),
                 ],
               ),
             ),
@@ -319,16 +319,63 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
         ),
         actions: [
           if (!_showHubView)
-            IconButton(
-              key: const ValueKey('talk-history-btn'),
-              icon: Icon(Icons.history_rounded, size: 22, color: tokens.ink),
-              tooltip: strings.talkHistoryTooltip,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              onPressed: () {
-                HapticFeedback.selectionClick();
-                setState(() => _showHubView = true);
-              },
+            Semantics(
+              button: true,
+              label: strings.talkHistoryTooltip,
+              child: Padding(
+                padding: const EdgeInsetsDirectional.only(end: 2),
+                child: MindPressable(
+                  key: const ValueKey('talk-history-btn'),
+                  semanticLabel: strings.talkHistoryTooltip,
+                  borderRadius: BorderRadius.circular(tokens.chipRadius),
+                  onPressed: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _showHubView = true);
+                  },
+                  child: Tooltip(
+                    message: strings.talkHistoryTooltip,
+                    child: Container(
+                      constraints: const BoxConstraints(
+                        minWidth: 48,
+                        minHeight: 48,
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: MediaQuery.sizeOf(context).width >= 355
+                            ? 10
+                            : 8,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: tokens.surface,
+                        borderRadius: BorderRadius.circular(tokens.chipRadius),
+                        border: Border.all(color: tokens.line),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.history_rounded,
+                            size: 19,
+                            color: tokens.ink,
+                          ),
+                          if (MediaQuery.sizeOf(context).width >= 355 &&
+                              MediaQuery.textScalerOf(context).scale(14) <= 18) ...[
+                            const SizedBox(width: 5),
+                            Text(
+                              strings.talkHistoryShortBtn,
+                              style: LabTheme.textStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: tokens.ink,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
           if (!_showHubView)
             IconButton(
@@ -362,13 +409,14 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
             ),
           IconButton(
             key: const ValueKey('talk-more-btn'),
-            icon: Icon(Icons.more_horiz_rounded, size: 22, color: tokens.ink),
+            icon: Icon(Icons.tune_rounded, size: 21, color: tokens.ink),
             tooltip: strings.listeningPrefsLabel,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             onPressed: () => _openMoreSheet(context, strings),
           ),
           const SupportButton(compact: true),
+          const SizedBox(width: 4),
         ],
       ),
       body: _showHubView

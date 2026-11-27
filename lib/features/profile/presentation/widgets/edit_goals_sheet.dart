@@ -117,7 +117,7 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
                 strings.isArabic
                     ? 'ما الذي ترغب في استيعابه أو تطويره من خلال Mindora؟'
                     : 'What would you like to understand or improve through Mindora?',
-                style: TextStyle(fontSize: 11.5, color: textSecondary),
+                style: TextStyle(fontSize: 12.5, color: textSecondary),
               ),
 
               const SizedBox(height: 12),
@@ -206,23 +206,21 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
 
                     // Custom Goal Input
                     Text(
-                      (strings.isArabic
-                              ? 'هدف شخصي مخصص'
-                              : (strings.isFrench
-                                    ? 'OBJECTIF PERSONNEL PERSONNALISÉ'
-                                    : 'CUSTOM PERSONAL GOAL'))
-                          .toUpperCase(),
+                      strings.isArabic
+                          ? 'هدف شخصي مخصص'
+                          : (strings.isFrench
+                                ? 'Objectif personnel personnalisé'
+                                : 'Custom personal goal'),
                       style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
                         color: textSecondary,
                       ),
                     ),
                     const SizedBox(height: 6),
                     TextField(
                       controller: _customGoalController,
-                      style: TextStyle(fontSize: 12.5, color: textPrimary),
+                      style: TextStyle(fontSize: 13.0, color: textPrimary),
                       decoration: InputDecoration(
                         hintText: strings.isArabic
                             ? 'أضف هدفاً إضافياً خاصاً بك...'
@@ -230,7 +228,7 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
                                   ? 'Saisissez tout autre objectif important pour vous...'
                                   : 'Enter any other goal meaningful to you...'),
                         hintStyle: TextStyle(
-                          fontSize: 11.5,
+                          fontSize: 12.5,
                           color: textSecondary.withValues(alpha: 0.6),
                         ),
                         filled: true,
@@ -266,7 +264,7 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
                 onTap: _save,
                 child: Container(
                   width: double.infinity,
-                  height: 46,
+                  height: 48,
                   decoration: BoxDecoration(
                     color: context.tokens.ink,
                     borderRadius: BorderRadius.circular(
@@ -275,16 +273,14 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    (strings.isArabic
-                            ? 'حفظ الأهداف'
-                            : (strings.isFrench
-                                  ? 'ENREGISTRER LES OBJECTIFS'
-                                  : 'SAVE GOALS'))
-                        .toUpperCase(),
+                    strings.isArabic
+                        ? 'حفظ الأهداف'
+                        : (strings.isFrench
+                              ? 'Enregistrer les objectifs'
+                              : 'Save goals'),
                     style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.6,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
                       color: context.tokens.bg,
                     ),
                   ),
