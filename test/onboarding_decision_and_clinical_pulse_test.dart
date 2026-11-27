@@ -15,6 +15,7 @@ import 'package:mind_forensics/features/auth/presentation/clinic_welcome_screen.
 import 'package:mind_forensics/features/clinic_sync/controllers/clinic_sync_providers.dart';
 import 'package:mind_forensics/features/clinician/controllers/clinician_providers.dart';
 import 'package:mind_forensics/features/clinician/data/clinic_handoff_bridge.dart';
+import 'package:mind_forensics/features/clinician/data/clinician_auth_service.dart';
 import 'package:mind_forensics/features/clinician/domain/clinician_models.dart';
 import 'package:mind_forensics/features/clinician/presentation/clinician_shell_screen.dart';
 import 'package:mind_forensics/features/home/presentation/widgets/home_clinical_pulse_card.dart';
@@ -59,19 +60,32 @@ void main() {
   });
 
   group('Phase B — Two-Sided Editions & Clean Auth Clinician Portal', () {
-    test('Patient edition routes fresh user to /auth and signed-out user to /auth; Clinician edition boots straight to /clinician', () async {
-      addTearDown(() => AppEditionConfig.configureForTesting(null));
+    test('Patient edition routes fresh/signed-out user to /auth and blocks /clinician; Clinician edition gates behind /clinician-auth until unlocked', () async {
+      addTearDown(() {
+        AppEditionConfig.configureForTesting(null);
+        ClinicianAuthService.setUnlockedForTesting(false);
+      });
 
       AppEditionConfig.configureForTesting(MindoraEdition.patient);
       expect(await AppRouter.resolveRedirectForLocation(AppRouter.home), AppRouter.auth);
+      expect(await AppRouter.resolveRedirectForLocation(AppRouter.clinician), AppRouter.auth);
 
-      // Signing out blocks return to /home even if onboarding was previously completed
+      // Signing out blocks return to /home and /clinician even if onboarding was previously completed
       await AuthService().signUpWithEmail('patient@clinic.tn', '123456');
       await AuthService().setOnboardingCompleted(true);
       await AuthService().signOut();
       expect(await AppRouter.resolveRedirectForLocation(AppRouter.home), AppRouter.auth);
+      expect(await AppRouter.resolveRedirectForLocation(AppRouter.clinician), AppRouter.auth);
 
+      // Doctor Edition: locked session must redirect to /clinician-auth
       AppEditionConfig.configureForTesting(MindoraEdition.clinician);
+      ClinicianAuthService.setUnlockedForTesting(false);
+      expect(await AppRouter.resolveRedirectForLocation(AppRouter.home), AppRouter.clinicianAuth);
+      expect(await AppRouter.resolveRedirectForLocation(AppRouter.clinician), AppRouter.clinicianAuth);
+      expect(await AppRouter.resolveRedirectForLocation(AppRouter.clinicianAuth), isNull);
+
+      // Doctor Edition: unlocked session routes cleanly to /clinician
+      ClinicianAuthService.setUnlockedForTesting(true);
       expect(await AppRouter.resolveRedirectForLocation(AppRouter.home), AppRouter.clinician);
       expect(await AppRouter.resolveRedirectForLocation(AppRouter.onboarding), AppRouter.clinician);
       expect(await AppRouter.resolveRedirectForLocation(AppRouter.clinician), isNull);

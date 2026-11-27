@@ -7,7 +7,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   setUp(() {
     TestWidgetsFlutterBinding.ensureInitialized();
-    SharedPreferences.setMockInitialValues({'mf_onboarding_completed': true});
+    SharedPreferences.setMockInitialValues({
+      'mf_onboarding_completed': true,
+      'mf_auth_current_user':
+          '{"id":"test_patient","codename":"Test Patient","authType":"clinicPin","clinicId":"cln_test","doctorId":"doc_test","createdAt":"2026-01-01T00:00:00.000"}',
+    });
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 

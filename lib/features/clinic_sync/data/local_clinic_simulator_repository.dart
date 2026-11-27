@@ -519,7 +519,8 @@ class LocalClinicSimulatorRepository
     final record = tokens[parsed.tokenId];
     final timestamp = now ?? DateTime.now();
 
-    if (record == null || record.patientId != parsed.patientId) {
+    if (record == null ||
+        (parsed.patientId.isNotEmpty && record.patientId != parsed.patientId)) {
       throw const ClinicAuthException(
         ClinicAuthErrorCode.invalidQrFormat,
         'Invalid invitation QR code.',
@@ -556,7 +557,7 @@ class LocalClinicSimulatorRepository
     }
 
     final accounts = await _loadAccounts();
-    final account = accounts[parsed.patientId];
+    final account = accounts[record.patientId];
     if (account == null) {
       throw const ClinicAuthException(
         ClinicAuthErrorCode.accountNotFound,

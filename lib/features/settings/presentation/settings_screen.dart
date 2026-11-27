@@ -272,7 +272,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     await ref.read(authControllerProvider.notifier).deleteAccount();
     await ref.read(appLockProvider.notifier).toggleBiometrics(false);
     await ref.read(gentleReminderServiceProvider).cancelReminders();
-    await ref.read(secureKeyManagerProvider).wipeAllKeys();
+    // Do NOT wipe the shared master key here: doing so would orphan encrypted
+    // clinic_directory_v1 & clinician_workspace_v1 partitions on shared devices.
+    await ref.read(secureKeyManagerProvider).clearGeminiApiKey();
+    await ref.read(secureKeyManagerProvider).clearGroqApiKey();
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('mf_settings_ai_history');

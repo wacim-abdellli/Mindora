@@ -375,7 +375,11 @@ void main() {
     testWidgets('/progress route cleanly redirects to TrackScreen Tab 1', (
       tester,
     ) async {
-      SharedPreferences.setMockInitialValues({'mf_onboarding_completed': true});
+      SharedPreferences.setMockInitialValues({
+        'mf_onboarding_completed': true,
+        'mf_auth_current_user':
+            '{"id":"test_patient","codename":"Test Patient","authType":"clinicPin","clinicId":"cln_test","doctorId":"doc_test","createdAt":"2026-01-01T00:00:00.000"}',
+      });
       tester.view.physicalSize = const Size(800, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);

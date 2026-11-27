@@ -23,9 +23,11 @@ class ClinicalExportService {
     WeeklySummaryReport? weeklySummary,
     List<MindTraceModel>? traces,
   }) {
-    // Strictly filter out private shielded cases (Principle 2)
+    // Strictly filter out private shielded cases AND private traces (Principle 2)
     final shareableCases = cases.where((c) => !c.isPrivate).toList();
-    final traceList = traces ?? const <MindTraceModel>[];
+    final traceList = (traces ?? const <MindTraceModel>[])
+        .where((t) => !t.isPrivate)
+        .toList(growable: false);
     final hasBaselineData = baseline != null && baseline.totalRecordedDays > 0;
     final hasWeeklyData =
         weeklySummary != null && weeklySummary.totalEntriesThisWeek > 0;
@@ -369,13 +371,28 @@ class ClinicalExportService {
         buffer.writeln();
       }
 
-      // 4. Patient's Grounded Conclusion
+      // 3b. AI Reflection Summary (Strictly separated from patient's own words)
+      if (c.findingsSummary != null &&
+          c.findingsSummary!.trim().isNotEmpty &&
+          c.findingsSummary!.trim() != (c.userConclusion ?? '').trim()) {
+        buffer.writeln(
+          isAr
+              ? '3ب. ملخص الذكاء الاصطناعي للمحادثة (غير تشخيصي):'
+              : (isFr
+                    ? '3b. SYNTHÈSE GÉNÉRÉE PAR L’IA (Non diagnostique) :'
+                    : '3b. AI-GENERATED REFLECTION SUMMARY (Non-Diagnostic):'),
+        );
+        buffer.writeln(c.findingsSummary!.trim());
+        buffer.writeln();
+      }
+
+      // 4. Patient's Grounded Conclusion (Patient-authored only)
       buffer.writeln(
         isAr
-            ? '4. الركيزة المعرفية المعتمدة (خلاصة المستعمل بكلماته الشخصية):'
+            ? '4. خلاصة المستعمل بكلماته الشخصية:'
             : (isFr
-                  ? '4. CONCLUSION ANCRÉE (Mots personnels du patient) :'
-                  : '4. PATIENT GROUNDED REFRAME ANCHOR (Patient’s Own Words):'),
+                  ? '4. CONCLUSION PERSONNELLE DU PATIENT (Mots du patient) :'
+                  : '4. PATIENT’S OWN WRITTEN TAKEAWAY (Patient-Authored Only):'),
       );
       buffer.writeln(
         c.userConclusion != null && c.userConclusion!.isNotEmpty

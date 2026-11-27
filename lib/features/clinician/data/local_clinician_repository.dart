@@ -68,7 +68,10 @@ class LocalClinicianRepository {
     );
   }
 
-  Future<void> upsertPatient(ClinicianPatientRecord record) async {
+  Future<void> upsertPatient(
+    ClinicianPatientRecord record, {
+    bool overwriteNotes = false,
+  }) async {
     if (record.isDemoCase) {
       final notesMap = await loadDemoNotes();
       notesMap[record.patientId] = record.clinicianNotes;
@@ -84,7 +87,7 @@ class LocalClinicianRepository {
     final existing = await loadImportedPatients();
     final idx = existing.indexWhere((r) => r.patientId == record.patientId);
     if (idx >= 0) {
-      final mergedNotes = record.clinicianNotes.isNotEmpty
+      final mergedNotes = (overwriteNotes || record.clinicianNotes.isNotEmpty)
           ? record.clinicianNotes
           : existing[idx].clinicianNotes;
       existing[idx] = record.copyWith(

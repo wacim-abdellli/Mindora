@@ -722,6 +722,9 @@ class ActiveCaseController extends Notifier<AsyncValue<CaseModel?>> {
 
   /// Bookmarks a helpful takeaway from an ongoing chat without completing or
   /// closing the conversation.
+  ///
+  /// Strict provenance: stores bookmarked AI reflection in [CaseModel.findingsSummary]
+  /// only and NEVER overwrites [CaseModel.userConclusion].
   Future<void> bookmarkTakeaway(String takeaway) async {
     final current = state.value;
     if (current == null) return;
@@ -730,7 +733,6 @@ class ActiveCaseController extends Notifier<AsyncValue<CaseModel?>> {
 
     final updated = current.copyWith(
       findingsSummary: trimmed,
-      userConclusion: trimmed,
       updatedAt: DateTime.now(),
     );
 

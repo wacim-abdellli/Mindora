@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../features/case_file/presentation/case_report_screen.dart';
+import '../../features/clinician/data/clinician_auth_service.dart';
+import '../../features/clinician/presentation/clinician_auth_screen.dart';
 import '../../features/clinician/presentation/clinician_patient_detail_screen.dart';
 import '../../features/clinician/presentation/clinician_shell_screen.dart';
 import '../../features/auth/domain/auth_user.dart';
@@ -38,6 +40,7 @@ class AppRouter {
   static const String track = '/track';
   static const String insights = '/insights';
   static const String companion = '/companion';
+  static const String clinicianAuth = '/clinician-auth';
   static const String clinician = '/clinician';
   static const String clinicianPatient = '/clinician/patient/:id';
 
@@ -71,47 +74,40 @@ class AppRouter {
     final isGoingToOnboarding = matchedLocation == onboarding;
     final isGoingToAuth = matchedLocation == auth;
     final isGoingToWelcome = matchedLocation == clinicWelcome;
+    final isGoingToClinicianAuth = matchedLocation == clinicianAuth;
     final isGoingToClinician = matchedLocation.startsWith(clinician);
 
-    // Dedicated Doctor / Admin edition skips patient onboarding entirely and
-    // boots straight into the clinician roster workspace unless a debug demo
-    // preview was explicitly triggered from Practice settings.
+    // Dedicated Doctor / Admin edition gates all patient dossiers behind
+    // explicit clinician PIN/biometric unlock before entering `/clinician`.
     if (AppEditionConfig.isClinicianApp) {
+      if (!ClinicianAuthService.isSessionUnlocked) {
+        return isGoingToClinicianAuth ? null : clinicianAuth;
+      }
       if (kDebugMode) {
         final prefs = await SharedPreferences.getInstance();
         if (prefs.getBool('mf_clinician_demo_preview') == true) {
           return null;
         }
       }
-      if (!isGoingToClinician && !isGoingToAuth) {
+      if (isGoingToClinicianAuth || !isGoingToClinician) {
         return clinician;
       }
       return null;
     }
 
+    // Strict Patient Edition role isolation: never expose clinician routes
+    // inside the Patient binary, even unauthenticated or via deep link.
     final prefs = await SharedPreferences.getInstance();
     final rawUser = prefs.getString('mf_auth_current_user');
     final signedOut = prefs.getBool('mf_signed_out') ?? false;
     final hasCompleted = prefs.getBool('mf_onboarding_completed') ?? false;
-    final preferredWorkspace =
-        prefs.getString('mf_preferred_workspace') ?? 'patient';
 
-    if (signedOut) {
-      if (!isGoingToAuth && !isGoingToClinician) {
-        return auth;
-      }
-      return null;
+    if (signedOut || rawUser == null) {
+      return isGoingToAuth ? null : auth;
     }
 
-    if (rawUser == null) {
-      if (!hasCompleted && !isGoingToAuth && !isGoingToClinician) {
-        return auth;
-      }
-      if (hasCompleted &&
-          (isGoingToOnboarding || isGoingToWelcome || isGoingToAuth)) {
-        return preferredWorkspace == 'clinician' ? clinician : home;
-      }
-      return null;
+    if (isGoingToClinician || isGoingToClinicianAuth) {
+      return hasCompleted ? home : clinicWelcome;
     }
 
     if (!hasCompleted) {
@@ -120,18 +116,15 @@ class AppRouter {
         isClinicUser = AuthUser.fromJson(rawUser).isClinicAccount;
       } catch (_) {}
       final target = isClinicUser ? clinicWelcome : onboarding;
-      if (matchedLocation != target && !isGoingToAuth && !isGoingToClinician) {
+      if (matchedLocation != target && !isGoingToAuth) {
         return target;
       }
       return null;
     }
 
-    // Completed returning users go straight to their workspace
+    // Completed returning patients go straight to Home
     if (isGoingToOnboarding || isGoingToWelcome || isGoingToAuth) {
-      return preferredWorkspace == 'clinician' ? clinician : home;
-    }
-    if (matchedLocation == home && preferredWorkspace == 'clinician') {
-      return clinician;
+      return home;
     }
     return null;
   }
@@ -197,6 +190,12 @@ class AppRouter {
         path: observatory,
         name: 'observatory',
         builder: (context, state) => const InnerObservatoryScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: clinicianAuth,
+        name: 'clinicianAuth',
+        builder: (context, state) => const ClinicianAuthScreen(),
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,

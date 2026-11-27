@@ -47,7 +47,7 @@ class MindForensicsApp extends ConsumerWidget {
     final isArabic = locale.languageCode == 'ar';
 
     ref.listen<MindTraceModel?>(todayTraceProvider, (_, next) {
-      if (next != null) {
+      if (next != null && next.hasExplicitMood) {
         ref.read(activeMoodProvider.notifier).setMoodByKey(next.overallMood);
       }
     });

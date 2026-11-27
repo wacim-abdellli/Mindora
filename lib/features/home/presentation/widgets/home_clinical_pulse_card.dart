@@ -71,13 +71,15 @@ class _HomeClinicalPulseCardState extends State<HomeClinicalPulseCard> {
   MindTraceModel _baseOrNew(MindTraceModel? existing) {
     if (existing != null) return existing;
     final now = DateTime.now();
+    // Do NOT fabricate overallMood: 'calm' / intensity 5 when the user records
+    // sleep or energy before choosing a mood on HomeDailyCheckInCard.
     return MindTraceModel(
       id: 'trace_${now.millisecondsSinceEpoch}',
       userId: 'local_user',
       date: now,
-      overallMood: 'calm',
-      moodIntensity: 5,
-      selectedEmotions: const ['calm'],
+      overallMood: MindTraceModel.unrecordedMoodKey,
+      moodIntensity: 0,
+      selectedEmotions: const [],
       createdAt: now,
       updatedAt: now,
     );

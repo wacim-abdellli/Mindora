@@ -244,7 +244,7 @@ class AuthController extends Notifier<AuthState> {
     await _service.signOut();
     state = state.copyWith(
       status: AuthStatus.unauthenticated,
-      user: null,
+      clearUser: true,
       clearError: true,
     );
   }

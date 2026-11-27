@@ -5885,8 +5885,8 @@ class AppStrings {
       : (isFrench ? 'Afficher ou masquer la clé' : 'Show or hide key');
 
   String get listeningPrefsLabel => isArabic
-      ? 'أسلوب الاستشارة الطبية'
-      : (isFrench ? 'Style de consultation' : 'Consultation style');
+      ? 'أسلوب الحوار'
+      : (isFrench ? 'Style de discussion' : 'Conversation style');
 
   String get whyThisHelpsHeader => isArabic
       ? 'كيفاش يعاونك التمرين هذا'
@@ -6393,20 +6393,20 @@ class AppStrings {
       ? 'محلي (المشاركة السحابية موقفة)'
       : (isFrench ? 'Local (partage cloud désactivé)' : 'Local (cloud consent off)');
 
-  // Calm Clinical Consultation Sanctuary
+  // Calm AI Companion Sanctuary (strictly non-diagnostic)
   String get talkConsultSpeaker => isArabic
-      ? 'مستشار المتابعة'
-      : (isFrench ? 'Spécialiste de suivi' : 'Care Specialist');
+      ? 'رفيق Mindora الذكي'
+      : (isFrench ? 'Compagnon IA Mindora' : 'Mindora AI Companion');
   String get talkWelcomeHeadline => isArabic
       ? 'مرحباً بك. شنوة اللي شاغل بالك اليوم؟'
       : (isFrench
             ? 'Bonjour. Qu’est-ce qui pèse le plus sur vous aujourd’hui ?'
             : 'Welcome. What is weighing on you right now?');
   String get talkWelcomeSub => isArabic
-      ? 'مساحة هادية وسرّية ترتّب فيها أفكارك — وما تتشارك مع الطبيب كان وقت ما تختار إنت.'
+      ? 'رفيق ذكي هادي يعاونك ترتّب أفكارك — ماهوش طبيب وما يشخّصش. تنجم تقفل أي حوار «ليّ وحدي» وقت ما تحب.'
       : (isFrench
-            ? 'Un espace calme et privé pour faire le point — partagé avec votre médecin uniquement si vous le souhaitez.'
-            : 'A quiet, private space to sort through what is on your mind — shared with a doctor only if you choose.');
+            ? 'Un compagnon IA calme pour clarifier vos pensées — ni médecin ni diagnostic. Verrouillez une discussion en privé à tout moment.'
+            : 'A calm AI companion to help sort your thoughts — not a doctor or diagnosis. Lock any talk as private anytime.');
   String get talkDoorwaySpinning => isArabic
       ? 'أفكار متسارعة تقلقني وتؤثّر على راحتي ونومي'
       : (isFrench
@@ -6997,6 +6997,75 @@ class AppStrings {
       : (isFrench
             ? 'Veuillez saisir le nom et l’identifiant du patient.'
             : 'Please enter the patient name and phone or username.');
+
+  // Phase 0: Clinician Auth Gate & Honest Roster Lifecycle
+  String get clinicianAuthTitle => isArabic
+      ? 'دخول فضاء الطبيب'
+      : (isFrench ? 'Accès espace médecin' : 'Doctor workspace lock');
+
+  String get clinicianAuthSubtitle => isArabic
+      ? 'أدخل الرمز السري لعيادتك باش تحل ملفات المرضى.'
+      : (isFrench
+            ? 'Saisissez le code PIN de votre cabinet pour ouvrir vos dossiers.'
+            : 'Enter your clinic PIN to open patient records.');
+
+  String get clinicianPinSetupTitle => isArabic
+      ? 'إعداد الرمز السري للطبيب'
+      : (isFrench ? 'Créer votre code PIN médecin' : 'Set your clinic PIN');
+
+  String get clinicianPinSetupSubtitle => isArabic
+      ? 'احمي ملفات مرضاك برمز سري (من 4 إلى 6 أرقام) قبل ما تبدا.'
+      : (isFrench
+            ? 'Protégez les dossiers patients avec un code PIN (4 à 6 chiffres) avant de commencer.'
+            : 'Protect patient records with a 4–6 digit clinic PIN before entering.');
+
+  String get clinicianPinFieldLabel => isArabic
+      ? 'الرمز السري للعيادة'
+      : (isFrench ? 'Code PIN du cabinet' : 'Clinic PIN');
+
+  String get clinicianConfirmPinLabel => isArabic
+      ? 'تأكيد الرمز السري'
+      : (isFrench ? 'Confirmer le code PIN' : 'Confirm PIN');
+
+  String get clinicianUnlockBtn => isArabic
+      ? 'فتح فضاء الطبيب'
+      : (isFrench ? 'Ouvrir l’espace médecin' : 'Unlock workspace');
+
+  String get clinicianCreatePinBtn => isArabic
+      ? 'حفظ الرمز والدخول'
+      : (isFrench ? 'Enregistrer et ouvrir' : 'Save PIN & enter');
+
+  String get clinicianLockWorkspaceBtn => isArabic
+      ? 'قفل فضاء الطبيب'
+      : (isFrench ? 'Verrouiller l’espace médecin' : 'Lock workspace');
+
+  String get clinicianPinTooShortError => isArabic
+      ? 'الرمز السري لازم يكون فيه على الأقل 4 أرقام.'
+      : (isFrench
+            ? 'Le code PIN doit contenir au moins 4 chiffres.'
+            : 'PIN must be at least 4 digits.');
+
+  String get clinicianPinMismatchError => isArabic
+      ? 'الرمزين ما يتطابقوش، عاود ثبت.'
+      : (isFrench
+            ? 'Les deux codes PIN ne correspondent pas.'
+            : 'PINs do not match.');
+
+  String get clinicianInvalidPinError => isArabic
+      ? 'الرمز السري غير صحيح.'
+      : (isFrench ? 'Code PIN incorrect.' : 'Incorrect clinic PIN.');
+
+  String get awaitingFirstLoginBadge => isArabic
+      ? 'في انتظار أول دخول'
+      : (isFrench ? 'En attente de 1re connexion' : 'Awaiting first login');
+
+  String get connectedNoCheckInsLabel => isArabic
+      ? 'متصل · لا توجد تسجيلات بعد'
+      : (isFrench ? 'Connecté · Aucun suivi encore' : 'Connected · No check-ins yet');
+
+  String buildingBaselineBadge(int days) => isArabic
+      ? 'تجميع المرجع ($days/7 أيام)'
+      : (isFrench ? 'Repère en cours ($days/7 j)' : 'Building baseline ($days/7d)');
 
   // Helper factory
   static AppStrings of(BuildContext context) {

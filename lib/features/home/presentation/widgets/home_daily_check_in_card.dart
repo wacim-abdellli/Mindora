@@ -78,7 +78,7 @@ class _HomeDailyCheckInCardState extends State<HomeDailyCheckInCard> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.todayTrace?.id != widget.todayTrace?.id ||
         oldWidget.todayTrace?.updatedAt != widget.todayTrace?.updatedAt) {
-      if (widget.todayTrace != null) {
+      if (widget.todayTrace != null && widget.todayTrace!.hasExplicitMood) {
         _isEditing = false;
         _creatingNewMoment = false;
         _pickedMood = null;
@@ -119,7 +119,8 @@ class _HomeDailyCheckInCardState extends State<HomeDailyCheckInCard> {
     final tokens = widget.tokens;
     final strings = widget.strings;
     final todayTrace = widget.todayTrace;
-    final showLoggedCard = todayTrace != null && !_isEditing;
+    final showLoggedCard =
+        todayTrace != null && todayTrace.hasExplicitMood && !_isEditing;
 
     final activeFloodMood = showLoggedCard
         ? AppMood.fromKey(todayTrace.overallMood)

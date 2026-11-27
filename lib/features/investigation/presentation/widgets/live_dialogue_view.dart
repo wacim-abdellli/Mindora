@@ -394,7 +394,6 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
           Text(
             strings.talkWelcomeHeadline,
             style: TextStyle(
-              fontFamily: 'Inter',
               fontSize: 22,
               fontWeight: FontWeight.w700,
               color: tokens.ink,
@@ -404,7 +403,9 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
           ),
           const SizedBox(height: 8),
           Text(
-            '${strings.talkWelcomeSub} · $privacyLine',
+            activeCase.isPrivate
+                ? '${strings.talkWelcomeSub} · $privacyLine'
+                : strings.talkWelcomeSub,
             style: TextStyle(
               fontSize: 13.5,
               height: 1.45,

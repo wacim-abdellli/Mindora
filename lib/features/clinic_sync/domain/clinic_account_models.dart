@@ -190,18 +190,23 @@ class ClinicPatientAccount {
 }
 
 /// Decoded contents of an ephemeral single-use QR invitation scanned in-clinic.
+///
+/// Format v2 (current): encodes ONLY an opaque `{v: 2, t: tokenId, s: secret}`
+/// pair — **zero personal data** (no name, phone, clinic, or patientId) travels
+/// inside the QR matrix, producing a compact, highly scannable Version 3–4 QR.
+/// Format v1 remains supported by [decode] for backward compatibility.
 class ClinicInvitePayload {
   const ClinicInvitePayload({
     required this.tokenId,
-    required this.patientId,
-    required this.doctorId,
-    required this.clinicId,
-    required this.doctorName,
-    required this.clinicName,
-    required this.patientDisplayName,
-    required this.loginIdentifier,
+    this.patientId = '',
+    this.doctorId = '',
+    this.clinicId = '',
+    this.doctorName = '',
+    this.clinicName = '',
+    this.patientDisplayName = '',
+    this.loginIdentifier = '',
     required this.secret,
-    required this.expiresAt,
+    this.expiresAt,
   });
 
   static const String qrPrefix = 'MF-INVITE-V1:';
@@ -215,21 +220,14 @@ class ClinicInvitePayload {
   final String patientDisplayName;
   final String loginIdentifier;
   final String secret;
-  final DateTime expiresAt;
+  final DateTime? expiresAt;
 
+  /// Encodes a zero-PII opaque invite token (`v: 2`).
   String encode() {
-    final map = {
-      'v': 1,
-      'tokenId': tokenId,
-      'patientId': patientId,
-      'doctorId': doctorId,
-      'clinicId': clinicId,
-      'doctorName': doctorName,
-      'clinicName': clinicName,
-      'patientDisplayName': patientDisplayName,
-      'loginIdentifier': loginIdentifier,
-      'secret': secret,
-      'expiresAt': expiresAt.toIso8601String(),
+    final map = <String, dynamic>{
+      'v': 2,
+      't': tokenId,
+      's': secret,
     };
     return '$qrPrefix${base64Url.encode(utf8.encode(jsonEncode(map)))}';
   }
@@ -247,6 +245,17 @@ class ClinicInvitePayload {
       final decodedMap =
           jsonDecode(utf8.decode(base64Url.decode(encoded)))
               as Map<String, dynamic>;
+      final version = (decodedMap['v'] as num?)?.toInt() ?? 1;
+      if (version >= 2) {
+        final tokenId = (decodedMap['t'] as String? ?? '').trim();
+        final secret = (decodedMap['s'] as String? ?? '').trim();
+        if (tokenId.isEmpty || secret.isEmpty) {
+          throw const FormatException('Missing required v2 QR fields');
+        }
+        return ClinicInvitePayload(tokenId: tokenId, secret: secret);
+      }
+
+      // Legacy v1 backward-compatible decode
       final tokenId = decodedMap['tokenId'] as String? ?? '';
       final patientId = decodedMap['patientId'] as String? ?? '';
       final secret = decodedMap['secret'] as String? ?? '';

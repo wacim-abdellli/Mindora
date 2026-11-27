@@ -208,7 +208,7 @@ class ClinicianRosterNotifier
     final updated = target.copyWith(
       clinicianNotes: [note, ...target.clinicianNotes],
     );
-    await repo.upsertPatient(updated);
+    await repo.upsertPatient(updated, overwriteNotes: true);
     final nextList = [...currentList];
     nextList[idx] = updated;
     state = AsyncValue.data(nextList);
@@ -226,7 +226,7 @@ class ClinicianRosterNotifier
           .where((n) => n.id != noteId)
           .toList(growable: false),
     );
-    await repo.upsertPatient(updated);
+    await repo.upsertPatient(updated, overwriteNotes: true);
     final nextList = [...currentList];
     nextList[idx] = updated;
     state = AsyncValue.data(nextList);

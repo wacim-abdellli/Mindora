@@ -701,7 +701,7 @@ class MindQrCodeView extends StatelessWidget {
           decoration: BoxDecoration(
             // Pure optical white quiet zone required by ISO/IEC 18004 scanners.
             color: const Color(0xFFFFFFFF),
-            borderRadius: BorderRadius.circular(tokens.chipRadius),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: tokens.line),
           ),
           child: CustomPaint(

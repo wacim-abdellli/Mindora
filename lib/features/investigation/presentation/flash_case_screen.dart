@@ -81,8 +81,9 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
       );
 
       final notifier = ref.read(activeCaseControllerProvider.notifier);
+      // Strict provenance: store AI summary ONLY in findingsSummary; never
+      // overwrite CaseModel.userConclusion ("Patient's own words").
       await notifier.saveFindings(summary);
-      await notifier.saveConclusion(summary);
 
       if (!context.mounted) return;
       final router = GoRouter.maybeOf(context);

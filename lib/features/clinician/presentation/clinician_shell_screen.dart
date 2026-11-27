@@ -22,6 +22,7 @@ import '../../../core/widgets/mind_switch.dart';
 import '../../mind_trace/domain/affect_taxonomy.dart';
 import '../../track/presentation/widgets/track_mood_utils.dart';
 import '../controllers/clinician_providers.dart';
+import '../data/clinician_auth_service.dart';
 import '../domain/clinician_models.dart';
 import 'clinician_patient_detail_screen.dart';
 import 'widgets/create_patient_account_sheet.dart';
@@ -58,9 +59,6 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
         ref
             .read(workspaceRoleProvider.notifier)
             .setRole(AppWorkspaceRole.clinician);
-        SharedPreferences.getInstance().then((prefs) {
-          prefs.setString('mf_preferred_workspace', 'clinician');
-        });
       }
     });
   }
@@ -394,7 +392,19 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
               reduceMotion: reduceMotion,
             ),
             const Spacer(),
-            if (!AppEditionConfig.isClinicianApp)
+            if (AppEditionConfig.isClinicianApp)
+              IconButton(
+                key: const ValueKey<String>('clinician-rail-lock-btn'),
+                tooltip: strings.clinicianLockWorkspaceBtn,
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                icon: Icon(Icons.lock_outline_rounded, color: tokens.ink2),
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  ClinicianAuthService.lockSession();
+                  GoRouter.maybeOf(context)?.go(AppRouter.clinicianAuth);
+                },
+              )
+            else
               IconButton(
                 tooltip: strings.switchToPatientWorkspaceBtn,
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
@@ -782,57 +792,6 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                     ),
                   ),
                 ),
-                Semantics(
-                  button: true,
-                  label: strings.invitePatientBtn,
-                  child: MindPressable(
-                    key: const ValueKey<String>('clinician-invite-patient-btn'),
-                    onPressed: () =>
-                        _copyClinicInvite(context, profile, tokens, strings),
-                    borderRadius: BorderRadius.circular(tokens.chipRadius),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        minWidth: 48,
-                        minHeight: 48,
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: tokens.surface2,
-                          borderRadius:
-                              BorderRadius.circular(tokens.chipRadius),
-                          border: Border.all(color: tokens.line),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.qr_code_2_rounded,
-                              size: 16,
-                              color: tokens.ink,
-                            ),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                strings.invitePatientBtn,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: tokens.ink,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
           ],
@@ -1080,10 +1039,13 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
     bool isSelected = false,
   }) {
     final latest = record.latestTrace;
+    final hasLogs = record.latestPacket.traces.isNotEmpty;
+    final recordedDays = record.baseline.totalRecordedDays;
     final recent = record.recentBaseline;
     final shifts = record.divergences(strings);
-    final moodKey = latest?.overallMood ?? 'calm';
-    final moodOption = trackMoodOptionFor(moodKey);
+    final hasMood = latest != null && latest.hasExplicitMood;
+    final moodKey = hasMood ? latest.overallMood : '';
+    final moodOption = hasMood ? trackMoodOptionFor(moodKey) : null;
     final agenda = record.latestPacket.preVisitAgenda;
     final sleepStr = recent.averageSleepHours != null
         ? '${recent.averageSleepHours!.toStringAsFixed(1)}h'
@@ -1093,21 +1055,26 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
       padding: const EdgeInsets.all(16),
       variant: isSelected ? MindCardVariant.tint : MindCardVariant.plain,
       borderColor: isSelected ? tokens.m1 : null,
-      semanticLabel: '${record.displayName}, ${trackMoodLabel(moodKey, strings)}',
+      semanticLabel: hasMood
+          ? '${record.displayName}, ${trackMoodLabel(moodKey, strings)}'
+          : '${record.displayName}, ${strings.connectedNoCheckInsLabel}',
       onTap: () => _openPatientDossier(context, record, isWide: isWide),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: moodOption.color,
-                ),
-              ),
+              if (moodOption != null)
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: moodOption.color,
+                  ),
+                )
+              else
+                Icon(Icons.schedule_rounded, size: 15, color: tokens.ink3),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -1144,39 +1111,62 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            '${trackMoodLabel(moodKey, strings)} · '
-            '${latest != null ? '${latest.moodIntensity}/10' : '--'} · '
-            '${strings.metricSleepLabel}: $sleepStr · '
-            '${_relativeSyncLabel(record.lastSyncedAt, strings)}',
+            !hasLogs
+                ? strings.connectedNoCheckInsLabel
+                : '${hasMood ? trackMoodLabel(moodKey, strings) : '--'} · '
+                    '${hasMood ? '${latest.moodIntensity}/10' : '--'} · '
+                    '${strings.metricSleepLabel}: $sleepStr · '
+                    '${_relativeSyncLabel(record.lastSyncedAt, strings)}',
             style: TextStyle(
               fontSize: 12.5,
               color: tokens.ink2,
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
-          const SizedBox(height: 10),
-          _SevenDaySleepMoodStrip(
-            record: record,
-            sleepStr: sleepStr,
-            strings: strings,
-            tokens: tokens,
-          ),
+          if (hasLogs) ...[
+            const SizedBox(height: 10),
+            _SevenDaySleepMoodStrip(
+              record: record,
+              sleepStr: sleepStr,
+              strings: strings,
+              tokens: tokens,
+            ),
+          ],
           const SizedBox(height: 10),
           Wrap(
             spacing: 6,
             runSpacing: 6,
             children: [
-              MindBadge(
-                icon: shifts.isNotEmpty
-                    ? Icons.trending_up_rounded
-                    : Icons.check_circle_outline_rounded,
-                label: shifts.isNotEmpty
-                    ? strings.shiftsCountBadge(shifts.length)
-                    : strings.baselineSteadyBadge,
-                borderColor: shifts.isNotEmpty ? tokens.safety : tokens.line,
-                textColor: shifts.isNotEmpty ? tokens.safety : tokens.ink2,
-              ),
-              if (recent.averageSleepHours != null &&
+              if (!hasLogs)
+                MindBadge(
+                  icon: Icons.schedule_rounded,
+                  label: strings.awaitingFirstLoginBadge,
+                  borderColor: tokens.line,
+                  textColor: tokens.ink2,
+                )
+              else if (shifts.isNotEmpty)
+                MindBadge(
+                  icon: Icons.trending_up_rounded,
+                  label: strings.shiftsCountBadge(shifts.length),
+                  borderColor: tokens.safety,
+                  textColor: tokens.safety,
+                )
+              else if (recordedDays < 7)
+                MindBadge(
+                  icon: Icons.hourglass_bottom_rounded,
+                  label: strings.buildingBaselineBadge(recordedDays),
+                  borderColor: tokens.line,
+                  textColor: tokens.ink2,
+                )
+              else
+                MindBadge(
+                  icon: Icons.check_circle_outline_rounded,
+                  label: strings.baselineSteadyBadge,
+                  borderColor: tokens.line,
+                  textColor: tokens.ink2,
+                ),
+              if (hasLogs &&
+                  recent.averageSleepHours != null &&
                   recent.averageSleepHours! < 5.5)
                 MindBadge(
                   icon: Icons.bedtime_outlined,
@@ -1503,53 +1493,6 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
           ),
         ),
 
-        const SizedBox(height: 14),
-        // Clinic Pairing & Patient Invite Card
-        MindCard(
-          variant: MindCardVariant.tint,
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.qr_code_2_rounded, size: 20, color: tokens.ink),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      strings.clinicInviteCodeTitle,
-                      style: TextStyle(
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w700,
-                        color: tokens.ink,
-                      ),
-                    ),
-                  ),
-                  MindBadge(label: profile.effectiveClinicCode),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                strings.clinicInviteCodeSub,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  color: tokens.ink2,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 12),
-              MindButton(
-                text: strings.copyInviteMsgBtn,
-                variant: MindButtonVariant.secondary,
-                leadingIcon: Icons.copy_rounded,
-                isFullWidth: true,
-                onPressed: () =>
-                    _copyClinicInvite(context, profile, tokens, strings),
-              ),
-            ],
-          ),
-        ),
-
         const SizedBox(height: 18),
         MindCard(
           padding: EdgeInsets.zero,
@@ -1680,7 +1623,38 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
           ),
         ),
 
-        if (!AppEditionConfig.isClinicianApp) ...[
+        if (AppEditionConfig.isClinicianApp) ...[
+          const SizedBox(height: 18),
+          MindButton(
+            key: const ValueKey<String>('clinician-practice-lock-btn'),
+            text: strings.clinicianLockWorkspaceBtn,
+            variant: MindButtonVariant.secondary,
+            leadingIcon: Icons.lock_outline_rounded,
+            isFullWidth: true,
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              ClinicianAuthService.lockSession();
+              GoRouter.maybeOf(context)?.go(AppRouter.clinicianAuth);
+            },
+          ),
+          if (kDebugMode) ...[
+            const SizedBox(height: 10),
+            MindButton(
+              key: const ValueKey<String>('clinician-preview-patient-demo-btn'),
+              text: strings.previewAsPatientDemoBtn,
+              variant: MindButtonVariant.soft,
+              leadingIcon: Icons.visibility_outlined,
+              isFullWidth: true,
+              onPressed: () async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('mf_clinician_demo_preview', true);
+                if (context.mounted) {
+                  GoRouter.maybeOf(context)?.go(AppRouter.home);
+                }
+              },
+            ),
+          ],
+        ] else ...[
           const SizedBox(height: 18),
           MindButton(
             text: strings.switchToPatientWorkspaceBtn,
@@ -1689,52 +1663,9 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
             isFullWidth: true,
             onPressed: () => _switchToPatientWorkspace(context),
           ),
-        ] else if (kDebugMode) ...[
-          const SizedBox(height: 18),
-          MindButton(
-            key: const ValueKey<String>('clinician-preview-patient-demo-btn'),
-            text: strings.previewAsPatientDemoBtn,
-            variant: MindButtonVariant.secondary,
-            leadingIcon: Icons.visibility_outlined,
-            isFullWidth: true,
-            onPressed: () async {
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.setBool('mf_clinician_demo_preview', true);
-              if (context.mounted) {
-                GoRouter.maybeOf(context)?.go(AppRouter.home);
-              }
-            },
-          ),
         ],
       ],
     );
-  }
-
-  Future<void> _copyClinicInvite(
-    BuildContext context,
-    ClinicianProfile profile,
-    MindTokens tokens,
-    AppStrings strings,
-  ) async {
-    HapticFeedback.mediumImpact();
-    final msg = strings.clinicInviteShareMessage(
-      profile.displayName,
-      profile.clinicName,
-      profile.effectiveClinicCode,
-    );
-    await Clipboard.setData(ClipboardData(text: msg));
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: tokens.surface2,
-          behavior: SnackBarBehavior.floating,
-          content: Text(
-            strings.patientInviteCopiedToast,
-            style: TextStyle(color: tokens.ink, fontSize: 13),
-          ),
-        ),
-      );
-    }
   }
 
   Widget _practiceActionRow({

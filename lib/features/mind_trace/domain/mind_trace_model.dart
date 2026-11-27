@@ -77,6 +77,14 @@ class MindTraceModel {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  /// Sentinel value for somatic/pulse-only logs recorded before explicit mood selection.
+  static const String unrecordedMoodKey = 'unrecorded';
+
+  bool get hasExplicitMood =>
+      overallMood.trim().isNotEmpty &&
+      overallMood != unrecordedMoodKey &&
+      moodIntensity > 0;
+
   bool get isInvestigated =>
       investigationAnswers.values.any((v) => v.trim().isNotEmpty);
 
