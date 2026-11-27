@@ -118,14 +118,19 @@ class SafetyInterceptor {
                 variant: MindButtonVariant.danger,
                 isFullWidth: true,
                 onPressed: () {
+                  final rootNav = Navigator.of(ctx, rootNavigator: true);
                   Navigator.of(ctx).pop();
-                  showModalBottomSheet<void>(
-                    context: context,
-                    isScrollControlled: true,
-                    useRootNavigator: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (_) => const SupportModalSheet(),
-                  );
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (rootNav.mounted) {
+                      showModalBottomSheet<void>(
+                        context: rootNav.context,
+                        isScrollControlled: true,
+                        useRootNavigator: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => const SupportModalSheet(),
+                      );
+                    }
+                  });
                 },
               ),
               const SizedBox(height: 10),

@@ -233,126 +233,22 @@ class _DailyMindTraceStepperState extends ConsumerState<DailyMindTraceStepper> {
   }
 
   Future<void> _promptCustomEmotion(AppStrings strings, bool isDark) async {
-    final textController = TextEditingController();
-    await showModalBottomSheet<void>(
+    final val = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        final border = ctx.tokens.line;
-        final bg = ctx.tokens.surface;
-        final textPrimary = ctx.tokens.ink;
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              color: bg,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              border: Border.all(color: border),
-            ),
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  strings.isArabic
-                      ? 'إضافة شعور مخصص'
-                      : (strings.isFrench ? 'Émotion personnalisée' : 'Custom Emotion'),
-                  style: LabTheme.textStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: textController,
-                  autofocus: true,
-                  style: TextStyle(color: textPrimary, fontSize: 13),
-                  decoration: InputDecoration(
-                    hintText: strings.isArabic
-                        ? 'دوّن الإحساس بدقة (مثال: حنين، سكينة)...'
-                        : (strings.isFrench
-                            ? 'Précisez le ressenti (ex. nostalgie, sérénité)...'
-                            : 'Enter nuanced feeling (e.g. yearning, grounded)...'),
-                    hintStyle: TextStyle(
-                      color: ctx.tokens.ink3,
-                      fontSize: 12,
-                    ),
-                    filled: true,
-                    fillColor: ctx.tokens.surface2,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(ctx.tokens.buttonRadius),
-                      borderSide: BorderSide(color: border),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(ctx.tokens.buttonRadius),
-                      borderSide: BorderSide(color: border),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(ctx.tokens.buttonRadius),
-                      borderSide: BorderSide(color: ctx.tokens.m1, width: 1.3),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: Text(
-                        strings.isArabic
-                            ? 'إلغاء'
-                            : (strings.isFrench ? 'Annuler' : 'Cancel'),
-                        style: TextStyle(color: ctx.tokens.ink2),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: ctx.tokens.ink,
-                        foregroundColor: ctx.tokens.bg,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(ctx.tokens.buttonRadius),
-                        ),
-                      ),
-                      onPressed: () {
-                        final val = textController.text.trim();
-                        if (val.isNotEmpty) {
-                          final level = CrisisKeywords.evaluateText(val);
-                          if (level == 2) {
-                            Navigator.pop(ctx);
-                            if (mounted) {
-                              SafetyInterceptor.showCrisisPauseDialog(context);
-                            }
-                            return;
-                          }
-                          final canonical = EmotionDescriptor.canonicalKey(val);
-                          setState(() {
-                            _selectedEmotions.add(canonical);
-                          });
-                        }
-                        Navigator.pop(ctx);
-                      },
-                      child: Text(
-                        strings.isArabic
-                            ? 'إضافة'
-                            : (strings.isFrench ? 'Ajouter' : 'Add Emotion'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+      builder: (_) => _CustomEmotionSheet(strings: strings),
     );
-    textController.dispose();
+    if (val == null || val.isEmpty || !mounted) return;
+    final level = CrisisKeywords.evaluateText(val);
+    if (level == 2) {
+      SafetyInterceptor.showCrisisPauseDialog(context);
+      return;
+    }
+    final canonical = EmotionDescriptor.canonicalKey(val);
+    setState(() {
+      _selectedEmotions.add(canonical);
+    });
   }
 
   @override
@@ -1806,6 +1702,124 @@ class _DailyMindTraceStepperState extends ConsumerState<DailyMindTraceStepper> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CustomEmotionSheet extends StatefulWidget {
+  const _CustomEmotionSheet({required this.strings});
+
+  final AppStrings strings;
+
+  @override
+  State<_CustomEmotionSheet> createState() => _CustomEmotionSheetState();
+}
+
+class _CustomEmotionSheetState extends State<_CustomEmotionSheet> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = widget.strings;
+    final tokens = context.tokens;
+    final border = tokens.line;
+    final bg = tokens.surface;
+    final textPrimary = tokens.ink;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+          border: Border.all(color: border),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              strings.isArabic
+                  ? 'إضافة شعور مخصص'
+                  : (strings.isFrench
+                        ? 'Émotion personnalisée'
+                        : 'Custom Emotion'),
+              style: LabTheme.textStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              style: TextStyle(color: textPrimary, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: strings.isArabic
+                    ? 'دوّن الإحساس بدقة (مثال: حنين، سكينة)...'
+                    : (strings.isFrench
+                          ? 'Précisez le ressenti (ex. nostalgie, sérénité)...'
+                          : 'Enter nuanced feeling (e.g. yearning, grounded)...'),
+                hintStyle: TextStyle(color: tokens.ink3, fontSize: 12.5),
+                filled: true,
+                fillColor: tokens.surface2,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(tokens.buttonRadius),
+                  borderSide: BorderSide(color: border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(tokens.buttonRadius),
+                  borderSide: BorderSide(color: border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(tokens.buttonRadius),
+                  borderSide: BorderSide(color: tokens.m1, width: 1.3),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    strings.cancelBtn,
+                    style: TextStyle(color: tokens.ink2),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(48, 48),
+                    backgroundColor: tokens.ink,
+                    foregroundColor: tokens.bg,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(tokens.buttonRadius),
+                    ),
+                  ),
+                  onPressed: () =>
+                      Navigator.pop(context, _controller.text.trim()),
+                  child: Text(
+                    strings.isArabic
+                        ? 'إضافة'
+                        : (strings.isFrench ? 'Ajouter' : 'Add Emotion'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -89,48 +89,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     AppStrings strings,
     MindTokens tokens,
   ) async {
-    final codeCtrl = TextEditingController();
     final rawCode = await showDialog<String>(
       context: context,
-      builder: (dialogCtx) => AlertDialog(
-        backgroundColor: tokens.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: tokens.line),
-        ),
-        title: Text(
-          strings.scanDoctorQrSheetTitle,
-          style: LabTheme.textStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-            color: tokens.ink,
-          ),
-        ),
-        content: TextField(
-          controller: codeCtrl,
-          minLines: 2,
-          maxLines: 4,
-          style: TextStyle(color: tokens.ink, fontSize: 14),
-          decoration: InputDecoration(
-            hintText: '${ClinicInvitePayload.qrPrefix}...',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogCtx).pop(),
-            style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-            child: Text(strings.cancelBtn),
-          ),
-          FilledButton(
-            onPressed: () =>
-                Navigator.of(dialogCtx).pop(codeCtrl.text.trim()),
-            style: FilledButton.styleFrom(minimumSize: const Size(64, 48)),
-            child: Text(strings.logInBtn),
-          ),
-        ],
-      ),
+      builder: (_) => _EnterQrCodeDialog(strings: strings, tokens: tokens),
     );
-    codeCtrl.dispose();
 
     if (rawCode == null || rawCode.isEmpty || !mounted) return;
     final success = await ref
@@ -328,7 +290,42 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     color: tokens.ink2,
                   ),
                 ),
-                const SizedBox(height: 20),
+                if (authState.errorMessage != null) ...[
+                  const SizedBox(height: 14),
+                  Container(
+                    key: const ValueKey<String>('auth-error-banner'),
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 14),
+                    decoration: BoxDecoration(
+                      color: tokens.safetySoft,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: tokens.safety.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.error_outline_rounded,
+                          size: 18,
+                          color: tokens.safety,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            authState.errorMessage!,
+                            style: LabTheme.textStyle(
+                              color: tokens.safety,
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else
+                  const SizedBox(height: 20),
 
                 // Hero Card 1: 1-Scan Doctor QR Login (zero typing for any age)
                 MindCard(
@@ -413,40 +410,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         ),
                       ),
                       const SizedBox(height: 14),
-
-                      if (authState.errorMessage != null) ...[
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          margin: const EdgeInsets.only(bottom: 14),
-                          decoration: BoxDecoration(
-                            color: tokens.safetySoft,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: tokens.safety.withValues(alpha: 0.4),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.error_outline_rounded,
-                                size: 18,
-                                color: tokens.safety,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  authState.errorMessage!,
-                                  style: LabTheme.textStyle(
-                                    color: tokens.safety,
-                                    fontSize: 13.5,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
 
                       _fieldLabel(strings.loginIdentifierLabel, tokens),
                       const SizedBox(height: 6),
@@ -547,6 +510,83 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         fontWeight: FontWeight.w700,
         color: tokens.ink,
       ),
+    );
+  }
+}
+
+class _EnterQrCodeDialog extends StatefulWidget {
+  const _EnterQrCodeDialog({
+    required this.strings,
+    required this.tokens,
+  });
+
+  final AppStrings strings;
+  final MindTokens tokens;
+
+  @override
+  State<_EnterQrCodeDialog> createState() => _EnterQrCodeDialogState();
+}
+
+class _EnterQrCodeDialogState extends State<_EnterQrCodeDialog> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = widget.strings;
+    final tokens = widget.tokens;
+    return AlertDialog(
+      backgroundColor: tokens.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: tokens.line),
+      ),
+      title: Text(
+        strings.scanDoctorQrSheetTitle,
+        style: LabTheme.textStyle(
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
+          color: tokens.ink,
+        ),
+      ),
+      content: TextField(
+        controller: _controller,
+        minLines: 2,
+        maxLines: 4,
+        style: TextStyle(color: tokens.ink, fontSize: 14),
+        decoration: InputDecoration(
+          hintText: '${ClinicInvitePayload.qrPrefix}...',
+          suffixIcon: IconButton(
+            tooltip: strings.pasteFromClipboardBtn,
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            icon: Icon(Icons.content_paste_rounded, color: tokens.ink2),
+            onPressed: () async {
+              final data = await Clipboard.getData(Clipboard.kTextPlain);
+              final text = data?.text?.trim();
+              if (text != null && text.isNotEmpty && mounted) {
+                _controller.text = text;
+              }
+            },
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+          child: Text(strings.cancelBtn),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
+          style: FilledButton.styleFrom(minimumSize: const Size(64, 48)),
+          child: Text(strings.logInBtn),
+        ),
+      ],
     );
   }
 }

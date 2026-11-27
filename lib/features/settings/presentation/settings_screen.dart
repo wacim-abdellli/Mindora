@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -415,132 +416,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   ) async {
     final user = ref.read(authControllerProvider).user;
     if (user == null) return;
-    final currentCtrl = TextEditingController();
-    final newCtrl = TextEditingController();
-    String? errorMsg;
-    var saving = false;
-
-    await showDialog<void>(
+    final changed = await showDialog<bool>(
       context: context,
-      builder: (dialogCtx) => StatefulBuilder(
-        builder: (dialogCtx, setDialogState) => AlertDialog(
-          backgroundColor: tokens.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: BorderSide(color: tokens.line),
-          ),
-          title: Text(
-            strings.changePinBtn,
-            style: TextStyle(
-              color: tokens.ink,
-              fontSize: 16.5,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: currentCtrl,
-                  obscureText: true,
-                  keyboardType: TextInputType.number,
-                  style: TextStyle(color: tokens.ink, fontSize: 14),
-                  decoration: InputDecoration(
-                    labelText: strings.currentPinLabel,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(tokens.buttonRadius),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: newCtrl,
-                  obscureText: true,
-                  keyboardType: TextInputType.number,
-                  style: TextStyle(color: tokens.ink, fontSize: 14),
-                  decoration: InputDecoration(
-                    labelText: strings.newPinLabel,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(tokens.buttonRadius),
-                    ),
-                  ),
-                ),
-                if (errorMsg != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    errorMsg!,
-                    style: TextStyle(
-                      color: tokens.safety,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: saving ? null : () => Navigator.of(dialogCtx).pop(),
-              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-              child: Text(strings.cancelBtn),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                minimumSize: const Size(48, 48),
-                backgroundColor: tokens.primary,
-                foregroundColor: tokens.onPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(tokens.buttonRadius),
-                ),
-              ),
-              onPressed: saving
-                  ? null
-                  : () async {
-                      final next = newCtrl.text.trim();
-                      if (next.length < 4) {
-                        setDialogState(() {
-                          errorMsg = strings.pinFieldHint;
-                        });
-                        return;
-                      }
-                      setDialogState(() {
-                        saving = true;
-                        errorMsg = null;
-                      });
-                      try {
-                        await ref
-                            .read(clinicAuthRepositoryProvider)
-                            .changePatientPin(
-                              patientId: user.id,
-                              currentPin: currentCtrl.text.trim(),
-                              newPin: next,
-                            );
-                        if (dialogCtx.mounted) {
-                          Navigator.of(dialogCtx).pop();
-                        }
-                        if (context.mounted) {
-                          showMindToast(context, strings.pinChangedToast);
-                        }
-                      } on ClinicAuthException catch (e) {
-                        if (dialogCtx.mounted) {
-                          setDialogState(() {
-                            saving = false;
-                            errorMsg = e.message;
-                          });
-                        }
-                      }
-                    },
-              child: Text(strings.saveNewPinBtn),
-            ),
-          ],
-        ),
+      builder: (_) => _ChangePinDialog(
+        patientId: user.id,
+        strings: strings,
+        tokens: tokens,
       ),
     );
-    currentCtrl.dispose();
-    newCtrl.dispose();
+    if (changed == true && mounted) {
+      showMindToast(this.context, strings.pinChangedToast);
+    }
   }
 
   @override
@@ -653,14 +539,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
 
             if (AppEditionConfig.isClinicianApp &&
-                profile?.userRole == 'clinician') ...[
+                (kDebugMode || profile?.userRole == 'clinician')) ...[
               const SizedBox(height: 14),
               MindButton(
                 text: strings.openDoctorWorkspaceBtn,
                 leadingIcon: Icons.medical_services_outlined,
                 variant: MindButtonVariant.primary,
                 isFullWidth: true,
-                onPressed: () {
+                onPressed: () async {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setBool('mf_clinician_demo_preview', false);
+                  if (!context.mounted) return;
                   final router = GoRouter.maybeOf(context);
                   if (router != null) {
                     router.go(AppRouter.clinician);
@@ -1524,6 +1413,150 @@ class _EditPreferredNameDialogState extends State<_EditPreferredNameDialog> {
             strings.saveChangesBtn,
             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ChangePinDialog extends ConsumerStatefulWidget {
+  const _ChangePinDialog({
+    required this.patientId,
+    required this.strings,
+    required this.tokens,
+  });
+
+  final String patientId;
+  final AppStrings strings;
+  final MindTokens tokens;
+
+  @override
+  ConsumerState<_ChangePinDialog> createState() => _ChangePinDialogState();
+}
+
+class _ChangePinDialogState extends ConsumerState<_ChangePinDialog> {
+  final TextEditingController _currentCtrl = TextEditingController();
+  final TextEditingController _newCtrl = TextEditingController();
+  String? _errorMsg;
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _currentCtrl.dispose();
+    _newCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = widget.strings;
+    final tokens = widget.tokens;
+    return AlertDialog(
+      backgroundColor: tokens.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: tokens.line),
+      ),
+      title: Text(
+        strings.changePinBtn,
+        style: TextStyle(
+          color: tokens.ink,
+          fontSize: 16.5,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _currentCtrl,
+              obscureText: true,
+              keyboardType: TextInputType.number,
+              style: TextStyle(color: tokens.ink, fontSize: 14),
+              decoration: InputDecoration(
+                labelText: strings.currentPinLabel,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(tokens.buttonRadius),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _newCtrl,
+              obscureText: true,
+              keyboardType: TextInputType.number,
+              style: TextStyle(color: tokens.ink, fontSize: 14),
+              decoration: InputDecoration(
+                labelText: strings.newPinLabel,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(tokens.buttonRadius),
+                ),
+              ),
+            ),
+            if (_errorMsg != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _errorMsg!,
+                style: TextStyle(
+                  color: tokens.safety,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => Navigator.of(context).pop(false),
+          style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+          child: Text(strings.cancelBtn),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(48, 48),
+            backgroundColor: tokens.primary,
+            foregroundColor: tokens.onPrimary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(tokens.buttonRadius),
+            ),
+          ),
+          onPressed: _saving
+              ? null
+              : () async {
+                  final next = _newCtrl.text.trim();
+                  if (next.length < 4) {
+                    setState(() => _errorMsg = strings.pinFieldHint);
+                    return;
+                  }
+                  setState(() {
+                    _saving = true;
+                    _errorMsg = null;
+                  });
+                  try {
+                    await ref
+                        .read(clinicAuthRepositoryProvider)
+                        .changePatientPin(
+                          patientId: widget.patientId,
+                          currentPin: _currentCtrl.text.trim(),
+                          newPin: next,
+                        );
+                    if (context.mounted) {
+                      Navigator.of(context).pop(true);
+                    }
+                  } on ClinicAuthException catch (e) {
+                    if (mounted) {
+                      setState(() {
+                        _saving = false;
+                        _errorMsg = e.message;
+                      });
+                    }
+                  }
+                },
+          child: Text(strings.saveNewPinBtn),
         ),
       ],
     );

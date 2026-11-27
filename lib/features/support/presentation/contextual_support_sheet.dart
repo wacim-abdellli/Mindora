@@ -371,8 +371,13 @@ class _ContextualSupportSheetState
                 child: InkWell(
                   borderRadius: BorderRadius.circular(sheetTokens.buttonRadius),
                   onTap: () {
+                    final rootNav = Navigator.of(ctx, rootNavigator: true);
                     Navigator.of(ctx).pop();
-                    SupportModalSheet.show(ctx);
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (rootNav.mounted) {
+                        SupportModalSheet.show(rootNav.context);
+                      }
+                    });
                   },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
