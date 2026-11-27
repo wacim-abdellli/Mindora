@@ -1888,9 +1888,8 @@ class _EditClinicianProfileSheetState
                               clinicName: _clinicCtrl.text.trim().isEmpty
                                   ? widget.profile.clinicName
                                   : _clinicCtrl.text.trim(),
-                              clinicCode: _clinicCodeCtrl.text
-                                  .trim()
-                                  .toUpperCase(),
+                              clinicCode:
+                                  _clinicCodeCtrl.text.trim().toUpperCase(),
                             ),
                           );
                       if (mounted) navigator.pop();

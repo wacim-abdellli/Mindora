@@ -124,11 +124,11 @@ class _JourneyActivityDetailScreenState
       backgroundColor: bg,
       appBar: AppBar(
         title: Text(
-          strings.phaseTitle(widget.activity.phase).toUpperCase(),
+          strings.phaseTitle(widget.activity.phase),
           style: TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 12,
-            letterSpacing: 1.0,
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+            letterSpacing: 0.2,
             color: textSecondary,
           ),
         ),
@@ -154,11 +154,11 @@ class _JourneyActivityDetailScreenState
                     border: Border.all(color: borderColor, width: 1),
                   ),
                   child: Text(
-                    'PHASE ${widget.activity.phase.phaseNumber}',
+                    'Phase ${widget.activity.phase.phaseNumber}',
                     style: TextStyle(
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.6,
+                      fontSize: 12.0,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.2,
                       color: textSecondary,
                     ),
                   ),
@@ -199,8 +199,8 @@ class _JourneyActivityDetailScreenState
                               ? strings.activityCompletedBadge
                               : strings.activityInProgressBadge,
                           style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 12.0,
+                            fontWeight: FontWeight.w700,
                             color: _isCompleted
                                 ? tokens.m1
                                 : textSecondary,
@@ -240,11 +240,11 @@ class _JourneyActivityDetailScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    strings.isArabic ? 'الهدف السريري من النشاط' : (strings.isFrench ? 'Objectif clinique' : 'CLINICAL PURPOSE'),
+                    strings.isArabic ? 'الهدف السريري من النشاط' : (strings.isFrench ? 'Objectif clinique' : 'Clinical purpose'),
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 12.0,
                       fontWeight: FontWeight.w800,
-                      letterSpacing: 0.8,
+                      letterSpacing: 0.2,
                       color: tokens.m1,
                     ),
                   ),
@@ -286,11 +286,11 @@ class _JourneyActivityDetailScreenState
 
             // 4. Guided Instructions
             Text(
-              strings.guidedInstructionsTitle.toUpperCase(),
+              strings.guidedInstructionsTitle,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 12.5,
                 fontWeight: FontWeight.w800,
-                letterSpacing: 0.8,
+                letterSpacing: 0.2,
                 color: textSecondary,
               ),
             ),
@@ -324,7 +324,7 @@ class _JourneyActivityDetailScreenState
                         child: Text(
                           '$stepIndex',
                           style: TextStyle(
-                            fontSize: 10.5,
+                            fontSize: 12.0,
                             fontWeight: FontWeight.w800,
                             color: textPrimary,
                           ),
@@ -351,11 +351,11 @@ class _JourneyActivityDetailScreenState
 
             // 5. Reflection Questions
             Text(
-              strings.reflectionQuestionsTitle.toUpperCase(),
+              strings.reflectionQuestionsTitle,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 12.5,
                 fontWeight: FontWeight.w800,
-                letterSpacing: 0.8,
+                letterSpacing: 0.2,
                 color: textSecondary,
               ),
             ),
@@ -412,7 +412,7 @@ class _JourneyActivityDetailScreenState
                                   ? 'Notez votre observation...'
                                   : 'Write your honest reflection...'),
                           hintStyle: TextStyle(
-                            fontSize: 11.5,
+                            fontSize: 12.5,
                             color: textSecondary.withValues(alpha: 0.6),
                           ),
                           filled: true,
@@ -446,11 +446,11 @@ class _JourneyActivityDetailScreenState
 
             // 7. Optional Personal Notes
             Text(
-              strings.personalNotesLabel.toUpperCase(),
+              strings.personalNotesLabel,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 12.5,
                 fontWeight: FontWeight.w800,
-                letterSpacing: 0.8,
+                letterSpacing: 0.2,
                 color: textSecondary,
               ),
             ),
@@ -466,7 +466,7 @@ class _JourneyActivityDetailScreenState
                         ? 'Remarques additionnelles ou prises de conscience...'
                         : 'Any additional personal notes, takeaways, or insights...'),
                 hintStyle: TextStyle(
-                  fontSize: 11.5,
+                  fontSize: 12.5,
                   color: textSecondary.withValues(alpha: 0.6),
                 ),
                 filled: true,
@@ -534,7 +534,7 @@ class _JourneyActivityDetailScreenState
                       ? strings.activityCompletedBadge
                       : strings.markAsCompletedBtn,
                   style: const TextStyle(
-                      fontSize: 11.5, fontWeight: FontWeight.w700),
+                      fontSize: 12.5, fontWeight: FontWeight.w700),
                 ),
                 onPressed: () {
                   _toggleCompleted();

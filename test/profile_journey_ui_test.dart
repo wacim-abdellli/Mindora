@@ -68,9 +68,9 @@ void main() {
 
       // Check title and purpose
       expect(find.text(activity.title), findsOneWidget);
-      expect(find.text('CLINICAL PURPOSE'), findsOneWidget);
-      expect(find.text('GUIDED INSTRUCTIONS'), findsOneWidget);
-      expect(find.text('REFLECTION QUESTIONS'), findsOneWidget);
+      expect(find.text('Clinical purpose'), findsOneWidget);
+      expect(find.text('Guided Instructions'), findsOneWidget);
+      expect(find.text('Reflection Questions'), findsOneWidget);
 
       // Enter reflection
       final textFields = find.byType(TextField);

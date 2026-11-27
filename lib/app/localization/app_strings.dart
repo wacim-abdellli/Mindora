@@ -1641,7 +1641,7 @@ class AppStrings {
       ? 'تسجيل أثر اليوم في السجل'
       : (isFrench
             ? 'Enregistrer dans l’archive'
-            : 'RECORD DAILY THOUGHT TRACE');
+            : 'Save daily check-in');
   String get traceSavedSnackbar => isArabic
       ? 'تم تسجيل أثر الفكرة وحفظه في أرشيفك الشخصي بنجاح'
       : (isFrench
@@ -1848,7 +1848,7 @@ class AppStrings {
       : (isFrench ? 'Marquer comme complété' : 'Mark as Completed');
   String get saveReflectionBtn => isArabic
       ? 'حفظ التأمل والاستنتاجات'
-      : (isFrench ? 'ENREGISTRER LA RÉFLEXION' : 'SAVE REFLECTION');
+      : (isFrench ? 'Enregistrer la réflexion' : 'Save reflection');
   String get reflectionSavedSnackbar => isArabic
       ? 'تم حفظ تأملاتك بنجاح'
       : (isFrench
@@ -2631,16 +2631,16 @@ class AppStrings {
 
   String get totalEntriesMetric => isArabic
       ? 'إجمالي التدوينات'
-      : (isFrench ? 'TOTAL ENTRÉES' : 'TOTAL ENTRIES');
+      : (isFrench ? 'Total entrées' : 'Total entries');
   String get uniqueDaysMetric => isArabic
       ? 'الأيام الملاحظة'
-      : (isFrench ? 'JOURS OBSERVÉS' : 'DAYS OBSERVED');
+      : (isFrench ? 'Jours observés' : 'Days observed');
   String get emotionSelectionsMetric => isArabic
       ? 'المشاعر المحددة'
-      : (isFrench ? 'ÉMOTIONS CITÉES' : 'EMOTION TAGS');
+      : (isFrench ? 'Émotions citées' : 'Emotion tags');
   String get emotionalSpectrumTitle => isArabic
       ? 'توزيع المشاعر المعاشة'
-      : (isFrench ? 'SPECTRE ÉMOTIONNEL' : 'REPORTED EMOTIONAL SPECTRUM');
+      : (isFrench ? 'Spectre émotionnel' : 'Reported emotional spectrum');
   String get emotionalVarietyTitle => isArabic
       ? 'المشاعر اللّي سمّيتها'
       : (isFrench

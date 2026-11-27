@@ -168,11 +168,13 @@ class _SymptomAssessmentSheetState extends ConsumerState<SymptomAssessmentSheet>
                       Text(
                         isAr
                             ? 'تقييم تجارب الأعراض (${widget.selectedSymptoms.length})'
-                            : 'SYMPTOM ASSESSMENT (${widget.selectedSymptoms.length})',
+                            : (strings.isFrench
+                                ? 'Évaluation des ressentis (${widget.selectedSymptoms.length})'
+                                : 'Symptom assessment (${widget.selectedSymptoms.length})'),
                         style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.8,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.2,
                           color: textSecondary,
                         ),
                       ),
@@ -381,7 +383,7 @@ class _SymptomAssessmentSheetState extends ConsumerState<SymptomAssessmentSheet>
               selected: isSelected,
               onSelected: (_) => setState(() => _selectedSomatic = item.id),
               labelStyle: TextStyle(
-                fontSize: 11,
+                fontSize: 12.5,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 color: isSelected ? textPrimary : textSecondary,
               ),
@@ -454,7 +456,7 @@ class _SymptomAssessmentSheetState extends ConsumerState<SymptomAssessmentSheet>
               selected: isSelected,
               onSelected: (_) => setState(() => _selectedContext = item.id),
               labelStyle: TextStyle(
-                fontSize: 11,
+                fontSize: 12.5,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 color: isSelected ? textPrimary : textSecondary,
               ),
@@ -565,7 +567,7 @@ class _SymptomAssessmentSheetState extends ConsumerState<SymptomAssessmentSheet>
               : (strings.isFrench
                   ? 'Réponses suggérées :'
                   : 'Suggested responses (Options-First):'),
-          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: textSecondary),
+          style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: textSecondary),
         ),
         const SizedBox(height: 8),
         ...suggestedOptions.map((opt) {
@@ -611,7 +613,7 @@ class _SymptomAssessmentSheetState extends ConsumerState<SymptomAssessmentSheet>
                 : (strings.isFrench
                     ? 'Ou ajoutez une courte note (optionnel)...'
                     : 'Or add a brief note (optional)...'),
-            hintStyle: TextStyle(color: tokens.ink3, fontSize: 11.5),
+            hintStyle: TextStyle(color: tokens.ink3, fontSize: 12.5),
             filled: true,
             fillColor: tokens.surface2,
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -709,12 +711,12 @@ class _SymptomAssessmentSheetState extends ConsumerState<SymptomAssessmentSheet>
                     isAr
                         ? 'التحليل التأملي الفوري'
                         : (strings.isFrench
-                            ? 'SYNTHÈSE RÉFLEXIVE IMMÉDIATE'
-                            : 'IMMEDIATE REFLECTIVE SYNTHESIS'),
+                            ? 'Synthèse réflexive immédiate'
+                            : 'Immediate reflective synthesis'),
                     style: TextStyle(
-                      fontSize: 10.5,
+                      fontSize: 12.5,
                       fontWeight: FontWeight.w800,
-                      letterSpacing: 0.8,
+                      letterSpacing: 0.2,
                       color: textSecondary,
                     ),
                   ),
@@ -746,19 +748,22 @@ class _SymptomAssessmentSheetState extends ConsumerState<SymptomAssessmentSheet>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      isAr
-                          ? 'استراتيجية التثبيت الموصى بها:'
-                          : (strings.isFrench
-                              ? 'STRATÉGIE D’APAISEMENT RECOMMANDÉE :'
-                              : 'RECOMMENDED STABILIZING STRATEGY:'),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.6,
-                        color: tokens.ink,
+                    Expanded(
+                      child: Text(
+                        isAr
+                            ? 'استراتيجية التثبيت الموصى بها:'
+                            : (strings.isFrench
+                                ? 'Stratégie d’apaisement recommandée :'
+                                : 'Recommended stabilizing strategy:'),
+                        style: TextStyle(
+                          fontSize: 12.0,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.2,
+                          color: tokens.ink,
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 8),
                     InkWell(
                       onTap: () {
                         Navigator.of(context).pop();
@@ -767,17 +772,20 @@ class _SymptomAssessmentSheetState extends ConsumerState<SymptomAssessmentSheet>
                           initialChoice: _intensity >= 7 ? SupportChoice.settle : SupportChoice.action,
                         );
                       },
-                      child: Text(
-                        isAr
-                            ? 'فتح الدعم الفوري →'
-                            : (strings.isFrench
-                                ? 'Ouvrir l’aide →'
-                                : 'Open Support →'),
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w700,
-                          color: tokens.ink,
-                          decoration: TextDecoration.underline,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Text(
+                          isAr
+                              ? 'فتح الدعم الفوري →'
+                              : (strings.isFrench
+                                  ? 'Ouvrir l’aide →'
+                                  : 'Open support →'),
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: tokens.ink,
+                            decoration: TextDecoration.underline,
+                          ),
                         ),
                       ),
                     ),
@@ -815,7 +823,7 @@ class _SymptomAssessmentSheetState extends ConsumerState<SymptomAssessmentSheet>
                         : (strings.isFrench
                             ? 'Référence personnelle : ${baseline.totalRecordedDays} jours calibrés'
                             : 'Personal Baseline: ${baseline.totalRecordedDays} calibrated days'),
-                    style: TextStyle(fontSize: 11.5, color: textSecondary),
+                    style: TextStyle(fontSize: 12.5, color: textSecondary),
                   ),
                 ),
               ],

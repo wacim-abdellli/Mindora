@@ -176,12 +176,12 @@ class _TraceInvestigationSheetState
                         strings.isArabic
                             ? 'استكشاف الفكرة'
                             : (strings.isFrench
-                                ? 'EXPLORATION DE LA PENSÉE'
-                                : 'EXPLORE THIS THOUGHT'),
+                                ? 'Exploration de la pensée'
+                                : 'Explore this thought'),
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: 1.4,
+                          letterSpacing: 0.2,
                           color: tokens.ink,
                         ),
                       ),
@@ -246,12 +246,12 @@ class _TraceInvestigationSheetState
                             strings.isArabic
                                 ? 'الأثر قيد الفحص'
                                 : (strings.isFrench
-                                    ? 'EMPREINTE EN COURS D’EXAMEN'
-                                    : 'ANCHOR THOUGHT UNDER INQUIRY'),
+                                    ? 'Empreinte en cours d’examen'
+                                    : 'Thought under reflection'),
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 12.0,
                               fontWeight: FontWeight.w700,
-                              letterSpacing: 1.2,
+                              letterSpacing: 0.2,
                               color: tokens.ink2,
                             ),
                           ),
@@ -330,12 +330,12 @@ class _TraceInvestigationSheetState
                         strings.isArabic
                             ? 'حفظ التأمل والتفكيك'
                             : (strings.isFrench
-                                ? 'ENREGISTRER LA RÉFLEXION'
-                                : 'SAVE REFLECTION TO TRACE'),
+                                ? 'Enregistrer la réflexion'
+                                : 'Save reflection to trace'),
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 13.5,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: 1.1,
+                          letterSpacing: 0.2,
                         ),
                       ),
               ),
@@ -375,7 +375,7 @@ class _TraceInvestigationSheetState
                 child: Text(
                   '0$index',
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 12.0,
                     fontWeight: FontWeight.bold,
                     color: tokens.ink,
                   ),
@@ -384,11 +384,11 @@ class _TraceInvestigationSheetState
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  q.category.toUpperCase(),
+                  q.category,
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 12.0,
                     fontWeight: FontWeight.w600,
-                    letterSpacing: 1.1,
+                    letterSpacing: 0.2,
                     color: tokens.ink2,
                   ),
                 ),
@@ -409,7 +409,7 @@ class _TraceInvestigationSheetState
           Text(
             q.hint,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 12.0,
               fontStyle: FontStyle.italic,
               color: tokens.ink2.withValues(alpha: 0.85),
               height: 1.3,

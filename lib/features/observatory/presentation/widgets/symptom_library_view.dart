@@ -170,7 +170,7 @@ class _SymptomLibraryViewState extends ConsumerState<SymptomLibraryView> {
                                   child: Text(
                                     '${r.dateKey} • $timeStr',
                                     style: TextStyle(
-                                      fontSize: 11.5,
+                                      fontSize: 12.5,
                                       fontWeight: FontWeight.w700,
                                       color: textSecondary,
                                     ),
@@ -186,7 +186,7 @@ class _SymptomLibraryViewState extends ConsumerState<SymptomLibraryView> {
                                   child: Text(
                                     '${r.intensity}/10',
                                     style: TextStyle(
-                                      fontSize: 11,
+                                      fontSize: 12.0,
                                       fontWeight: FontWeight.w800,
                                       color: textPrimary,
                                     ),
@@ -237,7 +237,7 @@ class _SymptomLibraryViewState extends ConsumerState<SymptomLibraryView> {
                                 child: Text(
                                   r.stabilizingStrategy!.trim(),
                                   style: TextStyle(
-                                    fontSize: 11.5,
+                                    fontSize: 12.5,
                                     height: 1.35,
                                     color: textPrimary,
                                   ),
@@ -320,7 +320,7 @@ class _SymptomLibraryViewState extends ConsumerState<SymptomLibraryView> {
                 onSelected: (_) =>
                     ref.read(selectedDomainFilterProvider.notifier).select(null),
                 labelStyle: TextStyle(
-                  fontSize: 11,
+                  fontSize: 12.5,
                   fontWeight: activeDomain == null ? FontWeight.w700 : FontWeight.w500,
                   color: activeDomain == null ? textPrimary : textSecondary,
                 ),
@@ -347,7 +347,7 @@ class _SymptomLibraryViewState extends ConsumerState<SymptomLibraryView> {
                         ref.read(selectedDomainFilterProvider.notifier).select(
                             isSelected ? null : d),
                     labelStyle: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12.5,
                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                       color: isSelected ? textPrimary : textSecondary,
                     ),
@@ -452,11 +452,11 @@ class _SymptomLibraryViewState extends ConsumerState<SymptomLibraryView> {
                                             isAr
                                                 ? 'خاص'
                                                 : (strings.isFrench
-                                                    ? 'PERSO'
-                                                    : 'CUSTOM'),
+                                                    ? 'Perso'
+                                                    : 'Custom'),
                                             style: TextStyle(
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.w800,
+                                              fontSize: 12.0,
+                                              fontWeight: FontWeight.w700,
                                               color: textSecondary,
                                             ),
                                           ),
@@ -465,7 +465,7 @@ class _SymptomLibraryViewState extends ConsumerState<SymptomLibraryView> {
                                         const SizedBox(width: 4),
                                         Container(
                                           padding: const EdgeInsets.symmetric(
-                                              horizontal: 5, vertical: 2),
+                                              horizontal: 6, vertical: 2),
                                           decoration: BoxDecoration(
                                             color: tokens.selectedTintFor(tokens.m1),
                                             borderRadius: BorderRadius.circular(4),
@@ -474,12 +474,12 @@ class _SymptomLibraryViewState extends ConsumerState<SymptomLibraryView> {
                                             isAr
                                                 ? 'من ملفك'
                                                 : (strings.isFrench
-                                                    ? 'PROFIL'
-                                                    : 'INTAKE'),
+                                                    ? 'Profil'
+                                                    : 'Profile'),
                                             style: TextStyle(
-                                              fontSize: 8.5,
-                                              fontWeight: FontWeight.w800,
-                                              letterSpacing: 0.3,
+                                              fontSize: 12.0,
+                                              fontWeight: FontWeight.w700,
+                                              letterSpacing: 0.2,
                                               color: textPrimary,
                                             ),
                                           ),
@@ -491,7 +491,7 @@ class _SymptomLibraryViewState extends ConsumerState<SymptomLibraryView> {
                                   Text(
                                     symptom.description(strings),
                                     style: TextStyle(
-                                      fontSize: 11.5,
+                                      fontSize: 12.5,
                                       color: textSecondary,
                                       height: 1.35,
                                     ),
@@ -544,7 +544,7 @@ class _SymptomLibraryViewState extends ConsumerState<SymptomLibraryView> {
                                 : (strings.isFrench
                                     ? 'Tout désélectionner'
                                     : 'Clear selection'),
-                            style: TextStyle(fontSize: 11, color: textSecondary),
+                            style: TextStyle(fontSize: 12.5, color: textSecondary),
                           ),
                         ),
                       ],

@@ -240,7 +240,7 @@ void main() {
       await tester.tap(find.text('Generate Immediate Analysis'));
       await tester.pumpAndSettle();
 
-      expect(find.text('IMMEDIATE REFLECTIVE SYNTHESIS'), findsOneWidget);
+      expect(find.text('Immediate reflective synthesis'), findsOneWidget);
       expect(find.text('Log to Observatory Timeline'), findsOneWidget);
     });
 

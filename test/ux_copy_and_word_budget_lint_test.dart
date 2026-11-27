@@ -132,5 +132,59 @@ void main() {
       expect(contents.contains('0xFFFAF9F6'), isTrue);
       expect(contents.contains('0xFF09090B'), isTrue);
     });
+
+    test('All UI TextStyle literals in lib/ honor >= 12.0sp floor and avoid UI .toUpperCase()', () {
+      final libDir = Directory('lib');
+      final fontSizeRegex = RegExp(r'fontSize:\s*([0-9]+(?:\.[0-9]+)?)');
+      final fontViolations = <String>[];
+      final upperViolations = <String>[];
+
+      for (final entity in libDir.listSync(recursive: true)) {
+        if (entity is! File || !entity.path.endsWith('.dart')) continue;
+        final normalizedPath = entity.path.replaceAll('\\', '/');
+        final isPdfService =
+            normalizedPath.endsWith('clinical_brief_pdf_service.dart');
+        final isPresentation = normalizedPath.contains('/presentation/');
+        final lines = entity.readAsLinesSync();
+
+        for (var i = 0; i < lines.length; i++) {
+          final line = lines[i];
+          final trimmed = line.trimLeft();
+          if (trimmed.startsWith('//')) continue;
+
+          if (!isPdfService) {
+            for (final match in fontSizeRegex.allMatches(line)) {
+              final value = double.tryParse(match.group(1) ?? '');
+              if (value != null && value < 12.0) {
+                fontViolations.add('$normalizedPath:${i + 1}: $trimmed');
+              }
+            }
+          }
+
+          if (isPresentation && line.contains('.toUpperCase()')) {
+            // Allow clinic code uppercase input normalization
+            final prevLine = i > 0 ? lines[i - 1] : '';
+            final isClinicCode = line.contains('ClinicCode') ||
+                line.contains('clinicCode') ||
+                prevLine.contains('clinicCode') ||
+                prevLine.contains('_clinicCodeCtrl');
+            if (!isClinicCode) {
+              upperViolations.add('$normalizedPath:${i + 1}: $trimmed');
+            }
+          }
+        }
+      }
+
+      expect(
+        fontViolations,
+        isEmpty,
+        reason: 'UI typography floor is 12.0sp:\n${fontViolations.join('\n')}',
+      );
+      expect(
+        upperViolations,
+        isEmpty,
+        reason: 'Use sentence case instead of UI .toUpperCase():\n${upperViolations.join('\n')}',
+      );
+    });
   });
 }

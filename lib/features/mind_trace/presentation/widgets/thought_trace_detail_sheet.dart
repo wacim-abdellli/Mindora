@@ -89,12 +89,12 @@ class ThoughtTraceDetailSheet extends ConsumerWidget {
                         strings.isArabic
                             ? 'أثر الفكرة المسجل'
                             : (strings.isFrench
-                                ? 'EMPREINTE DE PENSÉE'
-                                : 'THOUGHT TRACE RECORD'),
+                                ? 'Empreinte de pensée'
+                                : 'Thought trace record'),
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 12.0,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: 1.4,
+                          letterSpacing: 0.3,
                           color: tokens.ink,
                         ),
                       ),
@@ -228,12 +228,12 @@ class ThoughtTraceDetailSheet extends ConsumerWidget {
                           strings.isArabic
                               ? 'نص الفكرة المسجل'
                               : (strings.isFrench
-                                  ? 'PENSÉE CONSIGNÉE'
-                                  : 'CAPTURED THOUGHT'),
+                                  ? 'Pensée consignée'
+                                  : 'Captured thought'),
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 12.0,
                             fontWeight: FontWeight.w700,
-                            letterSpacing: 1.1,
+                            letterSpacing: 0.3,
                             color: textSecondary,
                           ),
                         ),
@@ -257,7 +257,10 @@ class ThoughtTraceDetailSheet extends ConsumerWidget {
               const SizedBox(height: 16),
 
               // Mood Intensity & Emotion Badges
-              Row(
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -267,16 +270,15 @@ class ThoughtTraceDetailSheet extends ConsumerWidget {
                       border: Border.all(color: tokens.ink.withValues(alpha: 0.3)),
                     ),
                     child: Text(
-                      '${trace.overallMood.toUpperCase()} • ${trace.moodIntensity}/10',
+                      '${strings.plainMoodLabel(trace.overallMood)} • ${trace.moodIntensity}/10',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
+                        letterSpacing: 0.2,
                         color: tokens.ink,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
                   if (trace.isInvestigated)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -292,11 +294,11 @@ class ThoughtTraceDetailSheet extends ConsumerWidget {
                               size: 13, color: tokens.ink),
                           const SizedBox(width: 5),
                           Text(
-                            strings.isArabic ? 'تم الاستكشاف' : (strings.isFrench ? 'EXPLORÉ' : 'EXPLORED'),
+                            strings.isArabic ? 'تم الاستكشاف' : (strings.isFrench ? 'Exploré' : 'Explored'),
                             style: TextStyle(
-                              fontSize: 9.5,
+                              fontSize: 12.0,
                               fontWeight: FontWeight.w700,
-                              letterSpacing: 0.8,
+                              letterSpacing: 0.2,
                               color: textPrimary,
                             ),
                           ),
@@ -322,7 +324,7 @@ class ThoughtTraceDetailSheet extends ConsumerWidget {
                       child: Text(
                         emotion,
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 12.5,
                           fontWeight: FontWeight.w600,
                           color: textPrimary,
                         ),
@@ -349,11 +351,11 @@ class ThoughtTraceDetailSheet extends ConsumerWidget {
                     color: tokens.bg,
                   ),
                   label: Text(
-                    strings.investigateThoughtBtn.toUpperCase(),
+                    strings.investigateThoughtBtn,
                     style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.1,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.2,
                       color: tokens.bg,
                     ),
                   ),
@@ -374,11 +376,11 @@ class ThoughtTraceDetailSheet extends ConsumerWidget {
               if ((trace.situation != null && trace.situation!.trim().isNotEmpty) ||
                   (trace.behavioralResponse != null && trace.behavioralResponse!.trim().isNotEmpty)) ...[
                 Text(
-                  strings.isArabic ? 'السياق والاستجابة' : (strings.isFrench ? 'CONTEXTE & RÉPONSE' : 'CONTEXT & BEHAVIORAL COPING'),
+                  strings.isArabic ? 'السياق والاستجابة' : (strings.isFrench ? 'Contexte & réponse' : 'Context & behavioral coping'),
                   style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.1,
+                    fontSize: 12.0,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
                     color: textSecondary,
                   ),
                 ),
@@ -418,11 +420,11 @@ class ThoughtTraceDetailSheet extends ConsumerWidget {
 
               // Somatic & Cognitive Indicators (Sleep, Energy, Tension, Clarity)
               Text(
-                strings.isArabic ? 'المؤشرات الجسدية والذهنية' : (strings.isFrench ? 'INDICATEURS CORPORELS & COGNITIFS' : 'BODY & MIND INDICATORS'),
+                strings.isArabic ? 'المؤشرات الجسدية والذهنية' : (strings.isFrench ? 'Indicateurs corporels & cognitifs' : 'Body & mind indicators'),
                 style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.1,
+                  fontSize: 12.0,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.2,
                   color: textSecondary,
                 ),
               ),
@@ -438,26 +440,26 @@ class ThoughtTraceDetailSheet extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _metricSnippet(
-                      'ENERGY',
+                      'Energy',
                       trace.energyLevel != null ? '${trace.energyLevel}/10' : '--',
                       textPrimary,
                       textSecondary,
                     ),
                     _metricSnippet(
-                      'TENSION',
+                      'Tension',
                       trace.physicalTension != null ? '${trace.physicalTension}/10' : '--',
                       textPrimary,
                       textSecondary,
                     ),
                     _metricSnippet(
-                      'SLEEP',
+                      'Sleep',
                       trace.sleepHours != null ? '${trace.sleepHours}h' : '--',
                       textPrimary,
                       textSecondary,
                     ),
                     if (trace.racingThoughts != null)
                       _metricSnippet(
-                        'RACING',
+                        'Racing',
                         '${trace.racingThoughts}/10',
                         textPrimary,
                         textSecondary,
@@ -471,11 +473,11 @@ class ThoughtTraceDetailSheet extends ConsumerWidget {
               // Socratic Investigation Answers (if previously answered)
               if (trace.investigationAnswers.isNotEmpty) ...[
                 Text(
-                  strings.isArabic ? 'نتائج الفحص السقراطي' : (strings.isFrench ? 'INVESTIGATION SOCRATIQUE' : 'SOCRATIC DECONSTRUCTION FINDINGS'),
+                  strings.isArabic ? 'نتائج الفحص السقراطي' : (strings.isFrench ? 'Exploration socratique' : 'Socratic reflection findings'),
                   style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.1,
+                    fontSize: 12.0,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
                     color: tokens.ink,
                   ),
                 ),
@@ -501,7 +503,7 @@ class ThoughtTraceDetailSheet extends ConsumerWidget {
                         Text(
                           questionTitle,
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 12.5,
                             fontWeight: FontWeight.w700,
                             color: textSecondary,
                           ),
@@ -543,11 +545,11 @@ class ThoughtTraceDetailSheet extends ConsumerWidget {
                               size: 14, color: tokens.ink),
                           const SizedBox(width: 6),
                           Text(
-                            strings.isArabic ? 'ملاحظة المساعد الذكي' : (strings.isFrench ? 'Observation réflexive de l’IA' : 'AI REFLECTIVE OBSERVATION'),
+                            strings.isArabic ? 'ملاحظة المساعد الذكي' : (strings.isFrench ? 'Observation réflexive de l’IA' : 'AI reflective observation'),
                             style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.8,
+                              fontSize: 12.0,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.2,
                               color: tokens.ink,
                             ),
                           ),
@@ -571,11 +573,11 @@ class ThoughtTraceDetailSheet extends ConsumerWidget {
               // Personal Journal Notes
               if (trace.journalText != null && trace.journalText!.trim().isNotEmpty) ...[
                 Text(
-                  strings.isArabic ? 'يومياتك وملاحظاتك' : (strings.isFrench ? 'Journal personnel' : 'PERSONAL JOURNAL NOTES'),
+                  strings.isArabic ? 'يومياتك وملاحظاتك' : (strings.isFrench ? 'Journal personnel' : 'Personal journal notes'),
                   style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
+                    fontSize: 12.0,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
                     color: textSecondary,
                   ),
                 ),
@@ -631,9 +633,9 @@ class ThoughtTraceDetailSheet extends ConsumerWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: 9.5,
+              fontSize: 12.0,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
+              letterSpacing: 0.2,
               color: textSecondary,
             ),
           ),
@@ -658,9 +660,9 @@ class ThoughtTraceDetailSheet extends ConsumerWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.6,
+            fontSize: 12.0,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.2,
             color: textSecondary,
           ),
         ),

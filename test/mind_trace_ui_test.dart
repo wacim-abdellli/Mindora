@@ -33,8 +33,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Check opening header & step indicator
-      expect(find.text('1. HOW ARE YOU FEELING?'), findsOneWidget);
-      expect(find.text('STEP 1/4'), findsOneWidget);
+      expect(find.text('1. How Are You Feeling?'), findsOneWidget);
+      expect(find.text('Step 1/4'), findsOneWidget);
 
       // Check 14-emotion library cards (Step 1)
       expect(find.text('Happy'), findsOneWidget);
@@ -44,27 +44,27 @@ void main() {
       expect(find.text('Overwhelmed'), findsOneWidget);
       expect(find.text('Custom emotion'), findsOneWidget);
 
-      // Step navigation: select emotion and tap CONTINUE
+      // Step navigation: select emotion and tap Continue
       await tester.tap(find.text('Calm'));
       await tester.pumpAndSettle();
-      expect(find.text('CONTINUE'), findsOneWidget);
-      await tester.tap(find.text('CONTINUE'));
+      expect(find.text('Continue'), findsOneWidget);
+      await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
       // Step 2: Intensity scale (1-10)
-      expect(find.text('2. EMOTIONAL INTENSITY'), findsOneWidget);
+      expect(find.text('2. Emotional Intensity'), findsOneWidget);
       expect(find.text('/ 10'), findsOneWidget);
-      await tester.tap(find.text('CONTINUE'));
+      await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
       // Step 3: Mind check
-      expect(find.text('3. HOW IS YOUR MIND?'), findsOneWidget);
-      await tester.tap(find.text('CONTINUE'));
+      expect(find.text('3. How Is Your Mind?'), findsOneWidget);
+      await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
       // Step 4: Body check & final submission (options-first 4-step wizard)
-      expect(find.text('4. HOW IS YOUR BODY?'), findsOneWidget);
-      expect(find.text('RECORD DAILY THOUGHT TRACE'), findsOneWidget);
+      expect(find.text('4. How Is Your Body?'), findsOneWidget);
+      expect(find.text('Save daily check-in'), findsOneWidget);
       expect(find.text('5. PERSONAL REFLECTION'), findsNothing);
     });
 
@@ -104,7 +104,7 @@ void main() {
 
       // Verify thought quotation
       expect(find.text('“Feeling like I will let everyone down if this fails.”'), findsOneWidget);
-      expect(find.text('EXPLORE THIS THOUGHT'), findsOneWidget);
+      expect(find.text('Explore This Thought'), findsOneWidget);
 
       // Verify context displayed
       expect(find.text('Preparing a presentation.'), findsOneWidget);
@@ -123,14 +123,14 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify 6 Socratic inquiries
-      expect(find.text('EXPLORE THIS THOUGHT'), findsOneWidget);
+      expect(find.text('Explore this thought'), findsOneWidget);
       expect(find.text('What happened before this thought appeared?'), findsOneWidget);
       expect(find.text('What was I feeling?'), findsOneWidget);
       expect(find.text('What did I believe was happening?'), findsOneWidget);
       expect(find.text('What did I do in response?'), findsOneWidget);
       expect(find.text('Is this something I have noticed before?'), findsOneWidget);
       expect(find.text('What would I like to understand about this experience?'), findsOneWidget);
-      expect(find.text('SAVE REFLECTION TO TRACE'), findsOneWidget);
+      expect(find.text('Save reflection to trace'), findsOneWidget);
     });
 
     testWidgets('DailyMindTraceStepper with historical 5-step trace preserves uncollected fields upon re-saving',
@@ -196,22 +196,22 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Calm'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('CONTINUE'));
+      await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
       // Step 2: Intensity -> Continue
-      expect(find.text('2. EMOTIONAL INTENSITY'), findsOneWidget);
-      await tester.tap(find.text('CONTINUE'));
+      expect(find.text('2. Emotional Intensity'), findsOneWidget);
+      await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
       // Step 3: Mind -> Continue
-      expect(find.text('3. HOW IS YOUR MIND?'), findsOneWidget);
-      await tester.tap(find.text('CONTINUE'));
+      expect(find.text('3. How Is Your Mind?'), findsOneWidget);
+      await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
       // Step 4: Body -> Submit
-      expect(find.text('4. HOW IS YOUR BODY?'), findsOneWidget);
-      final submitButton = find.text('RECORD DAILY THOUGHT TRACE');
+      expect(find.text('4. How Is Your Body?'), findsOneWidget);
+      final submitButton = find.text('Save daily check-in');
       expect(submitButton, findsOneWidget);
       await tester.tap(submitButton);
       await tester.pump();
