@@ -41,6 +41,7 @@ class MindTraceModel {
     this.suggestedJourneyActivityId,
     this.contextTags = const [],
     this.isCompleted = true,
+    this.isPrivate = false,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -72,6 +73,7 @@ class MindTraceModel {
   final String? suggestedJourneyActivityId;
   final List<String> contextTags;
   final bool isCompleted;
+  final bool isPrivate;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -168,6 +170,7 @@ class MindTraceModel {
     bool clearSuggestedJourneyActivityId = false,
     List<String>? contextTags,
     bool? isCompleted,
+    bool? isPrivate,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -221,6 +224,7 @@ class MindTraceModel {
           : (suggestedJourneyActivityId ?? this.suggestedJourneyActivityId),
       contextTags: contextTags ?? this.contextTags,
       isCompleted: isCompleted ?? this.isCompleted,
+      isPrivate: isPrivate ?? this.isPrivate,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -254,6 +258,7 @@ class MindTraceModel {
         'suggestedJourneyActivityId': suggestedJourneyActivityId,
         'contextTags': contextTags,
         'isCompleted': isCompleted,
+        'isPrivate': isPrivate,
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt.toIso8601String(),
       };
@@ -299,6 +304,7 @@ class MindTraceModel {
               .toList(growable: false) ??
           const [],
       isCompleted: json['isCompleted'] as bool? ?? true,
+      isPrivate: json['isPrivate'] as bool? ?? false,
       createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.now(),
       updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ??

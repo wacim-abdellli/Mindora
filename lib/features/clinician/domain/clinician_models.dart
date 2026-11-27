@@ -511,6 +511,7 @@ class ClinicianSessionNote {
 /// Practitioner identity metadata displayed in Practice settings & EHR headers.
 class ClinicianProfile {
   const ClinicianProfile({
+    this.doctorId = 'doc_mindora_primary',
     this.displayName = 'Dr. Salma Ben Amor',
     this.specialty = 'Psychiatrist',
     this.clinicName = 'Tunis Mindora Practice',
@@ -518,6 +519,7 @@ class ClinicianProfile {
     this.clinicCode = '',
   });
 
+  final String doctorId;
   final String displayName;
   final String specialty;
   final String clinicName;
@@ -542,6 +544,7 @@ class ClinicianProfile {
   }
 
   ClinicianProfile copyWith({
+    String? doctorId,
     String? displayName,
     String? specialty,
     String? clinicName,
@@ -549,6 +552,7 @@ class ClinicianProfile {
     String? clinicCode,
   }) {
     return ClinicianProfile(
+      doctorId: doctorId ?? this.doctorId,
       displayName: displayName ?? this.displayName,
       specialty: specialty ?? this.specialty,
       clinicName: clinicName ?? this.clinicName,
@@ -558,6 +562,7 @@ class ClinicianProfile {
   }
 
   Map<String, dynamic> toJson() => {
+    'doctorId': doctorId,
     'displayName': displayName,
     'specialty': specialty,
     'clinicName': clinicName,
@@ -567,6 +572,7 @@ class ClinicianProfile {
 
   factory ClinicianProfile.fromJson(Map<String, dynamic> json) {
     return ClinicianProfile(
+      doctorId: json['doctorId'] as String? ?? 'doc_mindora_primary',
       displayName: json['displayName'] as String? ?? 'Dr. Salma Ben Amor',
       specialty: json['specialty'] as String? ?? 'Psychiatrist',
       clinicName: json['clinicName'] as String? ?? 'Tunis Mindora Practice',

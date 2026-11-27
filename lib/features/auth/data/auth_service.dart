@@ -377,10 +377,17 @@ class AuthService {
     return updatedUser;
   }
 
-  /// Signs out of the current active session.
+  /// Persists an authenticated user record as the active session.
+  Future<void> persistCurrentUser(AuthUser user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyCurrentUser, user.toJson());
+  }
+
+  /// Signs out of the current active session and wipes transient caches.
   Future<void> signOut() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyCurrentUser);
+    await prefs.remove('mf_last_checkin_cache_v1');
   }
 
   /// Permanently deletes the active user account, credentials, and data partitions.

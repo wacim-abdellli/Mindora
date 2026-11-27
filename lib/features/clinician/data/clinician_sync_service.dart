@@ -90,9 +90,11 @@ class ClinicianSyncService {
     final windowDays = consentScope.windowDays.clamp(1, 365);
     final cutoffDay = todayStart.subtract(Duration(days: windowDays - 1));
 
+    // Hard privacy gate: NEVER include traces or cases marked isPrivate == true.
     final scopedTraces = consentScope.includeMoodMetrics
         ? traces
               .where((t) {
+                if (t.isPrivate) return false;
                 final d = DateTime(t.date.year, t.date.month, t.date.day);
                 return !d.isBefore(cutoffDay);
               })

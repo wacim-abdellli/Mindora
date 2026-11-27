@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -6,6 +8,7 @@ import '../../../app/localization/app_strings.dart';
 import '../../../core/safety/crisis_keywords.dart';
 import '../../../core/security/secure_key_manager.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../clinic_sync/controllers/clinic_sync_providers.dart';
 import '../../journal/controllers/journal_memory_controller.dart';
 import '../../journey/domain/journey_state_model.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
@@ -514,6 +517,7 @@ class ActiveCaseController extends Notifier<AsyncValue<CaseModel?>> {
       state = AsyncValue.data(updated);
     }
     ref.invalidate(savedCasesProvider);
+    unawaited(ref.read(clinicAutoSyncCoordinatorProvider).syncActivePatient());
   }
 
   /// Deletes a case and clears the active session if currently open.
@@ -526,6 +530,7 @@ class ActiveCaseController extends Notifier<AsyncValue<CaseModel?>> {
     }
     ref.read(journalMemoryControllerProvider.notifier).handleEntryDeleted('case:$id');
     ref.invalidate(savedCasesProvider);
+    unawaited(ref.read(clinicAutoSyncCoordinatorProvider).syncActivePatient());
   }
 
   /// Deletes all cases and resets the active session.
@@ -884,6 +889,9 @@ class ActiveCaseController extends Notifier<AsyncValue<CaseModel?>> {
           await ref.read(caseRepositoryProvider).saveCase(updated);
           state = AsyncValue.data(updated);
           ref.invalidate(savedCasesProvider);
+          unawaited(
+            ref.read(clinicAutoSyncCoordinatorProvider).syncActivePatient(),
+          );
         }
       }
       return true;
@@ -960,6 +968,9 @@ class ActiveCaseController extends Notifier<AsyncValue<CaseModel?>> {
           await ref.read(caseRepositoryProvider).saveCase(updated);
           state = AsyncValue.data(updated);
           ref.invalidate(savedCasesProvider);
+          unawaited(
+            ref.read(clinicAutoSyncCoordinatorProvider).syncActivePatient(),
+          );
         }
       }
     } finally {

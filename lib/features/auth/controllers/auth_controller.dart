@@ -1,5 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../clinic_sync/controllers/clinic_sync_providers.dart';
+import '../../clinic_sync/domain/clinic_account_models.dart';
+import '../../clinician/controllers/clinician_providers.dart';
+import '../../profile/controllers/profile_controller.dart';
 import '../data/auth_service.dart';
 import '../domain/auth_state.dart';
 import '../domain/auth_user.dart';
@@ -137,6 +141,100 @@ class AuthController extends Notifier<AuthState> {
       );
       return false;
     }
+  }
+
+  /// Signs in to a doctor-provisioned patient account with Phone/Username + PIN.
+  Future<bool> signInWithClinicCredentials(
+    String identifier,
+    String pinOrPassword,
+  ) async {
+    state = state.copyWith(status: AuthStatus.loading, clearError: true);
+    try {
+      final account = await ref
+          .read(clinicAuthRepositoryProvider)
+          .signInWithCredentials(
+            identifier: identifier,
+            pinOrPassword: pinOrPassword,
+          );
+      await _completeClinicSignIn(account);
+      return true;
+    } on ClinicAuthException catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: e.message,
+      );
+      return false;
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: e.toString(),
+      );
+      return false;
+    }
+  }
+
+  /// Signs in immediately via a single-use Doctor QR invitation payload.
+  Future<bool> signInWithClinicQr(String qrPayload) async {
+    state = state.copyWith(status: AuthStatus.loading, clearError: true);
+    try {
+      final account = await ref
+          .read(clinicAuthRepositoryProvider)
+          .signInWithInviteQr(qrPayload: qrPayload);
+      await _completeClinicSignIn(account);
+      return true;
+    } on ClinicAuthException catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: e.message,
+      );
+      return false;
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: e.toString(),
+      );
+      return false;
+    }
+  }
+
+  Future<void> _completeClinicSignIn(ClinicPatientAccount account) async {
+    final now = DateTime.now();
+    final user = AuthUser(
+      id: account.patientId,
+      codename: account.displayName,
+      authType: AuthType.clinicPin,
+      clinicId: account.clinicId,
+      doctorId: account.doctorId,
+      doctorName: account.doctorName,
+      clinicName: account.clinicName,
+      loginIdentifier: account.loginIdentifier,
+      createdAt: account.createdAt,
+      lastActiveAt: now,
+    );
+    await _service.persistCurrentUser(user);
+    await _service.setOnboardingCompleted(account.hasAcceptedSafetyNotice);
+
+    final coordinator = ref.read(clinicAutoSyncCoordinatorProvider);
+    await coordinator.applyProvisionedPreferences(account);
+    ref.invalidate(profileControllerProvider);
+    ref.invalidate(postVisitFocusControllerProvider);
+
+    state = AuthState(
+      status: AuthStatus.authenticated,
+      user: user,
+      hasCompletedOnboarding: account.hasAcceptedSafetyNotice,
+    );
+  }
+
+  /// Marks the one-time first-login welcome/safety notice as accepted.
+  Future<void> acceptClinicWelcome() async {
+    final user = state.user;
+    if (user != null && user.isClinicAccount) {
+      await ref
+          .read(clinicAuthRepositoryProvider)
+          .markSafetyNoticeAccepted(patientId: user.id);
+    }
+    await completeOnboarding();
   }
 
   /// Marks onboarding as officially completed.

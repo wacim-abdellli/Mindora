@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/security/secure_key_manager.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../clinic_sync/controllers/clinic_sync_providers.dart';
 import '../data/clinic_handoff_bridge.dart';
 import '../data/clinician_sync_service.dart';
 import '../data/demo_clinical_cohort.dart';
@@ -64,12 +65,23 @@ final clinicianDemoEnabledProvider =
 );
 
 class ClinicianProfileNotifier extends AsyncNotifier<ClinicianProfile> {
+  int _mutationEpoch = 0;
+  ClinicianProfile? _latestLocal;
+
   @override
   Future<ClinicianProfile> build() async {
-    return ref.watch(clinicianRepositoryProvider).loadClinicianProfile();
+    final epochAtStart = _mutationEpoch;
+    final loaded =
+        await ref.watch(clinicianRepositoryProvider).loadClinicianProfile();
+    if (_mutationEpoch != epochAtStart && _latestLocal != null) {
+      return _latestLocal!;
+    }
+    return loaded;
   }
 
   Future<void> updateProfile(ClinicianProfile profile) async {
+    _mutationEpoch++;
+    _latestLocal = profile;
     state = AsyncValue.data(profile);
     await ref.read(clinicianRepositoryProvider).saveClinicianProfile(profile);
   }
@@ -86,9 +98,37 @@ class ClinicianRosterNotifier
   Future<List<ClinicianPatientRecord>> build() async {
     final repo = ref.watch(clinicianRepositoryProvider);
     final demoEnabled = await ref.watch(clinicianDemoEnabledProvider.future);
+    final docProfile = await ref.watch(clinicianProfileProvider.future);
 
     final imported = await repo.loadImportedPatients();
-    final List<ClinicianPatientRecord> combined = [...imported];
+    final synced = await ref
+        .watch(clinicSyncRepositoryProvider)
+        .listSyncedPatientsForDoctor(docProfile.doctorId);
+
+    final byId = <String, ClinicianPatientRecord>{
+      for (final rec in imported) rec.patientId: rec,
+    };
+
+    for (final s in synced) {
+      final existing = byId[s.patientId];
+      if (existing == null) {
+        byId[s.patientId] = s;
+      } else {
+        final mergedNotes = existing.clinicianNotes.isNotEmpty
+            ? existing.clinicianNotes
+            : s.clinicianNotes;
+        final preservedReviewed = existing.reviewedAt != null &&
+                !s.lastSyncedAt.isAfter(existing.reviewedAt!)
+            ? existing.reviewedAt
+            : s.reviewedAt;
+        byId[s.patientId] = s.copyWith(
+          clinicianNotes: mergedNotes,
+          reviewedAt: preservedReviewed,
+        );
+      }
+    }
+
+    final List<ClinicianPatientRecord> combined = byId.values.toList();
 
     if (demoEnabled) {
       final demoNotesMap = await repo.loadDemoNotes();

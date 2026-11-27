@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/localization/locale_controller.dart';
 import '../../../core/security/secure_key_manager.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../clinic_sync/controllers/clinic_sync_providers.dart';
 import '../../investigation/controllers/investigation_providers.dart';
 import '../../journal/controllers/journal_memory_controller.dart';
 import '../../journey/controllers/journey_controller.dart';
@@ -73,6 +76,11 @@ class MindTraceNotifier extends AsyncNotifier<List<MindTraceModel>> {
     final fresh = await repo.getAllTraces();
     state = AsyncValue.data(fresh);
     ref.read(journalMemoryControllerProvider.notifier).recalculateMemories(traces: fresh);
+    unawaited(
+      ref
+          .read(clinicAutoSyncCoordinatorProvider)
+          .syncActivePatient(tracesOverride: fresh),
+    );
   }
 
   Future<void> updateCheckIn(MindTraceModel trace) async {
@@ -81,6 +89,19 @@ class MindTraceNotifier extends AsyncNotifier<List<MindTraceModel>> {
     final fresh = await repo.getAllTraces();
     state = AsyncValue.data(fresh);
     ref.read(journalMemoryControllerProvider.notifier).recalculateMemories(traces: fresh);
+    unawaited(
+      ref
+          .read(clinicAutoSyncCoordinatorProvider)
+          .syncActivePatient(tracesOverride: fresh),
+    );
+  }
+
+  Future<void> toggleTracePrivacy(String id) async {
+    final currentList = state.value ?? await future;
+    final idx = currentList.indexWhere((t) => t.id == id);
+    if (idx < 0) return;
+    final target = currentList[idx];
+    await updateCheckIn(target.copyWith(isPrivate: !target.isPrivate));
   }
 
   Future<void> deleteCheckIn(String id) async {
@@ -89,6 +110,11 @@ class MindTraceNotifier extends AsyncNotifier<List<MindTraceModel>> {
     final fresh = await repo.getAllTraces();
     state = AsyncValue.data(fresh);
     ref.read(journalMemoryControllerProvider.notifier).handleEntryDeleted('trace:$id');
+    unawaited(
+      ref
+          .read(clinicAutoSyncCoordinatorProvider)
+          .syncActivePatient(tracesOverride: fresh),
+    );
   }
 
   Future<void> clearAllTraces() async {
