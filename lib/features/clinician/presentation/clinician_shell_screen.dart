@@ -1,5 +1,6 @@
 import 'dart:ui' show ImageFilter;
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,6 +24,7 @@ import '../../track/presentation/widgets/track_mood_utils.dart';
 import '../controllers/clinician_providers.dart';
 import '../domain/clinician_models.dart';
 import 'clinician_patient_detail_screen.dart';
+import 'widgets/create_patient_account_sheet.dart';
 import 'widgets/import_patient_packet_sheet.dart';
 
 enum _RosterFilter { all, shifts, unreviewed, demo }
@@ -683,10 +685,10 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
               children: [
                 Semantics(
                   button: true,
-                  label: strings.addOrImportPatientBtn,
+                  label: strings.createPatientAccountBtn,
                   child: MindPressable(
-                    key: const ValueKey<String>('clinician-import-patient-btn'),
-                    onPressed: () => ImportPatientPacketSheet.show(context),
+                    key: const ValueKey<String>('clinician-add-patient-btn'),
+                    onPressed: () => CreatePatientAccountSheet.show(context),
                     borderRadius: BorderRadius.circular(tokens.chipRadius),
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(
@@ -714,13 +716,63 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                             const SizedBox(width: 6),
                             Flexible(
                               child: Text(
-                                strings.addOrImportPatientBtn,
+                                strings.createPatientAccountBtn,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w700,
                                   color: tokens.bg,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Semantics(
+                  button: true,
+                  label: strings.addOrImportPatientBtn,
+                  child: MindPressable(
+                    key: const ValueKey<String>('clinician-import-patient-btn'),
+                    onPressed: () => ImportPatientPacketSheet.show(context),
+                    borderRadius: BorderRadius.circular(tokens.chipRadius),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        minWidth: 48,
+                        minHeight: 48,
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: tokens.surface2,
+                          borderRadius:
+                              BorderRadius.circular(tokens.chipRadius),
+                          border: Border.all(color: tokens.line),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.download_outlined,
+                              size: 16,
+                              color: tokens.ink,
+                            ),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                strings.addOrImportPatientBtn,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: tokens.ink,
                                 ),
                               ),
                             ),
@@ -1636,6 +1688,22 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
             leadingIcon: Icons.person_outline_rounded,
             isFullWidth: true,
             onPressed: () => _switchToPatientWorkspace(context),
+          ),
+        ] else if (kDebugMode) ...[
+          const SizedBox(height: 18),
+          MindButton(
+            key: const ValueKey<String>('clinician-preview-patient-demo-btn'),
+            text: strings.previewAsPatientDemoBtn,
+            variant: MindButtonVariant.secondary,
+            leadingIcon: Icons.visibility_outlined,
+            isFullWidth: true,
+            onPressed: () async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('mf_clinician_demo_preview', true);
+              if (context.mounted) {
+                GoRouter.maybeOf(context)?.go(AppRouter.home);
+              }
+            },
           ),
         ],
       ],

@@ -10,23 +10,27 @@ import '../../../../core/widgets/mind_button.dart';
 import '../../../../core/widgets/mind_card.dart';
 import '../../../../core/widgets/mind_pill.dart';
 import '../../../../core/widgets/mind_qr_code.dart';
+import '../../../clinic_sync/controllers/clinic_sync_providers.dart';
 import '../../controllers/clinician_providers.dart';
 import '../../domain/post_visit_focus_model.dart';
 
 /// Modal sheet inside the Psychiatrist Workspace allowing the clinician to compose
 /// a non-diagnostic between-session focus plan (`MF-CAREPLAN-V1:...`) or deliver
-/// it straight to the on-device Patient Home view.
+/// it straight to the on-device Patient Home view (plus Clinic auto-sync inbox).
 class ComposePostVisitFocusSheet extends ConsumerStatefulWidget {
   const ComposePostVisitFocusSheet({
     super.key,
     required this.patientDisplayName,
+    this.patientId,
   });
 
   final String patientDisplayName;
+  final String? patientId;
 
   static Future<void> show(
     BuildContext context, {
     required String patientDisplayName,
+    String? patientId,
   }) {
     return showModalBottomSheet<void>(
       context: context,
@@ -34,6 +38,7 @@ class ComposePostVisitFocusSheet extends ConsumerStatefulWidget {
       backgroundColor: Colors.transparent,
       builder: (_) => ComposePostVisitFocusSheet(
         patientDisplayName: patientDisplayName,
+        patientId: patientId,
       ),
     );
   }
@@ -174,6 +179,14 @@ class _ComposePostVisitFocusSheetState
     try {
       final plan = _buildPlan(strings);
       await ref.read(postVisitFocusControllerProvider.notifier).savePlan(plan);
+      if (widget.patientId != null && widget.patientId!.trim().isNotEmpty) {
+        final profile = ref.read(clinicianProfileProvider).value;
+        await ref.read(clinicAutoSyncCoordinatorProvider).pushDoctorFocusPlan(
+              doctorId: profile?.doctorId ?? 'doc_mindora_primary',
+              patientId: widget.patientId!,
+              plan: plan,
+            );
+      }
       if (!mounted) return;
       HapticFeedback.mediumImpact();
       navigator.pop();

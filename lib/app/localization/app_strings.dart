@@ -6891,6 +6891,113 @@ class AppStrings {
             ? 'Votre suivi reste en sécurité chez votre médecin. Vous pourrez vous reconnecter avec votre code PIN ou le QR du médecin.'
             : 'Your clinical connection stays safe with your doctor. You can sign back in anytime with your PIN or doctor QR.');
 
+  // --- Phase 4: Doctor Admin Provisioning & Access Controls ---
+  String get createPatientAccountBtn => isArabic
+      ? 'زيد مريض'
+      : (isFrench ? 'Ajouter un patient' : 'Add patient');
+
+  String get createPatientTitle => isArabic
+      ? 'فتح حساب مريض جديد'
+      : (isFrench ? 'Créer un compte patient' : 'Create patient account');
+
+  String get createPatientSubtitle => isArabic
+      ? 'طلّع QR وكود مؤقت باش المريض يدخل مباشرة من غير تعقيد.'
+      : (isFrench
+            ? 'Générez un QR et un code PIN provisoire pour connecter le patient en consultation.'
+            : 'Generate an in-office QR code and temporary PIN so your patient signs in once.');
+
+  String get patientFullNameLabel => isArabic
+      ? 'اسم المريض'
+      : (isFrench ? 'Nom du patient' : 'Patient name');
+
+  String get patientIdentifierLabel => isArabic
+      ? 'رقم الهاتف أو اسم الدخول'
+      : (isFrench ? 'Téléphone ou identifiant' : 'Phone number or username');
+
+  String get patientAgeGroupLabel => isArabic
+      ? 'الفئة العمرية'
+      : (isFrench ? 'Tranche d’âge' : 'Age group');
+
+  String get patientLanguageLabel => isArabic
+      ? 'لغة التطبيق'
+      : (isFrench ? 'Langue préférée' : 'Preferred language');
+
+  String get patientCareTracksLabel => isArabic
+      ? 'محاور المتابعة (اختياري)'
+      : (isFrench ? 'Axes de suivi (optionnel)' : 'Focus areas (optional)');
+
+  String get generatePatientAccessBtn => isArabic
+      ? 'إنشاء الحساب والـ QR'
+      : (isFrench ? 'Créer l’accès & QR' : 'Create account & QR');
+
+  String get patientAccessReadyTitle => isArabic
+      ? 'حساب المريض جاهز'
+      : (isFrench ? 'Accès patient prêt' : 'Patient access ready');
+
+  String get patientTempPinLabel => isArabic
+      ? 'الكود المؤقت PIN'
+      : (isFrench ? 'Code PIN provisoire' : 'Temporary PIN');
+
+  String get patientQrExpireNote => isArabic
+      ? 'صالح 24 ساعة · يتسكانا مرة برك · الـ QR ما فيه حتى معطيات شخصية'
+      : (isFrench
+            ? 'Valable 24h · usage unique · aucune donnée personnelle dans le QR'
+            : 'Valid 24h · single scan · zero personal data inside QR');
+
+  String get copyPinAndIdBtn => isArabic
+      ? 'نسخ اسم الدخول والكود'
+      : (isFrench ? 'Copier identifiant & PIN' : 'Copy login & PIN');
+
+  String get accessCopiedToast => isArabic
+      ? 'تنسخ اسم الدخول والكود المؤقت.'
+      : (isFrench ? 'Identifiant et code PIN copiés.' : 'Login ID and PIN copied.');
+
+  String get clinicAccessAdminSection => isArabic
+      ? 'إدارة دخول المريض'
+      : (isFrench ? 'Accès compte clinique' : 'Clinic account access');
+
+  String get resetPinAndQrBtn => isArabic
+      ? 'تبديل الكود و QR جديد'
+      : (isFrench ? 'Nouveau code PIN & QR' : 'Reset PIN & new QR');
+
+  String get pausePatientAccessBtn => isArabic
+      ? 'تعليق الدخول'
+      : (isFrench ? 'Suspendre l’accès' : 'Pause access');
+
+  String get resumePatientAccessBtn => isArabic
+      ? 'تفعيل الدخول'
+      : (isFrench ? 'Rétablir l’accès' : 'Resume access');
+
+  String get editCareTracksBtn => isArabic
+      ? 'تبديل محاور المتابعة'
+      : (isFrench ? 'Modifier les axes' : 'Edit focus areas');
+
+  String get accountPausedBadge => isArabic
+      ? 'الدخول معلق'
+      : (isFrench ? 'Accès suspendu' : 'Access paused');
+
+  String get accountActiveBadge => isArabic
+      ? 'حساب نشط'
+      : (isFrench ? 'Accès actif' : 'Active clinic access');
+
+  String get accountPausedToast => isArabic
+      ? 'تم تعليق دخول هذا الحساب.'
+      : (isFrench ? 'L’accès patient a été suspendu.' : 'Patient access paused.');
+
+  String get accountResumedToast => isArabic
+      ? 'رجع الحساب يخدم بنجاح.'
+      : (isFrench ? 'L’accès patient a été rétabli.' : 'Patient access resumed.');
+
+  String get previewAsPatientDemoBtn => isArabic
+      ? 'معاينة شاشة المريض (تجربة)'
+      : (isFrench ? 'Aperçu vue Patient (Démo)' : 'Preview as Patient (Demo)');
+
+  String get fillRequiredFieldsError => isArabic
+      ? 'عمّر الاسم ورقم الهاتف ولا اسم الدخول قبل.'
+      : (isFrench
+            ? 'Veuillez saisir le nom et l’identifiant du patient.'
+            : 'Please enter the patient name and phone or username.');
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);

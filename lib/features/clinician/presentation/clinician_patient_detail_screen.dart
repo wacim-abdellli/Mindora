@@ -10,8 +10,12 @@ import '../../../core/widgets/mind_badge.dart';
 import '../../../core/widgets/mind_button.dart';
 import '../../../core/widgets/mind_card.dart';
 import '../../../core/widgets/mind_pill.dart';
+import '../../../core/widgets/mind_pressable.dart';
 import '../../../core/widgets/mind_segmented.dart';
+import '../../../core/widgets/mind_toast.dart';
 import '../../../core/widgets/smooth_spline_chart.dart';
+import '../../clinic_sync/controllers/clinic_sync_providers.dart';
+import '../../clinic_sync/domain/clinic_account_models.dart';
 import '../../insights/domain/forensic_loop_model.dart';
 import '../../insights/domain/personal_baseline_model.dart';
 import '../../insights/presentation/widgets/forensic_loop_map_card.dart';
@@ -28,6 +32,13 @@ import '../domain/clinician_models.dart';
 import '../domain/visit_diff_model.dart';
 import 'widgets/clinical_brief_preview_sheet.dart';
 import 'widgets/compose_post_visit_focus_sheet.dart';
+import 'widgets/create_patient_account_sheet.dart';
+
+final _dossierClinicAccountProvider =
+    FutureProvider.autoDispose.family<ClinicPatientAccount?, String>(
+      (ref, patientId) =>
+          ref.watch(clinicAuthRepositoryProvider).getPatientAccount(patientId),
+    );
 
 enum _ChartMetric { mood, sleep, energy, anxiety }
 
@@ -1535,6 +1546,7 @@ class _ClinicianPatientDetailScreenState
           ),
 
         const SizedBox(height: 16),
+        _buildClinicAccessAdminCard(context, record, tokens, strings),
         MindButton(
           text: strings.sharePostVisitFocusBtn,
           variant: MindButtonVariant.soft,
@@ -1543,6 +1555,7 @@ class _ClinicianPatientDetailScreenState
           onPressed: () => ComposePostVisitFocusSheet.show(
             context,
             patientDisplayName: record.displayName,
+            patientId: record.patientId,
           ),
         ),
         const SizedBox(height: 10),
@@ -1569,6 +1582,223 @@ class _ClinicianPatientDetailScreenState
       backgroundColor: Colors.transparent,
       builder: (_) => _AddClinicianNoteSheet(patientId: record.patientId),
     );
+  }
+
+  Widget _buildClinicAccessAdminCard(
+    BuildContext context,
+    ClinicianPatientRecord record,
+    MindTokens tokens,
+    AppStrings strings,
+  ) {
+    final accountAsync = ref.watch(_dossierClinicAccountProvider(record.patientId));
+    final account = accountAsync.value;
+    if (account == null) return const SizedBox.shrink();
+
+    final isPaused = account.status == ClinicAccountStatus.paused;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: MindCard(
+        key: const ValueKey<String>('dossier-clinic-access-card'),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.admin_panel_settings_outlined, size: 19, color: tokens.ink),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    strings.clinicAccessAdminSection,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: tokens.ink,
+                    ),
+                  ),
+                ),
+                MindBadge(
+                  label: isPaused
+                      ? strings.accountPausedBadge
+                      : strings.accountActiveBadge,
+                  backgroundColor: isPaused ? tokens.safetySoft : tokens.primarySoft,
+                  textColor: isPaused ? tokens.safety : tokens.ink,
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '${account.loginIdentifier} · ${account.ageRange} · ${account.preferredLanguage == 'ar' ? 'العربية' : (account.preferredLanguage == 'fr' ? 'Français' : 'English')}',
+              style: TextStyle(fontSize: 13, color: tokens.ink2),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                MindButton(
+                  key: const ValueKey<String>('dossier-reset-pin-qr-btn'),
+                  text: strings.resetPinAndQrBtn,
+                  variant: MindButtonVariant.soft,
+                  leadingIcon: Icons.qr_code_2_rounded,
+                  onPressed: () => _resetPatientPinAndQr(account),
+                ),
+                MindButton(
+                  key: const ValueKey<String>('dossier-pause-resume-btn'),
+                  text: isPaused
+                      ? strings.resumePatientAccessBtn
+                      : strings.pausePatientAccessBtn,
+                  variant: MindButtonVariant.secondary,
+                  leadingIcon: isPaused
+                      ? Icons.play_circle_outline_rounded
+                      : Icons.pause_circle_outline_rounded,
+                  onPressed: () => _togglePauseResume(account, strings),
+                ),
+                MindButton(
+                  key: const ValueKey<String>('dossier-edit-tracks-btn'),
+                  text: strings.editCareTracksBtn,
+                  variant: MindButtonVariant.secondary,
+                  leadingIcon: Icons.tune_rounded,
+                  onPressed: () =>
+                      _editAssignedTracks(context, account, tokens, strings),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _resetPatientPinAndQr(ClinicPatientAccount account) async {
+    final res = await ref.read(clinicAuthRepositoryProvider).resetPatientAccess(
+          doctorId: account.doctorId,
+          patientId: account.patientId,
+        );
+    ref.invalidate(_dossierClinicAccountProvider(account.patientId));
+    if (mounted) {
+      await CreatePatientAccountSheet.showAccessHandover(context, result: res);
+    }
+  }
+
+  Future<void> _togglePauseResume(
+    ClinicPatientAccount account,
+    AppStrings strings,
+  ) async {
+    final nextStatus = account.status == ClinicAccountStatus.paused
+        ? ClinicAccountStatus.active
+        : ClinicAccountStatus.paused;
+    await ref.read(clinicAuthRepositoryProvider).setAccountStatus(
+          doctorId: account.doctorId,
+          patientId: account.patientId,
+          status: nextStatus,
+        );
+    ref.invalidate(_dossierClinicAccountProvider(account.patientId));
+    ref.invalidate(clinicianRosterProvider);
+    if (mounted) {
+      showMindToast(
+        context,
+        nextStatus == ClinicAccountStatus.paused
+            ? strings.accountPausedToast
+            : strings.accountResumedToast,
+      );
+    }
+  }
+
+  Future<void> _editAssignedTracks(
+    BuildContext context,
+    ClinicPatientAccount account,
+    MindTokens tokens,
+    AppStrings strings,
+  ) async {
+    final selected = Set<String>.from(account.assignedTrackIds);
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (dialogCtx, setDialogState) => AlertDialog(
+          backgroundColor: tokens.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: tokens.line),
+          ),
+          title: Text(
+            strings.editCareTracksBtn,
+            style: TextStyle(
+              color: tokens.ink,
+              fontSize: 16.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: ClinicalTrack.values.map((track) {
+                final isSelected = selected.contains(track.id);
+                return MindPressable(
+                  onPressed: () => setDialogState(() {
+                    if (isSelected) {
+                      selected.remove(track.id);
+                    } else {
+                      selected.add(track.id);
+                    }
+                  }),
+                  borderRadius: BorderRadius.circular(tokens.chipRadius),
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      minWidth: 48,
+                      minHeight: 48,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected ? tokens.cardTint : tokens.surface2,
+                      borderRadius: BorderRadius.circular(tokens.chipRadius),
+                      border: Border.all(
+                        color: isSelected ? tokens.primary : tokens.line,
+                      ),
+                    ),
+                    child: Text(
+                      track.localizedTitle(strings),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        color: tokens.ink,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(false),
+              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+              child: Text(strings.cancelBtn),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                backgroundColor: tokens.primary,
+                foregroundColor: tokens.onPrimary,
+              ),
+              onPressed: () => Navigator.of(dialogCtx).pop(true),
+              child: Text(strings.saveChangesBtn),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (saved != true || !mounted) return;
+    await ref.read(clinicAuthRepositoryProvider).updateAssignedTracks(
+          doctorId: account.doctorId,
+          patientId: account.patientId,
+          trackIds: selected.toList(growable: false),
+        );
+    ref.invalidate(_dossierClinicAccountProvider(account.patientId));
   }
 }
 

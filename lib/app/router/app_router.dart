@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -73,8 +74,15 @@ class AppRouter {
     final isGoingToClinician = matchedLocation.startsWith(clinician);
 
     // Dedicated Doctor / Admin edition skips patient onboarding entirely and
-    // boots straight into the clinician roster workspace.
+    // boots straight into the clinician roster workspace unless a debug demo
+    // preview was explicitly triggered from Practice settings.
     if (AppEditionConfig.isClinicianApp) {
+      if (kDebugMode) {
+        final prefs = await SharedPreferences.getInstance();
+        if (prefs.getBool('mf_clinician_demo_preview') == true) {
+          return null;
+        }
+      }
       if (!isGoingToClinician && !isGoingToAuth) {
         return clinician;
       }
