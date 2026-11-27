@@ -5,26 +5,30 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/config/app_edition.dart';
 import '../../../app/localization/app_strings.dart';
+import '../../../app/localization/locale_controller.dart';
 import '../../../app/router/app_router.dart';
+import '../../../app/theme/display_comfort_controller.dart';
 import '../../../app/theme/lab_theme.dart';
 import '../../../app/theme/mind_tokens.dart';
 import '../../../core/safety/support_button.dart';
-import '../../../core/security/app_lock_provider.dart';
 import '../../../core/widgets/ambient_scaffold.dart';
 import '../../../core/widgets/mind_button.dart';
 import '../../../core/widgets/mind_card.dart';
+import '../../../core/widgets/mind_pressable.dart';
 import '../../../core/widgets/mind_segmented.dart';
-import '../../../core/widgets/mind_toast.dart';
 import '../../../core/widgets/mood_face.dart';
-import '../../clinician/presentation/clinician_shell_screen.dart';
+import '../../clinic_sync/domain/clinic_account_models.dart';
+import '../../clinician/controllers/clinician_providers.dart';
 import '../controllers/auth_controller.dart';
 import '../domain/auth_state.dart';
 
-/// Calm, plain-language entry screen for Mindora.
+/// Strictly Clinic-Only Patient Login Screen for Mindora.
 ///
-/// Leads with the private local-phone option ("Continue privately on this phone")
-/// while offering optional email sign-in / account creation and Psychiatrist
-/// Workspace entry below, with zero jargon or ALL-CAPS labels.
+/// Designed for patients of every age (14 to 75+):
+/// - Immediate Language (`EN / FR / AR`), `Larger text`, and Crisis Shield controls
+/// - Hero CTA: `Scan doctor's QR` (1-scan in-office login, zero typing)
+/// - Secondary Form: `Phone number or username` + `PIN`
+/// - Zero public self-signup, zero local-vault jargon, zero clinician portal links
 class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key});
 
@@ -33,92 +37,122 @@ class AuthScreen extends ConsumerStatefulWidget {
 }
 
 class _AuthScreenState extends ConsumerState<AuthScreen> {
-  bool _isSignUp = false;
-  bool _obscurePassword = true;
+  bool _obscurePin = true;
 
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _codenameController = TextEditingController();
-
+  final TextEditingController _identifierController = TextEditingController();
+  final TextEditingController _pinController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    _codenameController.dispose();
+    _identifierController.dispose();
+    _pinController.dispose();
     super.dispose();
   }
 
-  Future<void> _submitEmailAuth() async {
+  void _routeAfterAuth() {
+    if (!mounted) return;
+    if (AppEditionConfig.isClinicianApp) {
+      GoRouter.maybeOf(context)?.go(AppRouter.clinician);
+      return;
+    }
+    final authState = ref.read(authControllerProvider);
+    if (!authState.hasCompletedOnboarding) {
+      final isClinic = authState.user?.isClinicAccount ?? false;
+      GoRouter.maybeOf(context)?.go(
+        isClinic ? AppRouter.clinicWelcome : AppRouter.onboarding,
+      );
+    } else {
+      GoRouter.maybeOf(context)?.go(AppRouter.home);
+    }
+  }
+
+  Future<void> _scanDoctorQr(AppStrings strings) async {
+    HapticFeedback.mediumImpact();
+    final qrPayload = await ref.read(clinicHandoffBridgeProvider).scanQrCode(
+          context,
+          expectedPrefix: ClinicInvitePayload.qrPrefix,
+          title: strings.scanDoctorQrSheetTitle,
+          subtitle: strings.scanDoctorQrSheetSub,
+        );
+    if (qrPayload == null || qrPayload.trim().isEmpty || !mounted) return;
+
+    final success = await ref
+        .read(authControllerProvider.notifier)
+        .signInWithClinicQr(qrPayload);
+    if (success) {
+      _routeAfterAuth();
+    }
+  }
+
+  Future<void> _enterQrFallbackCode(
+    AppStrings strings,
+    MindTokens tokens,
+  ) async {
+    final codeCtrl = TextEditingController();
+    final rawCode = await showDialog<String>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: tokens.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: tokens.line),
+        ),
+        title: Text(
+          strings.scanDoctorQrSheetTitle,
+          style: LabTheme.textStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: tokens.ink,
+          ),
+        ),
+        content: TextField(
+          controller: codeCtrl,
+          minLines: 2,
+          maxLines: 4,
+          style: TextStyle(color: tokens.ink, fontSize: 14),
+          decoration: InputDecoration(
+            hintText: '${ClinicInvitePayload.qrPrefix}...',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(),
+            style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+            child: Text(strings.cancelBtn),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.of(dialogCtx).pop(codeCtrl.text.trim()),
+            style: FilledButton.styleFrom(minimumSize: const Size(64, 48)),
+            child: Text(strings.logInBtn),
+          ),
+        ],
+      ),
+    );
+    codeCtrl.dispose();
+
+    if (rawCode == null || rawCode.isEmpty || !mounted) return;
+    final success = await ref
+        .read(authControllerProvider.notifier)
+        .signInWithClinicQr(rawCode);
+    if (success) {
+      _routeAfterAuth();
+    }
+  }
+
+  Future<void> _submitCredentials() async {
     if (!_formKey.currentState!.validate()) return;
     HapticFeedback.lightImpact();
 
-    final authCtrl = ref.read(authControllerProvider.notifier);
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-    final codename = _codenameController.text.trim();
-
-    final success = _isSignUp
-        ? await authCtrl.signUpWithEmail(
-            email,
-            password,
-            codename: codename.isNotEmpty ? codename : null,
-          )
-        : await authCtrl.signInWithEmail(email, password);
-
-    if (success && mounted) {
-      if (AppEditionConfig.isClinicianApp) {
-        GoRouter.maybeOf(context)?.go(AppRouter.clinician);
-        return;
-      }
-      final authState = ref.read(authControllerProvider);
-      if (!authState.hasCompletedOnboarding) {
-        GoRouter.maybeOf(context)?.go(AppRouter.onboarding);
-      } else {
-        GoRouter.maybeOf(context)?.go(AppRouter.home);
-      }
-    }
-  }
-
-  Future<void> _continueAnonymously() async {
-    HapticFeedback.mediumImpact();
-    final user = await ref
+    final success = await ref
         .read(authControllerProvider.notifier)
-        .createAnonymousVault();
-
-    if (user != null && mounted) {
-      if (AppEditionConfig.isClinicianApp) {
-        GoRouter.maybeOf(context)?.go(AppRouter.clinician);
-        return;
-      }
-      final authState = ref.read(authControllerProvider);
-      if (!authState.hasCompletedOnboarding) {
-        GoRouter.maybeOf(context)?.go(AppRouter.onboarding);
-      } else {
-        GoRouter.maybeOf(context)?.go(AppRouter.home);
-      }
-    }
-  }
-
-  Future<void> _quickBiometricUnlock() async {
-    HapticFeedback.selectionClick();
-    final lockNotifier = ref.read(appLockProvider.notifier);
-    final unlocked = await lockNotifier.unlock(
-      reason: 'Unlock Mindora',
-    );
-    if (unlocked && mounted) {
-      final authState = ref.read(authControllerProvider);
-      if (authState.user != null) {
-        if (!authState.hasCompletedOnboarding) {
-          context.go(AppRouter.onboarding);
-        } else {
-          context.go(AppRouter.home);
-        }
-      } else {
-        final strings = ref.read(appStringsProvider);
-        showMindToast(context, strings.signInRequiredToast);
-      }
+        .signInWithClinicCredentials(
+          _identifierController.text,
+          _pinController.text,
+        );
+    if (success) {
+      _routeAfterAuth();
     }
   }
 
@@ -127,7 +161,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final tokens = context.tokens;
     final strings = ref.watch(appStringsProvider);
     final authState = ref.watch(authControllerProvider);
-    final lockState = ref.watch(appLockProvider);
+    final locale = ref.watch(localeControllerProvider);
+    final comfortMode = ref.watch(displayComfortProvider);
+    final langIndex = switch (locale.languageCode) {
+      'fr' => 1,
+      'ar' => 2,
+      _ => 0,
+    };
 
     return AmbientScaffold(
       appBar: AppBar(
@@ -146,23 +186,108 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
           physics: const BouncingScrollPhysics(),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Accessible Language + Larger Text strip before anything else
+                Row(
+                  children: [
+                    Expanded(
+                      child: MindSegmented(
+                        index: langIndex,
+                        labels: const ['EN', 'FR', 'AR'],
+                        onChanged: (idx) {
+                          HapticFeedback.selectionClick();
+                          final lang = switch (idx) {
+                            1 => AppLanguage.french,
+                            2 => AppLanguage.arabic,
+                            _ => AppLanguage.english,
+                          };
+                          ref
+                              .read(localeControllerProvider.notifier)
+                              .setLanguage(lang);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Semantics(
+                      button: true,
+                      toggled: comfortMode,
+                      label: strings.largerTextToggleLabel,
+                      child: MindPressable(
+                        key: const ValueKey<String>('auth-larger-text-toggle'),
+                        onPressed: () {
+                          HapticFeedback.selectionClick();
+                          ref
+                              .read(displayComfortProvider.notifier)
+                              .setComfortMode(!comfortMode);
+                        },
+                        borderRadius: BorderRadius.circular(tokens.chipRadius),
+                        child: Container(
+                          constraints: const BoxConstraints(
+                            minWidth: 48,
+                            minHeight: 48,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: comfortMode
+                                ? tokens.primarySoft
+                                : tokens.surface2,
+                            borderRadius: BorderRadius.circular(
+                              tokens.chipRadius,
+                            ),
+                            border: Border.all(
+                              color: comfortMode
+                                  ? tokens.primary
+                                  : tokens.line,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'AA',
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: tokens.ink,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                strings.largerTextToggleLabel,
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: tokens.ink,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+
                 const Center(
                   child: MoodFace(
                     mood: AppMood.calm,
-                    size: 72,
+                    size: 68,
                     isSelected: true,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 Text(
-                  strings.authTitle,
+                  strings.clinicLoginTitle,
                   textAlign: TextAlign.center,
                   style: LabTheme.textStyle(
                     fontSize: 24,
@@ -172,7 +297,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  strings.authSubtitle,
+                  strings.clinicLoginSubtitle,
                   textAlign: TextAlign.center,
                   style: LabTheme.textStyle(
                     fontSize: 15,
@@ -180,9 +305,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     color: tokens.ink2,
                   ),
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 20),
 
-                // Hero Card 1: Private on this phone (Recommended)
+                // Hero Card 1: 1-Scan Doctor QR Login (zero typing for any age)
                 MindCard(
                   variant: MindCardVariant.tint,
                   padding: const EdgeInsets.all(18),
@@ -192,14 +317,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       Row(
                         children: [
                           Icon(
-                            Icons.shield_outlined,
+                            Icons.qr_code_scanner_rounded,
                             size: 22,
                             color: tokens.primary,
                           ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              strings.anonymousOptionTitle,
+                              strings.scanDoctorQrBtn,
                               style: LabTheme.textStyle(
                                 fontWeight: FontWeight.w800,
                                 fontSize: 16.5,
@@ -211,48 +336,57 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        strings.anonymousOptionSubtitle,
+                        strings.scanDoctorQrSub,
                         style: LabTheme.textStyle(
-                          fontSize: 14.0,
-                          height: 1.45,
+                          fontSize: 14,
+                          height: 1.4,
                           color: tokens.ink2,
                         ),
                       ),
                       const SizedBox(height: 14),
                       MindButton(
-                        text: strings.onboardingContinuePrivatelyBtn,
+                        key: const ValueKey<String>('auth-scan-qr-btn'),
+                        text: strings.scanDoctorQrBtn,
+                        leadingIcon: Icons.qr_code_scanner_rounded,
                         isFullWidth: true,
-                        onPressed: _continueAnonymously,
+                        isLoading: authState.status == AuthStatus.loading,
+                        onPressed: () => _scanDoctorQr(strings),
+                      ),
+                      const SizedBox(height: 6),
+                      Center(
+                        child: TextButton(
+                          onPressed: () =>
+                              _enterQrFallbackCode(strings, tokens),
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size(48, 48),
+                          ),
+                          child: Text(
+                            strings.enterQrCodeFallbackBtn,
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
+                              color: tokens.ink2,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
 
-                const SizedBox(height: 22),
-
-                // Card 2: Optional Local Profile Sign-In / Creation
+                // Card 2: Phone / Username + PIN Form
                 MindCard(
                   padding: const EdgeInsets.all(18),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      MindSegmented(
-                        index: _isSignUp ? 1 : 0,
-                        labels: [strings.signInTab, strings.signUpTab],
-                        onChanged: (idx) {
-                          setState(() => _isSignUp = idx == 1);
-                          ref
-                              .read(authControllerProvider.notifier)
-                              .clearError();
-                        },
-                      ),
-                      const SizedBox(height: 10),
                       Text(
-                        strings.localProfileOnlyNote,
+                        strings.orLogInWithIdLabel,
                         style: LabTheme.textStyle(
-                          fontSize: 13.0,
-                          height: 1.4,
-                          color: tokens.ink2,
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w800,
+                          color: tokens.ink,
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -278,9 +412,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  strings.localizeAuthError(
-                                    authState.errorMessage!,
-                                  ),
+                                  authState.errorMessage!,
                                   style: LabTheme.textStyle(
                                     color: tokens.safety,
                                     fontSize: 13.5,
@@ -293,46 +425,25 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         ),
                       ],
 
-                      if (_isSignUp) ...[
-                        _fieldLabel(strings.codenameFieldLabel, tokens),
-                        const SizedBox(height: 6),
-                        TextFormField(
-                          controller: _codenameController,
-                          style: LabTheme.textStyle(
-                            color: tokens.ink,
-                            fontSize: 15.5,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: strings.codenameFieldHint,
-                            prefixIcon: Icon(
-                              Icons.badge_outlined,
-                              size: 20,
-                              color: tokens.ink2,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                      ],
-
-                      _fieldLabel(strings.emailFieldLabel, tokens),
+                      _fieldLabel(strings.loginIdentifierLabel, tokens),
                       const SizedBox(height: 6),
                       TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
+                        key: const ValueKey<String>('auth-identifier-field'),
+                        controller: _identifierController,
                         style: LabTheme.textStyle(
                           color: tokens.ink,
                           fontSize: 15.5,
                         ),
                         validator: (v) {
-                          if (v == null || v.trim().isEmpty || !v.contains('@')) {
-                            return strings.emailFieldHint;
+                          if (v == null || v.trim().length < 3) {
+                            return strings.loginIdentifierHint;
                           }
                           return null;
                         },
                         decoration: InputDecoration(
-                          hintText: strings.emailFieldHint,
+                          hintText: strings.loginIdentifierHint,
                           prefixIcon: Icon(
-                            Icons.alternate_email_rounded,
+                            Icons.person_outline_rounded,
                             size: 20,
                             color: tokens.ink2,
                           ),
@@ -340,23 +451,24 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       ),
                       const SizedBox(height: 14),
 
-                      _fieldLabel(strings.passwordFieldLabel, tokens),
+                      _fieldLabel(strings.pinFieldLabel, tokens),
                       const SizedBox(height: 6),
                       TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
+                        key: const ValueKey<String>('auth-pin-field'),
+                        controller: _pinController,
+                        obscureText: _obscurePin,
                         style: LabTheme.textStyle(
                           color: tokens.ink,
                           fontSize: 15.5,
                         ),
                         validator: (v) {
-                          if (v == null || v.trim().length < 6) {
-                            return strings.passwordFieldHint;
+                          if (v == null || v.trim().length < 4) {
+                            return strings.pinFieldHint;
                           }
                           return null;
                         },
                         decoration: InputDecoration(
-                          hintText: strings.passwordFieldHint,
+                          hintText: strings.pinFieldHint,
                           prefixIcon: Icon(
                             Icons.lock_outline_rounded,
                             size: 20,
@@ -369,16 +481,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                               minHeight: 48,
                             ),
                             icon: Icon(
-                              _obscurePassword
+                              _obscurePin
                                   ? Icons.visibility_outlined
                                   : Icons.visibility_off_outlined,
                               size: 20,
                               color: tokens.ink2,
                             ),
                             onPressed: () {
-                              setState(
-                                () => _obscurePassword = !_obscurePassword,
-                              );
+                              setState(() => _obscurePin = !_obscurePin);
                             },
                           ),
                         ),
@@ -386,102 +496,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       const SizedBox(height: 18),
 
                       MindButton(
-                        text: _isSignUp
-                            ? strings.createVaultBtn
-                            : strings.unlockVaultBtn,
+                        key: const ValueKey<String>('auth-login-submit-btn'),
+                        text: strings.logInBtn,
                         variant: MindButtonVariant.secondary,
                         isFullWidth: true,
                         isLoading: authState.status == AuthStatus.loading,
-                        onPressed: _submitEmailAuth,
-                      ),
-
-                      if (lockState.isEnabled && authState.user != null) ...[
-                        const SizedBox(height: 10),
-                        MindButton(
-                          text: strings.biometricUnlockBtn,
-                          leadingIcon: Icons.fingerprint_rounded,
-                          variant: MindButtonVariant.soft,
-                          isFullWidth: true,
-                          onPressed: _quickBiometricUnlock,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 18),
-
-                // Onboarding shortcut (Patient Edition only)
-                if (!AppEditionConfig.isClinicianApp)
-                  MindButton(
-                    text: strings.startExplorationBtn,
-                    variant: MindButtonVariant.soft,
-                    leadingIcon: Icons.tune_rounded,
-                    isFullWidth: true,
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      GoRouter.maybeOf(context)?.go(AppRouter.onboarding);
-                    },
-                  ),
-
-                const SizedBox(height: 8),
-
-                // Dedicated Psychiatrist / Clinic Admin Portal Card
-                MindCard(
-                  variant: MindCardVariant.flat,
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.medical_services_outlined,
-                            size: 20,
-                            color: tokens.ink,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              strings.clinicPortalAuthBanner,
-                              style: LabTheme.textStyle(
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.w700,
-                                color: tokens.ink,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        strings.clinicPortalAuthSub,
-                        style: LabTheme.textStyle(
-                          fontSize: 13.0,
-                          height: 1.4,
-                          color: tokens.ink2,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      MindButton(
-                        key: const ValueKey<String>('auth-clinician-portal-btn'),
-                        text: strings.clinicianPortalBtnLabel,
-                        leadingIcon: Icons.medical_services_outlined,
-                        variant: MindButtonVariant.soft,
-                        isFullWidth: true,
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          final router = GoRouter.maybeOf(context);
-                          if (router != null) {
-                            router.go(AppRouter.clinician);
-                          } else {
-                            Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => const ClinicianShellScreen(),
-                              ),
-                            );
-                          }
-                        },
+                        onPressed: _submitCredentials,
                       ),
                     ],
                   ),

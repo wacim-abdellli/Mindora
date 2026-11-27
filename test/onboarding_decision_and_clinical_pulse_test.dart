@@ -8,7 +8,13 @@ import 'package:mind_forensics/app/localization/app_strings.dart';
 import 'package:mind_forensics/app/router/app_router.dart';
 import 'package:mind_forensics/app/theme/lab_theme.dart';
 import 'package:mind_forensics/app/theme/mind_tokens.dart';
+import 'package:mind_forensics/features/auth/controllers/auth_controller.dart';
+import 'package:mind_forensics/features/auth/data/auth_service.dart';
 import 'package:mind_forensics/features/auth/presentation/auth_screen.dart';
+import 'package:mind_forensics/features/auth/presentation/clinic_welcome_screen.dart';
+import 'package:mind_forensics/features/clinic_sync/controllers/clinic_sync_providers.dart';
+import 'package:mind_forensics/features/clinician/controllers/clinician_providers.dart';
+import 'package:mind_forensics/features/clinician/data/clinic_handoff_bridge.dart';
 import 'package:mind_forensics/features/clinician/domain/clinician_models.dart';
 import 'package:mind_forensics/features/clinician/presentation/clinician_shell_screen.dart';
 import 'package:mind_forensics/features/home/presentation/widgets/home_clinical_pulse_card.dart';
@@ -53,11 +59,17 @@ void main() {
   });
 
   group('Phase B — Two-Sided Editions & Clean Auth Clinician Portal', () {
-    test('Patient edition routes fresh user to /onboarding; Clinician edition boots straight to /clinician', () async {
+    test('Patient edition routes fresh user to /auth and signed-out user to /auth; Clinician edition boots straight to /clinician', () async {
       addTearDown(() => AppEditionConfig.configureForTesting(null));
 
       AppEditionConfig.configureForTesting(MindoraEdition.patient);
-      expect(await AppRouter.resolveRedirectForLocation(AppRouter.home), AppRouter.onboarding);
+      expect(await AppRouter.resolveRedirectForLocation(AppRouter.home), AppRouter.auth);
+
+      // Signing out blocks return to /home even if onboarding was previously completed
+      await AuthService().signUpWithEmail('patient@clinic.tn', '123456');
+      await AuthService().setOnboardingCompleted(true);
+      await AuthService().signOut();
+      expect(await AppRouter.resolveRedirectForLocation(AppRouter.home), AppRouter.auth);
 
       AppEditionConfig.configureForTesting(MindoraEdition.clinician);
       expect(await AppRouter.resolveRedirectForLocation(AppRouter.home), AppRouter.clinician);
@@ -75,9 +87,26 @@ void main() {
       expect(custom.effectiveClinicCode, 'CLINIC-99');
     });
 
-    testWidgets('AuthScreen routes Doctor / Psychiatrist directly to /clinician portal without Onboarding gate', (
+    testWidgets('Clinic QR login transitions from AuthScreen -> ClinicWelcomeScreen -> /home cleanly', (
       tester,
     ) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final provision = await container
+          .read(clinicAuthRepositoryProvider)
+          .createPatientAccount(
+            doctorId: 'doc_salma',
+            clinicId: 'clinic_01',
+            doctorName: 'Dr. Salma Ben Amor',
+            clinicName: 'Tunis Mindora Practice',
+            displayName: 'Nadia B.',
+            loginIdentifier: '22900100',
+            ageRange: '25-44',
+            preferredLanguage: 'en',
+            customTempPin: '998877',
+          );
+
       final router = GoRouter(
         initialLocation: AppRouter.auth,
         routes: [
@@ -86,15 +115,29 @@ void main() {
             builder: (_, _) => const AuthScreen(),
           ),
           GoRoute(
-            path: AppRouter.clinician,
+            path: AppRouter.clinicWelcome,
+            builder: (_, _) => const ClinicWelcomeScreen(),
+          ),
+          GoRoute(
+            path: AppRouter.home,
             builder: (_, _) =>
-                const Scaffold(body: Center(child: Text('CLINICIAN_PORTAL_OK'))),
+                const Scaffold(body: Center(child: Text('HOME_READY_OK'))),
           ),
         ],
       );
 
+      final fakeContainer = ProviderContainer(
+        overrides: [
+          clinicHandoffBridgeProvider.overrideWithValue(
+            _FakeQrHandoffBridge(provision.qrPayload),
+          ),
+        ],
+      );
+      addTearDown(fakeContainer.dispose);
+
       await tester.pumpWidget(
-        ProviderScope(
+        UncontrolledProviderScope(
+          container: fakeContainer,
           child: MaterialApp.router(
             routerConfig: router,
             theme: buildMindTheme(Brightness.light),
@@ -103,16 +146,24 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final doctorPortalBtn = find.byKey(
-        const ValueKey<String>('auth-clinician-portal-btn'),
-      );
-      expect(doctorPortalBtn, findsOneWidget);
-
-      await tester.ensureVisible(doctorPortalBtn);
-      await tester.tap(doctorPortalBtn);
+      await tester.tap(find.byKey(const ValueKey<String>('auth-scan-qr-btn')));
       await tester.pumpAndSettle();
 
-      expect(find.text('CLINICIAN_PORTAL_OK'), findsOneWidget);
+      // Lands on one-time first-login Welcome & Safety screen
+      expect(find.text('Welcome, Nadia B.'), findsOneWidget);
+      expect(find.text('You are connected to Dr. Salma Ben Amor'), findsOneWidget);
+      expect(find.text('Not a 24/7 emergency monitor'), findsOneWidget);
+
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('clinic-welcome-start-btn')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('clinic-welcome-start-btn')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('HOME_READY_OK'), findsOneWidget);
+      expect(fakeContainer.read(authControllerProvider).hasCompletedOnboarding, isTrue);
     });
 
     testWidgets('Onboarding Step 4 shows optional clinic pairing code only when seeing a doctor', (
@@ -287,4 +338,27 @@ void main() {
       expect(errors, isEmpty);
     });
   });
+}
+
+class _FakeQrHandoffBridge extends ClinicHandoffBridge {
+  const _FakeQrHandoffBridge(this.payload);
+
+  final String payload;
+
+  @override
+  Future<void> sharePdfFile({
+    required String filePath,
+    required String subject,
+    required String text,
+  }) async {}
+
+  @override
+  Future<String?> scanQrCode(
+    BuildContext context, {
+    required String expectedPrefix,
+    required String title,
+    required String subtitle,
+  }) async {
+    return payload;
+  }
 }

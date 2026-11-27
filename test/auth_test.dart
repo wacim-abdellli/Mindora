@@ -9,7 +9,6 @@ import 'package:mind_forensics/features/auth/data/auth_service.dart';
 import 'package:mind_forensics/features/auth/domain/auth_state.dart';
 import 'package:mind_forensics/features/auth/domain/auth_user.dart';
 import 'package:mind_forensics/features/auth/presentation/auth_screen.dart';
-import 'package:mind_forensics/features/onboarding/presentation/onboarding_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -274,8 +273,8 @@ void main() {
     });
   });
 
-  group('AuthScreen & Onboarding Widget Tests', () {
-    testWidgets('AuthScreen renders private local hero card, segmented tabs, and input fields', (tester) async {
+  group('AuthScreen & Clinic Login Widget Tests', () {
+    testWidgets('AuthScreen renders strictly clinic login (QR scan, ID/PIN, language & larger text) without self-signup clutter', (tester) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -285,34 +284,49 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Verify title and local private hero card
-      expect(find.text('Access Your Account'), findsOneWidget);
-      expect(find.text('Private Local Space'), findsOneWidget);
-      expect(find.text('Continue privately on this phone'), findsOneWidget);
+      // Strictly Clinic-Only headers & controls
+      expect(find.text('Log in to Mindora'), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('auth-scan-qr-btn')), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('auth-identifier-field')), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('auth-pin-field')), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('auth-login-submit-btn')), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('auth-larger-text-toggle')), findsOneWidget);
 
-      // Verify segmented tabs & submit button (sentence case)
-      expect(find.text('Sign In'), findsOneWidget);
-      expect(find.text('Create Account'), findsOneWidget);
-      expect(find.byType(TextFormField), findsNWidgets(2));
-
-      // Verify onboarding shortcut
-      expect(find.text('Set up my space'), findsOneWidget);
-      expect(find.text('Psychiatrist / Clinician Portal'), findsOneWidget);
+      // Self-signup, anonymous vault, and doctor portal clutter must not exist here
+      expect(find.text('Create Account'), findsNothing);
+      expect(find.text('Continue privately on this phone'), findsNothing);
+      expect(find.text('Psychiatrist / Clinician Portal'), findsNothing);
     });
 
-    testWidgets('OnboardingScreen Step 1 renders Welcome and discrete Sign In link', (tester) async {
+    testWidgets('AuthScreen renders cleanly in 320px Arabic RTL at 1.35x without overflow', (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(
-        const ProviderScope(
+        ProviderScope(
           child: MaterialApp(
-            home: OnboardingScreen(),
+            locale: const Locale('ar'),
+            localizationsDelegates: const [
+              DefaultMaterialLocalizations.delegate,
+              DefaultWidgetsLocalizations.delegate,
+            ],
+            builder: (ctx, child) => MediaQuery(
+              data: MediaQuery.of(ctx).copyWith(
+                textScaler: const TextScaler.linear(1.35),
+              ),
+              child: Directionality(
+                textDirection: TextDirection.rtl,
+                child: child!,
+              ),
+            ),
+            home: const AuthScreen(),
           ),
         ),
       );
       await tester.pumpAndSettle();
-
-      expect(find.text('Mindora'), findsOneWidget);
-      expect(find.text('Start'), findsOneWidget);
-      expect(find.text('Sign In'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 }

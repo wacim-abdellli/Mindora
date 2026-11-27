@@ -5,7 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/case_file/presentation/case_report_screen.dart';
 import '../../features/clinician/presentation/clinician_patient_detail_screen.dart';
 import '../../features/clinician/presentation/clinician_shell_screen.dart';
+import '../../features/auth/domain/auth_user.dart';
 import '../../features/auth/presentation/auth_screen.dart';
+import '../../features/auth/presentation/clinic_welcome_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/insights/presentation/insights_screen.dart';
 import '../../features/investigation/presentation/flash_case_screen.dart';
@@ -22,6 +24,7 @@ import 'scaffold_with_nav_bar.dart';
 class AppRouter {
   static const String onboarding = '/onboarding';
   static const String auth = '/auth';
+  static const String clinicWelcome = '/clinic-welcome';
   static const String home = '/home';
   static const String journal = '/journal';
   static const String investigator = '/investigation';
@@ -66,6 +69,7 @@ class AppRouter {
 
     final isGoingToOnboarding = matchedLocation == onboarding;
     final isGoingToAuth = matchedLocation == auth;
+    final isGoingToWelcome = matchedLocation == clinicWelcome;
     final isGoingToClinician = matchedLocation.startsWith(clinician);
 
     // Dedicated Doctor / Admin edition skips patient onboarding entirely and
@@ -78,22 +82,48 @@ class AppRouter {
     }
 
     final prefs = await SharedPreferences.getInstance();
+    final rawUser = prefs.getString('mf_auth_current_user');
+    final signedOut = prefs.getBool('mf_signed_out') ?? false;
     final hasCompleted = prefs.getBool('mf_onboarding_completed') ?? false;
     final preferredWorkspace =
         prefs.getString('mf_preferred_workspace') ?? 'patient';
 
-    if (!hasCompleted) {
-      if (!isGoingToOnboarding && !isGoingToAuth && !isGoingToClinician) {
-        return onboarding;
+    if (signedOut) {
+      if (!isGoingToAuth && !isGoingToClinician) {
+        return auth;
       }
-    } else {
-      // Completed returning users stay away from onboarding
-      if (isGoingToOnboarding) {
+      return null;
+    }
+
+    if (rawUser == null) {
+      if (!hasCompleted && !isGoingToAuth && !isGoingToClinician) {
+        return auth;
+      }
+      if (hasCompleted &&
+          (isGoingToOnboarding || isGoingToWelcome || isGoingToAuth)) {
         return preferredWorkspace == 'clinician' ? clinician : home;
       }
-      if (matchedLocation == home && preferredWorkspace == 'clinician') {
-        return clinician;
+      return null;
+    }
+
+    if (!hasCompleted) {
+      bool isClinicUser = false;
+      try {
+        isClinicUser = AuthUser.fromJson(rawUser).isClinicAccount;
+      } catch (_) {}
+      final target = isClinicUser ? clinicWelcome : onboarding;
+      if (matchedLocation != target && !isGoingToAuth && !isGoingToClinician) {
+        return target;
       }
+      return null;
+    }
+
+    // Completed returning users go straight to their workspace
+    if (isGoingToOnboarding || isGoingToWelcome || isGoingToAuth) {
+      return preferredWorkspace == 'clinician' ? clinician : home;
+    }
+    if (matchedLocation == home && preferredWorkspace == 'clinician') {
+      return clinician;
     }
     return null;
   }
@@ -115,6 +145,12 @@ class AppRouter {
         path: auth,
         name: 'auth',
         builder: (context, state) => const AuthScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: clinicWelcome,
+        name: 'clinicWelcome',
+        builder: (context, state) => const ClinicWelcomeScreen(),
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,

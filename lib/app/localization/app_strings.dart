@@ -6710,6 +6710,135 @@ class AppStrings {
     return '$count tracked';
   }
 
+  // Phase 2: Strictly Clinic-Only Patient Login & First-Login Welcome
+  String get clinicLoginTitle => isArabic
+      ? 'الدخول إلى Mindora'
+      : (isFrench ? 'Se connecter à Mindora' : 'Log in to Mindora');
+
+  String get clinicLoginSubtitle => isArabic
+      ? 'استعمل كود الـ QR ولا المعطيات اللّي عطاهملك الطبيب متاعك.'
+      : (isFrench
+            ? 'Utilisez le QR code ou les identifiants remis par votre médecin.'
+            : 'Use the QR code or login details your doctor gave you.');
+
+  String get scanDoctorQrBtn => isArabic
+      ? 'مسح كود الطبيب (QR)'
+      : (isFrench ? 'Scanner le QR du médecin' : 'Scan doctor’s QR');
+
+  String get scanDoctorQrSub => isArabic
+      ? 'أسرع طريقة في العيادة — من غير ما تكتب شيء.'
+      : (isFrench
+            ? 'Le plus rapide au cabinet, sans rien taper.'
+            : 'Fastest in the clinic — no typing needed.');
+
+  String get scanDoctorQrSheetTitle => isArabic
+      ? 'امسح كود العيادة'
+      : (isFrench ? 'Scanner le QR de la clinique' : 'Scan clinic QR code');
+
+  String get scanDoctorQrSheetSub => isArabic
+      ? 'وجّه الكاميرا للكود اللّي على شاشة الطبيب.'
+      : (isFrench
+            ? 'Pointez votre caméra vers le code affiché sur l’écran du médecin.'
+            : 'Point your camera at the invite code on your doctor’s screen.');
+
+  String get enterQrCodeFallbackBtn => isArabic
+      ? 'أو ألصق كود الدعوة'
+      : (isFrench ? 'Ou coller le code d’invitation' : 'Or enter invite code');
+
+  String get orLogInWithIdLabel => isArabic
+      ? 'ولا أدخل بالمعرّف والكود PIN'
+      : (isFrench
+            ? 'Ou entrez votre identifiant et code PIN'
+            : 'Or log in with your ID & PIN');
+
+  String get loginIdentifierLabel => isArabic
+      ? 'رقم الهاتف ولا اسم المستخدم'
+      : (isFrench ? 'Téléphone ou identifiant' : 'Phone number or username');
+
+  String get loginIdentifierHint => isArabic
+      ? 'مثال: 22 444 555'
+      : (isFrench ? 'ex. 22 444 555 ou yassine' : 'e.g. 22 444 555 or yassine');
+
+  String get pinFieldLabel => isArabic
+      ? 'الكود PIN ولا كلمة السر'
+      : (isFrench ? 'Code PIN ou mot de passe' : 'PIN or password');
+
+  String get pinFieldHint => isArabic
+      ? 'أدخل الكود متاعك'
+      : (isFrench ? 'Entrez votre code à 6 chiffres' : 'Enter your PIN');
+
+  String get logInBtn =>
+      isArabic ? 'دخول' : (isFrench ? 'Se connecter' : 'Log in');
+
+  String get largerTextToggleLabel =>
+      isArabic ? 'خط أكبر' : (isFrench ? 'Grand texte' : 'Larger text');
+
+  String clinicWelcomeTitle(String name) {
+    final clean = name.trim();
+    if (clean.isEmpty) {
+      return isArabic ? 'مرحبا بك' : (isFrench ? 'Bienvenue' : 'Welcome');
+    }
+    return isArabic
+        ? 'مرحبا بك، $clean'
+        : (isFrench ? 'Bienvenue, $clean' : 'Welcome, $clean');
+  }
+
+  String clinicWelcomeConnectedTo(String doctorName) => isArabic
+      ? 'حسابك مربوط مع $doctorName'
+      : (isFrench
+            ? 'Vous êtes relié(e) à $doctorName'
+            : 'You are connected to $doctorName');
+
+  String get clinicWelcomeAutoSyncTitle => isArabic
+      ? 'متابعة يومية تلقائية مع طبيبك'
+      : (isFrench
+            ? 'Partage automatique avec votre médecin'
+            : 'Automatic updates for your doctor');
+
+  String clinicWelcomeAutoSyncBody(String doctorName) => isArabic
+      ? 'تسجيلاتك اليومية توصل أوتوماتيكياً لـ $doctorName باش تحضّر زيارتك الجاية. تنجم تقفل أي ملاحظة أو حوار "ليّ وحدي" وقت ما تحب.'
+      : (isFrench
+            ? 'Vos bilans quotidiens informent automatiquement $doctorName pour préparer vos visites. Vous pouvez verrouiller toute note ou discussion « Rien que pour moi » à tout moment.'
+            : 'Your daily check-ins automatically update $doctorName so visits stay effortless. You can mark any note or talk "Keep just for me" anytime.');
+
+  String get clinicWelcomeNotEmergencyTitle => isArabic
+      ? 'هذا ما هوش رقم طوارئ 24/24'
+      : (isFrench
+            ? 'Pas une ligne d’urgence 24/7'
+            : 'Not a 24/7 emergency monitor');
+
+  String get clinicWelcomeNotEmergencyBody => isArabic
+      ? 'طبيبك يراجع المعطيات قبل الموعد. كان تحس روحك في خطر، اضغط عالدرع الأحمر باش تلقى أرقام النجدة في الحين.'
+      : (isFrench
+            ? 'Votre médecin consulte vos bilans autour des rendez-vous. En cas d’urgence, appuyez sur le bouclier rouge pour obtenir une aide immédiate.'
+            : 'Your doctor reviews updates around appointments. If you ever feel unsafe, tap the red shield for immediate emergency help lines.');
+
+  String get setOwnPinOptionalBtn => isArabic
+      ? 'تبديل الكود PIN لكود شخصي (اختياري)'
+      : (isFrench
+            ? 'Choisir mon propre code PIN (optionnel)'
+            : 'Choose my own PIN (optional)');
+
+  String get currentPinLabel => isArabic
+      ? 'الكود PIN الحالي'
+      : (isFrench ? 'Code PIN actuel' : 'Current PIN');
+
+  String get newPinLabel => isArabic
+      ? 'الكود PIN الجديد'
+      : (isFrench ? 'Nouveau code PIN' : 'New PIN');
+
+  String get saveNewPinBtn => isArabic
+      ? 'حفظ الكود الجديد'
+      : (isFrench ? 'Enregistrer le nouveau code' : 'Save new PIN');
+
+  String get pinChangedToast => isArabic
+      ? 'تبدّل الكود PIN متاعك بنجاح.'
+      : (isFrench ? 'Votre code PIN a été mis à jour.' : 'Your PIN was updated.');
+
+  String get enterAppBtn => isArabic
+      ? 'ابدأ نهاري'
+      : (isFrench ? 'Commencer ma journée' : 'Start my day');
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);

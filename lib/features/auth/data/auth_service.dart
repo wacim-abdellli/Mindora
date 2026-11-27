@@ -24,6 +24,7 @@ class AuthService {
   static const String _keyRegisteredUsers = 'mf_auth_registered_users';
   static const String _keyUserCredentials = 'mf_auth_user_credentials';
   static const String _keyOnboardingDone = 'mf_onboarding_completed';
+  static const String _keySignedOut = 'mf_signed_out';
 
   final Uuid _uuid = const Uuid();
 
@@ -274,6 +275,7 @@ class AuthService {
     await prefs.setString(_keyRegisteredUsers, json.encode(users));
 
     // Save as current user
+    await prefs.remove(_keySignedOut);
     await prefs.setString(_keyCurrentUser, user.toJson());
     return user;
   }
@@ -318,6 +320,7 @@ class AuthService {
       userMap,
     ).copyWith(lastActiveAt: DateTime.now());
 
+    await prefs.remove(_keySignedOut);
     await prefs.setString(_keyCurrentUser, user.toJson());
     return user;
   }
@@ -380,6 +383,7 @@ class AuthService {
   /// Persists an authenticated user record as the active session.
   Future<void> persistCurrentUser(AuthUser user) async {
     final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_keySignedOut);
     await prefs.setString(_keyCurrentUser, user.toJson());
   }
 
@@ -388,6 +392,7 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyCurrentUser);
     await prefs.remove('mf_last_checkin_cache_v1');
+    await prefs.setBool(_keySignedOut, true);
   }
 
   /// Permanently deletes the active user account, credentials, and data partitions.
