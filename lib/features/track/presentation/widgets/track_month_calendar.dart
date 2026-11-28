@@ -153,13 +153,16 @@ class TrackMonthCalendar extends StatelessWidget {
               }
 
               final day = index - firstDayOffset + 1;
+              final todayOnly = DateTime(now.year, now.month, now.day);
+              final cellDate = DateTime(month.year, month.month, day);
+              final isFuture = cellDate.isAfter(todayOnly);
               final dayKey =
                   '${month.year}-${month.month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
               final dayList =
                   groupedByDayKey[dayKey] ?? const <MindTraceModel>[];
               final matchedTrace = dayList.isNotEmpty ? dayList.last : null;
               final isLogged = matchedTrace != null;
-              final isSelected = selectedDateKey == dayKey;
+              final isSelected = !isFuture && selectedDateKey == dayKey;
               final isToday = day == now.day &&
                   month.month == now.month &&
                   month.year == now.year;
@@ -178,7 +181,11 @@ class TrackMonthCalendar extends StatelessWidget {
               Color textColor;
               Border? circleBorder;
 
-              if (isSelected) {
+              if (isFuture) {
+                circleBg = Colors.transparent;
+                textColor = tokens.ink3.withValues(alpha: 0.42);
+                circleBorder = null;
+              } else if (isSelected) {
                 circleBg = isLogged ? moodFill : tokens.primary;
                 textColor = isLogged ? tokens.ink : tokens.onPrimary;
                 circleBorder = Border.all(
@@ -206,11 +213,14 @@ class TrackMonthCalendar extends StatelessWidget {
               return Center(
                 child: MindPressable(
                     borderRadius: BorderRadius.circular(999),
+                    enabled: !isFuture,
                     semanticLabel:
                         '$day ${strings.monthName(month.month)}${isLogged ? ' · ${trackMoodLabel(matchedTrace.overallMood, strings)}' : ''}',
-                    onPressed: () {
-                      onSelectDateKey(isSelected ? null : dayKey);
-                    },
+                    onPressed: isFuture
+                        ? null
+                        : () {
+                            onSelectDateKey(isSelected ? null : dayKey);
+                          },
                     child: Container(
                       alignment: Alignment.center,
                       decoration: BoxDecoration(

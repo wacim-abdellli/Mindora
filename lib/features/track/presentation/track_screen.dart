@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/localization/app_strings.dart';
+import '../../../app/localization/mind_formatters.dart';
 import '../../../app/router/app_router.dart';
 import '../../../app/theme/lab_theme.dart';
 import '../../../app/theme/mind_tokens.dart';
@@ -13,6 +14,7 @@ import '../../../app/theme/theme_controller.dart';
 import '../../../core/widgets/ambient_scaffold.dart';
 import '../../../core/widgets/mind_button.dart';
 import '../../../core/widgets/mind_card.dart';
+import '../../../core/widgets/mind_chip.dart';
 import '../../../core/widgets/mind_sheet.dart';
 import '../../../core/widgets/mind_strength_picker.dart';
 import '../../../core/widgets/mind_toast.dart';
@@ -21,6 +23,7 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../investigation/controllers/investigation_providers.dart';
 import '../../investigation/domain/conversation_mode.dart';
 import '../../mind_trace/controllers/mind_trace_controller.dart';
+import '../../mind_trace/domain/daily_context_tags.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
 import 'widgets/progressive_details_sheet.dart';
 import 'widgets/track_entry_detail_sheet.dart';
@@ -36,6 +39,7 @@ class TrackScreen extends ConsumerStatefulWidget {
     super.key,
     this.initialTab = 0,
     this.startNewMoment = false,
+    this.initialDateKey,
   });
 
   /// Retained for router backward-compatibility.
@@ -43,6 +47,9 @@ class TrackScreen extends ConsumerStatefulWidget {
 
   /// When true, opens the quick 2-tap mood sheet right away.
   final bool startNewMoment;
+
+  /// Optional `YYYY-MM-DD` date key jumped to from Home's 7-day strip.
+  final String? initialDateKey;
 
   @override
   ConsumerState<TrackScreen> createState() => _TrackScreenState();
@@ -52,12 +59,15 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
   DateTime _calendarMonth = DateTime(DateTime.now().year, DateTime.now().month);
   String? _selectedDateKey;
   bool _openedInitialNewMoment = false;
+  int _showAllLimit = 15;
+  bool _privateOnlyFilter = false;
 
   @override
   void initState() {
     super.initState();
     final now = DateTime.now();
     _selectedDateKey = _formatDateKey(now);
+    _applyInitialDateKey(widget.initialDateKey);
     if (widget.startNewMoment) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && !_openedInitialNewMoment) {
@@ -66,6 +76,30 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
         }
       });
     }
+  }
+
+  @override
+  void didUpdateWidget(covariant TrackScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialDateKey != null &&
+        widget.initialDateKey != oldWidget.initialDateKey) {
+      setState(() {
+        _applyInitialDateKey(widget.initialDateKey);
+      });
+    }
+  }
+
+  void _applyInitialDateKey(String? rawKey) {
+    if (rawKey == null || rawKey.trim().isEmpty) return;
+    final parts = rawKey.trim().split('-');
+    if (parts.length != 3) return;
+    final y = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    final d = int.tryParse(parts[2]);
+    if (y == null || m == null || d == null) return;
+    final normalized = _formatDateKey(DateTime(y, m, d));
+    _selectedDateKey = normalized;
+    _calendarMonth = DateTime(y, m);
   }
 
   String _formatDateKey(DateTime d) =>
@@ -217,12 +251,18 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
         _calendarMonth.year < now.year ||
         (_calendarMonth.year == now.year && _calendarMonth.month < now.month);
 
+    final hasPrivateEntries = traces.any((t) => t.isPrivate);
+    final filteredBase = _privateOnlyFilter
+        ? traces.where((t) => t.isPrivate).toList()
+        : traces;
+    final sortedAll = [...filteredBase]
+      ..sort((a, b) => b.effectiveTimestamp.compareTo(a.effectiveTimestamp));
+
     final dayEntries = _selectedDateKey != null
-        ? traces.where((t) => t.dateKey == _selectedDateKey).toList()
-        : traces.take(15).toList();
-    dayEntries.sort(
-      (a, b) => b.effectiveTimestamp.compareTo(a.effectiveTimestamp),
-    );
+        ? sortedAll.where((t) => t.dateKey == _selectedDateKey).toList()
+        : sortedAll.take(_showAllLimit).toList();
+    final hasMoreAllEntries =
+        _selectedDateKey == null && sortedAll.length > _showAllLimit;
 
     return AmbientScaffold(
       body: SafeArea(
@@ -281,22 +321,43 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
                     );
                   });
                 },
-                onSelectDateKey: (key) =>
-                    setState(() => _selectedDateKey = key),
+                onSelectDateKey: (key) => setState(() {
+                  _selectedDateKey = key;
+                  if (key == null) _showAllLimit = 15;
+                }),
                 onInspectTrace: (trace) => _inspectTrace(trace, strings),
               ),
 
               const SizedBox(height: 18),
 
-              // 2. Selected Day Timeline (when Show-all is active, anchor with concise title)
-              if (_selectedDateKey == null) ...[
-                Text(
-                  strings.navMyDays,
-                  style: LabTheme.textStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: tokens.ink,
-                  ),
+              // 2. Selected Day Timeline (when Show-all is active, anchor with clear title + optional private filter)
+              if (_selectedDateKey == null || hasPrivateEntries) ...[
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    if (_selectedDateKey == null)
+                      Text(
+                        strings.allRecentEntriesTitle,
+                        style: LabTheme.textStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: tokens.ink,
+                        ),
+                      ),
+                    if (hasPrivateEntries)
+                      MindChip(
+                        key: const ValueKey('track-private-filter-chip'),
+                        label: strings.privateOnlyFilterLabel,
+                        leadingIcon: Icons.lock_outline_rounded,
+                        selected: _privateOnlyFilter,
+                        onTap: () => setState(
+                          () => _privateOnlyFilter = !_privateOnlyFilter,
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 10),
               ],
@@ -331,11 +392,22 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
                     ],
                   ),
                 )
-              else
+              else ...[
                 for (final entry in dayEntries) ...[
                   _buildTimelineEntryCard(entry, tokens, strings),
                   const SizedBox(height: 10),
                 ],
+                if (hasMoreAllEntries) ...[
+                  const SizedBox(height: 4),
+                  MindButton(
+                    key: const ValueKey('track-load-older-btn'),
+                    text: strings.loadOlderEntriesBtn,
+                    variant: MindButtonVariant.secondary,
+                    isFullWidth: true,
+                    onPressed: () => setState(() => _showAllLimit += 20),
+                  ),
+                ],
+              ],
             ],
           ),
         ),
@@ -367,6 +439,26 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
         ? '${strings.formatHumanDate(ts)} · $strengthLabel · $timeStr'
         : '$strengthLabel · $timeStr';
 
+    final detailPills = <String>[
+      if (trace.sleepHours != null)
+        '${strings.sleepTrackingLabel} ${MindFormatters.hours(trace.sleepHours!, strings)}',
+      if (trace.energyLevel != null)
+        '${strings.energyTrackingLabel} ${trace.energyLevel}/10',
+      if (trace.physicalTension != null)
+        '${strings.physicalTensionLabel} ${trace.physicalTension}/10',
+      ...trace.contextTags
+          .take(3)
+          .map((tag) => DailyContextTags.localizedLabel(tag, strings)),
+      if (trace.behavioralResponse != null &&
+          trace.behavioralResponse!.trim().isNotEmpty)
+        ...trace.behavioralResponse!
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .take(2)
+            .map(strings.localizedWhatHelped),
+    ];
+
     return MindCard(
       onTap: () {
         HapticFeedback.selectionClick();
@@ -375,6 +467,7 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
       semanticLabel: '$moodLabel · $subtitleText',
       padding: const EdgeInsets.all(14),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           MoodFace(mood: mood, size: 46),
           const SizedBox(width: 14),
@@ -433,13 +526,45 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
                     ),
                   ),
                 ],
+                if (detailPills.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      for (final pill in detailPills)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: tokens.surface2,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: tokens.line),
+                          ),
+                          child: Text(
+                            pill,
+                            style: LabTheme.textStyle(
+                              fontSize: 12.0,
+                              fontWeight: FontWeight.w600,
+                              color: tokens.ink2,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
-          Icon(
-            Icons.arrow_forward_ios_rounded,
-            size: 16,
-            color: tokens.ink2,
+          Padding(
+            padding: const EdgeInsets.only(top: 14),
+            child: Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 16,
+              color: tokens.ink2,
+            ),
           ),
         ],
       ),

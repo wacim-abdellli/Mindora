@@ -844,13 +844,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     title: strings.supportCrisisRowTitle,
                     onTap: () => SupportModalSheet.show(context),
                   ),
-                  Divider(height: 1, thickness: 1, color: tokens.line),
-                  _buildNavRow(
-                    tokens: tokens,
-                    icon: Icons.logout_rounded,
-                    title: strings.logOutBtn,
-                    onTap: () => _confirmLogOut(context, strings, tokens),
-                  ),
+                  if (authUser?.isAnonymous != true) ...[
+                    Divider(height: 1, thickness: 1, color: tokens.line),
+                    _buildNavRow(
+                      tokens: tokens,
+                      icon: Icons.logout_rounded,
+                      title: strings.logOutBtn,
+                      onTap: () => _confirmLogOut(context, strings, tokens),
+                    ),
+                  ],
                   Divider(height: 1, thickness: 1, color: tokens.line),
                   _buildNavRow(
                     tokens: tokens,
@@ -886,117 +888,114 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         subtitle.isNotEmpty &&
         trailingText.length > 14;
 
-    return Semantics(
-      button: true,
-      label: title,
-      child: MindPressable(
-        onPressed: () {
-          HapticFeedback.lightImpact();
-          onTap();
-        },
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 56),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Icon(icon, size: 20, color: iconColor ?? tokens.ink),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
+    return MindPressable(
+      semanticLabel: title,
+      onPressed: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 56),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: iconColor ?? tokens.ink),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: titleColor ?? tokens.ink,
+                    ),
+                  ),
+                  if (subtitle != null && subtitle.isNotEmpty) ...[
+                    const SizedBox(height: 2),
                     Text(
-                      title,
+                      subtitle,
                       style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: titleColor ?? tokens.ink,
+                        fontSize: 12.5,
+                        color: tokens.ink2,
+                        height: 1.35,
                       ),
                     ),
-                    if (subtitle != null && subtitle.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          color: tokens.ink2,
-                          height: 1.35,
-                        ),
-                      ),
-                    ],
-                    if (stackTrailingBadge) ...[
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: tokens.cardTint,
-                          borderRadius: BorderRadius.circular(tokens.chipRadius),
-                          border: Border.all(
-                            color: tokens.ink.withValues(alpha: 0.32),
-                          ),
-                        ),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: AlignmentDirectional.centerStart,
-                          child: Text(
-                            trailingText,
-                            maxLines: 1,
-                            softWrap: false,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: tokens.ink,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
                   ],
-                ),
-              ),
-              if (!stackTrailingBadge &&
-                  trailingText != null &&
-                  trailingText.isNotEmpty) ...[
-                const SizedBox(width: 10),
-                Flexible(
-                  fit: FlexFit.loose,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 9,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: tokens.surface2,
-                      borderRadius: BorderRadius.circular(tokens.chipRadius),
-                      border: Border.all(color: tokens.line),
-                    ),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        trailingText,
-                        maxLines: 1,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: tokens.ink,
+                  if (stackTrailingBadge) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: tokens.cardTint,
+                        borderRadius: BorderRadius.circular(tokens.chipRadius),
+                        border: Border.all(
+                          color: tokens.ink.withValues(alpha: 0.32),
                         ),
+                      ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          trailingText,
+                          maxLines: 1,
+                          softWrap: false,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: tokens.ink,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (!stackTrailingBadge &&
+                trailingText != null &&
+                trailingText.isNotEmpty) ...[
+              const SizedBox(width: 10),
+              Flexible(
+                fit: FlexFit.loose,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: tokens.surface2,
+                    borderRadius: BorderRadius.circular(tokens.chipRadius),
+                    border: Border.all(color: tokens.line),
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      trailingText,
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.ink,
                       ),
                     ),
                   ),
                 ),
-              ],
-              const SizedBox(width: 6),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 15,
-                color: tokens.ink3,
               ),
             ],
-          ),
+            const SizedBox(width: 6),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 15,
+              color: tokens.ink3,
+            ),
+          ],
         ),
       ),
     );

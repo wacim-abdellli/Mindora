@@ -171,19 +171,12 @@ class AppRouter {
       GoRoute(
         path: mindTrace,
         name: 'mindTrace',
-        redirect: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          final initialTab = extra?['initialTabIndex'];
-          if (initialTab == 1) {
-            return '$track?tab=1';
-          }
-          return track;
-        },
+        redirect: (context, state) => track,
       ),
       GoRoute(
         path: progress,
         name: 'progress',
-        redirect: (context, state) => '$track?tab=1',
+        redirect: (context, state) => track,
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
@@ -270,9 +263,11 @@ class AppRouter {
                       int.tryParse(state.uri.queryParameters['tab'] ?? '') ?? 0;
                   final startNewMoment =
                       state.uri.queryParameters['newMoment'] == '1';
+                  final dateKey = state.uri.queryParameters['date'];
                   return TrackScreen(
                     initialTab: tabIndex.clamp(0, 1),
                     startNewMoment: startNewMoment,
+                    initialDateKey: dateKey,
                   );
                 },
               ),

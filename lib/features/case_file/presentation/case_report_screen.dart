@@ -52,7 +52,7 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
     if (_case == null) return;
     final controller = TextEditingController(text: _case!.userConclusion ?? '');
 
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: ctx.tokens.surface,
@@ -61,12 +61,12 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
           side: BorderSide(color: ctx.tokens.line, width: 1),
         ),
         title: Text(
-          strings.editVerdictTitle,
+          strings.editMyTakeawayTitle,
           style: TextStyle(
             color: ctx.tokens.ink,
-            fontSize: 14,
+            fontSize: 15,
             fontWeight: FontWeight.w800,
-            letterSpacing: 0.8,
+            letterSpacing: strings.isArabic ? 0 : 0.2,
           ),
         ),
         content: TextField(
@@ -109,11 +109,18 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
               setState(() => _case = updated);
               if (ctx.mounted) Navigator.of(ctx).pop();
             },
-            child: Text(strings.saveVerdictBtn, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, letterSpacing: 0.2)),
+            child: Text(
+              strings.saveTakeawayBtn,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+                letterSpacing: strings.isArabic ? 0 : 0.2,
+              ),
+            ),
           ),
         ],
       ),
-    );
+    ).whenComplete(controller.dispose);
   }
 
   Future<void> _togglePrivacy(CaseModel c) async {
@@ -243,7 +250,12 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
       appBar: AppBar(
         title: Text(
           strings.formatSessionNumber(c.caseNumber),
-          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, letterSpacing: 0.5, color: textPrimary),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 14,
+            letterSpacing: strings.isArabic ? 0 : 0.3,
+            color: textPrimary,
+          ),
         ),
         actions: [
           IconButton(
@@ -374,7 +386,12 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                     const SizedBox(height: 10),
                     Text(
                       c.title,
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17, letterSpacing: -0.3, color: textPrimary),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 17,
+                        letterSpacing: strings.isArabic ? 0 : -0.3,
+                        color: textPrimary,
+                      ),
                     ),
                     if (chain != null && chain.emotion.isNotEmpty) ...[
                       const SizedBox(height: 10),
@@ -535,7 +552,7 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: c.statements.take(12).map((st) {
+                    children: c.statements.map((st) {
                       final isUser = st.speaker == StatementSpeaker.user;
                       final speakerLabel = isUser
                           ? strings.youSpeakerLabel
@@ -678,11 +695,11 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                     if (router != null && router.canPop()) {
                       router.pop();
                     } else {
-                      context.go(AppRouter.home);
+                      context.go(AppRouter.companion);
                     }
                   },
                   child: Text(
-                    strings.navHome,
+                    strings.backToTalkBtn,
                     style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
                   ),
                 ),

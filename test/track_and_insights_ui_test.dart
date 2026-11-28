@@ -197,6 +197,11 @@ void main() {
         await tester.tap(find.text(en.deleteEntryBtn));
         await tester.pumpAndSettle();
 
+        // Confirm destructive deletion in the calm MindDialog
+        expect(find.text(en.deleteCheckInConfirmTitle), findsOneWidget);
+        await tester.tap(find.text(en.deleteEntryBtn).last);
+        await tester.pumpAndSettle();
+
         expect(find.text('Updated evening reflection.'), findsNothing);
         expect(find.text(en.checkInRemovedUndo), findsOneWidget);
         await tester.pump(const Duration(seconds: 5));

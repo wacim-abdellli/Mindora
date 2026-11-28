@@ -121,7 +121,8 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text(en.keepJustForMeLabel), findsOneWidget);
-        expect(find.text(en.sharedWithDoctorStatus), findsOneWidget);
+        // Local non-clinic accounts honestly show device-only status instead of clinic sync
+        expect(find.text(en.localDeviceOnlyLabel), findsOneWidget);
 
         await tester.tap(find.byType(MindSwitch));
         await tester.pumpAndSettle();

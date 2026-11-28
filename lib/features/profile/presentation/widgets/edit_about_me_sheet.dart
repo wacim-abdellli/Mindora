@@ -42,10 +42,8 @@ class _EditAboutMeSheetState extends ConsumerState<EditAboutMeSheet> {
   static const List<String> _ageRanges = [
     'under_18',
     '18-24',
-    '25-34',
-    '35-44',
-    '45-54',
-    '55-64',
+    '25-44',
+    '45-64',
     '65+',
     'prefer_not_to_say',
   ];
@@ -58,8 +56,15 @@ class _EditAboutMeSheetState extends ConsumerState<EditAboutMeSheet> {
       case 'under_18':
       case 'moins de 18 ans':
         return 'under_18';
+      case '25-34':
+      case '35-44':
+      case '25-44':
+        return '25-44';
+      case '45-54':
+      case '55-64':
+      case '45-64':
       case '55+':
-        return '55-64';
+        return '45-64';
       case 'prefer not to say':
       case 'prefer_not_to_say':
       case '':

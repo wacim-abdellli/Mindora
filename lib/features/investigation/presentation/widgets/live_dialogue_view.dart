@@ -236,6 +236,38 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
 
     return Column(
       children: [
+        Container(
+          key: const ValueKey('talk-companion-disclaimer-bar'),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          decoration: BoxDecoration(
+            color: tokens.surface2,
+            border: Border(bottom: BorderSide(color: tokens.line)),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.auto_awesome_outlined,
+                size: 14,
+                color: tokens.ink2,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  strings.talkCompanionDisclaimerBar,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12.0,
+                    fontWeight: FontWeight.w500,
+                    color: tokens.ink2,
+                    height: 1.3,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
         if (runtimeNotice != AiFallbackReason.none)
           _buildRuntimeNoticeBanner(
             tokens: tokens,
@@ -351,14 +383,6 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
             (focusPlan.focusItems.any((i) => !i.isCompleted) ||
                 focusPlan.observationCue.trim().isNotEmpty));
 
-    final privacyLine = activeCase.isPrivate
-        ? strings.privacyPrivateSessionTag
-        : (isLive
-              ? (profileConsented
-                    ? strings.privacyCloudConsentedTag
-                    : strings.privacyConsentPausedTag)
-              : strings.privacyLocalTag);
-
     final doorways = [
       strings.talkDoorwaySpinning,
       strings.talkDoorwayHeavyDay,
@@ -404,7 +428,7 @@ class _LiveDialogueViewState extends ConsumerState<LiveDialogueView> {
           const SizedBox(height: 8),
           Text(
             activeCase.isPrivate
-                ? '${strings.talkWelcomeSub} · $privacyLine'
+                ? '${strings.talkWelcomeSub} · ${strings.privacyPrivateSessionTag}'
                 : strings.talkWelcomeSub,
             style: TextStyle(
               fontSize: 13.5,

@@ -51,6 +51,119 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
   int? _selectedPointIndex;
   bool _showMoreDetails = false;
 
+  Widget _buildMoodDistributionStrip({
+    required MindTokens tokens,
+    required AppStrings strings,
+    required List<MindTraceModel> sourceTraces,
+  }) {
+    var steadier = 0;
+    var tense = 0;
+    var heavy = 0;
+    for (final t in sourceTraces) {
+      switch (AppMood.fromKey(t.overallMood)) {
+        case AppMood.good:
+        case AppMood.calm:
+          steadier++;
+        case AppMood.anxious:
+        case AppMood.restless:
+          tense++;
+        case AppMood.frustrated:
+        case AppMood.heavy:
+          heavy++;
+      }
+    }
+    final total = steadier + tense + heavy;
+    if (total == 0) return const SizedBox.shrink();
+
+    Widget legendItem(Color color, String label, int count) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            '$label ($count)',
+            style: LabTheme.textStyle(
+              fontSize: 12.0,
+              fontWeight: FontWeight.w600,
+              color: tokens.ink2,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      key: const ValueKey('insights-mood-distribution-bar'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          strings.moodBalanceTitle,
+          style: LabTheme.textStyle(
+            fontSize: 13.0,
+            fontWeight: FontWeight.w700,
+            color: tokens.ink,
+          ),
+        ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: SizedBox(
+            height: 10,
+            child: Row(
+              children: [
+                if (steadier > 0)
+                  Expanded(
+                    flex: steadier,
+                    child: ColoredBox(color: MindTokens.moodCalm),
+                  ),
+                if (tense > 0)
+                  Expanded(
+                    flex: tense,
+                    child: ColoredBox(color: MindTokens.moodAnxious),
+                  ),
+                if (heavy > 0)
+                  Expanded(
+                    flex: heavy,
+                    child: ColoredBox(color: MindTokens.moodFrustrated),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 12,
+          runSpacing: 6,
+          children: [
+            if (steadier > 0)
+              legendItem(
+                MindTokens.moodCalm,
+                strings.moodBandSteadierLabel,
+                steadier,
+              ),
+            if (tense > 0)
+              legendItem(
+                MindTokens.moodAnxious,
+                strings.moodBandTenseLabel,
+                tense,
+              ),
+            if (heavy > 0)
+              legendItem(
+                MindTokens.moodFrustrated,
+                strings.moodBandHeavyLabel,
+                heavy,
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
   List<MindTraceModel> _filterTracesByRange(List<MindTraceModel> traces) {
     final now = DateTime.now();
     final Duration window;
@@ -120,7 +233,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                 leadingIcon: Icons.calendar_month_outlined,
                 onPressed: () {
                   Navigator.of(ctx).pop();
-                  context.go('${AppRouter.track}?tab=1');
+                  context.go(AppRouter.track);
                 },
               ),
             ],
@@ -151,6 +264,22 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
     final nonDefaultTracks = activeTracks
         .where((t) => t != ClinicalTrack.generalWellness)
         .toList(growable: false);
+    final now = DateTime.now();
+    final weekStart = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(const Duration(days: 6));
+    final thisWeekTraces = allTraces
+        .where((t) => !t.date.isBefore(weekStart))
+        .toList()
+      ..sort((a, b) => b.effectiveTimestamp.compareTo(a.effectiveTimestamp));
+    final thisWeekDistinctDays = {
+      for (final t in thisWeekTraces) t.dateKey,
+    }.length;
+    final weekPreviewTraces = thisWeekTraces.isNotEmpty
+        ? thisWeekTraces.take(7).toList()
+        : allTraces.take(7).toList();
 
     return Scaffold(
       backgroundColor: tokens.bg,
@@ -220,9 +349,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                     Text(
                       allTraces.length < 3
                           ? strings.baselineNeedsMoreData
-                          : strings.daysThisWeekCount(
-                              allTraces.take(7).length,
-                            ),
+                          : strings.daysThisWeekCount(thisWeekDistinctDays),
                       style: LabTheme.textStyle(
                         fontSize: 15,
                         height: 1.45,
@@ -234,7 +361,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        for (final t in allTraces.take(7))
+                        for (final t in weekPreviewTraces)
                           MoodFace(
                             mood: AppMood.fromKey(t.overallMood),
                             size: 36,
@@ -243,6 +370,12 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                             ),
                           ),
                       ],
+                    ),
+                    const SizedBox(height: 14),
+                    _buildMoodDistributionStrip(
+                      tokens: tokens,
+                      strings: strings,
+                      sourceTraces: traces.isNotEmpty ? traces : allTraces,
                     ),
                   ],
                 ],
@@ -537,7 +670,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
             // 8. Detailed Analytics Deep-Dive Button (Preserved Core)
             MindCard(
               padding: const EdgeInsets.all(16),
-              onTap: () => context.go('${AppRouter.track}?tab=1'),
+              onTap: () => context.go(AppRouter.track),
               child: Row(
                 children: [
                   Container(
@@ -1250,7 +1383,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
             const SizedBox(width: 8),
             MindPressable(
               semanticLabel: strings.viewAllArrowLabel,
-              onPressed: () => context.go('${AppRouter.track}?tab=1'),
+              onPressed: () => context.go(AppRouter.track),
               borderRadius: BorderRadius.circular(tokens.chipRadius),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minHeight: 48),
@@ -1371,7 +1504,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
               padding: const EdgeInsets.only(bottom: 10),
               child: MindCard(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                onTap: () => context.go('${AppRouter.track}?tab=1'),
+                onTap: () => context.go(AppRouter.track),
                 child: Row(
                   children: [
                     Container(

@@ -52,7 +52,13 @@ void main() {
                     onMoodSelected: (idx) => setState(() => selectedIdx = idx),
                     onIntensityChanged: (val) => setState(() => intensity = val),
                     onSave: () => saved = true,
-                    onQuickSave: (moodKey, strength, {bool createNew = false}) {
+                    onQuickSave: (
+                      moodKey,
+                      strength, {
+                      bool createNew = false,
+                      String? note,
+                      bool isPrivate = false,
+                    }) {
                       quickMood = moodKey;
                       quickIntensity = strength;
                     },

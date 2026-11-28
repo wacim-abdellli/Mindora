@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/localization/app_strings.dart';
+import '../../../app/localization/mind_formatters.dart';
 import '../../../app/theme/lab_theme.dart';
 import '../../../app/theme/mind_tokens.dart';
+import '../../../core/widgets/mind_dialog.dart';
 import '../../../core/widgets/mind_pressable.dart';
 import '../../../core/widgets/mind_undo_banner.dart';
 import '../controllers/investigation_providers.dart';
@@ -24,6 +27,15 @@ class AiCompanionHubView extends ConsumerStatefulWidget {
 }
 
 class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   void _showRenameDialog(BuildContext context, CaseModel caseModel) {
     final controller = TextEditingController(text: caseModel.title);
     final strings = ref.read(appStringsProvider);
@@ -85,12 +97,12 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
                 }
                 if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
               },
-              child: Text(strings.saveVerdictBtn),
+              child: Text(strings.saveChangesBtn),
             ),
           ],
         );
       },
-    );
+    ).whenComplete(controller.dispose);
   }
 
   Future<void> _showDeleteDialog(
@@ -98,6 +110,16 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
     CaseModel caseModel,
   ) async {
     final strings = ref.read(appStringsProvider);
+    final confirmed = await showMindConfirmDialog(
+      context,
+      title: strings.deleteConversationTitle,
+      body: strings.deleteCheckInConfirmBody,
+      confirmLabel: strings.deleteEntryBtn,
+      cancelLabel: strings.cancelBtn,
+      destructive: true,
+      icon: Icons.delete_outline_rounded,
+    );
+    if (!confirmed || !context.mounted) return;
     final repo = ref.read(caseRepositoryProvider);
     HapticFeedback.mediumImpact();
     await ref
@@ -341,162 +363,328 @@ class _AiCompanionHubViewState extends ConsumerState<AiCompanionHubView> {
                 );
               }
 
+              final q = _searchQuery.trim().toLowerCase();
+              final filteredCases = q.isEmpty
+                  ? cases
+                  : cases.where((c) {
+                      final inTitle = c.title.toLowerCase().contains(q);
+                      final inSummary =
+                          (c.findingsSummary ?? '').toLowerCase().contains(q);
+                      final inTakeaway =
+                          (c.userConclusion ?? '').toLowerCase().contains(q);
+                      final inMessages = c.statements.any(
+                        (s) => s.text.toLowerCase().contains(q),
+                      );
+                      return inTitle || inSummary || inTakeaway || inMessages;
+                    }).toList();
+
               return Column(
-                children: cases.map((c) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: MindPressable(
-                      semanticLabel: c.title,
-                      borderRadius: BorderRadius.circular(tokens.cardRadius),
-                      onPressed: () {
-                        HapticFeedback.selectionClick();
-                        ref
-                            .read(activeCaseControllerProvider.notifier)
-                            .resumeCase(c);
-                        widget.onSessionSelected?.call();
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: tokens.surface,
-                          borderRadius: BorderRadius.circular(
-                            tokens.cardRadius,
-                          ),
-                          border: Border.all(color: tokens.line),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: tokens.surface2,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: tokens.line),
-                              ),
-                              child: Icon(
-                                c.isPrivate
-                                    ? Icons.lock_outline_rounded
-                                    : Icons.chat_bubble_outline_rounded,
-                                size: 17,
-                                color: tokens.ink2,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    c.title,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 14.5,
-                                      fontWeight: FontWeight.w700,
-                                      color: tokens.ink,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 2,
-                                    crossAxisAlignment:
-                                        WrapCrossAlignment.center,
-                                    children: [
-                                      Text(
-                                        strings.formatSessionNumber(
-                                          c.caseNumber,
-                                        ),
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: tokens.ink2,
-                                        ),
-                                      ),
-                                      if (c.isPrivate)
-                                        Text(
-                                          strings.privacyPrivateSessionTag,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: tokens.ink2,
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            PopupMenuButton<String>(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                    key: const ValueKey('talk-history-search-field'),
+                    controller: _searchController,
+                    onChanged: (v) => setState(() => _searchQuery = v),
+                    style: TextStyle(fontSize: 14, color: tokens.ink),
+                    decoration: InputDecoration(
+                      hintText: strings.searchPastTalksHint,
+                      prefixIcon: Icon(
+                        Icons.search_rounded,
+                        size: 20,
+                        color: tokens.ink2,
+                      ),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              tooltip: strings.closeBtn,
                               icon: Icon(
-                                Icons.more_vert_rounded,
-                                size: 19,
+                                Icons.close_rounded,
+                                size: 18,
                                 color: tokens.ink2,
                               ),
-                              color: tokens.surface,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                                side: BorderSide(color: tokens.line),
-                              ),
-                              onSelected: (val) async {
-                                if (val == 'resume') {
-                                  ref
-                                      .read(activeCaseControllerProvider.notifier)
-                                      .resumeCase(c);
-                                  widget.onSessionSelected?.call();
-                                } else if (val == 'privacy') {
-                                  await ref
-                                      .read(activeCaseControllerProvider.notifier)
-                                      .toggleCasePrivacy(c.id);
-                                } else if (val == 'rename') {
-                                  _showRenameDialog(context, c);
-                                } else if (val == 'delete') {
-                                  await _showDeleteDialog(context, c);
-                                }
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchQuery = '');
                               },
-                              itemBuilder: (ctx) => [
-                                PopupMenuItem(
-                                  value: 'resume',
-                                  child: Text(
-                                    strings.resumeConversationBtn,
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
-                                ),
-                                PopupMenuItem(
-                                  value: 'privacy',
-                                  child: Text(
-                                    strings.talkPrivateToggleTitle,
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
-                                ),
-                                PopupMenuItem(
-                                  value: 'rename',
-                                  child: Text(
-                                    strings.renameConversationTitle,
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
-                                ),
-                                PopupMenuItem(
-                                  value: 'delete',
-                                  child: Text(
-                                    strings.deleteConversationTitle,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: tokens.safety,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: tokens.surface,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: tokens.line),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: tokens.line),
                       ),
                     ),
-                  );
-                }).toList(),
+                  ),
+                  const SizedBox(height: 12),
+                  if (filteredCases.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: tokens.surface,
+                        borderRadius: BorderRadius.circular(tokens.cardRadius),
+                        border: Border.all(color: tokens.line),
+                      ),
+                      child: Text(
+                        strings.noRecentConversations,
+                        style: TextStyle(fontSize: 13, color: tokens.ink2),
+                      ),
+                    )
+                  else
+                    ...filteredCases.map((c) {
+                      final hasSummary =
+                          (c.findingsSummary?.trim().isNotEmpty ?? false) ||
+                          (c.userConclusion?.trim().isNotEmpty ?? false);
+                      final msgCount = c.statements.length;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: MindPressable(
+                          semanticLabel: c.title,
+                          borderRadius: BorderRadius.circular(tokens.cardRadius),
+                          onPressed: () {
+                            HapticFeedback.selectionClick();
+                            ref
+                                .read(activeCaseControllerProvider.notifier)
+                                .resumeCase(c);
+                            widget.onSessionSelected?.call();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: tokens.surface,
+                              borderRadius: BorderRadius.circular(
+                                tokens.cardRadius,
+                              ),
+                              border: Border.all(color: tokens.line),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        color: tokens.surface2,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(color: tokens.line),
+                                      ),
+                                      child: Icon(
+                                        c.isPrivate
+                                            ? Icons.lock_outline_rounded
+                                            : Icons.chat_bubble_outline_rounded,
+                                        size: 17,
+                                        color: tokens.ink2,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            c.title,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 14.5,
+                                              fontWeight: FontWeight.w700,
+                                              color: tokens.ink,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 3),
+                                          Wrap(
+                                            spacing: 8,
+                                            runSpacing: 2,
+                                            crossAxisAlignment:
+                                                WrapCrossAlignment.center,
+                                            children: [
+                                              Text(
+                                                MindFormatters.shortDate(
+                                                  c.updatedAt,
+                                                  strings,
+                                                ),
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: tokens.ink2,
+                                                ),
+                                              ),
+                                              if (msgCount > 0)
+                                                Text(
+                                                  '· $msgCount',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: tokens.ink2,
+                                                  ),
+                                                ),
+                                              if (c.isPrivate)
+                                                Text(
+                                                  strings.privacyPrivateSessionTag,
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: tokens.ink2,
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    PopupMenuButton<String>(
+                                      icon: Icon(
+                                        Icons.more_vert_rounded,
+                                        size: 19,
+                                        color: tokens.ink2,
+                                      ),
+                                      color: tokens.surface,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                        side: BorderSide(color: tokens.line),
+                                      ),
+                                      onSelected: (val) async {
+                                        if (val == 'resume') {
+                                          ref
+                                              .read(
+                                                activeCaseControllerProvider
+                                                    .notifier,
+                                              )
+                                              .resumeCase(c);
+                                          widget.onSessionSelected?.call();
+                                        } else if (val == 'summary') {
+                                          GoRouter.maybeOf(
+                                            context,
+                                          )?.push('/case/${c.id}');
+                                        } else if (val == 'privacy') {
+                                          await ref
+                                              .read(
+                                                activeCaseControllerProvider
+                                                    .notifier,
+                                              )
+                                              .toggleCasePrivacy(c.id);
+                                        } else if (val == 'rename') {
+                                          _showRenameDialog(context, c);
+                                        } else if (val == 'delete') {
+                                          await _showDeleteDialog(context, c);
+                                        }
+                                      },
+                                      itemBuilder: (ctx) => [
+                                        PopupMenuItem(
+                                          value: 'resume',
+                                          child: Text(
+                                            strings.resumeConversationBtn,
+                                            style: const TextStyle(fontSize: 13),
+                                          ),
+                                        ),
+                                        if (hasSummary)
+                                          PopupMenuItem(
+                                            value: 'summary',
+                                            child: Text(
+                                              strings.viewSummaryChip,
+                                              style: const TextStyle(
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ),
+                                        PopupMenuItem(
+                                          value: 'privacy',
+                                          child: Text(
+                                            strings.talkPrivateToggleTitle,
+                                            style: const TextStyle(fontSize: 13),
+                                          ),
+                                        ),
+                                        PopupMenuItem(
+                                          value: 'rename',
+                                          child: Text(
+                                            strings.renameConversationTitle,
+                                            style: const TextStyle(fontSize: 13),
+                                          ),
+                                        ),
+                                        PopupMenuItem(
+                                          value: 'delete',
+                                          child: Text(
+                                            strings.deleteConversationTitle,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: tokens.safety,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                if (hasSummary) ...[
+                                  const SizedBox(height: 8),
+                                  Align(
+                                    alignment: AlignmentDirectional.centerStart,
+                                    child: MindPressable(
+                                      key: ValueKey('hub-summary-${c.id}'),
+                                      semanticLabel: strings.viewSummaryChip,
+                                      borderRadius: BorderRadius.circular(12),
+                                      onPressed: () {
+                                        HapticFeedback.selectionClick();
+                                        GoRouter.maybeOf(
+                                          context,
+                                        )?.push('/case/${c.id}');
+                                      },
+                                      child: Container(
+                                        constraints: const BoxConstraints(
+                                          minHeight: 40,
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: tokens.surface2,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          border:
+                                              Border.all(color: tokens.line),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.fact_check_outlined,
+                                              size: 14,
+                                              color: tokens.ink,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              strings.viewSummaryChip,
+                                              style: TextStyle(
+                                                fontSize: 12.0,
+                                                fontWeight: FontWeight.w700,
+                                                color: tokens.ink,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                ],
               );
             },
           ),

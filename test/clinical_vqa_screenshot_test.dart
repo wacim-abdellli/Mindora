@@ -227,7 +227,12 @@ void main() {
         await tester.tap(find.text(enStrings.skipBtn));
         await tester.pumpAndSettle();
 
-        await tester.ensureVisible(find.text('Physical movement'));
+        await tester.ensureVisible(
+          find.descendant(
+            of: find.byType(ProgressiveDetailsSheet),
+            matching: find.text('Physical movement'),
+          ),
+        );
         await tester.pumpAndSettle();
 
         expect(find.byType(ProgressiveDetailsSheet), findsOneWidget);

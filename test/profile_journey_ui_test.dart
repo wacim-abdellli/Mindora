@@ -43,8 +43,8 @@ void main() {
       expect(find.text('Share profile with AI companion'), findsOneWidget);
       expect(find.byType(MindSwitch), findsOneWidget);
 
-      // Verify Save button uses sentence case
-      expect(find.text('Save profile'), findsOneWidget);
+      // Verify retired placebo Save button is no longer shown (sections auto-save individually)
+      expect(find.text('Save profile'), findsNothing);
     });
 
     testWidgets('JourneyActivityDetailScreen allows writing reflection and completing',

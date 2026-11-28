@@ -2339,10 +2339,14 @@ class AppStrings {
         return isArabic ? '25 - 34 سنة' : (isFrench ? '25-34 ans' : '25-34');
       case '35-44':
         return isArabic ? '35 - 44 سنة' : (isFrench ? '35-44 ans' : '35-44');
+      case '25-44':
+        return isArabic ? '25 - 44 سنة' : (isFrench ? '25-44 ans' : '25-44');
       case '45-54':
         return isArabic ? '45 - 54 سنة' : (isFrench ? '45-54 ans' : '45-54');
       case '55-64':
         return isArabic ? '55 - 64 سنة' : (isFrench ? '55-64 ans' : '55-64');
+      case '45-64':
+        return isArabic ? '45 - 64 سنة' : (isFrench ? '45-64 ans' : '45-64');
       case '65+':
         return isArabic ? '+65 سنة' : (isFrench ? '65 ans et plus' : '65+');
       case 'prefer_not_to_say':
@@ -7885,6 +7889,183 @@ class AppStrings {
       : (isFrench
             ? 'Affiche les dossiers de démonstration.'
             : 'Showing demonstration patient records.');
+
+  // Phase 5: Patient Portal Overhaul (Today, My days, Talk, Patterns, Me)
+  String get addOptionalNoteChip => isArabic
+      ? '+ إضافة ملاحظة (اختياري)'
+      : (isFrench ? '+ Ajouter une note (optionnel)' : '+ Add a note (optional)');
+
+  String get quickNoteInputHint => isArabic
+      ? 'سطر قصير عن اليوم (اختياري)...'
+      : (isFrench
+            ? 'Quelques mots sur votre journée (optionnel)...'
+            : 'A quick line about today (optional)...');
+
+  String get syncingQuietLabel => isArabic
+      ? 'جاري المزامنة...'
+      : (isFrench ? 'Synchronisation...' : 'Syncing...');
+
+  String get syncPausedQuietLabel => isArabic
+      ? 'المزامنة متوقّفة'
+      : (isFrench ? 'Synchro en pause' : 'Sync paused');
+
+  String get syncPausedHelpToast => isArabic
+      ? 'المزامنة مع طبيبك متوقّفة حالياً. ملاحظاتك محفوظة على هاتفك — اطلب من طبيبك تفعيلها.'
+      : (isFrench
+            ? 'La synchronisation avec votre médecin est en pause. Vos notes restent sur votre téléphone.'
+            : 'Sync with your doctor is paused. Your notes stay safe on this phone — ask your doctor to resume.');
+
+  String get allRecentEntriesTitle => isArabic
+      ? 'كل تسجيلاتك الأخيرة'
+      : (isFrench ? 'Toutes vos entrées récentes' : 'All recent entries');
+
+  String get loadOlderEntriesBtn => isArabic
+      ? 'عرض تسجيلات أقدم'
+      : (isFrench ? 'Afficher les entrées plus anciennes' : 'Load older entries');
+
+  String get privateOnlyFilterLabel => isArabic
+      ? 'الخاصة فقط'
+      : (isFrench ? 'Privées seulement' : 'Private only');
+
+  String get deleteCheckInConfirmTitle => isArabic
+      ? 'حذف هذا التسجيل؟'
+      : (isFrench ? 'Supprimer cette entrée ?' : 'Delete this check-in?');
+
+  String get deleteCheckInConfirmBody => isArabic
+      ? 'سيتم حذف هذا التسجيل من يومياتك. يمكنك التراجع مباشرة بعد الحذف.'
+      : (isFrench
+            ? 'Cette entrée sera retirée de votre journal. Vous pourrez annuler juste après.'
+            : 'This check-in will be removed from your history. You can undo right away.');
+
+  String get editMoodSectionLabel => isArabic
+      ? 'تعديل الشعور والقوة (اختياري)'
+      : (isFrench
+            ? 'Modifier le ressenti et l’intensité (optionnel)'
+            : 'Update feeling & strength (optional)');
+
+  String localizedWhatHelped(String raw) {
+    final norm = raw.trim().toLowerCase();
+    switch (norm) {
+      case 'help_walk':
+      case 'walk':
+        return isArabic ? 'مشي خفيف' : (isFrench ? 'Marche' : 'Walk');
+      case 'help_breathing':
+      case 'breathing':
+        return isArabic ? 'تنفّس هادئ' : (isFrench ? 'Respiration' : 'Breathing');
+      case 'help_quiet_time':
+      case 'quiet time':
+        return isArabic ? 'وقت هدوء' : (isFrench ? 'Temps calme' : 'Quiet time');
+      case 'help_talked':
+      case 'talked':
+        return isArabic
+            ? 'حديث مع شخص'
+            : (isFrench ? 'Parler à quelqu’un' : 'Talked');
+      case 'help_rest':
+      case 'rest':
+        return isArabic ? 'راحة' : (isFrench ? 'Repos' : 'Rest');
+      default:
+        return raw.trim();
+    }
+  }
+
+  String get talkCompanionDisclaimerBar => isArabic
+      ? 'مساعد Mindora الذكي · مساحة هادئة للتأمل (ليس طبيباً)'
+      : (isFrench
+            ? 'Compagnon IA Mindora · Espace de réflexion (pas un médecin)'
+            : 'Mindora AI Companion · Supportive reflection tool (not a doctor)');
+
+  String get talkSharedShortPill => isArabic
+      ? 'مشارك'
+      : (isFrench ? 'Partagé' : 'Shared');
+
+  String get talkPrivateShortPill => isArabic
+      ? 'خاص'
+      : (isFrench ? 'Privé' : 'Private');
+
+  String get searchPastTalksHint => isArabic
+      ? 'ابحث في حواراتك السابقة...'
+      : (isFrench
+            ? 'Rechercher dans vos échanges...'
+            : 'Search past talks...');
+
+  String get viewSummaryChip => isArabic
+      ? 'عرض الملخص'
+      : (isFrench ? 'Voir le bilan' : 'View summary');
+
+  String get backToTalkBtn => isArabic
+      ? 'العودة إلى الحوار'
+      : (isFrench ? 'Retour au dialogue' : 'Back to Talk');
+
+  String get editMyTakeawayTitle => isArabic
+      ? 'تعديل خلاصتي'
+      : (isFrench ? 'Modifier ma conclusion' : 'Edit my takeaway');
+
+  String get saveTakeawayBtn => isArabic
+      ? 'حفظ الخلاصة'
+      : (isFrench ? 'Enregistrer' : 'Save takeaway');
+
+  String get moodBalanceTitle => isArabic
+      ? 'توازن أيامك الشعوري'
+      : (isFrench ? 'Répartition de vos journées' : 'How your days felt');
+
+  String get moodBandSteadierLabel => isArabic
+      ? 'جيد وهادئ'
+      : (isFrench ? 'Bien & Calme' : 'Good & Calm');
+
+  String get moodBandTenseLabel => isArabic
+      ? 'قلق ومتوتر'
+      : (isFrench ? 'Inquiet & Agité' : 'Worried & Restless');
+
+  String get moodBandHeavyLabel => isArabic
+      ? 'ثقيل ومنزعج'
+      : (isFrench ? 'Bas & Contrarié' : 'Low & Annoyed');
+
+  String get careFromMyDoctorTitle => isArabic
+      ? 'المتابعة مع طبيبي'
+      : (isFrench ? 'Suivi avec mon médecin' : 'Care from my doctor');
+
+  String get managedByDoctorBadge => isArabic
+      ? 'بإشراف طبيبك'
+      : (isFrench ? 'Géré par votre médecin' : 'Managed by your doctor');
+
+  String get connectedToClinicBadge => isArabic
+      ? 'مرتبط بالعيادة'
+      : (isFrench ? 'Connecté au cabinet' : 'Connected to clinic');
+
+  String localizedOnboardingGoal(String raw) {
+    switch (raw.trim().toLowerCase()) {
+      case 'track_mood_sleep':
+        return isArabic
+            ? 'متابعة المزاج والنوم'
+            : (isFrench ? 'Suivre humeur et sommeil' : 'Track mood & sleep');
+      case 'doctor_visits':
+        return isArabic
+            ? 'التحضير لزيارات الطبيب'
+            : (isFrench
+                  ? 'Préparer mes visites médicales'
+                  : 'Prepare for doctor visits');
+      case 'spot_triggers':
+        return isArabic
+            ? 'فهم المحفّزات اليومية'
+            : (isFrench ? 'Repérer mes déclencheurs' : 'Spot daily triggers');
+      case 'build_routine':
+        return isArabic
+            ? 'بناء روتين هادئ'
+            : (isFrench ? 'Construire une routine' : 'Build a steady routine');
+      case 'understand_patterns':
+        return isArabic
+            ? 'فهم أنماطي الشخصية'
+            : (isFrench
+                  ? 'Comprendre mes schémas'
+                  : 'Understand personal patterns');
+      case 'manage_stress':
+        return isArabic
+            ? 'تخفيف التوتر اليومي'
+            : (isFrench ? 'Apaiser le stress' : 'Ease daily stress');
+      default:
+        return raw.replaceAll('_', ' ').trim();
+    }
+  }
 
   // Helper factory
   static AppStrings of(BuildContext context) {

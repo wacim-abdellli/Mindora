@@ -74,8 +74,8 @@ class PatternAwarenessService {
     // -------------------------------------------------------------------------
     // Combined Shift: Lower sleep co-occurring with elevated energy or racing thoughts
     if (sleepDeficit != null &&
-        sleepDeficit >= 0.1 &&
-        ((energySurge != null && energySurge >= 0.1) || hasRacingThoughts)) {
+        sleepDeficit >= 1.0 &&
+        ((energySurge != null && energySurge >= 1.5) || hasRacingThoughts)) {
       final recSleep = recentAvgSleep!.toStringAsFixed(1);
       final baseSleep = baseline.averageSleepHours!.toStringAsFixed(1);
       final List<String> observations = [
@@ -109,13 +109,13 @@ class PatternAwarenessService {
         );
       }
 
-      final energyClauseEn = (energySurge != null && energySurge >= 0.1)
+      final energyClauseEn = (energySurge != null && energySurge >= 1.5)
           ? 'reported energy is higher by ${energySurge.toStringAsFixed(1)} points'
           : 'energy ratings remain steady with your baseline';
-      final energyClauseFr = (energySurge != null && energySurge >= 0.1)
+      final energyClauseFr = (energySurge != null && energySurge >= 1.5)
           ? 'l’énergie déclarée est plus haute de ${energySurge.toStringAsFixed(1)} points'
           : 'l’énergie reste proche de votre repère habituel';
-      final energyClauseAr = (energySurge != null && energySurge >= 0.1)
+      final energyClauseAr = (energySurge != null && energySurge >= 1.5)
           ? 'والطاقة طالعة بـ ${energySurge.toStringAsFixed(1)} نقاط'
           : 'والطاقة قاعدة قريبة من معدّلك المعتاد';
       final sleepDiffStr = sleepDeficit.toStringAsFixed(1);
@@ -173,8 +173,8 @@ class PatternAwarenessService {
         : null;
 
     if (energyDrop != null &&
-        energyDrop >= 0.1 &&
-        ((moodDrop != null && moodDrop >= 0.1) || hasHeavyOrLowMood)) {
+        energyDrop >= 1.5 &&
+        ((moodDrop != null && moodDrop >= 1.2) || hasHeavyOrLowMood)) {
       final recEng = recentAvgEnergy!.toStringAsFixed(1);
       final baseEng = baseline.averageEnergyLevel!.toStringAsFixed(1);
       final List<String> observations = [
@@ -184,7 +184,7 @@ class PatternAwarenessService {
           'الطاقة المسجّلة كانت في حدود $recEng/10 على ${recentEnergyValues.length} تسجيلات (معدّلك المعتاد: $baseEng/10 على ${baseline.energyObservationCount} تسجيل).',
         ),
       ];
-      if (moodDrop != null && moodDrop >= 0.1) {
+      if (moodDrop != null && moodDrop >= 1.2) {
         final recMood = recentAvgIntensity!.toStringAsFixed(1);
         final dropStr = moodDrop.toStringAsFixed(1);
         final baseMood = baseline.averageMoodIntensity!.toStringAsFixed(1);
@@ -254,7 +254,7 @@ class PatternAwarenessService {
     // -------------------------------------------------------------------------
     // Independent Sleep difference: reported regardless of energy level
     final alreadyHasCombinedSleep = divergences.any((d) => d.category == DivergenceCategory.elevatedActivation);
-    if (!alreadyHasCombinedSleep && sleepDeficit != null && sleepDeficit.abs() >= 0.1) {
+    if (!alreadyHasCombinedSleep && sleepDeficit != null && sleepDeficit.abs() >= 1.0) {
       final recSleep = recentAvgSleep!.toStringAsFixed(1);
       final baseSleep = baseline.averageSleepHours!.toStringAsFixed(1);
       final diffStr = sleepDeficit.abs().toStringAsFixed(1);
@@ -304,7 +304,7 @@ class PatternAwarenessService {
 
     // Independent Energy difference: reported regardless of mood
     final alreadyHasCombinedEnergy = divergences.any((d) => d.category == DivergenceCategory.lowActivation || d.category == DivergenceCategory.elevatedActivation);
-    if (!alreadyHasCombinedEnergy && energyDrop != null && energyDrop.abs() >= 0.1) {
+    if (!alreadyHasCombinedEnergy && energyDrop != null && energyDrop.abs() >= 1.5) {
       final recEng = recentAvgEnergy!.toStringAsFixed(1);
       final baseEng = baseline.averageEnergyLevel!.toStringAsFixed(1);
       final diffStr = energyDrop.abs().toStringAsFixed(1);
@@ -566,7 +566,7 @@ class WeeklySummaryReport {
 
     // Topics to discuss with therapist
     final topics = <String>[];
-    if (sleepDiff != null && sleepDiff.abs() >= 0.1 && avgSleepThisWeek != null && baseline.averageSleepHours != null) {
+    if (sleepDiff != null && sleepDiff.abs() >= 0.8 && avgSleepThisWeek != null && baseline.averageSleepHours != null) {
       final wSleep = avgSleepThisWeek.toStringAsFixed(1);
       final bSleep = baseline.averageSleepHours!.toStringAsFixed(1);
       topics.add(strings.isArabic

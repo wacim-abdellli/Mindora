@@ -3,17 +3,21 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/localization/app_strings.dart';
+import '../../../../app/localization/mind_formatters.dart';
 import '../../../../app/theme/mind_tokens.dart';
 import '../../../../core/safety/crisis_keywords.dart';
 import '../../../../core/safety/safety_interceptor.dart';
 import '../../../../core/safety/support_button.dart';
 import '../../../../core/widgets/mind_button.dart';
+import '../../../../core/widgets/mind_dialog.dart';
 import '../../../../core/widgets/mind_pressable.dart';
 import '../../../../core/widgets/mind_switch.dart';
 import '../../../../core/widgets/mind_undo_banner.dart';
 import '../../../../core/widgets/mood_face.dart';
+import '../../../auth/controllers/auth_controller.dart';
 import '../../../mind_trace/controllers/mind_trace_controller.dart';
 import '../../../mind_trace/domain/affect_taxonomy.dart';
+import '../../../mind_trace/domain/daily_context_tags.dart';
 import '../../../mind_trace/domain/mind_trace_model.dart';
 import 'track_mood_picker.dart';
 import 'track_mood_utils.dart';
@@ -60,9 +64,19 @@ class TrackEntryDetailSheet extends ConsumerWidget {
     WidgetRef ref,
     AppStrings strings,
     MindTokens tokens,
+    MindTraceModel deletedTrace,
   ) async {
+    final confirmed = await showMindConfirmDialog(
+      context,
+      title: strings.deleteCheckInConfirmTitle,
+      body: strings.deleteCheckInConfirmBody,
+      confirmLabel: strings.deleteEntryBtn,
+      cancelLabel: strings.cancelBtn,
+      destructive: true,
+      icon: Icons.delete_outline_rounded,
+    );
+    if (!confirmed || !context.mounted) return;
     HapticFeedback.mediumImpact();
-    final deletedTrace = trace;
     final notifier = ref.read(mindTraceControllerProvider.notifier);
     final rootContext = Navigator.of(context, rootNavigator: true).context;
     await notifier.deleteCheckIn(deletedTrace.id);
@@ -92,12 +106,32 @@ class TrackEntryDetailSheet extends ConsumerWidget {
             .cast<MindTraceModel?>()
             .firstWhere((t) => t?.id == trace.id, orElse: () => trace) ??
         trace;
+    final isClinicAccount =
+        ref.watch(authControllerProvider).user?.isClinicAccount == true;
     final moodStyle = trackMoodOptionFor(liveTrace.overallMood);
     final moodText = trackMoodLabel(liveTrace.overallMood, strings);
     final ts = liveTrace.effectiveTimestamp;
     final hour = ts.hour.toString().padLeft(2, '0');
     final minute = ts.minute.toString().padLeft(2, '0');
     final nuanced = liveTrace.nuancedEmotions;
+    final somaticPills = <String>[
+      if (liveTrace.sleepHours != null)
+        '${strings.sleepTrackingLabel}: ${MindFormatters.hours(liveTrace.sleepHours!, strings)}',
+      if (liveTrace.energyLevel != null)
+        '${strings.energyTrackingLabel}: ${liveTrace.energyLevel}/10',
+      if (liveTrace.anxietyLevel != null)
+        '${strings.anxietyTrackingLabel}: ${liveTrace.anxietyLevel}/10',
+      if (liveTrace.physicalTension != null)
+        '${strings.physicalTensionLabel}: ${liveTrace.physicalTension}/10',
+    ];
+    final helpedItems = liveTrace.behavioralResponse == null
+        ? const <String>[]
+        : liveTrace.behavioralResponse!
+              .split(',')
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty)
+              .map(strings.localizedWhatHelped)
+              .toList();
 
     return Container(
       decoration: BoxDecoration(
@@ -133,7 +167,7 @@ class TrackEntryDetailSheet extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${strings.formatHumanDate(trace.effectiveTimestamp)} • $hour:$minute',
+                          '${strings.formatHumanDate(liveTrace.effectiveTimestamp)} • $hour:$minute',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -165,7 +199,7 @@ class TrackEntryDetailSheet extends ConsumerWidget {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   MoodFace(
-                                    mood: AppMood.fromKey(trace.overallMood),
+                                    mood: AppMood.fromKey(liveTrace.overallMood),
                                     size: 24,
                                   ),
                                   const SizedBox(width: 8),
@@ -191,7 +225,7 @@ class TrackEntryDetailSheet extends ConsumerWidget {
                               ),
                               child: Text(
                                 strings.strengthWordForIntensity(
-                                  trace.moodIntensity,
+                                  liveTrace.moodIntensity,
                                 ),
                                 style: TextStyle(
                                   fontSize: 13.0,
@@ -242,8 +276,37 @@ class TrackEntryDetailSheet extends ConsumerWidget {
                   ],
                 ),
               ],
-              if (trace.journalText != null &&
-                  trace.journalText!.trim().isNotEmpty) ...[
+              if (somaticPills.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final item in somaticPills)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: tokens.surface2,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: tokens.line),
+                        ),
+                        child: Text(
+                          item,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: tokens.ink,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+              if (liveTrace.journalText != null &&
+                  liveTrace.journalText!.trim().isNotEmpty) ...[
                 const SizedBox(height: 16),
                 Container(
                   width: double.infinity,
@@ -254,7 +317,7 @@ class TrackEntryDetailSheet extends ConsumerWidget {
                     border: Border.all(color: tokens.line),
                   ),
                   child: Text(
-                    trace.journalText!.trim(),
+                    liveTrace.journalText!.trim(),
                     style: TextStyle(
                       fontSize: 13.5,
                       height: 1.48,
@@ -263,8 +326,82 @@ class TrackEntryDetailSheet extends ConsumerWidget {
                   ),
                 ),
               ],
-              if (trace.situation != null &&
-                  trace.situation!.trim().isNotEmpty) ...[
+              if (liveTrace.contextTags.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Text(
+                  strings.whatWasPartOfTodayQuestion,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: strings.isArabic ? 0 : 0.2,
+                    color: tokens.ink2,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: liveTrace.contextTags
+                      .map(
+                        (tag) => Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: tokens.surface2,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: tokens.line),
+                          ),
+                          child: Text(
+                            DailyContextTags.localizedLabel(tag, strings),
+                            style: TextStyle(fontSize: 12, color: tokens.ink),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
+              if (helpedItems.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Text(
+                  strings.whatHelpedTodayLabel,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: strings.isArabic ? 0 : 0.2,
+                    color: tokens.ink2,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: helpedItems
+                      .map(
+                        (item) => Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: tokens.surface2,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: tokens.line),
+                          ),
+                          child: Text(
+                            item,
+                            style: TextStyle(fontSize: 12, color: tokens.ink),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
+              if (liveTrace.situation != null &&
+                  liveTrace.situation!.trim().isNotEmpty) ...[
                 const SizedBox(height: 14),
                 Text(
                   strings.triggersContextHeader,
@@ -280,7 +417,7 @@ class TrackEntryDetailSheet extends ConsumerWidget {
                 Wrap(
                   spacing: 6,
                   runSpacing: 6,
-                  children: trace.situation!
+                  children: liveTrace.situation!
                       .split(',')
                       .map((s) => s.trim())
                       .where((s) => s.isNotEmpty)
@@ -323,7 +460,9 @@ class TrackEntryDetailSheet extends ConsumerWidget {
                     Icon(
                       liveTrace.isPrivate
                           ? Icons.lock_outline_rounded
-                          : Icons.health_and_safety_outlined,
+                          : (isClinicAccount
+                                ? Icons.health_and_safety_outlined
+                                : Icons.smartphone_outlined),
                       size: 20,
                       color: liveTrace.isPrivate ? tokens.ink : tokens.m1,
                     ),
@@ -344,7 +483,9 @@ class TrackEntryDetailSheet extends ConsumerWidget {
                           Text(
                             liveTrace.isPrivate
                                 ? strings.keepJustForMeDesc
-                                : strings.sharedWithDoctorStatus,
+                                : (isClinicAccount
+                                      ? strings.sharedWithDoctorStatus
+                                      : strings.localDeviceOnlyLabel),
                             style: TextStyle(
                               fontSize: 12,
                               color: tokens.ink2,
@@ -432,8 +573,13 @@ class TrackEntryDetailSheet extends ConsumerWidget {
                     child: MindPressable(
                       semanticLabel: strings.deleteEntryBtn,
                       borderRadius: BorderRadius.circular(tokens.buttonRadius),
-                      onPressed: () =>
-                          _confirmAndDelete(context, ref, strings, tokens),
+                      onPressed: () => _confirmAndDelete(
+                        context,
+                        ref,
+                        strings,
+                        tokens,
+                        liveTrace,
+                      ),
                       child: Container(
                         constraints: const BoxConstraints(minHeight: 48),
                         padding: const EdgeInsets.symmetric(horizontal: 10),

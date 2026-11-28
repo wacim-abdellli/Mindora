@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../../app/localization/app_strings.dart';
 import '../../../../app/theme/lab_theme.dart';
 import '../../../../app/theme/mind_tokens.dart';
+import '../../../../core/widgets/mind_badge.dart';
 import '../../../../core/widgets/mind_button.dart';
 import '../../../../core/widgets/mind_card.dart';
 import '../../../../core/widgets/mind_strength_picker.dart';
@@ -35,6 +36,7 @@ class HomeDailyCheckInCard extends StatefulWidget {
     required this.getMoodLabel,
     required this.getMoodColor,
     this.todayTraces = const [],
+    this.isClinicAccount = false,
     this.onQuickSave,
     this.onAddDetails,
     this.onBreatheTap,
@@ -48,6 +50,7 @@ class HomeDailyCheckInCard extends StatefulWidget {
   final MindTraceModel? todayTrace;
   final List<MindTraceModel> traces;
   final List<MindTraceModel> todayTraces;
+  final bool isClinicAccount;
   final int selectedMoodIndex;
   final double moodIntensity;
   final TextEditingController todayNoteController;
@@ -57,8 +60,13 @@ class HomeDailyCheckInCard extends StatefulWidget {
   final VoidCallback onSave;
   final String Function(String key, AppStrings strings) getMoodLabel;
   final Color Function(String key) getMoodColor;
-  final void Function(String moodKey, int intensity, {bool createNew})?
-  onQuickSave;
+  final void Function(
+    String moodKey,
+    int intensity, {
+    bool createNew,
+    String? note,
+    bool isPrivate,
+  })? onQuickSave;
   final ValueChanged<MindTraceModel>? onAddDetails;
   final VoidCallback? onBreatheTap;
   final ValueChanged<MindTraceModel>? onTalkAboutIt;
@@ -72,6 +80,8 @@ class _HomeDailyCheckInCardState extends State<HomeDailyCheckInCard> {
   bool _isEditing = false;
   bool _creatingNewMoment = false;
   AppMood? _pickedMood;
+  bool _showNoteInput = false;
+  bool _keepPrivate = false;
 
   @override
   void didUpdateWidget(covariant HomeDailyCheckInCard oldWidget) {
@@ -82,6 +92,8 @@ class _HomeDailyCheckInCardState extends State<HomeDailyCheckInCard> {
         _isEditing = false;
         _creatingNewMoment = false;
         _pickedMood = null;
+        _showNoteInput = false;
+        _keepPrivate = false;
       }
     }
   }
@@ -96,21 +108,27 @@ class _HomeDailyCheckInCardState extends State<HomeDailyCheckInCard> {
 
   void _handleStrengthTap(int intensity) {
     final mood = _pickedMood ?? AppMood.calm;
+    final noteText = widget.todayNoteController.text.trim();
     HapticFeedback.mediumImpact();
     if (widget.onQuickSave != null) {
       widget.onQuickSave!(
         mood.key,
         intensity,
         createNew: _creatingNewMoment,
+        note: noteText.isEmpty ? null : noteText,
+        isPrivate: _keepPrivate,
       );
     } else {
       widget.onIntensityChanged(intensity.toDouble());
       widget.onSave();
     }
+    widget.todayNoteController.clear();
     setState(() {
       _isEditing = false;
       _creatingNewMoment = false;
       _pickedMood = null;
+      _showNoteInput = false;
+      _keepPrivate = false;
     });
   }
 
@@ -255,6 +273,71 @@ class _HomeDailyCheckInCardState extends State<HomeDailyCheckInCard> {
                         accentColor: MindTokens.moodColor(_pickedMood!),
                         onSelected: _handleStrengthTap,
                       ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          MindBadge(
+                            key: const ValueKey<String>(
+                              'today-add-note-toggle',
+                            ),
+                            icon: Icons.edit_note_rounded,
+                            label: strings.addOptionalNoteChip,
+                            isSelected: _showNoteInput,
+                            onTap: () => setState(
+                              () => _showNoteInput = !_showNoteInput,
+                            ),
+                          ),
+                          if (widget.isClinicAccount)
+                            MindBadge(
+                              key: const ValueKey<String>(
+                                'today-keep-private-toggle',
+                              ),
+                              icon: _keepPrivate
+                                  ? Icons.lock_rounded
+                                  : Icons.lock_open_rounded,
+                              label: strings.keepJustForMeLabel,
+                              isSelected: _keepPrivate,
+                              onTap: () =>
+                                  setState(() => _keepPrivate = !_keepPrivate),
+                            ),
+                        ],
+                      ),
+                      if (_showNoteInput) ...[
+                        const SizedBox(height: 10),
+                        TextField(
+                          key: const ValueKey<String>('today-quick-note-field'),
+                          controller: widget.todayNoteController,
+                          maxLines: 2,
+                          style: TextStyle(fontSize: 14, color: tokens.ink),
+                          decoration: InputDecoration(
+                            hintText: strings.quickNoteInputHint,
+                            hintStyle: TextStyle(
+                              fontSize: 13.5,
+                              color: tokens.ink3,
+                            ),
+                            filled: true,
+                            fillColor: tokens.surface,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                tokens.inputRadius,
+                              ),
+                              borderSide: BorderSide(color: tokens.line),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                tokens.inputRadius,
+                              ),
+                              borderSide: BorderSide(color: tokens.line),
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

@@ -5,10 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/localization/app_strings.dart';
 import '../../../app/theme/lab_theme.dart';
 import '../../../app/theme/mind_tokens.dart';
-import '../../../core/widgets/bouncing_widget.dart';
 import '../../../core/widgets/fingerprint_thread_signature.dart';
 import '../../../core/widgets/mind_switch.dart';
+import '../../auth/controllers/auth_controller.dart';
+import '../../auth/domain/auth_user.dart';
+import '../../clinician/controllers/clinician_providers.dart';
+import '../../clinician/domain/post_visit_focus_model.dart';
 import '../controllers/profile_controller.dart';
+import '../domain/clinical_condition_catalog.dart';
 import '../domain/communication_preferences_catalog.dart';
 import '../domain/diagnostic_status.dart';
 import '../domain/psychological_profile_model.dart';
@@ -40,6 +44,9 @@ class PsychologicalProfileView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(profileControllerProvider);
+    final authUser = ref.watch(authControllerProvider).user;
+    final activeFocusPlan = ref.watch(postVisitFocusControllerProvider).value;
+    final isClinicAccount = authUser?.isClinicAccount == true;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final strings = ref.watch(appStringsProvider);
@@ -69,7 +76,20 @@ class PsychologicalProfileView extends ConsumerWidget {
                 borderColor,
                 textPrimary,
                 textSecondary,
+                isClinicAccount: isClinicAccount,
               ),
+
+              if (isClinicAccount && authUser != null) ...[
+                const SizedBox(height: 14),
+                _buildCareFromMyDoctorCard(
+                  context: context,
+                  tokens: tokens,
+                  strings: strings,
+                  authUser: authUser,
+                  profile: profile,
+                  focusPlan: activeFocusPlan,
+                ),
+              ],
 
               const SizedBox(height: 18),
 
@@ -245,55 +265,144 @@ class PsychologicalProfileView extends ConsumerWidget {
                 textSecondary,
               ),
 
-              const SizedBox(height: 24),
-
-              // Save / Confirm Button
-              BouncingWidget(
-                onTap: () {
-                  HapticFeedback.mediumImpact();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: tokens.surface,
-                      content: Text(
-                        strings.profileSavedSnackbar,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: tokens.ink,
-                        ),
-                      ),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  );
-                },
-                child: Container(
-                  width: double.infinity,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: tokens.ink,
-                    borderRadius: BorderRadius.circular(tokens.buttonRadius),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    strings.saveProfileBtn,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.6,
-                      color: tokens.bg,
-                    ),
-                  ),
-                ),
-              ),
-
               const SizedBox(height: 32),
             ],
           ),
         );
       },
+    );
+  }
+
+  // ===========================================================================
+  // READ-ONLY CLINIC CONNECTION CARD ("CARE FROM MY DOCTOR")
+  // ===========================================================================
+  Widget _buildCareFromMyDoctorCard({
+    required BuildContext context,
+    required MindTokens tokens,
+    required AppStrings strings,
+    required AuthUser authUser,
+    required PsychologicalProfileModel profile,
+    required PostVisitFocusPlan? focusPlan,
+  }) {
+    final activeTracks = ClinicalConditionCatalog.resolveTracks(profile)
+        .where((t) => t != ClinicalTrack.generalWellness)
+        .toList();
+    final hasActivePlan = focusPlan != null && !focusPlan.isDismissed;
+
+    return Container(
+      key: const ValueKey('profile-clinic-connection-card'),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: tokens.cardTint,
+        borderRadius: BorderRadius.circular(tokens.cardRadius),
+        border: Border.all(color: tokens.line, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.medical_services_outlined,
+                    size: 16,
+                    color: tokens.ink,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    strings.careFromMyDoctorTitle,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      color: tokens.ink,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: tokens.surface,
+                  borderRadius: BorderRadius.circular(tokens.chipRadius),
+                  border: Border.all(color: tokens.line),
+                ),
+                child: Text(
+                  strings.managedByDoctorBadge,
+                  style: TextStyle(
+                    fontSize: 12.0,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.ink2,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if ((authUser.doctorName ?? '').trim().isNotEmpty)
+            Text(
+              authUser.doctorName!.trim(),
+              style: TextStyle(
+                fontSize: 14.5,
+                fontWeight: FontWeight.w700,
+                color: tokens.ink,
+              ),
+            ),
+          if ((authUser.clinicName ?? '').trim().isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              authUser.clinicName!.trim(),
+              style: TextStyle(fontSize: 12.5, color: tokens.ink2),
+            ),
+          ],
+          if (activeTracks.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final track in activeTracks)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: tokens.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: tokens.line),
+                    ),
+                    child: Text(
+                      track.localizedTitle(strings),
+                      style: TextStyle(
+                        fontSize: 12.0,
+                        fontWeight: FontWeight.w600,
+                        color: tokens.ink,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+          if (hasActivePlan && focusPlan.observationCue.trim().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              focusPlan.observationCue.trim(),
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.4,
+                color: tokens.ink2,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -307,8 +416,9 @@ class PsychologicalProfileView extends ConsumerWidget {
     Color surfaceColor,
     Color borderColor,
     Color textPrimary,
-    Color textSecondary,
-  ) {
+    Color textSecondary, {
+    bool isClinicAccount = false,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -319,24 +429,32 @@ class PsychologicalProfileView extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              const FingerprintThreadSignature(size: 20, animated: false),
-              const SizedBox(width: 8),
-              Text(
-                strings.isArabic
-                    ? 'نظرة عامة على الملف'
-                    : (strings.isFrench
-                          ? 'Aperçu du profil'
-                          : 'Profile overview'),
-                style: TextStyle(
-                  fontSize: 13.0,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: strings.isArabic ? 0 : 0.2,
-                  color: context.tokens.ink,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const FingerprintThreadSignature(size: 20, animated: false),
+                  const SizedBox(width: 8),
+                  Text(
+                    strings.isArabic
+                        ? 'نظرة عامة على الملف'
+                        : (strings.isFrench
+                              ? 'Aperçu du profil'
+                              : 'Profile overview'),
+                    style: TextStyle(
+                      fontSize: 13.0,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: strings.isArabic ? 0 : 0.2,
+                      color: context.tokens.ink,
+                    ),
+                  ),
+                ],
               ),
-              const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 9,
@@ -350,11 +468,13 @@ class PsychologicalProfileView extends ConsumerWidget {
                   border: Border.all(color: context.tokens.line),
                 ),
                 child: Text(
-                  strings.isArabic
-                      ? 'حساب محلي آمن'
-                      : (strings.isFrench
-                            ? 'Compte local sécurisé'
-                            : 'Private on device'),
+                  isClinicAccount
+                      ? strings.connectedToClinicBadge
+                      : (strings.isArabic
+                            ? 'حساب محلي آمن'
+                            : (strings.isFrench
+                                  ? 'Compte local sécurisé'
+                                  : 'Private on device')),
                   style: TextStyle(
                     fontSize: 12.0,
                     fontWeight: FontWeight.w700,
@@ -428,7 +548,7 @@ class PsychologicalProfileView extends ConsumerWidget {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
-                          letterSpacing: 0.4,
+                          letterSpacing: strings.isArabic ? 0 : 0.4,
                           color: textPrimary,
                         ),
                       ),
@@ -556,7 +676,7 @@ class PsychologicalProfileView extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  profile.ageRange,
+                  strings.ageRangeDisplayName(profile.ageRange),
                   style: TextStyle(
                     fontSize: 12.0,
                     fontWeight: FontWeight.w600,
@@ -606,11 +726,14 @@ class PsychologicalProfileView extends ConsumerWidget {
       );
     }
 
-    return Wrap(
-      spacing: 6,
-      runSpacing: 6,
-      children: profile.conditions.map((entry) {
-        return Container(
+    final chips = <Widget>[];
+    final seenLabels = <String>{};
+
+    for (final entry in profile.conditions) {
+      final label = strings.conditionName(entry.condition);
+      seenLabels.add(label.toLowerCase());
+      chips.add(
+        Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
             color: context.tokens.surface2,
@@ -621,7 +744,7 @@ class PsychologicalProfileView extends ConsumerWidget {
             TextSpan(
               children: [
                 TextSpan(
-                  text: strings.conditionName(entry.condition),
+                  text: label,
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
@@ -641,9 +764,73 @@ class PsychologicalProfileView extends ConsumerWidget {
               ],
             ),
           ),
-        );
-      }).toList(),
-    );
+        ),
+      );
+    }
+
+    for (final condId in profile.selectedConditionIds) {
+      final item = ClinicalConditionCatalog.byId(condId);
+      final label = item != null
+          ? item.localized(strings)
+          : condId.replaceAll('_', ' ').trim();
+      if (label.isEmpty || !seenLabels.add(label.toLowerCase())) continue;
+      chips.add(
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: context.tokens.surface2,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: context.tokens.line),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: context.tokens.ink,
+            ),
+          ),
+        ),
+      );
+    }
+
+    for (final trackId in profile.selectedTrackIds) {
+      final track = ClinicalTrack.tryParse(trackId);
+      if (track == null || track == ClinicalTrack.generalWellness) continue;
+      final label = track.localizedTitle(strings);
+      if (!seenLabels.add(label.toLowerCase())) continue;
+      chips.add(
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: context.tokens.cardTint,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: context.tokens.line),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: context.tokens.ink,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (chips.isEmpty) {
+      return Text(
+        strings.isArabic
+            ? 'ما فماش اختيارات حالياً · انقر لاختيار المجالات اللي تهمّك.'
+            : (strings.isFrench
+                  ? 'Aucune sélection pour l’instant · touchez pour choisir.'
+                  : 'None selected yet · tap to choose focus areas.'),
+        style: TextStyle(fontSize: 12.5, color: textSecondary),
+      );
+    }
+
+    return Wrap(spacing: 6, runSpacing: 6, children: chips);
   }
 
   // ===========================================================================
@@ -760,7 +947,7 @@ class PsychologicalProfileView extends ConsumerWidget {
             border: Border.all(color: borderColor),
           ),
           child: Text(
-            goal,
+            strings.localizedOnboardingGoal(goal),
             style: TextStyle(
               fontSize: 12.0,
               fontWeight: FontWeight.w600,
@@ -918,7 +1105,7 @@ class PsychologicalProfileView extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: 0.4,
+                    letterSpacing: strings.isArabic ? 0 : 0.4,
                     color: textPrimary,
                   ),
                 ),
@@ -929,7 +1116,7 @@ class PsychologicalProfileView extends ConsumerWidget {
                   size: 16,
                   color: context.tokens.ink,
                 ),
-                tooltip: 'Privacy settings',
+                tooltip: strings.sectionPrivacy,
                 onPressed: () => PrivacyManagementSheet.show(context, profile),
               ),
             ],

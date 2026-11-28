@@ -11,6 +11,7 @@ import '../../../../core/widgets/mind_button.dart';
 import '../../../../core/widgets/mind_chip.dart';
 import '../../../../core/widgets/mind_pressable.dart';
 import '../../../../core/widgets/mind_sheet.dart';
+import '../../../../core/widgets/mind_strength_picker.dart';
 import '../../../../core/widgets/mind_toast.dart';
 import '../../../../core/widgets/quick_note_sparks_bar.dart';
 import '../../../mind_trace/controllers/mind_trace_controller.dart';
@@ -55,6 +56,8 @@ class _ProgressiveDetailsSheetState
   int _cardIndex = 0;
   bool _saving = false;
 
+  late String _overallMood;
+  late int _moodIntensity;
   late final Set<String> _nuanced;
   double? _sleepHours;
   int? _energyLevel;
@@ -63,17 +66,41 @@ class _ProgressiveDetailsSheetState
   late final TextEditingController _noteCtrl;
 
   static const List<String> _helpedOptions = [
-    'Walk',
-    'Breathing',
-    'Quiet time',
-    'Talked',
-    'Rest',
+    'help_walk',
+    'help_breathing',
+    'help_quiet_time',
+    'help_talked',
+    'help_rest',
   ];
+
+  static String _canonicalHelpedKey(String raw) {
+    switch (raw.trim().toLowerCase()) {
+      case 'help_walk':
+      case 'walk':
+        return 'help_walk';
+      case 'help_breathing':
+      case 'breathing':
+        return 'help_breathing';
+      case 'help_quiet_time':
+      case 'quiet time':
+        return 'help_quiet_time';
+      case 'help_talked':
+      case 'talked':
+        return 'help_talked';
+      case 'help_rest':
+      case 'rest':
+        return 'help_rest';
+      default:
+        return raw.trim();
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     final t = widget.trace;
+    _overallMood = t.overallMood;
+    _moodIntensity = t.moodIntensity;
     _nuanced = {...t.nuancedEmotions};
     _sleepHours = t.sleepHours;
     _energyLevel = t.energyLevel;
@@ -82,7 +109,7 @@ class _ProgressiveDetailsSheetState
       if (t.behavioralResponse != null && t.behavioralResponse!.trim().isNotEmpty)
         ...t.behavioralResponse!
             .split(',')
-            .map((e) => e.trim())
+            .map((e) => _canonicalHelpedKey(e))
             .where((e) => e.isNotEmpty),
     };
     _noteCtrl = TextEditingController(text: t.journalText ?? '');
@@ -105,8 +132,10 @@ class _ProgressiveDetailsSheetState
     setState(() => _saving = true);
     HapticFeedback.mediumImpact();
 
-    final baseMood = widget.trace.overallMood;
+    final baseMood = _overallMood;
     final updated = widget.trace.copyWith(
+      overallMood: baseMood,
+      moodIntensity: _moodIntensity,
       selectedEmotions: <String>[
         baseMood,
         ..._nuanced.where((e) => e.toLowerCase() != baseMood.toLowerCase()),
@@ -259,11 +288,49 @@ class _ProgressiveDetailsSheetState
   }
 
   Widget _buildCardNuance(MindTokens tokens, AppStrings strings) {
+    final currentMood = AppMood.fromKey(_overallMood);
     final options =
-        AffectTaxonomy.prioritizedForCore(widget.trace.overallMood).take(6);
+        AffectTaxonomy.prioritizedForCore(_overallMood).take(6);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(
+          strings.editMoodSectionLabel,
+          style: LabTheme.textStyle(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w700,
+            color: tokens.ink2,
+          ),
+        ),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final mood in AppMood.values) ...[
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(end: 8),
+                  child: MindChip(
+                    key: ValueKey('progressive-mood-${mood.key}'),
+                    label: strings.plainMoodLabel(mood.key),
+                    selected: currentMood == mood,
+                    onTap: () => setState(() => _overallMood = mood.key),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        MindStrengthPicker(
+          selectedIntensity: _moodIntensity,
+          aLittleLabel: strings.strengthALittle,
+          mediumLabel: strings.strengthMedium,
+          aLotLabel: strings.strengthALot,
+          accentColor: MindTokens.moodColor(currentMood),
+          onSelected: (val) => setState(() => _moodIntensity = val),
+        ),
+        const SizedBox(height: 18),
         Text(
           strings.closerWordQuestion,
           style: LabTheme.textStyle(
@@ -453,7 +520,7 @@ class _ProgressiveDetailsSheetState
           children: [
             for (final item in _helpedOptions)
               MindChip(
-                label: strings.helpedOptionLabel(item),
+                label: strings.localizedWhatHelped(item),
                 selected: _helped.contains(item),
                 onTap: () {
                   setState(() {
@@ -483,7 +550,7 @@ class _ProgressiveDetailsSheetState
         ),
         const SizedBox(height: 12),
         QuickNoteSparksBar(
-          moodKey: widget.trace.overallMood,
+          moodKey: _overallMood,
           controller: _noteCtrl,
           strings: strings,
         ),

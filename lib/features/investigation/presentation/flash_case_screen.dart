@@ -10,6 +10,7 @@ import '../../../app/theme/mind_tokens.dart';
 import '../../../core/safety/support_button.dart';
 import '../../../core/widgets/mind_pressable.dart';
 import '../../../core/widgets/mind_sheet.dart';
+import '../../../core/widgets/mind_toast.dart';
 import '../../journal/presentation/widgets/journal_memory_sheet.dart';
 import '../../profile/controllers/profile_controller.dart';
 import '../controllers/investigation_providers.dart';
@@ -240,14 +241,8 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
     final caseAsync = ref.watch(activeCaseControllerProvider);
     final strings = ref.watch(appStringsProvider);
     final tokens = context.tokens;
-    final aiConfig = ref.watch(aiConfigProvider);
-    final profile = ref.watch(profileControllerProvider).value;
-    final profileConsented =
-        (profile?.shareWithAiCompanion ?? false) &&
-        (profile?.allowAiPersonalization ?? false);
     final caseModel = caseAsync.value;
-    final isLiveConnected =
-        aiConfig.isLiveActive && profileConsented && !(caseModel?.isPrivate ?? false);
+    final isPrivate = caseModel?.isPrivate ?? false;
 
     ref.listen<AsyncValue<CaseModel?>>(activeCaseControllerProvider, (
       prev,
@@ -297,26 +292,70 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
                 ),
               ),
             ),
-            const SizedBox(width: 6),
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isLiveConnected
-                    ? MindTokens.moodCalm
-                    : tokens.ink2.withValues(alpha: 0.45),
-              ),
-            ),
-            if (caseModel?.isPrivate ?? false) ...[
+            if (!_showHubView && caseModel != null) ...[
               const SizedBox(width: 8),
-              Tooltip(
-                message: strings.keepJustForMeLabel,
-                child: Icon(
-                  Icons.lock_outline_rounded,
-                  key: const ValueKey('talk-private-lock-badge'),
-                  size: 16,
-                  color: tokens.ink2,
+              MindPressable(
+                key: const ValueKey('talk-header-privacy-pill'),
+                semanticLabel: strings.talkPrivateToggleTitle,
+                selected: isPrivate,
+                borderRadius: BorderRadius.circular(12),
+                onPressed: () async {
+                  HapticFeedback.selectionClick();
+                  await ref
+                      .read(activeCaseControllerProvider.notifier)
+                      .toggleCasePrivacy(caseModel.id);
+                  if (!context.mounted) return;
+                  final nowPrivate =
+                      ref.read(activeCaseControllerProvider).value?.isPrivate ??
+                      !isPrivate;
+                  if (nowPrivate) {
+                    showMindToast(context, strings.talkPrivateEnabledNotice);
+                  }
+                },
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 48),
+                  child: Center(
+                    widthFactor: 1.0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isPrivate ? tokens.cardTint : tokens.surface2,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isPrivate ? tokens.ink : tokens.line,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isPrivate
+                                ? Icons.lock_outline_rounded
+                                : Icons.lock_open_rounded,
+                            key: isPrivate
+                                ? const ValueKey('talk-private-lock-badge')
+                                : null,
+                            size: 13,
+                            color: isPrivate ? tokens.ink : tokens.ink2,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            isPrivate
+                                ? strings.talkPrivateShortPill
+                                : strings.talkSharedShortPill,
+                            style: LabTheme.textStyle(
+                              fontSize: 12.0,
+                              fontWeight: FontWeight.w700,
+                              color: isPrivate ? tokens.ink : tokens.ink2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -324,59 +363,56 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
         ),
         actions: [
           if (!_showHubView)
-            Semantics(
-              button: true,
-              label: strings.talkHistoryTooltip,
-              child: Padding(
-                padding: const EdgeInsetsDirectional.only(end: 2),
-                child: MindPressable(
-                  key: const ValueKey('talk-history-btn'),
-                  semanticLabel: strings.talkHistoryTooltip,
-                  borderRadius: BorderRadius.circular(tokens.chipRadius),
-                  onPressed: () {
-                    HapticFeedback.selectionClick();
-                    setState(() => _showHubView = true);
-                  },
-                  child: Tooltip(
-                    message: strings.talkHistoryTooltip,
-                    child: Container(
-                      constraints: const BoxConstraints(
-                        minWidth: 48,
-                        minHeight: 48,
-                      ),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: MediaQuery.sizeOf(context).width >= 355
-                            ? 10
-                            : 8,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: tokens.surface,
-                        borderRadius: BorderRadius.circular(tokens.chipRadius),
-                        border: Border.all(color: tokens.line),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.history_rounded,
-                            size: 19,
-                            color: tokens.ink,
-                          ),
-                          if (MediaQuery.sizeOf(context).width >= 355 &&
-                              MediaQuery.textScalerOf(context).scale(14) <= 18) ...[
-                            const SizedBox(width: 5),
-                            Text(
-                              strings.talkHistoryShortBtn,
-                              style: LabTheme.textStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: tokens.ink,
-                              ),
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 2),
+              child: MindPressable(
+                key: const ValueKey('talk-history-btn'),
+                semanticLabel: strings.talkHistoryTooltip,
+                borderRadius: BorderRadius.circular(tokens.chipRadius),
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _showHubView = true);
+                },
+                child: Tooltip(
+                  message: strings.talkHistoryTooltip,
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      minWidth: 48,
+                      minHeight: 48,
+                    ),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: MediaQuery.sizeOf(context).width >= 355
+                          ? 10
+                          : 8,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: tokens.surface,
+                      borderRadius: BorderRadius.circular(tokens.chipRadius),
+                      border: Border.all(color: tokens.line),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.history_rounded,
+                          size: 19,
+                          color: tokens.ink,
+                        ),
+                        if (MediaQuery.sizeOf(context).width >= 355 &&
+                            MediaQuery.textScalerOf(context).scale(14) <=
+                                18) ...[
+                          const SizedBox(width: 5),
+                          Text(
+                            strings.talkHistoryShortBtn,
+                            style: LabTheme.textStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: tokens.ink,
                             ),
-                          ],
+                          ),
                         ],
-                      ),
+                      ],
                     ),
                   ),
                 ),
@@ -414,7 +450,7 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
             ),
           IconButton(
             key: const ValueKey('talk-more-btn'),
-            icon: Icon(Icons.tune_rounded, size: 21, color: tokens.ink),
+            icon: Icon(Icons.more_horiz_rounded, size: 22, color: tokens.ink),
             tooltip: strings.listeningPrefsLabel,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),

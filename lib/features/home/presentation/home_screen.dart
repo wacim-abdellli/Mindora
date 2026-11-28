@@ -19,6 +19,7 @@ import '../../../core/security/encrypted_storage_helper.dart';
 import '../../../core/security/secure_key_manager.dart';
 import '../../../core/widgets/ambient_scaffold.dart';
 import '../../../core/widgets/mind_card.dart';
+import '../../../core/widgets/mind_pressable.dart';
 import '../../../core/widgets/mind_toast.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../clinic_sync/controllers/clinic_sync_providers.dart';
@@ -75,7 +76,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     String moodKey,
     int intensity, {
     bool createNew = false,
+    String? note,
+    bool isPrivate = false,
   }) async {
+    final trimmedNote = note?.trim();
+    if (trimmedNote != null &&
+        trimmedNote.isNotEmpty &&
+        CrisisKeywords.evaluateText(trimmedNote) == 2) {
+      if (mounted) SafetyInterceptor.showCrisisPauseDialog(context);
+      return;
+    }
+
     HapticFeedback.mediumImpact();
     final now = DateTime.now();
     final todayTrace = ref.read(todayTraceProvider);
@@ -93,6 +104,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 EmotionDescriptor.canonicalKey(e).toLowerCase() != moodKey,
           ),
         ],
+        journalText: (trimmedNote != null && trimmedNote.isNotEmpty)
+            ? trimmedNote
+            : todayTrace.journalText,
+        isPrivate: isPrivate ? true : todayTrace.isPrivate,
         updatedAt: now,
       );
       await ref
@@ -107,6 +122,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         moodIntensity: intensity,
         energyLevel: null,
         selectedEmotions: [moodKey],
+        journalText: (trimmedNote != null && trimmedNote.isNotEmpty)
+            ? trimmedNote
+            : null,
+        isPrivate: isPrivate,
         createdAt: now,
         updatedAt: now,
       );
@@ -208,6 +227,83 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  Widget _buildQuietSyncPill(
+    MindTokens tokens,
+    AppStrings strings,
+    ClinicSyncStatus syncStatus,
+  ) {
+    final bool isSynced = syncStatus.phase == ClinicSyncPhase.synced ||
+        (syncStatus.phase == ClinicSyncPhase.idle &&
+            syncStatus.lastSyncedAt != null);
+    final bool isSyncing = syncStatus.phase == ClinicSyncPhase.syncing;
+    final bool isPaused = syncStatus.phase == ClinicSyncPhase.pausedOrError;
+
+    final IconData icon = isPaused
+        ? Icons.pause_circle_outline_rounded
+        : isSyncing
+        ? Icons.sync_rounded
+        : isSynced
+        ? Icons.cloud_done_outlined
+        : Icons.check_circle_outline_rounded;
+    final Color iconColor = isPaused
+        ? tokens.safety
+        : isSynced
+        ? tokens.m1
+        : tokens.ink2;
+    final String label = isPaused
+        ? strings.syncPausedQuietLabel
+        : isSyncing
+        ? strings.syncingQuietLabel
+        : isSynced
+        ? strings.syncedQuietLabel
+        : strings.savedOnPhoneLabel;
+
+    final pill = Container(
+      key: const ValueKey('home-quiet-sync-pill'),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: isPaused ? tokens.safetySoft : tokens.surface2,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isPaused ? tokens.safety.withValues(alpha: 0.4) : tokens.line,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: iconColor),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LabTheme.textStyle(
+                fontSize: 12.0,
+                fontWeight: FontWeight.w600,
+                color: isPaused ? tokens.safety : tokens.ink2,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (!isPaused) return pill;
+    return MindPressable(
+      semanticLabel: label,
+      borderRadius: BorderRadius.circular(12),
+      onPressed: () {
+        HapticFeedback.selectionClick();
+        showMindToast(context, strings.syncPausedHelpToast);
+      },
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
+        child: Center(widthFactor: 1.0, child: pill),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
@@ -275,50 +371,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               if (authUser?.isClinicAccount == true) ...[
                                 const SizedBox(width: 8),
                                 Flexible(
-                                  child: Container(
-                                    key: const ValueKey('home-quiet-sync-pill'),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: tokens.surface2,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: tokens.line),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          syncStatus.phase ==
-                                                      ClinicSyncPhase.synced ||
-                                                  syncStatus.lastSyncedAt !=
-                                                      null
-                                              ? Icons.cloud_done_outlined
-                                              : Icons.check_circle_outline_rounded,
-                                          size: 13,
-                                          color: tokens.m1,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Flexible(
-                                          child: Text(
-                                            syncStatus.phase ==
-                                                        ClinicSyncPhase.synced ||
-                                                    syncStatus.lastSyncedAt !=
-                                                        null
-                                                ? strings.syncedQuietLabel
-                                                : strings.savedOnPhoneLabel,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: LabTheme.textStyle(
-                                              fontSize: 12.0,
-                                              fontWeight: FontWeight.w600,
-                                              color: tokens.ink2,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                  child: _buildQuietSyncPill(
+                                    tokens,
+                                    strings,
+                                    syncStatus,
                                   ),
                                 ),
                               ],
@@ -352,6 +408,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   todayTrace: todayTrace,
                   traces: traces,
                   todayTraces: todayTraces,
+                  isClinicAccount: authUser?.isClinicAccount == true,
                   selectedMoodIndex: _selectedMoodIndex,
                   moodIntensity: _moodIntensity,
                   todayNoteController: _todayNoteController,
@@ -364,12 +421,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     _moodOptions[_selectedMoodIndex].key,
                     _moodIntensity.round(),
                   ),
-                  onQuickSave: (moodKey, intensity, {createNew = false}) =>
-                      _saveQuickCheckIn(
-                        moodKey,
-                        intensity,
-                        createNew: createNew,
-                      ),
+                  onQuickSave: (
+                    moodKey,
+                    intensity, {
+                    createNew = false,
+                    note,
+                    isPrivate = false,
+                  }) => _saveQuickCheckIn(
+                    moodKey,
+                    intensity,
+                    createNew: createNew,
+                    note: note,
+                    isPrivate: isPrivate,
+                  ),
                   getMoodLabel: _getMoodLabel,
                   getMoodColor: _getMoodColor,
                   onBreatheTap: () => ContextualSupportSheet.show(
@@ -380,36 +444,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       _openCompanionForTrace(trace, strings),
                 ),
 
-                const SizedBox(height: 14),
-
-                // 2. Playful, condition-aware Daily Ritual (collapsed softly before mood check-in)
-                HomeClinicalPulseCard(
-                  tokens: tokens,
-                  strings: strings,
-                  plan: plan,
-                  profile: profile,
-                  loggedDaysThisWeek: weekDaysLogged,
-                  todayTrace: todayTrace,
-                  initiallyCollapsed: todayTrace == null,
-                  onUpdateTrace: _updateTodayClinicalPulse,
-                ),
-
-                const SizedBox(height: 14),
-
-                // 3. Gentle 7-Day Colored MoodFace Strip
-                HomeWeeklyRhythmCard(
-                  traces: traces,
-                  tokens: tokens,
-                  strings: strings,
-                  isDark: isDark,
-                  getMoodColor: _getMoodColor,
-                  getMoodLabel: _getMoodLabel,
-                  onDayTap: (_, _) {
-                    GoRouter.maybeOf(context)?.go(AppRouter.track);
-                  },
-                ),
-
-                // 4. Optional Doctor's Plan (auto-synced from doctor, only shown when active)
+                // 2. Active Doctor's Focus Plan (elevated directly beneath Check-In when active)
                 if (activeFocusPlan != null &&
                     !activeFocusPlan.isDismissed) ...[
                   const SizedBox(height: 14),
@@ -423,6 +458,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         .dismissPlan(),
                   ),
                 ],
+
+                const SizedBox(height: 14),
+
+                // 3. Playful, condition-aware Daily Ritual (collapsed softly before mood check-in)
+                HomeClinicalPulseCard(
+                  tokens: tokens,
+                  strings: strings,
+                  plan: plan,
+                  profile: profile,
+                  loggedDaysThisWeek: weekDaysLogged,
+                  todayTrace: todayTrace,
+                  initiallyCollapsed: todayTrace == null,
+                  onUpdateTrace: _updateTodayClinicalPulse,
+                ),
+
+                const SizedBox(height: 14),
+
+                // 4. Gentle 7-Day Colored MoodFace Strip (taps jump directly to that day in My days)
+                HomeWeeklyRhythmCard(
+                  traces: traces,
+                  tokens: tokens,
+                  strings: strings,
+                  isDark: isDark,
+                  getMoodColor: _getMoodColor,
+                  getMoodLabel: _getMoodLabel,
+                  onDayTap: (day, _) {
+                    final dateKey =
+                        '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+                    GoRouter.maybeOf(
+                      context,
+                    )?.go('${AppRouter.track}?date=$dateKey');
+                  },
+                ),
 
                 const SizedBox(height: 14),
 
