@@ -2235,8 +2235,17 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
               onPressed: () async {
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.setBool('mf_clinician_demo_preview', true);
+                final rawUser = prefs.getString('mf_auth_current_user');
+                final signedOut = prefs.getBool('mf_signed_out') ?? false;
+                final hasCompleted =
+                    prefs.getBool('mf_onboarding_completed') ?? false;
+                final target = (rawUser == null || signedOut)
+                    ? AppRouter.auth
+                    : (hasCompleted
+                          ? AppRouter.home
+                          : AppRouter.clinicWelcome);
                 if (context.mounted) {
-                  GoRouter.maybeOf(context)?.go(AppRouter.home);
+                  GoRouter.maybeOf(context)?.go(target);
                 }
               },
             ),

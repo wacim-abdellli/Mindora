@@ -14,6 +14,8 @@ import '../../../../core/widgets/mind_pill.dart';
 import '../../../../core/widgets/mind_skeleton.dart';
 import '../../../../core/widgets/mind_switch.dart';
 import '../../../../core/widgets/mind_toast.dart';
+import '../../../profile/domain/clinical_condition_catalog.dart';
+import '../../../profile/presentation/widgets/clinical_condition_search_sheet.dart';
 import '../../controllers/clinician_providers.dart';
 import '../../domain/clinician_models.dart';
 
@@ -181,6 +183,7 @@ class _ClinicianDiagnosisSheetState
   late final TextEditingController _notesCtrl;
   late DiagnosisCertainty _certainty;
   late DiagnosisStatus _status;
+  String _labelQuery = '';
   bool _isSaving = false;
 
   @override
@@ -192,6 +195,7 @@ class _ClinicianDiagnosisSheetState
         TextEditingController(text: widget.existing?.clinicalNotes ?? '');
     _certainty = widget.existing?.certainty ?? DiagnosisCertainty.working;
     _status = widget.existing?.status ?? DiagnosisStatus.active;
+    _labelQuery = widget.existing?.label ?? '';
   }
 
   @override
@@ -280,15 +284,110 @@ class _ClinicianDiagnosisSheetState
             tone: MindBannerTone.info,
           ),
           const SizedBox(height: 12),
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 2,
+            children: [
+              Text(
+                strings.quickConditionSuggestionsLabel,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: tokens.ink2,
+                ),
+              ),
+              TextButton.icon(
+                key: const ValueKey<String>('dx-browse-catalog-btn'),
+                onPressed: () async {
+                  final picked = await ClinicalConditionSearchSheet.show(
+                    context,
+                    initialConditionIds: const [],
+                    initialTrackIds: const [],
+                  );
+                  if (picked == null ||
+                      picked.selectedConditionIds.isEmpty ||
+                      !mounted) {
+                    return;
+                  }
+                  final item = ClinicalConditionCatalog.byId(
+                    picked.selectedConditionIds.first,
+                  );
+                  if (item == null) return;
+                  setState(() {
+                    _labelCtrl.text = item.localized(strings);
+                    _labelQuery = '';
+                  });
+                },
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(48, 48),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                ),
+                icon: Icon(
+                  Icons.menu_book_outlined,
+                  size: 16,
+                  color: tokens.accentInk,
+                ),
+                label: Text(
+                  strings.browseAllConditionsBtn,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.accentInk,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
           TextField(
             key: const ValueKey<String>('dx-label-field'),
             controller: _labelCtrl,
+            onChanged: (v) => setState(() => _labelQuery = v.trim()),
             style: TextStyle(fontSize: 14, color: tokens.ink),
             decoration: _editorFieldDecoration(
               tokens,
               label: strings.diagnosisLabelField,
+              hint: strings.patientConditionInputHint,
             ),
           ),
+          if (_labelQuery.length >= 2) ...[
+            Builder(
+              builder: (context) {
+                final suggestions = ClinicalConditionCatalog.search(_labelQuery)
+                    .where(
+                      (item) =>
+                          item.localized(strings).toLowerCase() !=
+                          _labelQuery.toLowerCase(),
+                    )
+                    .take(4)
+                    .toList(growable: false);
+                if (suggestions.isEmpty) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final item in suggestions)
+                        MindPill(
+                          label: item.localized(strings),
+                          isSelected: false,
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            setState(() {
+                              _labelCtrl.text = item.localized(strings);
+                              _labelQuery = '';
+                            });
+                          },
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
           const SizedBox(height: 10),
           Directionality(
             textDirection: TextDirection.ltr,

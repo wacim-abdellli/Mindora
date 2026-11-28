@@ -30,14 +30,29 @@ class LocalClinicianRepository {
   Future<LocalDataCipher> _getCipher() =>
       _keyManager.getCipherForUser('clinician_workspace_v1');
 
-  Future<List<ClinicianPatientRecord>> loadImportedPatients() async {
+  Future<String?> _readEncrypted(String key) async {
     final prefs = await SharedPreferences.getInstance();
     final cipher = await _getCipher();
-    final raw = await EncryptedStorageHelper.readAndMigrate(
+    return EncryptedStorageHelper.readAndMigrateRecoverable(
       prefs: prefs,
-      key: _patientsKey,
+      key: key,
       cipher: cipher,
     );
+  }
+
+  Future<void> _writeEncrypted(String key, String plaintext) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cipher = await _getCipher();
+    await EncryptedStorageHelper.writeEncrypted(
+      prefs: prefs,
+      key: key,
+      plaintext: plaintext,
+      cipher: cipher,
+    );
+  }
+
+  Future<List<ClinicianPatientRecord>> loadImportedPatients() async {
+    final raw = await _readEncrypted(_patientsKey);
     if (raw == null || raw.isEmpty) return [];
     try {
       final list = jsonDecode(raw) as List<dynamic>;
@@ -56,18 +71,11 @@ class LocalClinicianRepository {
   Future<void> saveImportedPatients(
     List<ClinicianPatientRecord> records,
   ) async {
-    final prefs = await SharedPreferences.getInstance();
-    final cipher = await _getCipher();
     final sanitized = records.where((r) => !r.isDemoCase).toList(growable: false);
     final payload = jsonEncode(
       sanitized.map((r) => r.toJson()).toList(growable: false),
     );
-    await EncryptedStorageHelper.writeEncrypted(
-      prefs: prefs,
-      key: _patientsKey,
-      plaintext: payload,
-      cipher: cipher,
-    );
+    await _writeEncrypted(_patientsKey, payload);
   }
 
   Future<void> upsertPatient(
@@ -125,13 +133,7 @@ class LocalClinicianRepository {
   }
 
   Future<Map<String, List<ClinicianSessionNote>>> loadDemoNotes() async {
-    final prefs = await SharedPreferences.getInstance();
-    final cipher = await _getCipher();
-    final raw = await EncryptedStorageHelper.readAndMigrate(
-      prefs: prefs,
-      key: _demoNotesKey,
-      cipher: cipher,
-    );
+    final raw = await _readEncrypted(_demoNotesKey);
     if (raw == null || raw.isEmpty) return {};
     try {
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
@@ -154,29 +156,16 @@ class LocalClinicianRepository {
   Future<void> saveDemoNotes(
     Map<String, List<ClinicianSessionNote>> notesByPatient,
   ) async {
-    final prefs = await SharedPreferences.getInstance();
-    final cipher = await _getCipher();
     final payload = jsonEncode(
       notesByPatient.map(
         (k, v) => MapEntry(k, v.map((n) => n.toJson()).toList(growable: false)),
       ),
     );
-    await EncryptedStorageHelper.writeEncrypted(
-      prefs: prefs,
-      key: _demoNotesKey,
-      plaintext: payload,
-      cipher: cipher,
-    );
+    await _writeEncrypted(_demoNotesKey, payload);
   }
 
   Future<Map<String, DateTime>> loadDemoReviewedMap() async {
-    final prefs = await SharedPreferences.getInstance();
-    final cipher = await _getCipher();
-    final raw = await EncryptedStorageHelper.readAndMigrate(
-      prefs: prefs,
-      key: _demoReviewedKey,
-      cipher: cipher,
-    );
+    final raw = await _readEncrypted(_demoReviewedKey);
     if (raw == null || raw.isEmpty) return {};
     try {
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
@@ -192,27 +181,14 @@ class LocalClinicianRepository {
   }
 
   Future<void> saveDemoReviewedMap(Map<String, DateTime> reviewedMap) async {
-    final prefs = await SharedPreferences.getInstance();
-    final cipher = await _getCipher();
     final payload = jsonEncode(
       reviewedMap.map((k, v) => MapEntry(k, v.toIso8601String())),
     );
-    await EncryptedStorageHelper.writeEncrypted(
-      prefs: prefs,
-      key: _demoReviewedKey,
-      plaintext: payload,
-      cipher: cipher,
-    );
+    await _writeEncrypted(_demoReviewedKey, payload);
   }
 
   Future<Map<String, ClinicianClinicalRecord>> loadDemoClinicalRecords() async {
-    final prefs = await SharedPreferences.getInstance();
-    final cipher = await _getCipher();
-    final raw = await EncryptedStorageHelper.readAndMigrate(
-      prefs: prefs,
-      key: _demoClinicalRecordsKey,
-      cipher: cipher,
-    );
+    final raw = await _readEncrypted(_demoClinicalRecordsKey);
     if (raw == null || raw.isEmpty) return {};
     try {
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
@@ -230,27 +206,14 @@ class LocalClinicianRepository {
   Future<void> saveDemoClinicalRecords(
     Map<String, ClinicianClinicalRecord> recordsByPatient,
   ) async {
-    final prefs = await SharedPreferences.getInstance();
-    final cipher = await _getCipher();
     final payload = jsonEncode(
       recordsByPatient.map((k, v) => MapEntry(k, v.toJson())),
     );
-    await EncryptedStorageHelper.writeEncrypted(
-      prefs: prefs,
-      key: _demoClinicalRecordsKey,
-      plaintext: payload,
-      cipher: cipher,
-    );
+    await _writeEncrypted(_demoClinicalRecordsKey, payload);
   }
 
   Future<ClinicianProfile> loadClinicianProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    final cipher = await _getCipher();
-    final raw = await EncryptedStorageHelper.readAndMigrate(
-      prefs: prefs,
-      key: _profileKey,
-      cipher: cipher,
-    );
+    final raw = await _readEncrypted(_profileKey);
     if (raw == null || raw.isEmpty) return const ClinicianProfile();
     try {
       return ClinicianProfile.fromJson(
@@ -262,14 +225,7 @@ class LocalClinicianRepository {
   }
 
   Future<void> saveClinicianProfile(ClinicianProfile profile) async {
-    final prefs = await SharedPreferences.getInstance();
-    final cipher = await _getCipher();
-    await EncryptedStorageHelper.writeEncrypted(
-      prefs: prefs,
-      key: _profileKey,
-      plaintext: jsonEncode(profile.toJson()),
-      cipher: cipher,
-    );
+    await _writeEncrypted(_profileKey, jsonEncode(profile.toJson()));
   }
 
   Future<bool> isDemoEnabled() async {

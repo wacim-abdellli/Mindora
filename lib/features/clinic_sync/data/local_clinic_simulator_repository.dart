@@ -15,7 +15,9 @@ import '../../clinician/domain/post_visit_focus_model.dart';
 import '../../investigation/domain/case_model.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
 import '../../observatory/domain/symptom_report.dart';
+import '../../profile/domain/clinical_condition_catalog.dart';
 import '../../profile/domain/psychological_profile_model.dart';
+import '../../../app/localization/app_strings.dart';
 import '../domain/clinic_account_models.dart';
 import 'clinic_auth_repository.dart';
 
@@ -48,6 +50,27 @@ class LocalClinicSimulatorRepository
   Future<LocalDataCipher> _getCipher() =>
       _keyManager.getCipherForUser('clinic_directory_v1');
 
+  Future<String?> _readEncryptedValue(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cipher = await _getCipher();
+    return EncryptedStorageHelper.readAndMigrateRecoverable(
+      prefs: prefs,
+      key: key,
+      cipher: cipher,
+    );
+  }
+
+  Future<void> _writeEncryptedValue(String key, String plaintext) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cipher = await _getCipher();
+    await EncryptedStorageHelper.writeEncrypted(
+      prefs: prefs,
+      key: key,
+      plaintext: plaintext,
+      cipher: cipher,
+    );
+  }
+
   String _generateTempPin() {
     final n = 100000 + _random.nextInt(900000);
     return n.toString();
@@ -63,13 +86,7 @@ class LocalClinicSimulatorRepository
   }
 
   Future<Map<String, ClinicPatientAccount>> _loadAccounts() async {
-    final prefs = await SharedPreferences.getInstance();
-    final cipher = await _getCipher();
-    final raw = await EncryptedStorageHelper.readAndMigrate(
-      prefs: prefs,
-      key: _accountsKey,
-      cipher: cipher,
-    );
+    final raw = await _readEncryptedValue(_accountsKey);
     if (raw == null || raw.isEmpty) return {};
     try {
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
@@ -85,25 +102,12 @@ class LocalClinicSimulatorRepository
   }
 
   Future<void> _saveAccounts(Map<String, ClinicPatientAccount> map) async {
-    final prefs = await SharedPreferences.getInstance();
-    final cipher = await _getCipher();
     final encoded = jsonEncode(map.map((k, v) => MapEntry(k, v.toJson())));
-    await EncryptedStorageHelper.writeEncrypted(
-      prefs: prefs,
-      key: _accountsKey,
-      plaintext: encoded,
-      cipher: cipher,
-    );
+    await _writeEncryptedValue(_accountsKey, encoded);
   }
 
   Future<Map<String, ClinicInviteTokenRecord>> _loadTokens() async {
-    final prefs = await SharedPreferences.getInstance();
-    final cipher = await _getCipher();
-    final raw = await EncryptedStorageHelper.readAndMigrate(
-      prefs: prefs,
-      key: _tokensKey,
-      cipher: cipher,
-    );
+    final raw = await _readEncryptedValue(_tokensKey);
     if (raw == null || raw.isEmpty) return {};
     try {
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
@@ -119,25 +123,12 @@ class LocalClinicSimulatorRepository
   }
 
   Future<void> _saveTokens(Map<String, ClinicInviteTokenRecord> map) async {
-    final prefs = await SharedPreferences.getInstance();
-    final cipher = await _getCipher();
     final encoded = jsonEncode(map.map((k, v) => MapEntry(k, v.toJson())));
-    await EncryptedStorageHelper.writeEncrypted(
-      prefs: prefs,
-      key: _tokensKey,
-      plaintext: encoded,
-      cipher: cipher,
-    );
+    await _writeEncryptedValue(_tokensKey, encoded);
   }
 
   Future<List<ClinicAuditEntry>> _loadAudit() async {
-    final prefs = await SharedPreferences.getInstance();
-    final cipher = await _getCipher();
-    final raw = await EncryptedStorageHelper.readAndMigrate(
-      prefs: prefs,
-      key: _auditKey,
-      cipher: cipher,
-    );
+    final raw = await _readEncryptedValue(_auditKey);
     if (raw == null || raw.isEmpty) return [];
     try {
       final list = jsonDecode(raw) as List<dynamic>;
@@ -153,25 +144,15 @@ class LocalClinicSimulatorRepository
     final list = await _loadAudit();
     list.insert(0, entry);
     final capped = list.take(500).toList(growable: false);
-    final prefs = await SharedPreferences.getInstance();
-    final cipher = await _getCipher();
-    await EncryptedStorageHelper.writeEncrypted(
-      prefs: prefs,
-      key: _auditKey,
-      plaintext: jsonEncode(capped.map((e) => e.toJson()).toList()),
-      cipher: cipher,
+    await _writeEncryptedValue(
+      _auditKey,
+      jsonEncode(capped.map((e) => e.toJson()).toList()),
     );
   }
 
   Future<Map<String, Map<String, ClinicianPatientRecord>>>
       _loadDoctorPackets() async {
-    final prefs = await SharedPreferences.getInstance();
-    final cipher = await _getCipher();
-    final raw = await EncryptedStorageHelper.readAndMigrate(
-      prefs: prefs,
-      key: _doctorPacketsKey,
-      cipher: cipher,
-    );
+    final raw = await _readEncryptedValue(_doctorPacketsKey);
     if (raw == null || raw.isEmpty) return {};
     try {
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
@@ -196,8 +177,6 @@ class LocalClinicSimulatorRepository
   Future<void> _saveDoctorPackets(
     Map<String, Map<String, ClinicianPatientRecord>> data,
   ) async {
-    final prefs = await SharedPreferences.getInstance();
-    final cipher = await _getCipher();
     final encoded = jsonEncode(
       data.map(
         (docId, patientsMap) => MapEntry(
@@ -206,22 +185,11 @@ class LocalClinicSimulatorRepository
         ),
       ),
     );
-    await EncryptedStorageHelper.writeEncrypted(
-      prefs: prefs,
-      key: _doctorPacketsKey,
-      plaintext: encoded,
-      cipher: cipher,
-    );
+    await _writeEncryptedValue(_doctorPacketsKey, encoded);
   }
 
   Future<Map<String, ClinicPatientSyncInbox>> _loadInboxes() async {
-    final prefs = await SharedPreferences.getInstance();
-    final cipher = await _getCipher();
-    final raw = await EncryptedStorageHelper.readAndMigrate(
-      prefs: prefs,
-      key: _inboxKey,
-      cipher: cipher,
-    );
+    final raw = await _readEncryptedValue(_inboxKey);
     if (raw == null || raw.isEmpty) return {};
     try {
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
@@ -239,13 +207,9 @@ class LocalClinicSimulatorRepository
   Future<void> _saveInboxes(
     Map<String, ClinicPatientSyncInbox> inboxes,
   ) async {
-    final prefs = await SharedPreferences.getInstance();
-    final cipher = await _getCipher();
-    await EncryptedStorageHelper.writeEncrypted(
-      prefs: prefs,
-      key: _inboxKey,
-      plaintext: jsonEncode(inboxes.map((k, v) => MapEntry(k, v.toJson()))),
-      cipher: cipher,
+    await _writeEncryptedValue(
+      _inboxKey,
+      jsonEncode(inboxes.map((k, v) => MapEntry(k, v.toJson()))),
     );
   }
 
@@ -312,7 +276,10 @@ class LocalClinicSimulatorRepository
     required String loginIdentifier,
     required String ageRange,
     required String preferredLanguage,
+    String? clinicianLanguage,
     List<String> assignedTrackIds = const [],
+    List<String> conditionIds = const [],
+    List<String> customConditions = const [],
     String? customTempPin,
     Duration inviteValidity = const Duration(hours: 24),
     DateTime? now,
@@ -348,6 +315,64 @@ class LocalClinicSimulatorRepository
     final timestamp = now ?? DateTime.now();
     final patientId =
         'pat_${_uuid.v4().replaceAll('-', '').substring(0, 12)}';
+
+    final cleanConditionIds = <String>[];
+    final derivedTracks = <String>{...assignedTrackIds};
+    final documentedDiagnoses = <ClinicianDiagnosisEntry>[];
+    final seenDiagnosisLabels = <String>{};
+    final doctorStrings = AppStrings(clinicianLanguage ?? preferredLanguage);
+
+    for (final rawId in conditionIds) {
+      final item = ClinicalConditionCatalog.byId(rawId);
+      if (item == null) continue;
+      if (!cleanConditionIds.contains(item.id)) {
+        cleanConditionIds.add(item.id);
+      }
+      derivedTracks.add(item.track.id);
+      final label = item.localized(doctorStrings).trim();
+      final key = label.toLowerCase();
+      if (label.isNotEmpty && seenDiagnosisLabels.add(key)) {
+        documentedDiagnoses.add(
+          ClinicianDiagnosisEntry(
+            id: 'dx_${timestamp.millisecondsSinceEpoch}_${documentedDiagnoses.length}',
+            label: label,
+            certainty: DiagnosisCertainty.working,
+            status: DiagnosisStatus.active,
+            documentedAt: timestamp,
+            documentedByDoctorName: doctorName,
+          ),
+        );
+      }
+    }
+
+    for (final rawCustom in customConditions) {
+      final trimmed = rawCustom.trim();
+      final key = trimmed.toLowerCase();
+      if (trimmed.isEmpty || !seenDiagnosisLabels.add(key)) continue;
+      documentedDiagnoses.add(
+        ClinicianDiagnosisEntry(
+          id: 'dx_${timestamp.millisecondsSinceEpoch}_${documentedDiagnoses.length}',
+          label: trimmed,
+          certainty: DiagnosisCertainty.working,
+          status: DiagnosisStatus.active,
+          documentedAt: timestamp,
+          documentedByDoctorName: doctorName,
+        ),
+      );
+    }
+
+    final effectiveTracks = derivedTracks.toList(growable: false);
+    final phoneField = RegExp(r'^[\d+\-().\s]{6,}$').hasMatch(loginIdentifier.trim())
+        ? loginIdentifier.trim()
+        : '';
+    final initialClinicalRecord = (documentedDiagnoses.isNotEmpty || phoneField.isNotEmpty)
+        ? ClinicianClinicalRecord(
+            phone: phoneField,
+            diagnoses: documentedDiagnoses,
+            updatedAt: timestamp,
+          )
+        : const ClinicianClinicalRecord();
+
     final account = ClinicPatientAccount(
       patientId: patientId,
       doctorId: doctorId,
@@ -358,7 +383,8 @@ class LocalClinicSimulatorRepository
       loginIdentifier: cleanId,
       ageRange: ageRange,
       preferredLanguage: preferredLanguage,
-      assignedTrackIds: List<String>.from(assignedTrackIds),
+      assignedTrackIds: effectiveTracks,
+      assignedConditionIds: cleanConditionIds,
       credentialHash: AuthService.hashPassword(pin),
       requiresPinChange: true,
       status: ClinicAccountStatus.pendingFirstLogin,
@@ -406,6 +432,7 @@ class LocalClinicSimulatorRepository
       importedAt: timestamp,
       lastSyncedAt: timestamp,
       latestPacket: emptyPacket,
+      clinicalRecord: initialClinicalRecord,
       reviewedAt: timestamp,
     );
     await _saveDoctorPackets(doctorPackets);
@@ -414,7 +441,7 @@ class LocalClinicSimulatorRepository
     final inboxes = await _loadInboxes();
     inboxes[patientId] = ClinicPatientSyncInbox(
       patientId: patientId,
-      assignedTrackIds: List<String>.from(assignedTrackIds),
+      assignedTrackIds: effectiveTracks,
       updatedAt: timestamp,
     );
     await _saveInboxes(inboxes);
@@ -932,6 +959,8 @@ class LocalClinicSimulatorRepository
       latestPacket: packet,
       previousPackets: previousPackets,
       clinicianNotes: existing?.clinicianNotes ?? const [],
+      clinicalRecord:
+          existing?.clinicalRecord ?? const ClinicianClinicalRecord(),
       reviewedAt: null,
     );
     await _saveDoctorPackets(doctorPackets);

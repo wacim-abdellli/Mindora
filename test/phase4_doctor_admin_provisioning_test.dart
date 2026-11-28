@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:mind_forensics/app/config/app_edition.dart';
 import 'package:mind_forensics/app/localization/app_strings.dart';
+import 'package:mind_forensics/app/router/app_router.dart';
 import 'package:mind_forensics/app/theme/mind_tokens.dart';
 import 'package:mind_forensics/core/security/secure_key_manager.dart';
 import 'package:mind_forensics/core/widgets/mind_qr_code.dart';
+import 'package:mind_forensics/features/auth/presentation/auth_screen.dart';
 import 'package:mind_forensics/features/clinic_sync/controllers/clinic_sync_providers.dart';
 import 'package:mind_forensics/features/clinic_sync/domain/clinic_account_models.dart';
 import 'package:mind_forensics/features/clinician/presentation/clinician_patient_detail_screen.dart';
@@ -291,6 +294,229 @@ void main() {
           scrollable: find.byType(Scrollable).last,
         );
         expect(demoBtn, findsOneWidget);
+      },
+    );
+
+    test(
+      'LocalClinicSimulatorRepository recovers cleanly from undecryptable keystore-rotated simulator blobs',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'mf_clinic_sim_accounts_v1': 'enc:v1\$AAAA\$BBBB\$CCCC',
+          'mf_clinic_sim_invite_tokens_v1': 'enc:v1\$AAAA\$BBBB\$CCCC',
+          'mf_clinic_sim_doctor_packets_v1': 'enc:v1\$AAAA\$BBBB\$CCCC',
+          'mf_clinic_sim_patient_inbox_v1': 'enc:v1\$AAAA\$BBBB\$CCCC',
+          'mf_clinic_sim_audit_v1': 'enc:v1\$AAAA\$BBBB\$CCCC',
+        });
+
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        final authRepo = container.read(clinicAuthRepositoryProvider);
+        final provision = await authRepo.createPatientAccount(
+          doctorId: 'doc_mindora_primary',
+          clinicId: 'clinic_tunis_01',
+          doctorName: 'Dr. Salma Ben Amor',
+          clinicName: 'Tunis Mindora Practice',
+          displayName: 'hajer ben rbeh',
+          loginIdentifier: '23169341',
+          ageRange: '18-24',
+          preferredLanguage: 'en',
+          assignedTrackIds: const ['anxietyPanic', 'depressiveSpectrum'],
+        );
+
+        expect(provision.account.displayName, 'hajer ben rbeh');
+        expect(provision.account.loginIdentifier, '23169341');
+        expect(provision.qrPayload, startsWith(ClinicInvitePayload.qrPrefix));
+
+        final prefs = await SharedPreferences.getInstance();
+        expect(
+          prefs.getString('mf_clinic_sim_accounts_v1_orphaned_v1'),
+          'enc:v1\$AAAA\$BBBB\$CCCC',
+        );
+      },
+    );
+
+    testWidgets(
+      'Doctor selects catalog condition, types custom illness, expands all 12 tracks, and saves diagnoses into Patient Dossier',
+      (tester) async {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              theme: ThemeData.light().copyWith(
+                extensions: const [MindTokens.light],
+              ),
+              home: const ClinicianShellScreen(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(const ValueKey('clinician-add-patient-btn')));
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.byKey(const ValueKey('admin-create-name-field')),
+          'Hajer Ben Rbeh',
+        );
+        await tester.enterText(
+          find.byKey(const ValueKey('admin-create-identifier-field')),
+          '23169341',
+        );
+
+        // Search and pick from the 300+ clinical catalog
+        final conditionInput = find.byKey(
+          const ValueKey('admin-create-condition-input'),
+        );
+        await tester.ensureVisible(conditionInput);
+        await tester.enterText(conditionInput, 'Bipolar');
+        await tester.pumpAndSettle();
+
+        final bipolarChoice = find.byKey(
+          const ValueKey('admin-condition-suggestion-bipolar_1'),
+        );
+        await tester.ensureVisible(bipolarChoice);
+        await tester.tap(bipolarChoice);
+        await tester.pumpAndSettle();
+
+        // Also type a custom clinician condition / illness
+        await tester.ensureVisible(conditionInput);
+        await tester.enterText(conditionInput, 'Postpartum insomnia');
+        await tester.pumpAndSettle();
+        final addTypedBtn = find.byKey(
+          const ValueKey('admin-create-add-typed-condition-btn'),
+        );
+        await tester.ensureVisible(addTypedBtn);
+        await tester.tap(addTypedBtn);
+        await tester.pumpAndSettle();
+
+        // Expand all 12 Focus areas
+        final toggleAllBtn = find.byKey(
+          const ValueKey('admin-create-toggle-all-tracks-btn'),
+        );
+        await tester.ensureVisible(toggleAllBtn);
+        await tester.tap(toggleAllBtn);
+        await tester.pumpAndSettle();
+
+        const en = AppStrings('en');
+        expect(
+          find.text(ClinicalTrack.neurodevelopmental.localizedTitle(en)),
+          findsWidgets,
+        );
+
+        final submitBtn = find.byKey(const ValueKey('admin-create-submit-btn'));
+        await tester.ensureVisible(submitBtn);
+        await tester.tap(submitBtn);
+        await tester.pumpAndSettle();
+
+        expect(find.text(en.patientAccessReadyTitle), findsOneWidget);
+
+        await tester.tap(find.text(en.doneBtn));
+        await tester.pumpAndSettle();
+
+        final roster = await container.read(clinicAuthRepositoryProvider).listPatientsForDoctor('doc_mindora_primary');
+        expect(roster.length, 1);
+        final createdId = roster.first.patientId;
+        expect(
+          roster.first.assignedTrackIds,
+          contains(ClinicalTrack.bipolarCycling.id),
+        );
+
+        final packets = await container
+            .read(clinicSyncRepositoryProvider)
+            .listSyncedPatientsForDoctor('doc_mindora_primary');
+        final record = packets.firstWhere((r) => r.patientId == createdId);
+        final dxLabels = record.clinicalRecord.diagnoses
+            .map((d) => d.label)
+            .toList(growable: false);
+        expect(
+          dxLabels,
+          containsAll(<String>['Bipolar I Disorder', 'Postpartum insomnia']),
+        );
+      },
+    );
+
+    testWidgets(
+      'Patient login via PIN or QR from AuthScreen inside Doctor Edition debug build routes to Patient Welcome, NEVER back to Doctor View',
+      (tester) async {
+        AppEditionConfig.setMainEdition(MindoraEdition.clinician);
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        final provision = await container
+            .read(clinicAuthRepositoryProvider)
+            .createPatientAccount(
+              doctorId: 'doc_mindora_primary',
+              clinicId: 'clinic_tunis_01',
+              doctorName: 'Dr. Salma Ben Amor',
+              clinicName: 'Tunis Mindora Practice',
+              displayName: 'hajer ben rbeh',
+              loginIdentifier: '23169341',
+              ageRange: '18-24',
+              preferredLanguage: 'en',
+              customTempPin: '106378',
+            );
+
+        String? navigatedLocation;
+        final router = GoRouter(
+          initialLocation: AppRouter.auth,
+          routes: [
+            GoRoute(
+              path: AppRouter.auth,
+              builder: (_, _) => const AuthScreen(),
+            ),
+            GoRoute(
+              path: AppRouter.clinicWelcome,
+              builder: (_, _) {
+                navigatedLocation = AppRouter.clinicWelcome;
+                return const Scaffold(body: Text('PATIENT_WELCOME_TARGET'));
+              },
+            ),
+            GoRoute(
+              path: AppRouter.clinician,
+              builder: (_, _) {
+                navigatedLocation = AppRouter.clinician;
+                return const Scaffold(body: Text('DOCTOR_VIEW_TARGET'));
+              },
+            ),
+          ],
+        );
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp.router(
+              theme: ThemeData.light().copyWith(
+                extensions: const [MindTokens.light],
+              ),
+              routerConfig: router,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.byKey(const ValueKey('auth-identifier-field')),
+          provision.account.loginIdentifier,
+        );
+        await tester.enterText(
+          find.byKey(const ValueKey('auth-pin-field')),
+          provision.temporaryPin,
+        );
+        final loginBtn = find.byKey(const ValueKey('auth-login-submit-btn'));
+        await tester.ensureVisible(loginBtn);
+        await tester.tap(loginBtn);
+        await tester.pumpAndSettle();
+
+        expect(navigatedLocation, AppRouter.clinicWelcome);
+        expect(find.text('PATIENT_WELCOME_TARGET'), findsOneWidget);
+        expect(find.text('DOCTOR_VIEW_TARGET'), findsNothing);
+
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getBool('mf_clinician_demo_preview'), isTrue);
       },
     );
   });

@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../app/config/app_edition.dart';
 import '../../../app/localization/app_strings.dart';
@@ -51,11 +53,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     super.dispose();
   }
 
-  void _routeAfterAuth() {
+  Future<void> _routeAfterAuth() async {
     if (!mounted) return;
-    if (AppEditionConfig.isClinicianApp) {
-      GoRouter.maybeOf(context)?.go(AppRouter.clinician);
-      return;
+    if (AppEditionConfig.isClinicianApp && kDebugMode) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('mf_clinician_demo_preview', true);
+      if (!mounted) return;
     }
     final authState = ref.read(authControllerProvider);
     if (!authState.hasCompletedOnboarding) {
@@ -82,7 +85,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         .read(authControllerProvider.notifier)
         .signInWithClinicQr(qrPayload);
     if (success) {
-      _routeAfterAuth();
+      await _routeAfterAuth();
     }
   }
 
@@ -100,7 +103,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         .read(authControllerProvider.notifier)
         .signInWithClinicQr(rawCode);
     if (success) {
-      _routeAfterAuth();
+      await _routeAfterAuth();
     }
   }
 
@@ -115,7 +118,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           _pinController.text,
         );
     if (success) {
-      _routeAfterAuth();
+      await _routeAfterAuth();
     }
   }
 

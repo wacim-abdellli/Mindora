@@ -155,6 +155,10 @@ class ClinicAutoSyncCoordinator {
     final trackIds = (inbox != null && inbox.assignedTrackIds.isNotEmpty)
         ? inbox.assignedTrackIds
         : account.assignedTrackIds;
+    final conditionIds = {
+      ...existing.selectedConditionIds,
+      ...account.assignedConditionIds,
+    }.toList(growable: false);
 
     final updatedProfile = existing.copyWith(
       userId: account.patientId,
@@ -165,6 +169,7 @@ class ClinicAutoSyncCoordinator {
       preferredLanguage: account.preferredLanguage,
       userRole: 'patient',
       careContext: 'regular_doctor',
+      selectedConditionIds: conditionIds,
       selectedTrackIds: trackIds,
       updatedAt: DateTime.now(),
     );

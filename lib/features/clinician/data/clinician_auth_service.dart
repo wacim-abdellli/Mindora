@@ -40,7 +40,7 @@ class ClinicianAuthService {
   Future<String?> _readPinHash() async {
     final prefs = await SharedPreferences.getInstance();
     final cipher = await _keyManager.getCipherForUser('clinician_workspace_v1');
-    return EncryptedStorageHelper.readAndMigrate(
+    return EncryptedStorageHelper.readAndMigrateRecoverable(
       prefs: prefs,
       key: _pinHashKey,
       cipher: cipher,

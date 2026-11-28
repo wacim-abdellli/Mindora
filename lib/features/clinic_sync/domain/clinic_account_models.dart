@@ -57,6 +57,7 @@ class ClinicPatientAccount {
     this.ageRange = '25-44',
     this.preferredLanguage = 'en',
     this.assignedTrackIds = const [],
+    this.assignedConditionIds = const [],
     required this.credentialHash,
     this.requiresPinChange = true,
     this.status = ClinicAccountStatus.pendingFirstLogin,
@@ -76,6 +77,7 @@ class ClinicPatientAccount {
   final String ageRange;
   final String preferredLanguage;
   final List<String> assignedTrackIds;
+  final List<String> assignedConditionIds;
   final String credentialHash;
   final bool requiresPinChange;
   final ClinicAccountStatus status;
@@ -108,6 +110,7 @@ class ClinicPatientAccount {
     String? ageRange,
     String? preferredLanguage,
     List<String>? assignedTrackIds,
+    List<String>? assignedConditionIds,
     String? credentialHash,
     bool? requiresPinChange,
     ClinicAccountStatus? status,
@@ -127,6 +130,7 @@ class ClinicPatientAccount {
       ageRange: ageRange ?? this.ageRange,
       preferredLanguage: preferredLanguage ?? this.preferredLanguage,
       assignedTrackIds: assignedTrackIds ?? this.assignedTrackIds,
+      assignedConditionIds: assignedConditionIds ?? this.assignedConditionIds,
       credentialHash: credentialHash ?? this.credentialHash,
       requiresPinChange: requiresPinChange ?? this.requiresPinChange,
       status: status ?? this.status,
@@ -149,6 +153,7 @@ class ClinicPatientAccount {
         'ageRange': ageRange,
         'preferredLanguage': preferredLanguage,
         'assignedTrackIds': assignedTrackIds,
+        'assignedConditionIds': assignedConditionIds,
         'credentialHash': credentialHash,
         'requiresPinChange': requiresPinChange,
         'status': status.name,
@@ -171,6 +176,10 @@ class ClinicPatientAccount {
       ageRange: json['ageRange'] as String? ?? '25-44',
       preferredLanguage: json['preferredLanguage'] as String? ?? 'en',
       assignedTrackIds: (json['assignedTrackIds'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList(growable: false) ??
+          const [],
+      assignedConditionIds: (json['assignedConditionIds'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList(growable: false) ??
           const [],

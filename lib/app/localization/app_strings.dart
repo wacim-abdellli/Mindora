@@ -8122,6 +8122,61 @@ class AppStrings {
       ? 'إعادة محاولة الكاميرا'
       : (isFrench ? 'Réessayer la caméra' : 'Try camera again');
 
+  String get patientClinicalConditionLabel => isArabic
+      ? 'الحالة السريرية أو التشخيص (اختياري)'
+      : (isFrench
+            ? 'Condition clinique / diagnostic (optionnel)'
+            : 'Clinical condition / diagnosis (optional)');
+
+  String get patientConditionInputHint => isArabic
+      ? 'ابحث في +300 حالة أو اكتب التشخيص...'
+      : (isFrench
+            ? 'Chercher (300+ troubles) ou saisir librement...'
+            : 'Search 300+ conditions or type your own...');
+
+  String get browseAllConditionsBtn => isArabic
+      ? 'تصفّح القائمة (+300)'
+      : (isFrench ? 'Catalogue (300+)' : 'Browse catalog (300+)');
+
+  String addCustomConditionChip(String text) {
+    final trimmed = text.trim();
+    if (isArabic) return '+ إضافة "$trimmed"';
+    if (isFrench) return '+ Ajouter « $trimmed »';
+    return '+ Add "$trimmed"';
+  }
+
+  String get showAllFocusAreasBtn => isArabic
+      ? 'عرض الكل (12)'
+      : (isFrench ? 'Voir les 12 axes' : 'Show all 12');
+
+  String get showFewerFocusAreasBtn => isArabic
+      ? 'إظهار أقل'
+      : (isFrench ? 'Voir moins' : 'Show fewer');
+
+  String get quickConditionSuggestionsLabel => isArabic
+      ? 'اقتراحات من الدليل السريري'
+      : (isFrench
+            ? 'Suggestions du catalogue clinique'
+            : 'Matches from clinical catalog');
+
+  String get removeConditionTooltip => isArabic
+      ? 'إزالة'
+      : (isFrench ? 'Retirer' : 'Remove');
+
+  String get copyQrCodeBtn => isArabic
+      ? 'نسخ رمز الدعوة QR'
+      : (isFrench ? 'Copier le code QR' : 'Copy QR invite code');
+
+  String get qrCodeCopiedToast => isArabic
+      ? 'تم نسخ رمز الدعوة QR.'
+      : (isFrench ? 'Code QR d’invitation copié.' : 'QR invite code copied.');
+
+  String get testPatientLoginOnDeviceBtn => isArabic
+      ? 'تجربة دخول المريض على هذا الهاتف'
+      : (isFrench
+            ? 'Tester la connexion patient ici'
+            : 'Test patient login on this device');
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);

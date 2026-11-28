@@ -34,7 +34,7 @@ class LocalCarePlanRepository {
   Future<PostVisitFocusPlan?> loadActivePlan() async {
     final prefs = await SharedPreferences.getInstance();
     final cipher = await _getCipher();
-    final raw = await EncryptedStorageHelper.readAndMigrate(
+    final raw = await EncryptedStorageHelper.readAndMigrateRecoverable(
       prefs: prefs,
       key: _storageKey,
       cipher: cipher,
