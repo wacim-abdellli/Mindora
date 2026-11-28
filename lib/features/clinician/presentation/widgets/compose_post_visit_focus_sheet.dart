@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/config/app_edition.dart';
 import '../../../../app/localization/app_strings.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/mind_tokens.dart';
@@ -10,6 +11,7 @@ import '../../../../core/widgets/mind_button.dart';
 import '../../../../core/widgets/mind_card.dart';
 import '../../../../core/widgets/mind_pill.dart';
 import '../../../../core/widgets/mind_qr_code.dart';
+import '../../../../core/widgets/mind_toast.dart';
 import '../../../clinic_sync/controllers/clinic_sync_providers.dart';
 import '../../controllers/clinician_providers.dart';
 import '../../data/clinician_sync_service.dart';
@@ -182,34 +184,57 @@ class _ComposePostVisitFocusSheetState
 
     try {
       final plan = _buildPlan(strings);
-      await ref.read(postVisitFocusControllerProvider.notifier).savePlan(plan);
-      if (widget.patientId != null && widget.patientId!.trim().isNotEmpty) {
+      final targetPatientId = widget.patientId?.trim();
+      final hasClinicTarget =
+          targetPatientId != null && targetPatientId.isNotEmpty;
+
+      if (hasClinicTarget) {
         final profile = ref.read(clinicianProfileProvider).value;
         await ref.read(clinicAutoSyncCoordinatorProvider).pushDoctorFocusPlan(
               doctorId: profile?.doctorId ?? 'doc_mindora_primary',
-              patientId: widget.patientId!,
+              patientId: targetPatientId,
               plan: plan,
             );
+        ref.invalidate(dossierPatientInboxProvider(targetPatientId));
       }
+
+      // Only save to the local single-device patient vault when operating in
+      // single-device demo mode without an explicit clinic target (never
+      // overwrite an unrelated patient partition in Doctor Edition).
+      if (!AppEditionConfig.isClinicianApp && !hasClinicTarget) {
+        await ref.read(postVisitFocusControllerProvider.notifier).savePlan(plan);
+      }
+
       if (!mounted) return;
       HapticFeedback.mediumImpact();
+      final rootContext = navigator.context;
       navigator.pop();
-      messenger?.showSnackBar(
-        SnackBar(
-          backgroundColor: tokens.surface2,
-          content: Text(
+      if (AppEditionConfig.isClinicianApp || hasClinicTarget) {
+        if (rootContext.mounted) {
+          showMindToast(
+            rootContext,
             strings.focusDeliveredSnackbar,
-            style: TextStyle(color: tokens.ink, fontSize: 13),
+            variant: MindToastVariant.success,
+          );
+        }
+      } else {
+        messenger?.showSnackBar(
+          SnackBar(
+            backgroundColor: tokens.surface2,
+            content: Text(
+              strings.focusDeliveredSnackbar,
+              style: TextStyle(color: tokens.ink, fontSize: 13),
+            ),
+            action: router == null
+                ? null
+                : SnackBarAction(
+                    label: strings.patientViewChipLabel,
+                    textColor: tokens.accentInk,
+                    onPressed: () => router.go(AppRouter.home),
+                  ),
           ),
-          action: router == null
-              ? null
-              : SnackBarAction(
-                  label: strings.patientViewChipLabel,
-                  textColor: tokens.accentInk,
-                  onPressed: () => router.go(AppRouter.home),
-                ),
-        ),
-      );
+        );
+      }
     } on ClinicianSyncException catch (e) {
       if (!mounted) return;
       setState(() => _errorText = strings.localizedClinicianSyncError(e.code));

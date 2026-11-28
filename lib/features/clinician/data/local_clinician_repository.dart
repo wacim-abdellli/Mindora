@@ -24,6 +24,8 @@ class LocalClinicianRepository {
   static const String _workspaceRoleKey = 'mf_workspace_role_v1';
   static const String _demoNotesKey = 'mf_clinician_demo_notes_v1';
   static const String _demoReviewedKey = 'mf_clinician_demo_reviewed_v1';
+  static const String _demoClinicalRecordsKey =
+      'mf_clinician_demo_clinical_records_v1';
 
   Future<LocalDataCipher> _getCipher() =>
       _keyManager.getCipherForUser('clinician_workspace_v1');
@@ -71,11 +73,17 @@ class LocalClinicianRepository {
   Future<void> upsertPatient(
     ClinicianPatientRecord record, {
     bool overwriteNotes = false,
+    bool overwriteClinicalRecord = false,
   }) async {
     if (record.isDemoCase) {
       final notesMap = await loadDemoNotes();
       notesMap[record.patientId] = record.clinicianNotes;
       await saveDemoNotes(notesMap);
+      if (overwriteClinicalRecord || !record.clinicalRecord.isEmpty) {
+        final clinicalMap = await loadDemoClinicalRecords();
+        clinicalMap[record.patientId] = record.clinicalRecord;
+        await saveDemoClinicalRecords(clinicalMap);
+      }
       if (record.reviewedAt != null) {
         final reviewed = await loadDemoReviewedMap();
         reviewed[record.patientId] = record.reviewedAt!;
@@ -90,9 +98,14 @@ class LocalClinicianRepository {
       final mergedNotes = (overwriteNotes || record.clinicianNotes.isNotEmpty)
           ? record.clinicianNotes
           : existing[idx].clinicianNotes;
+      final mergedClinical =
+          (overwriteClinicalRecord || !record.clinicalRecord.isEmpty)
+              ? record.clinicalRecord
+              : existing[idx].clinicalRecord;
       existing[idx] = record.copyWith(
         importedAt: existing[idx].importedAt,
         clinicianNotes: mergedNotes,
+        clinicalRecord: mergedClinical,
       );
     } else {
       existing.add(record);
@@ -187,6 +200,44 @@ class LocalClinicianRepository {
     await EncryptedStorageHelper.writeEncrypted(
       prefs: prefs,
       key: _demoReviewedKey,
+      plaintext: payload,
+      cipher: cipher,
+    );
+  }
+
+  Future<Map<String, ClinicianClinicalRecord>> loadDemoClinicalRecords() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cipher = await _getCipher();
+    final raw = await EncryptedStorageHelper.readAndMigrate(
+      prefs: prefs,
+      key: _demoClinicalRecordsKey,
+      cipher: cipher,
+    );
+    if (raw == null || raw.isEmpty) return {};
+    try {
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      return decoded.map(
+        (key, value) => MapEntry(
+          key,
+          ClinicianClinicalRecord.fromJson(value as Map<String, dynamic>),
+        ),
+      );
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<void> saveDemoClinicalRecords(
+    Map<String, ClinicianClinicalRecord> recordsByPatient,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cipher = await _getCipher();
+    final payload = jsonEncode(
+      recordsByPatient.map((k, v) => MapEntry(k, v.toJson())),
+    );
+    await EncryptedStorageHelper.writeEncrypted(
+      prefs: prefs,
+      key: _demoClinicalRecordsKey,
       plaintext: payload,
       cipher: cipher,
     );

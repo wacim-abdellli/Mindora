@@ -158,6 +158,59 @@ class ClinicalBriefPdfService {
           );
           widgets.add(pw.SizedBox(height: 12));
 
+          // Block 1B: Clinician-Documented Clinical Summary (Diagnoses, Meds, Allergies)
+          final cr = record.clinicalRecord;
+          if (cr.diagnoses.isNotEmpty ||
+              cr.medications.isNotEmpty ||
+              cr.allergies.isNotEmpty ||
+              cr.noKnownAllergies) {
+            widgets.add(_sectionTitle(strings.clinicalSummaryTitle));
+            widgets.add(
+              _cardBox(
+                children: [
+                  if (cr.diagnoses.isNotEmpty)
+                    _labeledLine(
+                      '${strings.documentedDiagnosesTitle}:',
+                      cr.diagnoses
+                          .map(
+                            (d) =>
+                                '${d.displayTitle} (${d.certainty.localizedLabel(strings)}, ${d.status.localizedLabel(strings)})',
+                          )
+                          .join(isRtl ? '، ' : '; '),
+                    ),
+                  if (cr.medications.isNotEmpty) ...[
+                    if (cr.diagnoses.isNotEmpty) pw.SizedBox(height: 3),
+                    _labeledLine(
+                      '${strings.currentMedicationsTitle}:',
+                      cr.medications
+                          .map(
+                            (m) =>
+                                '${m.name}${m.regimenSummary.isNotEmpty ? ' (${m.regimenSummary})' : ''} [${m.status.localizedLabel(strings)}]',
+                          )
+                          .join(isRtl ? '، ' : '; '),
+                    ),
+                  ],
+                  if (cr.allergies.isNotEmpty || cr.noKnownAllergies) ...[
+                    if (cr.diagnoses.isNotEmpty || cr.medications.isNotEmpty)
+                      pw.SizedBox(height: 3),
+                    _labeledLine(
+                      '${strings.allergiesTitle}:',
+                      cr.allergies.isNotEmpty
+                          ? cr.allergies
+                              .map(
+                                (a) =>
+                                    '${a.substance}${a.reaction.trim().isNotEmpty ? ' — ${a.reaction.trim()}' : ''} (${a.severity.localizedLabel(strings)})',
+                              )
+                              .join(isRtl ? '، ' : '; ')
+                          : strings.noKnownAllergiesLabel,
+                    ),
+                  ],
+                ],
+              ),
+            );
+            widgets.add(pw.SizedBox(height: 12));
+          }
+
           // Block 2: Pre-Visit Agenda & Active Focus Plan
           if (scope.includePreVisitAgenda && agenda != null && !agenda.isEmpty) {
             widgets.add(_sectionTitle(strings.preVisitAgendaHeader));

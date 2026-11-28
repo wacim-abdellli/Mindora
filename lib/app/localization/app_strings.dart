@@ -7372,6 +7372,520 @@ class AppStrings {
     return count == 1 ? '1 day tracked' : '$count days tracked';
   }
 
+  // Phase 4: Doctor Portal Clinical Dossier, Clinical Queue Dashboard & Audit Log
+  String get clinicalSummaryTitle => isArabic
+      ? 'الملخص السريري (موثّق من الطبيب)'
+      : (isFrench
+            ? 'Synthèse clinique (documentée par le médecin)'
+            : 'Clinical summary (clinician documented)');
+
+  String get clinicianDocumentedBadge => isArabic
+      ? 'موثّق من الطبيب'
+      : (isFrench ? 'Documenté par le médecin' : 'Clinician documented');
+
+  String get patientSelfReportedBadge => isArabic
+      ? 'مصرّح به من المريض'
+      : (isFrench ? 'Déclaré par le patient' : 'Patient self-reported');
+
+  String get aiReflectionNonDiagnosticBadge => isArabic
+      ? 'تأمل بمساعدة الذكاء الاصطناعي · غير تشخيصي'
+      : (isFrench
+            ? 'Réflexion assistée par IA · Non diagnostique'
+            : 'AI-assisted reflection · Non-diagnostic');
+
+  String get documentedDiagnosesTitle => isArabic
+      ? 'التشخيصات الموثّقة'
+      : (isFrench ? 'Diagnostics documentés' : 'Documented diagnoses');
+
+  String get addDiagnosisBtn => isArabic
+      ? 'إضافة تشخيص'
+      : (isFrench ? 'Ajouter un diagnostic' : 'Add diagnosis');
+
+  String get editDiagnosisTitle => isArabic
+      ? 'تعديل التشخيص'
+      : (isFrench ? 'Modifier le diagnostic' : 'Edit diagnosis');
+
+  String get diagnosisLabelField => isArabic
+      ? 'التشخيص السريري'
+      : (isFrench ? 'Libellé du diagnostic' : 'Clinical diagnosis label');
+
+  String get diagnosisCodeField => isArabic
+      ? 'رمز ICD-11 / DSM-5 (اختياري)'
+      : (isFrench
+            ? 'Code CIM-11 / DSM-5 (optionnel)'
+            : 'ICD-11 / DSM-5 code (optional)');
+
+  String get diagnosisCertaintyLabel => isArabic
+      ? 'درجة التأكيد'
+      : (isFrench ? 'Certitude diagnostique' : 'Certainty');
+
+  String get diagnosisStatusLabel => isArabic
+      ? 'الحالة الحالية'
+      : (isFrench ? 'Statut actuel' : 'Status');
+
+  String get clinicalNotesOptionalField => isArabic
+      ? 'ملاحظات سريرية (اختياري)'
+      : (isFrench ? 'Notes cliniques (optionnel)' : 'Clinical notes (optional)');
+
+  String get noDiagnosesRecordedLabel => isArabic
+      ? 'لا يوجد تشخيص موثّق من الطبيب بعد.'
+      : (isFrench
+            ? 'Aucun diagnostic documenté par le médecin.'
+            : 'No clinician-documented diagnoses yet.');
+
+  String get currentMedicationsTitle => isArabic
+      ? 'الأدوية الحالية'
+      : (isFrench ? 'Traitements en cours' : 'Current medications');
+
+  String get addMedicationBtn => isArabic
+      ? 'إضافة دواء'
+      : (isFrench ? 'Ajouter un traitement' : 'Add medication');
+
+  String get editMedicationTitle => isArabic
+      ? 'تعديل الدواء'
+      : (isFrench ? 'Modifier le traitement' : 'Edit medication');
+
+  String get medicationNameField => isArabic
+      ? 'اسم الدواء'
+      : (isFrench ? 'Nom du médicament' : 'Medication name');
+
+  String get medicationDosageField => isArabic
+      ? 'الجرعة (مثال: 300 ملغ)'
+      : (isFrench ? 'Posologie (ex. 300 mg)' : 'Dosage (e.g. 300 mg)');
+
+  String get medicationFrequencyField => isArabic
+      ? 'التوقيت / التكرار (مثال: مساءً)'
+      : (isFrench ? 'Fréquence (ex. le soir)' : 'Schedule (e.g. evening)');
+
+  String get noMedicationsRecordedLabel => isArabic
+      ? 'لا توجد أدوية مسجّلة في الملف.'
+      : (isFrench ? 'Aucun traitement consigné.' : 'No medications recorded.');
+
+  String get allergiesTitle => isArabic
+      ? 'الحساسية والتفاعلات الدوائية'
+      : (isFrench ? 'Allergies et intolérances' : 'Allergies & reactions');
+
+  String get addAllergyBtn => isArabic
+      ? 'إضافة حساسية'
+      : (isFrench ? 'Ajouter une allergie' : 'Add allergy');
+
+  String get allergySubstanceField => isArabic
+      ? 'المادة أو الدواء'
+      : (isFrench ? 'Substance ou médicament' : 'Substance or drug');
+
+  String get allergyReactionField => isArabic
+      ? 'التفاعل (اختياري)'
+      : (isFrench ? 'Réaction observée (optionnel)' : 'Reaction (optional)');
+
+  String get allergySeverityLabel =>
+      isArabic ? 'الشدة' : (isFrench ? 'Sévérité' : 'Severity');
+
+  String get noKnownAllergiesLabel => isArabic
+      ? 'لا توجد حساسية معروفة (موثّق)'
+      : (isFrench
+            ? 'Aucune allergie connue (documenté)'
+            : 'No known allergies documented');
+
+  String get allergiesNotRecordedLabel => isArabic
+      ? 'الحساسية غير مسجّلة بعد.'
+      : (isFrench ? 'Allergies non renseignées.' : 'Allergies not recorded yet.');
+
+  String get clinicalHistoryAndDetailsTitle => isArabic
+      ? 'السوابق السريرية والبيانات'
+      : (isFrench
+            ? 'Antécédents et coordonnées'
+            : 'Clinical history & demographics');
+
+  String get editClinicalDetailsBtn => isArabic
+      ? 'تعديل الملف السريري'
+      : (isFrench ? 'Modifier le dossier' : 'Edit chart details');
+
+  String get clinicFileNumberField => isArabic
+      ? 'رقم الملف الطبي (MRN)'
+      : (isFrench ? 'N° de dossier (IPP / MRN)' : 'Clinic file # (MRN)');
+
+  String get patientPhoneField => isArabic
+      ? 'هاتف المريض'
+      : (isFrench ? 'Téléphone du patient' : 'Patient phone');
+
+  String get biologicalSexField => isArabic
+      ? 'الجنس'
+      : (isFrench ? 'Sexe' : 'Sex');
+
+  String get referralSourceField => isArabic
+      ? 'جهة التحويل'
+      : (isFrench ? 'Adressé par' : 'Referral source');
+
+  String get emergencyContactNameField => isArabic
+      ? 'اسم جهة الاتصال للطوارئ'
+      : (isFrench ? 'Contact d’urgence (nom)' : 'Emergency contact name');
+
+  String get emergencyContactPhoneField => isArabic
+      ? 'هاتف جهة الاتصال للطوارئ'
+      : (isFrench ? 'Contact d’urgence (tél.)' : 'Emergency contact phone');
+
+  String get psychiatricHistoryField => isArabic
+      ? 'السوابق النفسية'
+      : (isFrench ? 'Antécédents psychiatriques' : 'Psychiatric history');
+
+  String get medicalHistoryField => isArabic
+      ? 'السوابق الطبية والجسدية'
+      : (isFrench ? 'Antécédents médicaux' : 'Medical history');
+
+  String get familyHistoryField => isArabic
+      ? 'السوابق العائلية (اختياري)'
+      : (isFrench
+            ? 'Antécédents familiaux (optionnel)'
+            : 'Family history (optional)');
+
+  String get safetyProtectiveFactorsField => isArabic
+      ? 'عوامل الحماية وملاحظات السلامة (غير تنبؤية)'
+      : (isFrench
+            ? 'Facteurs protecteurs et repères de sécurité (non prédictif)'
+            : 'Protective factors & safety notes (non-predictive)');
+
+  String get nextAppointmentTitle => isArabic
+      ? 'الموعد القادم للمتابعة'
+      : (isFrench ? 'Prochain rendez-vous' : 'Next follow-up appointment');
+
+  String get noAppointmentScheduledLabel => isArabic
+      ? 'لم يتم تحديد موعد قادم بعد.'
+      : (isFrench
+            ? 'Aucun rendez-vous planifié.'
+            : 'No follow-up scheduled yet.');
+
+  String get scheduleFollowUpBtn => isArabic
+      ? 'تحديد موعد'
+      : (isFrench ? 'Planifier' : 'Schedule');
+
+  String get clearDateBtn =>
+      isArabic ? 'إزالة التاريخ' : (isFrench ? 'Effacer la date' : 'Clear date');
+
+  String get safetyPauseAlertBadge => isArabic
+      ? 'تنبيه توقّف أمان'
+      : (isFrench ? 'Pause sécurité déclenchée' : 'Safety pause triggered');
+
+  String get safetyPauseAlertBanner => isArabic
+      ? 'تم تفعيل توقّف الأمان في أحد حوارات المريض المشتركة — راجع قسم الحوارات المشتركة.'
+      : (isFrench
+            ? 'Une pause de sécurité a été déclenchée dans une réflexion partagée — consultez l’onglet Réflexions.'
+            : 'A safety pause was triggered in a shared reflection — review in the Reflections tab.');
+
+  String get patientSelfReportedProfileTitle => isArabic
+      ? 'الملف الشخصي المصرّح به من المريض'
+      : (isFrench
+            ? 'Profil déclaré par le patient'
+            : 'Patient self-reported profile');
+
+  String get selfReportedTreatmentLabel => isArabic
+      ? 'المتابعة المصرّح بها:'
+      : (isFrench ? 'Suivi déclaré :' : 'Self-reported care:');
+
+  String get selfReportedTriggersLabel => isArabic
+      ? 'محفّزات ذكرها المريض:'
+      : (isFrench ? 'Déclencheurs signalés :' : 'Reported triggers:');
+
+  String get selfReportedGoalsLabel => isArabic
+      ? 'أهداف المريض:'
+      : (isFrench ? 'Objectifs du patient :' : 'Patient goals:');
+
+  String get singlePatientShiftsTitle => isArabic
+      ? 'التغيّرات الملاحظة مقارنة بمرجع المريض'
+      : (isFrench
+            ? 'Écarts observés par rapport au repère personnel'
+            : 'Observed shifts vs. personal baseline');
+
+  String get physicalTensionLabel => isArabic
+      ? 'التوتر الجسدي'
+      : (isFrench ? 'Tension physique' : 'Physical tension');
+
+  String get preVisitQuestionSubLabel => isArabic
+      ? 'سؤال المريض'
+      : (isFrench ? 'Question du patient' : 'Patient question');
+
+  String get preVisitHelpedSubLabel => isArabic
+      ? 'ما ساعد مؤخراً'
+      : (isFrench ? 'Ce qui a aidé récemment' : 'What helped recently');
+
+  String get activeFocusPlanDoctorTitle => isArabic
+      ? 'خطة التركيز النشطة بين الزيارات'
+      : (isFrench
+            ? 'Plan de suivi actif inter-séances'
+            : 'Active between-session focus plan');
+
+  String get updateFocusPlanBtn => isArabic
+      ? 'تحديث الخطة'
+      : (isFrench ? 'Mettre à jour' : 'Update plan');
+
+  String get consentDetailsToggleLabel => isArabic
+      ? 'تفاصيل نطاق الموافقة (7 عناصر)'
+      : (isFrench
+            ? 'Détails du consentement (7 éléments)'
+            : 'Consent scope details (7 toggles)');
+
+  String get consentWithheldLabel =>
+      isArabic ? 'غير مشارك' : (isFrench ? 'Non partagé' : 'Withheld');
+
+  String get consentIncludedLabel =>
+      isArabic ? 'مشارك' : (isFrench ? 'Partagé' : 'Shared');
+
+  String get noCheckInsLoggedYetLabel => isArabic
+      ? 'لم يسجّل المريض أي حالة يومية بعد.'
+      : (isFrench
+            ? 'Aucun bilan quotidien enregistré pour le moment.'
+            : 'No daily check-ins logged yet.');
+
+  String get symptomsExcludedByConsentLabel => isArabic
+      ? 'سجلات الأعراض مستثناة حسب اختيار موافقة المريض.'
+      : (isFrench
+            ? 'Les journaux de symptômes sont exclus par le consentement du patient.'
+            : 'Symptom logs are excluded by the patient’s consent choice.');
+
+  String get noSymptomLogsRecordedLabel => isArabic
+      ? 'لا توجد سجلات أعراض مسجّلة في هذه الفترة.'
+      : (isFrench
+            ? 'Aucun symptôme enregistré sur cette période.'
+            : 'No symptom logs recorded during this window.');
+
+  String get aiSummaryBoxLabel => isArabic
+      ? 'ملخص مساعد Mindora الذكي (غير تشخيصي)'
+      : (isFrench
+            ? 'Synthèse IA Mindora (non diagnostique)'
+            : 'AI reflection summary (non-diagnostic)');
+
+  String get patientTakeawayBoxLabel => isArabic
+      ? 'خلاصة المريض بكلماته'
+      : (isFrench
+            ? 'Conclusion rédigée par le patient'
+            : 'Patient’s own takeaway');
+
+  String get editNoteTitle => isArabic
+      ? 'تعديل الملاحظة السريرية'
+      : (isFrench ? 'Modifier la note clinique' : 'Edit clinical note');
+
+  String get deleteNoteConfirmTitle => isArabic
+      ? 'حذف هذه الملاحظة؟'
+      : (isFrench ? 'Supprimer cette note ?' : 'Delete this note?');
+
+  String get deleteNoteConfirmBody => isArabic
+      ? 'سيتم إزالة الملاحظة من الملف السريري. يمكنك التراجع مباشرة بعد الحذف.'
+      : (isFrench
+            ? 'Cette note sera retirée du dossier. Vous pourrez annuler juste après.'
+            : 'This note will be removed from the chart. You can undo right away.');
+
+  String get noteDeletedToast => isArabic
+      ? 'تم حذف الملاحظة.'
+      : (isFrench ? 'Note supprimée.' : 'Clinical note deleted.');
+
+  String get resetPinConfirmTitle => isArabic
+      ? 'إعادة تعيين الرمز السري وإنشاء QR جديد؟'
+      : (isFrench
+            ? 'Réinitialiser le PIN et générer un nouveau QR ?'
+            : 'Reset PIN and generate a new QR?');
+
+  String get resetPinConfirmBody => isArabic
+      ? 'سيتم إلغاء الرمز السري المؤقت القديم فوراً وإنشاء رمز دخول جديد للمريض.'
+      : (isFrench
+            ? 'L’ancien code PIN temporaire sera invalidé immédiatement et un nouvel accès sera créé.'
+            : 'The patient’s previous PIN and invite QR will be invalidated immediately.');
+
+  String get markReviewedBtn => isArabic
+      ? 'تأكيد المراجعة'
+      : (isFrench ? 'Marquer comme revu' : 'Mark reviewed');
+
+  String get reviewedToast => isArabic
+      ? 'تم تأكيد مراجعة الملف.'
+      : (isFrench ? 'Dossier marqué comme revu.' : 'Patient chart marked reviewed.');
+
+  String get removeImportedPatientBtn => isArabic
+      ? 'إزالة هذا الملف المستورد'
+      : (isFrench ? 'Retirer ce dossier importé' : 'Remove imported record');
+
+  String get removeImportedPatientConfirm => isArabic
+      ? 'هل تريد حذف هذا الملف المستورد يدوياً وملاحظاته من هذا الجهاز؟'
+      : (isFrench
+            ? 'Supprimer ce dossier importé manuellement et ses notes de cet appareil ?'
+            : 'Remove this manually imported record and its local notes from this device?');
+
+  String get clinicalQueueTitle => isArabic
+      ? 'قائمة المتابعة اليومية'
+      : (isFrench ? 'File clinique du jour' : 'Clinical Queue');
+
+  String get queueNeedsAttentionTitle => isArabic
+      ? 'يحتاج انتباهك الآن'
+      : (isFrench ? 'À examiner en priorité' : 'Needs attention now');
+
+  String get queueUpcomingFollowUpsTitle => isArabic
+      ? 'مواعيد المتابعة القادمة'
+      : (isFrench ? 'Suivis planifiés' : 'Upcoming follow-ups');
+
+  String get queueOnboardingWatchTitle => isArabic
+      ? 'بانتظار الدخول الأول أو غير نشط'
+      : (isFrench
+            ? 'En attente de connexion ou inactifs'
+            : 'Onboarding & engagement watch');
+
+  String get queueAllClearLabel => isArabic
+      ? 'لا توجد تنبيهات عاجلة الآن.'
+      : (isFrench
+            ? 'Aucune priorité urgente en attente.'
+            : 'No urgent alerts right now.');
+
+  String get kpiSafetyAlerts => isArabic
+      ? 'تنبيهات أمان'
+      : (isFrench ? 'Alertes sécurité' : 'Safety alerts');
+
+  String get kpiPendingFollowUps => isArabic
+      ? 'بانتظار الدخول'
+      : (isFrench ? 'En attente' : 'Pending');
+
+  String get filterAlerts =>
+      isArabic ? 'تنبيهات' : (isFrench ? 'Alertes' : 'Alerts');
+
+  String get filterPendingLogin =>
+      isArabic ? 'بانتظار الدخول' : (isFrench ? 'En attente' : 'Pending');
+
+  String get filterPaused =>
+      isArabic ? 'متوقّف' : (isFrench ? 'En pause' : 'Paused');
+
+  String get sortRecentLabel =>
+      isArabic ? 'الأحدث' : (isFrench ? 'Récent' : 'Recent');
+
+  String get sortPriorityLabel =>
+      isArabic ? 'الأولوية' : (isFrench ? 'Priorité' : 'Priority');
+
+  String get sortNameLabel =>
+      isArabic ? 'الاسم أ-ي' : (isFrench ? 'Nom A–Z' : 'Name A–Z');
+
+  String get noMatchingPatientsTitle => isArabic
+      ? 'لا يوجد مرضى مطابقون لهذا الفلتر'
+      : (isFrench
+            ? 'Aucun patient ne correspond à ce filtre'
+            : 'No patients match this filter');
+
+  String get noMatchingPatientsSub => isArabic
+      ? 'جرّب تغيير الفلتر أو مسح نص البحث لعرض كل المرضى.'
+      : (isFrench
+            ? 'Modifiez le filtre ou effacez la recherche pour afficher tous vos patients.'
+            : 'Adjust the filter or clear search to view your full patient list.');
+
+  String get clinicianLicenseRefField => isArabic
+      ? 'رقم التسجيل المهني (CNOM)'
+      : (isFrench ? 'N° d’inscription (CNOM / RPPS)' : 'Medical license # (CNOM)');
+
+  String get clinicPhoneField => isArabic
+      ? 'هاتف العيادة'
+      : (isFrench ? 'Téléphone du cabinet' : 'Clinic phone');
+
+  String get clinicAddressField => isArabic
+      ? 'عنوان العيادة'
+      : (isFrench ? 'Adresse du cabinet' : 'Clinic address');
+
+  String get practiceProfileSavedToast => isArabic
+      ? 'تم حفظ بيانات العيادة.'
+      : (isFrench ? 'Profil du cabinet enregistré.' : 'Practice profile saved.');
+
+  String get clinicAuditLogTitle => isArabic
+      ? 'سجل نشاط وإدارة العيادة'
+      : (isFrench ? 'Journal d’activité du cabinet' : 'Clinic activity & audit log');
+
+  String get clinicAuditLogSub => isArabic
+      ? 'عرض سجل إنشاء الحسابات، إعادة التعيين، الإيقاف وخطط المتابعة.'
+      : (isFrench
+            ? 'Historique des comptes créés, réinitialisations, pauses et plans envoyés.'
+            : 'View account creation, PIN resets, access pauses, and focus plan actions.');
+
+  String get clinicAuditLogEmpty => isArabic
+      ? 'لا توجد عمليات مسجّلة في سجل النشاط بعد.'
+      : (isFrench
+            ? 'Aucune activité enregistrée pour le moment.'
+            : 'No clinic activity recorded yet.');
+
+  String localizedAuditAction(String actionName) {
+    if (isArabic) {
+      return switch (actionName) {
+        'createdAccount' => 'إنشاء حساب مريض',
+        'resetAccess' => 'إعادة تعيين الرمز السري و QR',
+        'pausedAccount' => 'إيقاف دخول المريض مؤقتاً',
+        'resumedAccount' => 'استئناف دخول المريض',
+        'updatedTracks' => 'تحديث محاور المتابعة',
+        'pushedFocusPlan' => 'إرسال خطة تركيز بين الزيارات',
+        'patientQrLogin' => 'دخول المريض عبر QR',
+        'patientPinLogin' => 'دخول المريض بالرمز السري',
+        'patientPinChanged' => 'تغيير المريض لرمزه السري',
+        'safetyNoticeAccepted' => 'موافقة المريض على إشعار الأمان',
+        _ => actionName,
+      };
+    }
+    if (isFrench) {
+      return switch (actionName) {
+        'createdAccount' => 'Compte patient créé',
+        'resetAccess' => 'PIN et QR réinitialisés',
+        'pausedAccount' => 'Accès patient suspendu',
+        'resumedAccount' => 'Accès patient réactivé',
+        'updatedTracks' => 'Axes de suivi mis à jour',
+        'pushedFocusPlan' => 'Plan inter-séances envoyé',
+        'patientQrLogin' => 'Connexion patient via QR',
+        'patientPinLogin' => 'Connexion patient par PIN',
+        'patientPinChanged' => 'Code PIN modifié par le patient',
+        'safetyNoticeAccepted' => 'Notice de sécurité acceptée',
+        _ => actionName,
+      };
+    }
+    return switch (actionName) {
+      'createdAccount' => 'Patient account created',
+      'resetAccess' => 'PIN & QR reset',
+      'pausedAccount' => 'Patient access paused',
+      'resumedAccount' => 'Patient access resumed',
+      'updatedTracks' => 'Focus tracks updated',
+      'pushedFocusPlan' => 'Between-session focus plan sent',
+      'patientQrLogin' => 'Patient signed in via QR',
+      'patientPinLogin' => 'Patient signed in via PIN',
+      'patientPinChanged' => 'Patient changed PIN',
+      'safetyNoticeAccepted' => 'Patient accepted safety notice',
+      _ => actionName,
+    };
+  }
+
+  String localizedAgeRange(String raw) {
+    switch (raw.trim()) {
+      case 'under_18':
+        return isArabic ? 'أقل من 18 سنة' : (isFrench ? 'Moins de 18 ans' : 'Under 18');
+      case '18-24':
+        return '18–24';
+      case '25-44':
+        return '25–44';
+      case '45-64':
+        return '45–64';
+      case '65+':
+        return '65+';
+      default:
+        return raw;
+    }
+  }
+
+  String inactiveDaysBadge(int days) {
+    if (isArabic) return 'بدون تسجيل منذ $days أيام';
+    if (isFrench) return 'Inactif depuis ${days}j';
+    return 'No logs for ${days}d';
+  }
+
+  String get clearOfflineImportsTitle => isArabic
+      ? 'مسح الملفات المستوردة يدوياً'
+      : (isFrench
+            ? 'Effacer les imports hors ligne'
+            : 'Clear offline imported packets');
+
+  String get managedPatientsCountLabel => isArabic
+      ? 'حسابات العيادة المُدارة'
+      : (isFrench ? 'Patients suivis du cabinet' : 'Managed clinic patients');
+
+  String get demoBannerNotice => isArabic
+      ? 'يعرض حالياً ملفات تدريبية تجريبية.'
+      : (isFrench
+            ? 'Affiche les dossiers de démonstration.'
+            : 'Showing demonstration patient records.');
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);

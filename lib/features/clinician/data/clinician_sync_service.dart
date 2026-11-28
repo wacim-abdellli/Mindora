@@ -542,6 +542,36 @@ class ClinicianSyncService {
     buf.writeln('============================================================');
     buf.writeln();
 
+    // 0. Clinician-Documented Clinical Summary (strictly clinician-authored)
+    final cr = record.clinicalRecord;
+    if (cr.diagnoses.isNotEmpty ||
+        cr.medications.isNotEmpty ||
+        cr.allergies.isNotEmpty ||
+        cr.noKnownAllergies) {
+      buf.writeln('[0] ${strings.clinicalSummaryTitle}');
+      if (cr.diagnoses.isNotEmpty) {
+        buf.writeln(
+          '${strings.documentedDiagnosesTitle}: '
+          '${cr.diagnoses.map((d) => '${d.displayTitle} (${d.certainty.localizedLabel(strings)}, ${d.status.localizedLabel(strings)})').join('; ')}',
+        );
+      }
+      if (cr.medications.isNotEmpty) {
+        buf.writeln(
+          '${strings.currentMedicationsTitle}: '
+          '${cr.medications.map((m) => '${m.name}${m.regimenSummary.isNotEmpty ? ' (${m.regimenSummary})' : ''} [${m.status.localizedLabel(strings)}]').join('; ')}',
+        );
+      }
+      if (cr.allergies.isNotEmpty) {
+        buf.writeln(
+          '${strings.allergiesTitle}: '
+          '${cr.allergies.map((a) => '${a.substance}${a.reaction.trim().isNotEmpty ? ' - ${a.reaction.trim()}' : ''} (${a.severity.localizedLabel(strings)})').join('; ')}',
+        );
+      } else if (cr.noKnownAllergies) {
+        buf.writeln('${strings.allergiesTitle}: ${strings.noKnownAllergiesLabel}');
+      }
+      buf.writeln();
+    }
+
     // 1. Pre-visit Agenda
     final agenda = packet.preVisitAgenda;
     if (scope.includePreVisitAgenda && agenda != null && !agenda.isEmpty) {

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/security/secure_key_manager.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../clinic_sync/controllers/clinic_sync_providers.dart';
+import '../../clinic_sync/domain/clinic_account_models.dart';
 import '../data/clinic_handoff_bridge.dart';
 import '../data/clinician_sync_service.dart';
 import '../data/demo_clinical_cohort.dart';
@@ -117,12 +118,16 @@ class ClinicianRosterNotifier
         final mergedNotes = existing.clinicianNotes.isNotEmpty
             ? existing.clinicianNotes
             : s.clinicianNotes;
+        final mergedClinical = !existing.clinicalRecord.isEmpty
+            ? existing.clinicalRecord
+            : s.clinicalRecord;
         final preservedReviewed = existing.reviewedAt != null &&
                 !s.lastSyncedAt.isAfter(existing.reviewedAt!)
             ? existing.reviewedAt
             : s.reviewedAt;
         byId[s.patientId] = s.copyWith(
           clinicianNotes: mergedNotes,
+          clinicalRecord: mergedClinical,
           reviewedAt: preservedReviewed,
         );
       }
@@ -133,15 +138,20 @@ class ClinicianRosterNotifier
     if (demoEnabled) {
       final demoNotesMap = await repo.loadDemoNotes();
       final demoReviewedMap = await repo.loadDemoReviewedMap();
+      final demoClinicalMap = await repo.loadDemoClinicalRecords();
       final demoRecords = DemoClinicalCohort.buildRecords();
       for (final demo in demoRecords) {
         final mergedNotes = demoNotesMap.containsKey(demo.patientId)
             ? demoNotesMap[demo.patientId]!
             : demo.clinicianNotes;
+        final mergedClinical = demoClinicalMap.containsKey(demo.patientId)
+            ? demoClinicalMap[demo.patientId]!
+            : demo.clinicalRecord;
         final mergedReviewed = demoReviewedMap[demo.patientId] ?? demo.reviewedAt;
         combined.add(
           demo.copyWith(
             clinicianNotes: mergedNotes,
+            clinicalRecord: mergedClinical,
             reviewedAt: mergedReviewed,
           ),
         );
@@ -153,7 +163,7 @@ class ClinicianRosterNotifier
   }
 
   /// Imports a verified, consent-scoped [ClinicianSyncPacket] and preserves any
-  /// existing private clinician notes for returning patients.
+  /// existing private clinician notes and clinical record for returning patients.
   Future<ClinicianPatientRecord> importPacket(ClinicianSyncPacket packet) async {
     final repo = ref.read(clinicianRepositoryProvider);
     final existingImported = await repo.loadImportedPatients();
@@ -163,6 +173,9 @@ class ClinicianRosterNotifier
     final existingNotes = existingIdx >= 0
         ? existingImported[existingIdx].clinicianNotes
         : const <ClinicianSessionNote>[];
+    final existingClinical = existingIdx >= 0
+        ? existingImported[existingIdx].clinicalRecord
+        : const ClinicianClinicalRecord();
     final importedAt = existingIdx >= 0
         ? existingImported[existingIdx].importedAt
         : packet.generatedAt;
@@ -189,6 +202,7 @@ class ClinicianRosterNotifier
       latestPacket: sanitizedPacket,
       previousPackets: previousPackets,
       clinicianNotes: existingNotes,
+      clinicalRecord: existingClinical,
       reviewedAt: null,
     );
 
@@ -209,6 +223,44 @@ class ClinicianRosterNotifier
       clinicianNotes: [note, ...target.clinicianNotes],
     );
     await repo.upsertPatient(updated, overwriteNotes: true);
+    final nextList = [...currentList];
+    nextList[idx] = updated;
+    state = AsyncValue.data(nextList);
+  }
+
+  Future<void> updateNote(
+    String patientId,
+    ClinicianSessionNote updatedNote,
+  ) async {
+    final repo = ref.read(clinicianRepositoryProvider);
+    final currentList = state.value ?? await future;
+    final idx = currentList.indexWhere((r) => r.patientId == patientId);
+    if (idx < 0) return;
+
+    final target = currentList[idx];
+    final nextNotes = target.clinicianNotes
+        .map((n) => n.id == updatedNote.id ? updatedNote : n)
+        .toList(growable: false);
+    final updated = target.copyWith(clinicianNotes: nextNotes);
+    await repo.upsertPatient(updated, overwriteNotes: true);
+    final nextList = [...currentList];
+    nextList[idx] = updated;
+    state = AsyncValue.data(nextList);
+  }
+
+  Future<void> updateClinicalRecord(
+    String patientId,
+    ClinicianClinicalRecord clinicalRecord,
+  ) async {
+    final repo = ref.read(clinicianRepositoryProvider);
+    final currentList = state.value ?? await future;
+    final idx = currentList.indexWhere((r) => r.patientId == patientId);
+    if (idx < 0) return;
+
+    final target = currentList[idx];
+    final stamped = clinicalRecord.copyWith(updatedAt: DateTime.now());
+    final updated = target.copyWith(clinicalRecord: stamped);
+    await repo.upsertPatient(updated, overwriteClinicalRecord: true);
     final nextList = [...currentList];
     nextList[idx] = updated;
     state = AsyncValue.data(nextList);
@@ -261,17 +313,64 @@ class ClinicianRosterNotifier
 
   Future<void> clearImportedPatients() async {
     final repo = ref.read(clinicianRepositoryProvider);
-    await repo.clearImportedPatients();
-    final currentList = state.value ?? const [];
-    state = AsyncValue.data(
-      currentList.where((r) => r.isDemoCase).toList(growable: false),
-    );
+    final docProfile = await ref.read(clinicianProfileProvider.future);
+    final managedAccounts = await ref
+        .read(clinicAuthRepositoryProvider)
+        .listPatientsForDoctor(docProfile.doctorId);
+    final managedIds = managedAccounts.map((a) => a.patientId).toSet();
+
+    // Preserve encrypted clinician notes & clinical charts belonging to
+    // managed clinic accounts; remove only offline manually imported packets.
+    final stored = await repo.loadImportedPatients();
+    final keep = stored
+        .where((r) => managedIds.contains(r.patientId))
+        .toList(growable: false);
+    if (keep.isEmpty) {
+      await repo.clearImportedPatients();
+    } else {
+      await repo.saveImportedPatients(keep);
+    }
+    ref.invalidateSelf();
+    await future;
   }
 }
 
 final clinicianRosterProvider =
     AsyncNotifierProvider<ClinicianRosterNotifier, List<ClinicianPatientRecord>>(
   ClinicianRosterNotifier.new,
+);
+
+/// Managed clinic patient accounts keyed by `patientId` for accurate lifecycle
+/// triage badges (`Pending first login` / `Active` / `Paused`) & search.
+final clinicDoctorAccountsProvider =
+    FutureProvider<Map<String, ClinicPatientAccount>>((ref) async {
+  ref.watch(clinicianRosterProvider);
+  final profile = await ref.watch(clinicianProfileProvider.future);
+  final accounts = await ref
+      .watch(clinicAuthRepositoryProvider)
+      .listPatientsForDoctor(profile.doctorId);
+  return <String, ClinicPatientAccount>{
+    for (final a in accounts) a.patientId: a,
+  };
+});
+
+/// Reverse-chronological clinic activity & access audit log for the doctor.
+final clinicAuditLogProvider =
+    FutureProvider.autoDispose<List<ClinicAuditEntry>>((ref) async {
+  ref.watch(clinicianRosterProvider);
+  final profile = await ref.watch(clinicianProfileProvider.future);
+  final entries = await ref
+      .watch(clinicAuthRepositoryProvider)
+      .listAuditLog(doctorId: profile.doctorId);
+  return List<ClinicAuditEntry>.from(entries)
+    ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+});
+
+/// Patient's doctor-delivered inbox (active Focus Plan + assigned tracks).
+final dossierPatientInboxProvider =
+    FutureProvider.autoDispose.family<ClinicPatientSyncInbox?, String>(
+  (ref, patientId) =>
+      ref.watch(clinicSyncRepositoryProvider).pullPatientInbox(patientId),
 );
 
 // -----------------------------------------------------------------------------

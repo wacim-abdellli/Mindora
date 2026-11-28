@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../app/config/app_edition.dart';
 import '../../../app/localization/app_strings.dart';
 import '../../../app/localization/locale_controller.dart';
+import '../../../app/localization/mind_formatters.dart';
 import '../../../app/router/app_router.dart';
 import '../../../app/theme/display_comfort_controller.dart';
 import '../../../app/theme/lab_theme.dart';
@@ -17,25 +18,34 @@ import '../../../app/theme/mind_tokens.dart';
 import '../../../app/theme/theme_controller.dart';
 import '../../../core/security/app_lock_provider.dart';
 import '../../../core/widgets/mind_badge.dart';
+import '../../../core/widgets/mind_banner.dart';
 import '../../../core/widgets/mind_button.dart';
 import '../../../core/widgets/mind_card.dart';
+import '../../../core/widgets/mind_dialog.dart';
 import '../../../core/widgets/mind_pill.dart';
 import '../../../core/widgets/mind_pressable.dart';
 import '../../../core/widgets/mind_segmented.dart';
+import '../../../core/widgets/mind_skeleton.dart';
 import '../../../core/widgets/mind_switch.dart';
-import '../../mind_trace/domain/affect_taxonomy.dart';
+import '../../../core/widgets/mind_toast.dart';
+import '../../clinic_sync/domain/clinic_account_models.dart';
+import '../../profile/domain/clinical_condition_catalog.dart';
 import '../../track/presentation/widgets/track_mood_utils.dart';
 import '../controllers/clinician_providers.dart';
 import '../data/clinician_auth_service.dart';
 import '../domain/clinician_models.dart';
 import 'clinician_patient_detail_screen.dart';
+import 'widgets/clinician_record_editor_sheets.dart';
 import 'widgets/create_patient_account_sheet.dart';
 import 'widgets/import_patient_packet_sheet.dart';
 
-enum _RosterFilter { all, shifts, unreviewed, demo }
+enum _RosterFilter { all, shifts, unreviewed, pending, paused, demo }
 
-/// Three-tab Psychiatrist & Clinician Workspace shell (`Patients`, `Overview`,
-/// `Practice`) paired with the luxury floating frosted-glass navigation dock.
+enum _RosterSort { recent, priority, name }
+
+/// Three-tab Psychiatrist & Clinician Workspace shell (`Patients`, `Overview`
+/// Clinical Queue, `Practice`) with responsive tablet/desktop master-detail
+/// split pane and explicit interaction-driven review state.
 class ClinicianShellScreen extends ConsumerStatefulWidget {
   const ClinicianShellScreen({super.key});
 
@@ -51,6 +61,7 @@ class ClinicianShellScreen extends ConsumerStatefulWidget {
 class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
   int _tabIndex = 0;
   _RosterFilter _filter = _RosterFilter.all;
+  _RosterSort _sort = _RosterSort.recent;
   String? _selectedPatientId;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -73,27 +84,94 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
     super.dispose();
   }
 
+  int _priorityScore(
+    ClinicianPatientRecord r,
+    ClinicPatientAccount? account,
+    AppStrings strings,
+  ) {
+    var score = 0;
+    if (r.hasSafetyPauseAlert) score += 1000;
+    final shifts = r.divergences(strings).length;
+    if (shifts > 0) score += 200 + shifts * 20;
+    if (r.hasUnreviewedUpdate) score += 100;
+    if (account?.status == ClinicAccountStatus.pendingFirstLogin) score += 40;
+    if (account?.status == ClinicAccountStatus.paused) score -= 50;
+    return score;
+  }
+
   List<ClinicianPatientRecord> _filteredRoster(
     List<ClinicianPatientRecord> roster,
+    Map<String, ClinicPatientAccount> accountsById,
     AppStrings strings,
   ) {
     final q = _searchQuery.trim().toLowerCase();
-    return roster.where((r) {
+    final matched = roster.where((r) {
+      final account = accountsById[r.patientId];
       final passesFilter = switch (_filter) {
         _RosterFilter.all => true,
-        _RosterFilter.shifts => r.divergences(strings).isNotEmpty,
+        _RosterFilter.shifts =>
+          r.hasSafetyPauseAlert || r.divergences(strings).isNotEmpty,
         _RosterFilter.unreviewed => r.hasUnreviewedUpdate,
+        _RosterFilter.pending =>
+          account?.status == ClinicAccountStatus.pendingFirstLogin,
+        _RosterFilter.paused => account?.status == ClinicAccountStatus.paused,
         _RosterFilter.demo => r.isDemoCase,
       };
       if (!passesFilter) return false;
       if (q.isEmpty) return true;
+
       final nameMatch = r.displayName.toLowerCase().contains(q);
       final idMatch = r.patientId.toLowerCase().contains(q);
+      final phoneMatch = (account?.loginIdentifier.toLowerCase().contains(q) ??
+              false) ||
+          r.clinicalRecord.phone.toLowerCase().contains(q) ||
+          r.clinicalRecord.clinicFileNumber.toLowerCase().contains(q);
+      final dxMatch = r.clinicalRecord.diagnoses.any(
+        (d) =>
+            d.label.toLowerCase().contains(q) ||
+            d.code.toLowerCase().contains(q),
+      );
+      final trackMatch = (account?.assignedTrackIds ?? const <String>[]).any(
+        (id) {
+          for (final t in ClinicalTrack.values) {
+            if (t.id == id &&
+                t.localizedTitle(strings).toLowerCase().contains(q)) {
+              return true;
+            }
+          }
+          return id.toLowerCase().contains(q);
+        },
+      );
       final latestMood = r.latestTrace != null
           ? trackMoodLabel(r.latestTrace!.overallMood, strings).toLowerCase()
           : '';
-      return nameMatch || idMatch || latestMood.contains(q);
-    }).toList(growable: false);
+      return nameMatch ||
+          idMatch ||
+          phoneMatch ||
+          dxMatch ||
+          trackMatch ||
+          latestMood.contains(q);
+    }).toList();
+
+    switch (_sort) {
+      case _RosterSort.recent:
+        matched.sort((a, b) => b.lastSyncedAt.compareTo(a.lastSyncedAt));
+      case _RosterSort.priority:
+        matched.sort((a, b) {
+          final sa = _priorityScore(a, accountsById[a.patientId], strings);
+          final sb = _priorityScore(b, accountsById[b.patientId], strings);
+          if (sb != sa) return sb.compareTo(sa);
+          return b.lastSyncedAt.compareTo(a.lastSyncedAt);
+        });
+      case _RosterSort.name:
+        matched.sort(
+          (a, b) => a.displayName
+              .toLowerCase()
+              .compareTo(b.displayName.toLowerCase()),
+        );
+    }
+
+    return matched;
   }
 
   String? _resolveSelectedPatientId(List<ClinicianPatientRecord> filtered) {
@@ -111,6 +189,8 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
     bool isWide = false,
   }) {
     HapticFeedback.lightImpact();
+    // Explicit clinician click marks the chart as reviewed (never passive mount!).
+    ref.read(clinicianRosterProvider.notifier).markReviewed(record.patientId);
     if (isWide) {
       setState(() {
         _selectedPatientId = record.patientId;
@@ -156,6 +236,8 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
     final tokens = context.tokens;
     final strings = ref.watch(appStringsProvider);
     final rosterAsync = ref.watch(clinicianRosterProvider);
+    final accountsById = ref.watch(clinicDoctorAccountsProvider).value ??
+        const <String, ClinicPatientAccount>{};
     final profileAsync = ref.watch(clinicianProfileProvider);
     final demoEnabledAsync = ref.watch(clinicianDemoEnabledProvider);
     final appLock = ref.watch(appLockProvider);
@@ -166,7 +248,7 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
     final demoEnabled = demoEnabledAsync.value ?? true;
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isWide = screenWidth >= ClinicianShellScreen.splitBreakpoint;
-    final filtered = _filteredRoster(roster, strings);
+    final filtered = _filteredRoster(roster, accountsById, strings);
     final effectiveSelectedId = _resolveSelectedPatientId(filtered);
 
     if (isWide) {
@@ -192,7 +274,9 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                             strings: strings,
                             roster: roster,
                             filtered: filtered,
+                            accountsById: accountsById,
                             profile: profile,
+                            demoEnabled: demoEnabled,
                             isLoading: rosterAsync.isLoading && roster.isEmpty,
                             isWide: true,
                             selectedPatientId: effectiveSelectedId,
@@ -251,6 +335,9 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                                   key: ValueKey<String>(effectiveSelectedId),
                                   patientId: effectiveSelectedId,
                                   embedded: true,
+                                  // Prevent passive mount from silently wiping
+                                  // unreviewed dots before the doctor clicks.
+                                  autoMarkReviewed: false,
                                 ),
                         ),
                       ],
@@ -259,11 +346,12 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                       alignment: Alignment.topCenter,
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 920),
-                        child: _buildCohortOverviewTab(
+                        child: _buildClinicalQueueTab(
                           context: context,
                           tokens: tokens,
                           strings: strings,
                           roster: roster,
+                          accountsById: accountsById,
                           isWide: true,
                         ),
                       ),
@@ -277,6 +365,7 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                           tokens: tokens,
                           strings: strings,
                           roster: roster,
+                          accountsById: accountsById,
                           profile: profile,
                           demoEnabled: demoEnabled,
                           appLock: appLock,
@@ -305,20 +394,24 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
               strings: strings,
               roster: roster,
               filtered: filtered,
+              accountsById: accountsById,
               profile: profile,
+              demoEnabled: demoEnabled,
               isLoading: rosterAsync.isLoading && roster.isEmpty,
             ),
-            _buildCohortOverviewTab(
+            _buildClinicalQueueTab(
               context: context,
               tokens: tokens,
               strings: strings,
               roster: roster,
+              accountsById: accountsById,
             ),
             _buildPracticeTab(
               context: context,
               tokens: tokens,
               strings: strings,
               roster: roster,
+              accountsById: accountsById,
               profile: profile,
               demoEnabled: demoEnabled,
               appLock: appLock,
@@ -378,8 +471,8 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
             const SizedBox(height: 10),
             _buildRailItem(
               index: 1,
-              icon: Icons.insights_outlined,
-              activeIcon: Icons.insights_rounded,
+              icon: Icons.dashboard_outlined,
+              activeIcon: Icons.dashboard_rounded,
               label: strings.clinicianTabOverview,
               tokens: tokens,
               strings: strings,
@@ -489,13 +582,13 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: LabTheme.fontFamily,
-                    fontFamilyFallback: LabTheme.fontFallback,
-                    fontSize: 12.0,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected ? tokens.ink : tokens.ink3,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: LabTheme.fontFamily,
+                  fontFamilyFallback: LabTheme.fontFallback,
+                  fontSize: 12.0,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? tokens.ink : tokens.ink3,
                   letterSpacing: strings.isArabic ? 0 : -0.1,
                 ),
               ),
@@ -551,8 +644,8 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                           ),
                           _buildDockItem(
                             index: 1,
-                            icon: Icons.insights_outlined,
-                            activeIcon: Icons.insights_rounded,
+                            icon: Icons.dashboard_outlined,
+                            activeIcon: Icons.dashboard_rounded,
                             label: strings.clinicianTabOverview,
                             tokens: tokens,
                             strings: strings,
@@ -661,21 +754,37 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
     required AppStrings strings,
     required List<ClinicianPatientRecord> roster,
     required List<ClinicianPatientRecord> filtered,
+    required Map<String, ClinicPatientAccount> accountsById,
     required ClinicianProfile profile,
+    required bool demoEnabled,
     required bool isLoading,
     bool isWide = false,
     String? selectedPatientId,
   }) {
     final shiftsTotal = roster
-        .where((r) => r.divergences(strings).isNotEmpty)
+        .where((r) => r.hasSafetyPauseAlert || r.divergences(strings).isNotEmpty)
         .length;
-    final unreviewedTotal =
-        roster.where((r) => r.hasUnreviewedUpdate).length;
+    final unreviewedTotal = roster.where((r) => r.hasUnreviewedUpdate).length;
+    final pendingCount = roster
+        .where(
+          (r) =>
+              accountsById[r.patientId]?.status ==
+              ClinicAccountStatus.pendingFirstLogin,
+        )
+        .length;
+    final pausedCount = roster
+        .where(
+          (r) =>
+              accountsById[r.patientId]?.status == ClinicAccountStatus.paused,
+        )
+        .length;
+    final hasActiveFilter =
+        _searchQuery.trim().isNotEmpty || _filter != _RosterFilter.all;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
       children: [
-        // Header Row (Wraps cleanly on 320px viewports)
+        // Header Row
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -703,111 +812,100 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
               '${profile.displayName} · ${profile.clinicName}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12.5,
-                color: tokens.ink2,
-              ),
+              style: TextStyle(fontSize: 12.5, color: tokens.ink2),
             ),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                Semantics(
-                  button: true,
-                  label: strings.createPatientAccountBtn,
-                  child: MindPressable(
-                    key: const ValueKey<String>('clinician-add-patient-btn'),
-                    onPressed: () => CreatePatientAccountSheet.show(context),
-                    borderRadius: BorderRadius.circular(tokens.chipRadius),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        minWidth: 48,
-                        minHeight: 48,
+                MindPressable(
+                  key: const ValueKey<String>('clinician-add-patient-btn'),
+                  semanticLabel: strings.createPatientAccountBtn,
+                  onPressed: () => CreatePatientAccountSheet.show(context),
+                  borderRadius: BorderRadius.circular(tokens.chipRadius),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minWidth: 48,
+                      minHeight: 48,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
                       ),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: tokens.ink,
-                          borderRadius:
-                              BorderRadius.circular(tokens.chipRadius),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.person_add_alt_1_outlined,
-                              size: 16,
-                              color: tokens.bg,
-                            ),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                strings.createPatientAccountBtn,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: tokens.bg,
-                                ),
+                      decoration: BoxDecoration(
+                        color: tokens.ink,
+                        borderRadius: BorderRadius.circular(tokens.chipRadius),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.person_add_alt_1_outlined,
+                            size: 16,
+                            color: tokens.bg,
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              strings.createPatientAccountBtn,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                                color: tokens.bg,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
-                Semantics(
-                  button: true,
-                  label: strings.addOrImportPatientBtn,
-                  child: MindPressable(
-                    key: const ValueKey<String>('clinician-import-patient-btn'),
-                    onPressed: () => ImportPatientPacketSheet.show(context),
-                    borderRadius: BorderRadius.circular(tokens.chipRadius),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        minWidth: 48,
-                        minHeight: 48,
+                MindPressable(
+                  key: const ValueKey<String>('clinician-import-patient-btn'),
+                  semanticLabel: strings.addOrImportPatientBtn,
+                  onPressed: () => ImportPatientPacketSheet.show(context),
+                  borderRadius: BorderRadius.circular(tokens.chipRadius),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minWidth: 48,
+                      minHeight: 48,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
                       ),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: tokens.surface2,
-                          borderRadius:
-                              BorderRadius.circular(tokens.chipRadius),
-                          border: Border.all(color: tokens.line),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.download_outlined,
-                              size: 16,
-                              color: tokens.ink,
-                            ),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                strings.addOrImportPatientBtn,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: tokens.ink,
-                                ),
+                      decoration: BoxDecoration(
+                        color: tokens.surface2,
+                        borderRadius: BorderRadius.circular(tokens.chipRadius),
+                        border: Border.all(color: tokens.line),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.download_outlined,
+                            size: 16,
+                            color: tokens.ink,
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              strings.addOrImportPatientBtn,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                                color: tokens.ink,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -819,7 +917,7 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
 
         const SizedBox(height: 12),
 
-        // KPI Summary Strip
+        // Interactive KPI Summary Strip (tapping filters roster immediately)
         Row(
           children: [
             Expanded(
@@ -827,6 +925,8 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                 tokens: tokens,
                 value: '${roster.length}',
                 label: strings.kpiActivePatients,
+                selected: _filter == _RosterFilter.all,
+                onTap: () => setState(() => _filter = _RosterFilter.all),
               ),
             ),
             const SizedBox(width: 8),
@@ -836,6 +936,8 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                 value: '$shiftsTotal',
                 label: strings.kpiBaselineShifts,
                 highlight: shiftsTotal > 0,
+                selected: _filter == _RosterFilter.shifts,
+                onTap: () => setState(() => _filter = _RosterFilter.shifts),
               ),
             ),
             const SizedBox(width: 8),
@@ -844,6 +946,8 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                 tokens: tokens,
                 value: '$unreviewedTotal',
                 label: strings.kpiSharedUpdates,
+                selected: _filter == _RosterFilter.unreviewed,
+                onTap: () => setState(() => _filter = _RosterFilter.unreviewed),
               ),
             ),
           ],
@@ -851,7 +955,7 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
 
         const SizedBox(height: 10),
 
-        // Search Patients Field
+        // Search Patients Field (name, phone, file #, diagnosis, track, mood)
         TextField(
           key: const ValueKey<String>('clinician-patient-search-field'),
           controller: _searchController,
@@ -899,7 +1003,7 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
 
         const SizedBox(height: 10),
 
-        // Filter Pills
+        // Filter Pills + Sort Controls
         Wrap(
           spacing: 6,
           runSpacing: 6,
@@ -922,11 +1026,66 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               onTap: () => setState(() => _filter = _RosterFilter.unreviewed),
             ),
-            MindPill(
-              label: strings.filterSampleShort,
-              isSelected: _filter == _RosterFilter.demo,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              onTap: () => setState(() => _filter = _RosterFilter.demo),
+            if (pendingCount > 0)
+              MindPill(
+                label: '${strings.filterPendingLogin} ($pendingCount)',
+                isSelected: _filter == _RosterFilter.pending,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                onTap: () => setState(() => _filter = _RosterFilter.pending),
+              ),
+            if (pausedCount > 0)
+              MindPill(
+                label: '${strings.filterPaused} ($pausedCount)',
+                isSelected: _filter == _RosterFilter.paused,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                onTap: () => setState(() => _filter = _RosterFilter.paused),
+              ),
+            if (demoEnabled)
+              MindPill(
+                label: strings.filterSampleShort,
+                isSelected: _filter == _RosterFilter.demo,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                onTap: () => setState(() => _filter = _RosterFilter.demo),
+              ),
+          ],
+        ),
+
+        const SizedBox(height: 8),
+
+        // Compact Sort Selector
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            MindBadge(
+              key: const ValueKey<String>('roster-sort-recent'),
+              icon: Icons.schedule_rounded,
+              label: strings.sortRecentLabel,
+              isSelected: _sort == _RosterSort.recent,
+              onTap: () => setState(() => _sort = _RosterSort.recent),
+            ),
+            MindBadge(
+              key: const ValueKey<String>('roster-sort-priority'),
+              icon: Icons.priority_high_rounded,
+              label: strings.sortPriorityLabel,
+              isSelected: _sort == _RosterSort.priority,
+              onTap: () => setState(() => _sort = _RosterSort.priority),
+            ),
+            MindBadge(
+              key: const ValueKey<String>('roster-sort-name'),
+              icon: Icons.sort_by_alpha_rounded,
+              label: strings.sortNameLabel,
+              isSelected: _sort == _RosterSort.name,
+              onTap: () => setState(() => _sort = _RosterSort.name),
             ),
           ],
         ),
@@ -934,9 +1093,12 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
         const SizedBox(height: 12),
 
         if (isLoading)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 48),
-            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          const Column(
+            children: [
+              MindSkeleton.card(height: 112),
+              SizedBox(height: 10),
+              MindSkeleton.card(height: 112),
+            ],
           )
         else if (filtered.isEmpty)
           MindCard(
@@ -945,7 +1107,7 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Icon(
-                  _searchQuery.trim().isNotEmpty
+                  hasActiveFilter
                       ? Icons.search_off_rounded
                       : Icons.folder_shared_outlined,
                   size: 28,
@@ -953,8 +1115,8 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  _searchQuery.trim().isNotEmpty
-                      ? strings.noSearchMatchPatients
+                  hasActiveFilter
+                      ? strings.noMatchingPatientsTitle
                       : strings.noPatientsEmptyTitle,
                   style: TextStyle(
                     fontSize: 15,
@@ -964,7 +1126,9 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  strings.noPatientsEmptySub,
+                  hasActiveFilter
+                      ? strings.noMatchingPatientsSub
+                      : strings.noPatientsEmptySub,
                   style: TextStyle(
                     fontSize: 12.5,
                     color: tokens.ink2,
@@ -973,12 +1137,12 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                 ),
                 const SizedBox(height: 14),
                 MindButton(
-                  text: _searchQuery.trim().isNotEmpty
+                  text: hasActiveFilter
                       ? strings.clearFilterBtn
-                      : strings.importPacketBtn,
+                      : strings.createPatientAccountBtn,
                   variant: MindButtonVariant.soft,
                   isFullWidth: true,
-                  onPressed: _searchQuery.trim().isNotEmpty
+                  onPressed: hasActiveFilter
                       ? () {
                           _searchController.clear();
                           setState(() {
@@ -986,7 +1150,7 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                             _filter = _RosterFilter.all;
                           });
                         }
-                      : () => ImportPatientPacketSheet.show(context),
+                      : () => CreatePatientAccountSheet.show(context),
                 ),
               ],
             ),
@@ -998,6 +1162,7 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
               child: _buildPatientTriageCard(
                 context,
                 record,
+                accountsById[record.patientId],
                 tokens,
                 strings,
                 isWide: isWide,
@@ -1014,24 +1179,29 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
     required String value,
     required String label,
     bool highlight = false,
+    bool selected = false,
+    VoidCallback? onTap,
   }) {
     return MindCard(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-      variant: highlight ? MindCardVariant.tint : MindCardVariant.plain,
+      variant: (highlight || selected)
+          ? MindCardVariant.tint
+          : MindCardVariant.plain,
+      borderColor: selected ? tokens.ink : (highlight ? tokens.safety : null),
+      semanticLabel: '$label: $value',
+      onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: AlignmentDirectional.centerStart,
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: tokens.ink,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: highlight ? tokens.safety : tokens.ink,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
           const SizedBox(height: 4),
@@ -1053,6 +1223,7 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
   Widget _buildPatientTriageCard(
     BuildContext context,
     ClinicianPatientRecord record,
+    ClinicPatientAccount? account,
     MindTokens tokens,
     AppStrings strings, {
     bool isWide = false,
@@ -1063,28 +1234,44 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
     final recordedDays = record.baseline.totalRecordedDays;
     final recent = record.recentBaseline;
     final shifts = record.divergences(strings);
-    final hasMood = latest != null && latest.hasExplicitMood;
+    final isPending = account?.status == ClinicAccountStatus.pendingFirstLogin;
+    final isPaused = account?.status == ClinicAccountStatus.paused;
+    final hasMood = !isPending && latest != null && latest.hasExplicitMood;
     final moodKey = hasMood ? latest.overallMood : '';
     final moodOption = hasMood ? trackMoodOptionFor(moodKey) : null;
     final agenda = record.latestPacket.preVisitAgenda;
+    final activeDx = record.activeDiagnoses;
     final sleepStr = recent.averageSleepHours != null
-        ? '${recent.averageSleepHours!.toStringAsFixed(1)}h'
+        ? MindFormatters.hours(recent.averageSleepHours!, strings)
         : '--';
+
+    final statusLine = isPaused
+        ? strings.accountPausedBadge
+        : (!hasLogs
+            ? strings.connectedNoCheckInsLabel
+            : '${hasMood ? trackMoodLabel(moodKey, strings) : '--'} · '
+                '${hasMood ? '${latest.moodIntensity}/10' : '--'} · '
+                '${_relativeSyncLabel(record.lastSyncedAt, strings)}');
 
     return MindCard(
       padding: const EdgeInsets.all(16),
       variant: isSelected ? MindCardVariant.tint : MindCardVariant.plain,
-      borderColor: isSelected ? tokens.m1 : null,
-      semanticLabel: hasMood
-          ? '${record.displayName}, ${trackMoodLabel(moodKey, strings)}'
-          : '${record.displayName}, ${strings.connectedNoCheckInsLabel}',
+      borderColor: isSelected
+          ? tokens.accentInk
+          : (record.hasSafetyPauseAlert ? tokens.safety : null),
+      semanticLabel: '${record.displayName}, $statusLine',
       onTap: () => _openPatientDossier(context, record, isWide: isWide),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              if (moodOption != null)
+              if (isPaused)
+                Icon(Icons.pause_circle_outline_rounded,
+                    size: 16, color: tokens.safety)
+              else if (isPending || !hasLogs)
+                Icon(Icons.schedule_rounded, size: 15, color: tokens.ink3)
+              else if (moodOption != null)
                 Container(
                   width: 10,
                   height: 10,
@@ -1094,7 +1281,7 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                   ),
                 )
               else
-                Icon(Icons.schedule_rounded, size: 15, color: tokens.ink3),
+                Icon(Icons.circle_outlined, size: 14, color: tokens.ink3),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -1113,12 +1300,15 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                 const SizedBox(width: 6),
               ],
               if (record.hasUnreviewedUpdate)
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: tokens.m1,
+                Semantics(
+                  label: strings.filterNewUpdates,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: tokens.accentInk,
+                    ),
                   ),
                 ),
               const SizedBox(width: 6),
@@ -1129,21 +1319,35 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          if (activeDx.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              activeDx
+                  .take(2)
+                  .map(
+                    (d) =>
+                        '${d.displayTitle} (${d.certainty.localizedLabel(strings)})',
+                  )
+                  .join(' · '),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: tokens.accentInk,
+              ),
+            ),
+          ],
+          const SizedBox(height: 6),
           Text(
-            !hasLogs
-                ? strings.connectedNoCheckInsLabel
-                : '${hasMood ? trackMoodLabel(moodKey, strings) : '--'} · '
-                    '${hasMood ? '${latest.moodIntensity}/10' : '--'} · '
-                    '${strings.metricSleepLabel}: $sleepStr · '
-                    '${_relativeSyncLabel(record.lastSyncedAt, strings)}',
+            statusLine,
             style: TextStyle(
               fontSize: 12.5,
               color: tokens.ink2,
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
-          if (hasLogs) ...[
+          if (!isPending && hasLogs) ...[
             const SizedBox(height: 10),
             _SevenDaySleepMoodStrip(
               record: record,
@@ -1157,10 +1361,27 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
             spacing: 6,
             runSpacing: 6,
             children: [
-              if (!hasLogs)
+              if (record.hasSafetyPauseAlert)
+                MindBadge(
+                  icon: Icons.warning_amber_rounded,
+                  label: strings.safetyPauseAlertBadge,
+                  backgroundColor: tokens.safetySoft,
+                  borderColor: tokens.safety,
+                  textColor: tokens.safety,
+                ),
+              if (isPaused)
+                MindBadge(
+                  icon: Icons.pause_circle_outline_rounded,
+                  label: strings.accountPausedBadge,
+                  backgroundColor: tokens.safetySoft,
+                  textColor: tokens.safety,
+                )
+              else if (isPending || !hasLogs)
                 MindBadge(
                   icon: Icons.schedule_rounded,
-                  label: strings.awaitingFirstLoginBadge,
+                  label: isPending
+                      ? strings.awaitingFirstLoginBadge
+                      : strings.connectedNoCheckInsLabel,
                   borderColor: tokens.line,
                   textColor: tokens.ink2,
                 )
@@ -1185,7 +1406,8 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                   borderColor: tokens.line,
                   textColor: tokens.ink2,
                 ),
-              if (hasLogs &&
+              if (!isPending &&
+                  hasLogs &&
                   recent.averageSleepHours != null &&
                   recent.averageSleepHours! < 5.5)
                 MindBadge(
@@ -1236,158 +1458,206 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
   }
 
   // ---------------------------------------------------------------------------
-  // TAB 1: COHORT OVERVIEW
+  // TAB 1: DAILY CLINICAL QUEUE DASHBOARD (NO MEANINGLESS COHORT AVERAGES)
   // ---------------------------------------------------------------------------
-  Widget _buildCohortOverviewTab({
+  Widget _buildClinicalQueueTab({
     required BuildContext context,
     required MindTokens tokens,
     required AppStrings strings,
     required List<ClinicianPatientRecord> roster,
+    required Map<String, ClinicPatientAccount> accountsById,
     bool isWide = false,
   }) {
-    final observationPairs = <(ClinicianPatientRecord, String, String)>[];
-    final combinedEmotions = <String, int>{};
-    final sleeps = <double>[];
-    final anxieties = <double>[];
-    final energies = <double>[];
-    final intensities = <double>[];
+    // Keep real clinic KPIs clean from demo records once real patients exist.
+    final realPatients = roster.where((r) => !r.isDemoCase).toList();
+    final showingDemoOnly = realPatients.isEmpty && roster.isNotEmpty;
+    final queueSource = showingDemoOnly ? roster : realPatients;
 
-    for (final record in roster) {
-      final b = record.baseline;
-      final r = record.recentBaseline;
-      if (r.averageSleepHours != null) sleeps.add(r.averageSleepHours!);
-      if (r.averageAnxietyLevel != null) anxieties.add(r.averageAnxietyLevel!);
-      if (r.averageEnergyLevel != null) energies.add(r.averageEnergyLevel!);
-      if (r.averageMoodIntensity != null) {
-        intensities.add(r.averageMoodIntensity!);
-      }
-      for (final entry in b.emotionFrequencyMap.entries) {
-        combinedEmotions[entry.key] =
-            (combinedEmotions[entry.key] ?? 0) + entry.value;
-      }
+    final safetyQueue = queueSource
+        .where((r) => r.hasSafetyPauseAlert)
+        .toList(growable: false);
+    final shiftPairs = <(ClinicianPatientRecord, String, String)>[];
+    for (final record in queueSource) {
       for (final div in record.divergences(strings)) {
-        observationPairs.add((record, div.title, div.baselineComparison));
+        shiftPairs.add((record, div.title, div.baselineComparison));
       }
     }
+    final unreviewedQueue = queueSource
+        .where((r) => r.hasUnreviewedUpdate)
+        .toList(growable: false);
+    final followUpQueue = queueSource
+        .where((r) => r.clinicalRecord.nextAppointmentAt != null)
+        .toList()
+      ..sort(
+        (a, b) => a.clinicalRecord.nextAppointmentAt!
+            .compareTo(b.clinicalRecord.nextAppointmentAt!),
+      );
+    final pendingAccounts = queueSource
+        .where(
+          (r) =>
+              accountsById[r.patientId]?.status ==
+              ClinicAccountStatus.pendingFirstLogin,
+        )
+        .toList(growable: false);
 
-    String avgStr(List<double> nums, [String suffix = '']) {
-      if (nums.isEmpty) return '--';
-      final mean = nums.reduce((a, b) => a + b) / nums.length;
-      return '${mean.toStringAsFixed(1)}$suffix';
+    final now = DateTime.now();
+    final inactiveQueue = <(ClinicianPatientRecord, int)>[];
+    for (final r in queueSource) {
+      if (accountsById[r.patientId]?.status ==
+          ClinicAccountStatus.pendingFirstLogin) {
+        continue;
+      }
+      final latest = r.latestTrace;
+      if (latest != null) {
+        final daysAgo = now.difference(latest.date).inDays;
+        if (daysAgo > 7) {
+          inactiveQueue.add((r, daysAgo));
+        }
+      }
     }
-
-    final sortedEmotions = combinedEmotions.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
 
     return ListView(
+      key: const ValueKey<String>('clinician-queue-dashboard'),
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
       children: [
         Text(
-          strings.clinicianTabOverview,
+          strings.clinicalQueueTitle,
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w700,
             color: tokens.ink,
           ),
         ),
-        const SizedBox(height: 16),
+        if (showingDemoOnly) ...[
+          const SizedBox(height: 8),
+          MindBanner(body: strings.demoBannerNotice, tone: MindBannerTone.info),
+        ],
+        const SizedBox(height: 14),
 
-        Text(
-          strings.cohortAvgMetricsTitle,
-          style: TextStyle(
-            fontSize: 12.0,
-            fontWeight: FontWeight.w700,
-            letterSpacing: strings.isArabic ? 0 : 0.6,
-            color: tokens.ink2,
-          ),
-        ),
-        const SizedBox(height: 8),
+        // 4 Actionable Clinical Queue Counters
         Row(
           children: [
             Expanded(
               child: _kpiCard(
                 tokens: tokens,
-                value: avgStr(intensities),
-                label: strings.metricMoodLabel,
+                value: '${safetyQueue.length}',
+                label: strings.kpiSafetyAlerts,
+                highlight: safetyQueue.isNotEmpty,
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: _kpiCard(
                 tokens: tokens,
-                value: avgStr(sleeps, 'h'),
-                label: strings.metricSleepLabel,
+                value: '${shiftPairs.length}',
+                label: strings.kpiBaselineShifts,
+                highlight: shiftPairs.isNotEmpty,
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: _kpiCard(
                 tokens: tokens,
-                value: avgStr(anxieties),
-                label: strings.metricAnxietyLabel,
+                value: '${unreviewedQueue.length}',
+                label: strings.kpiSharedUpdates,
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: _kpiCard(
                 tokens: tokens,
-                value: avgStr(energies),
-                label: strings.metricEnergyLabel,
+                value: '${pendingAccounts.length + followUpQueue.length}',
+                label: strings.kpiPendingFollowUps,
               ),
             ),
           ],
         ),
 
-        const SizedBox(height: 18),
-        Text(
-          strings.cohortTopFeelingsTitle,
-          style: TextStyle(
-            fontSize: 12.0,
-            fontWeight: FontWeight.w700,
-            letterSpacing: strings.isArabic ? 0 : 0.6,
-            color: tokens.ink2,
+        // Section 1: Safety Pauses (Highest Priority)
+        if (safetyQueue.isNotEmpty) ...[
+          const SizedBox(height: 18),
+          Text(
+            strings.queueNeedsAttentionTitle,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              color: tokens.safety,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        MindCard(
-          padding: const EdgeInsets.all(14),
-          child: sortedEmotions.isEmpty
-              ? Text(
-                  strings.noPatientsEmptySub,
-                  style: TextStyle(fontSize: 12.5, color: tokens.ink2),
-                )
-              : Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: sortedEmotions.take(8).map((entry) {
-                    final label =
-                        AffectTaxonomy.localizedLabel(entry.key, strings);
-                    return MindBadge(label: '$label (${entry.value}x)');
-                  }).toList(),
+          const SizedBox(height: 8),
+          ...safetyQueue.map(
+            (record) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: MindCard(
+                borderColor: tokens.safety,
+                padding: const EdgeInsets.all(14),
+                onTap: () =>
+                    _openPatientDossier(context, record, isWide: isWide),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      size: 20,
+                      color: tokens.safety,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            record.displayName,
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                              color: tokens.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            strings.safetyPauseAlertBadge,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: tokens.safety,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 15,
+                      color: tokens.ink3,
+                    ),
+                  ],
                 ),
-        ),
+              ),
+            ),
+          ),
+        ],
 
+        // Section 2: Notable Baseline Shifts
         const SizedBox(height: 18),
         Text(
           strings.cohortObservationsTitle,
           style: TextStyle(
-            fontSize: 12.0,
+            fontSize: 12.5,
             fontWeight: FontWeight.w700,
-            letterSpacing: strings.isArabic ? 0 : 0.6,
             color: tokens.ink2,
           ),
         ),
         const SizedBox(height: 8),
-        if (observationPairs.isEmpty)
+        if (shiftPairs.isEmpty)
           MindCard(
             padding: const EdgeInsets.all(14),
             child: Text(
-              strings.baselineSteadyBadge,
+              strings.queueAllClearLabel,
               style: TextStyle(fontSize: 13, color: tokens.ink2),
             ),
           )
         else
-          ...observationPairs.map((item) {
+          ...shiftPairs.map((item) {
             final record = item.$1;
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
@@ -1432,31 +1702,167 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
             );
           }),
 
-        const SizedBox(height: 12),
-        MindButton(
-          text: strings.importPacketTitle,
-          variant: MindButtonVariant.soft,
-          leadingIcon: Icons.download_outlined,
-          isFullWidth: true,
-          onPressed: () => ImportPatientPacketSheet.show(context),
-        ),
+        // Section 3: Upcoming Follow-Ups
+        if (followUpQueue.isNotEmpty) ...[
+          const SizedBox(height: 18),
+          Text(
+            strings.queueUpcomingFollowUpsTitle,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              color: tokens.ink2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...followUpQueue.map((record) {
+            final appt = record.clinicalRecord.nextAppointmentAt!;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: MindCard(
+                padding: const EdgeInsets.all(14),
+                onTap: () =>
+                    _openPatientDossier(context, record, isWide: isWide),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.event_outlined,
+                      size: 18,
+                      color: tokens.accentInk,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        record.displayName,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: tokens.ink,
+                        ),
+                      ),
+                    ),
+                    MindBadge(
+                      label: MindFormatters.shortDate(appt, strings),
+                      backgroundColor: tokens.primarySoft,
+                      textColor: tokens.ink,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
+
+        // Section 4: Onboarding & Engagement Watch
+        if (pendingAccounts.isNotEmpty || inactiveQueue.isNotEmpty) ...[
+          const SizedBox(height: 18),
+          Text(
+            strings.queueOnboardingWatchTitle,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              color: tokens.ink2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...pendingAccounts.map(
+            (record) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: MindCard(
+                padding: const EdgeInsets.all(14),
+                onTap: () =>
+                    _openPatientDossier(context, record, isWide: isWide),
+                child: Row(
+                  children: [
+                    Icon(Icons.qr_code_2_rounded, size: 18, color: tokens.ink2),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            record.displayName,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: tokens.ink,
+                            ),
+                          ),
+                          Text(
+                            strings.awaitingFirstLoginBadge,
+                            style: TextStyle(fontSize: 12, color: tokens.ink2),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 15,
+                      color: tokens.ink3,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          ...inactiveQueue.map(
+            (pair) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: MindCard(
+                padding: const EdgeInsets.all(14),
+                onTap: () =>
+                    _openPatientDossier(context, pair.$1, isWide: isWide),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.hourglass_empty_rounded,
+                      size: 18,
+                      color: tokens.ink2,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        pair.$1.displayName,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: tokens.ink,
+                        ),
+                      ),
+                    ),
+                    MindBadge(label: strings.inactiveDaysBadge(pair.$2)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
 
   // ---------------------------------------------------------------------------
-  // TAB 2: PRACTICE & PRIVACY SETTINGS
+  // TAB 2: PRACTICE, GOVERNANCE & PRIVACY SETTINGS
   // ---------------------------------------------------------------------------
   Widget _buildPracticeTab({
     required BuildContext context,
     required MindTokens tokens,
     required AppStrings strings,
     required List<ClinicianPatientRecord> roster,
+    required Map<String, ClinicPatientAccount> accountsById,
     required ClinicianProfile profile,
     required bool demoEnabled,
     required AppLockState appLock,
   }) {
-    final importedCount = roster.where((r) => !r.isDemoCase).length;
+    final managedCount = accountsById.length;
+    final offlineImportedCount = roster
+        .where((r) => !r.isDemoCase && !accountsById.containsKey(r.patientId))
+        .length;
+
+    final profileMeta = <String>[
+      profile.specialty,
+      profile.clinicName,
+      if (profile.licenseRef.trim().isNotEmpty) profile.licenseRef.trim(),
+    ].join(' · ');
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
@@ -1482,8 +1888,9 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
         ),
         const SizedBox(height: 8),
         MindCard(
+          key: const ValueKey<String>('clinician-practice-profile-card'),
           padding: const EdgeInsets.all(16),
-          onTap: () => _editProfileSheet(context, profile, tokens, strings),
+          onTap: () => _editProfileSheet(context, profile),
           child: Row(
             children: [
               Icon(Icons.medical_services_outlined, size: 22, color: tokens.ink),
@@ -1502,9 +1909,24 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${profile.specialty} · ${profile.clinicName}',
+                      profileMeta,
                       style: TextStyle(fontSize: 12.5, color: tokens.ink2),
                     ),
+                    if (profile.clinicPhone.trim().isNotEmpty ||
+                        profile.clinicAddress.trim().isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        [
+                          if (profile.clinicPhone.trim().isNotEmpty)
+                            MindFormatters.ltrIsolate(
+                              profile.clinicPhone.trim(),
+                            ),
+                          if (profile.clinicAddress.trim().isNotEmpty)
+                            profile.clinicAddress.trim(),
+                        ].join(' · '),
+                        style: TextStyle(fontSize: 12, color: tokens.ink3),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1641,7 +2063,10 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -1666,7 +2091,9 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                     ),
                     const SizedBox(width: 8),
                     MindSwitch(
-                      key: const ValueKey<String>('clinician-demo-cohort-switch'),
+                      key: const ValueKey<String>(
+                        'clinician-demo-cohort-switch',
+                      ),
                       value: demoEnabled,
                       semanticLabel: strings.demoCohortToggleTitle,
                       onChanged: (v) {
@@ -1681,7 +2108,10 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
               ),
               Divider(height: 1, color: tokens.line),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -1722,10 +2152,21 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
         ),
 
         const SizedBox(height: 14),
+        // Governance & Data Controls (Audit Log + Honest Offline Import Count)
         MindCard(
           padding: EdgeInsets.zero,
           child: Column(
             children: [
+              _practiceActionRow(
+                key: const ValueKey<String>('clinician-audit-log-btn'),
+                tokens: tokens,
+                icon: Icons.history_rounded,
+                title: strings.clinicAuditLogTitle,
+                subtitle:
+                    '${strings.managedPatientsCountLabel}: $managedCount',
+                onTap: () => ClinicAuditLogSheet.show(context),
+              ),
+              Divider(height: 1, color: tokens.line),
               _practiceActionRow(
                 tokens: tokens,
                 icon: Icons.download_outlined,
@@ -1734,10 +2175,13 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
               ),
               Divider(height: 1, color: tokens.line),
               _practiceActionRow(
+                key: const ValueKey<String>('clinician-clear-offline-btn'),
                 tokens: tokens,
                 icon: Icons.delete_outline_rounded,
-                title: '${strings.clearImportedPatientsBtn} ($importedCount)',
-                onTap: () => _confirmClearImported(context, tokens, strings),
+                title:
+                    '${strings.clearOfflineImportsTitle} ($offlineImportedCount)',
+                enabled: offlineImportedCount > 0,
+                onTap: () => _confirmClearImported(context, strings),
               ),
             ],
           ),
@@ -1812,32 +2256,54 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
   }
 
   Widget _practiceActionRow({
+    Key? key,
     required MindTokens tokens,
     required IconData icon,
     required String title,
+    String? subtitle,
+    bool enabled = true,
     required VoidCallback onTap,
   }) {
+    final fg = enabled ? tokens.ink : tokens.ink3;
     return MindPressable(
+      key: key,
       semanticLabel: title,
-      onPressed: onTap,
+      enabled: enabled,
+      onPressed: enabled ? onTap : null,
       child: Container(
         constraints: const BoxConstraints(minHeight: 54),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: tokens.ink),
+            Icon(icon, size: 20, color: fg),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: tokens.ink,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: fg,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(fontSize: 12, color: tokens.ink2),
+                    ),
+                  ],
+                ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios_rounded, size: 15, color: tokens.ink3),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 15,
+              color: enabled ? tokens.ink3 : tokens.lineStrong,
+            ),
           ],
         ),
       ),
@@ -1847,8 +2313,6 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
   Future<void> _editProfileSheet(
     BuildContext context,
     ClinicianProfile profile,
-    MindTokens tokens,
-    AppStrings strings,
   ) {
     return showModalBottomSheet<void>(
       context: context,
@@ -1861,37 +2325,18 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
 
   Future<void> _confirmClearImported(
     BuildContext context,
-    MindTokens tokens,
     AppStrings strings,
   ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: tokens.surface,
-        title: Text(
-          strings.clearImportedPatientsBtn,
-          style: TextStyle(color: tokens.ink),
-        ),
-        content: Text(
-          strings.clearImportedPatientsConfirm,
-          style: TextStyle(color: tokens.ink2, fontSize: 13.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(strings.cancelBtn, style: TextStyle(color: tokens.ink2)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(
-              strings.clearImportedPatientsBtn,
-              style: TextStyle(color: tokens.safety),
-            ),
-          ),
-        ],
-      ),
+    final confirmed = await showMindConfirmDialog(
+      context,
+      title: strings.clearOfflineImportsTitle,
+      body: strings.clearImportedPatientsConfirm,
+      confirmLabel: strings.clearImportedPatientsBtn,
+      cancelLabel: strings.cancelBtn,
+      destructive: true,
+      icon: Icons.delete_outline_rounded,
     );
-    if (confirmed == true) {
+    if (confirmed && mounted) {
       await ref.read(clinicianRosterProvider.notifier).clearImportedPatients();
     }
   }
@@ -1912,7 +2357,9 @@ class _EditClinicianProfileSheetState
   late final TextEditingController _nameCtrl;
   late final TextEditingController _specCtrl;
   late final TextEditingController _clinicCtrl;
-  late final TextEditingController _clinicCodeCtrl;
+  late final TextEditingController _licenseCtrl;
+  late final TextEditingController _phoneCtrl;
+  late final TextEditingController _addressCtrl;
   bool _isSaving = false;
 
   @override
@@ -1921,11 +2368,9 @@ class _EditClinicianProfileSheetState
     _nameCtrl = TextEditingController(text: widget.profile.displayName);
     _specCtrl = TextEditingController(text: widget.profile.specialty);
     _clinicCtrl = TextEditingController(text: widget.profile.clinicName);
-    _clinicCodeCtrl = TextEditingController(
-      text: widget.profile.clinicCode.isNotEmpty
-          ? widget.profile.clinicCode
-          : widget.profile.effectiveClinicCode,
-    );
+    _licenseCtrl = TextEditingController(text: widget.profile.licenseRef);
+    _phoneCtrl = TextEditingController(text: widget.profile.clinicPhone);
+    _addressCtrl = TextEditingController(text: widget.profile.clinicAddress);
   }
 
   @override
@@ -1933,7 +2378,9 @@ class _EditClinicianProfileSheetState
     _nameCtrl.dispose();
     _specCtrl.dispose();
     _clinicCtrl.dispose();
-    _clinicCodeCtrl.dispose();
+    _licenseCtrl.dispose();
+    _phoneCtrl.dispose();
+    _addressCtrl.dispose();
     super.dispose();
   }
 
@@ -1942,17 +2389,23 @@ class _EditClinicianProfileSheetState
     final tokens = context.tokens;
     final strings = ref.watch(appStringsProvider);
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final isWide = MediaQuery.sizeOf(context).width >= 840;
 
-    return Container(
+    final sheet = Container(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+        maxHeight: MediaQuery.sizeOf(context).height * 0.88,
+        maxWidth: isWide ? 560 : double.infinity,
       ),
       decoration: BoxDecoration(
         color: tokens.surface,
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(tokens.sheetRadius),
         ),
-        border: Border(top: BorderSide(color: tokens.line)),
+        border: Border(
+          top: BorderSide(color: tokens.line),
+          left: isWide ? BorderSide(color: tokens.line) : BorderSide.none,
+          right: isWide ? BorderSide(color: tokens.line) : BorderSide.none,
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -1997,16 +2450,40 @@ class _EditClinicianProfileSheetState
                   ),
                 ),
                 const SizedBox(height: 10),
+                Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: TextField(
+                    key: const ValueKey<String>('practice-license-ref-field'),
+                    controller: _licenseCtrl,
+                    style: TextStyle(fontSize: 14, color: tokens.ink),
+                    decoration: InputDecoration(
+                      labelText: strings.clinicianLicenseRefField,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: TextField(
+                    controller: _phoneCtrl,
+                    keyboardType: TextInputType.phone,
+                    style: TextStyle(fontSize: 14, color: tokens.ink),
+                    decoration: InputDecoration(
+                      labelText: strings.clinicPhoneField,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
                 TextField(
-                  controller: _clinicCodeCtrl,
-                  textCapitalization: TextCapitalization.characters,
+                  controller: _addressCtrl,
                   style: TextStyle(fontSize: 14, color: tokens.ink),
                   decoration: InputDecoration(
-                    labelText: strings.clinicInviteCodeTitle,
+                    labelText: strings.clinicAddressField,
                   ),
                 ),
                 const SizedBox(height: 16),
                 MindButton(
+                  key: const ValueKey<String>('practice-profile-save-btn'),
                   text: strings.saveChangesBtn,
                   isFullWidth: true,
                   isLoading: _isSaving,
@@ -2027,11 +2504,22 @@ class _EditClinicianProfileSheetState
                               clinicName: _clinicCtrl.text.trim().isEmpty
                                   ? widget.profile.clinicName
                                   : _clinicCtrl.text.trim(),
-                              clinicCode:
-                                  _clinicCodeCtrl.text.trim().toUpperCase(),
+                              licenseRef: _licenseCtrl.text.trim(),
+                              clinicPhone: _phoneCtrl.text.trim(),
+                              clinicAddress: _addressCtrl.text.trim(),
                             ),
                           );
-                      if (mounted) navigator.pop();
+                      if (mounted) {
+                        final rootCtx = navigator.context;
+                        navigator.pop();
+                        if (rootCtx.mounted) {
+                          showMindToast(
+                            rootCtx,
+                            strings.practiceProfileSavedToast,
+                            variant: MindToastVariant.success,
+                          );
+                        }
+                      }
                     } finally {
                       if (mounted) setState(() => _isSaving = false);
                     }
@@ -2043,6 +2531,8 @@ class _EditClinicianProfileSheetState
         ),
       ),
     );
+
+    return isWide ? Center(heightFactor: 1.0, child: sheet) : sheet;
   }
 }
 
@@ -2081,40 +2571,54 @@ class _SevenDaySleepMoodStrip extends StatelessWidget {
             flex: 3,
             child: Directionality(
               textDirection: TextDirection.ltr,
-              child: SizedBox(
-                height: 22,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: List.generate(7, (idx) {
-                    final day = today.subtract(Duration(days: 6 - idx));
-                    final key =
-                        '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
-                    final item = byDay[key];
-                    final barColor = item != null
-                        ? MindTokens.moodColorByKey(item.mood)
-                        : tokens.lineStrong;
-                    final barHeight = item == null
-                        ? 4.0
-                        : (item.sleep != null
-                              ? (item.sleep! * 2.1).clamp(7.0, 20.0)
-                              : 10.0);
-                    return Expanded(
-                      child: Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Container(
-                          width: 6,
-                          height: barHeight,
-                          decoration: BoxDecoration(
-                            color: item != null
-                                ? barColor
-                                : tokens.line.withValues(alpha: 0.7),
-                            borderRadius: BorderRadius.circular(3),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: List.generate(7, (idx) {
+                  final day = today.subtract(Duration(days: 6 - idx));
+                  final key =
+                      '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+                  final item = byDay[key];
+                  final barColor = item != null
+                      ? MindTokens.moodColorByKey(item.mood)
+                      : tokens.lineStrong;
+                  final barHeight = item == null
+                      ? 4.0
+                      : (item.sleep != null
+                            ? (item.sleep! * 2.1).clamp(7.0, 20.0)
+                            : 10.0);
+                  return Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          height: 22,
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Container(
+                              width: 6,
+                              height: barHeight,
+                              decoration: BoxDecoration(
+                                color: item != null
+                                    ? barColor
+                                    : tokens.line.withValues(alpha: 0.7),
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  }),
-                ),
+                        const SizedBox(height: 3),
+                        Text(
+                          strings.weekdayInitial(day.weekday),
+                          maxLines: 1,
+                          style: TextStyle(
+                            fontSize: 12.0,
+                            color: tokens.ink3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
               ),
             ),
           ),
@@ -2122,23 +2626,21 @@ class _SevenDaySleepMoodStrip extends StatelessWidget {
           Flexible(
             flex: 2,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
               decoration: BoxDecoration(
                 color: tokens.surface,
                 borderRadius: BorderRadius.circular(tokens.chipRadius),
                 border: Border.all(color: tokens.line),
               ),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  strings.sleep7dShortLabel(sleepStr),
-                  maxLines: 1,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: tokens.ink,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
+              child: Text(
+                strings.sleep7dShortLabel(sleepStr),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: tokens.ink,
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
             ),

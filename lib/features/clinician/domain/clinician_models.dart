@@ -6,7 +6,10 @@ import '../../investigation/domain/case_model.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
 import '../../observatory/domain/symptom_report.dart';
 import '../../profile/domain/psychological_profile_model.dart';
+import 'clinician_clinical_record.dart';
 import 'visit_diff_model.dart';
+
+export 'clinician_clinical_record.dart';
 
 /// Active workspace mode for the two-sided Mindora platform.
 enum AppWorkspaceRole {
@@ -517,6 +520,8 @@ class ClinicianProfile {
     this.clinicName = 'Tunis Mindora Practice',
     this.licenseRef = '',
     this.clinicCode = '',
+    this.clinicPhone = '',
+    this.clinicAddress = '',
   });
 
   final String doctorId;
@@ -525,6 +530,8 @@ class ClinicianProfile {
   final String clinicName;
   final String licenseRef;
   final String clinicCode;
+  final String clinicPhone;
+  final String clinicAddress;
 
   /// Returns a crisp, human-readable clinic pairing code for patients, falling back
   /// to a stable code derived from the practitioner/clinic name when unset.
@@ -550,6 +557,8 @@ class ClinicianProfile {
     String? clinicName,
     String? licenseRef,
     String? clinicCode,
+    String? clinicPhone,
+    String? clinicAddress,
   }) {
     return ClinicianProfile(
       doctorId: doctorId ?? this.doctorId,
@@ -558,6 +567,8 @@ class ClinicianProfile {
       clinicName: clinicName ?? this.clinicName,
       licenseRef: licenseRef ?? this.licenseRef,
       clinicCode: clinicCode ?? this.clinicCode,
+      clinicPhone: clinicPhone ?? this.clinicPhone,
+      clinicAddress: clinicAddress ?? this.clinicAddress,
     );
   }
 
@@ -568,6 +579,8 @@ class ClinicianProfile {
     'clinicName': clinicName,
     'licenseRef': licenseRef,
     'clinicCode': clinicCode,
+    'clinicPhone': clinicPhone,
+    'clinicAddress': clinicAddress,
   };
 
   factory ClinicianProfile.fromJson(Map<String, dynamic> json) {
@@ -578,6 +591,8 @@ class ClinicianProfile {
       clinicName: json['clinicName'] as String? ?? 'Tunis Mindora Practice',
       licenseRef: json['licenseRef'] as String? ?? '',
       clinicCode: json['clinicCode'] as String? ?? '',
+      clinicPhone: json['clinicPhone'] as String? ?? '',
+      clinicAddress: json['clinicAddress'] as String? ?? '',
     );
   }
 }
@@ -593,6 +608,7 @@ class ClinicianPatientRecord {
     required this.latestPacket,
     this.previousPackets = const [],
     this.clinicianNotes = const [],
+    this.clinicalRecord = const ClinicianClinicalRecord(),
     this.reviewedAt,
   });
 
@@ -604,7 +620,23 @@ class ClinicianPatientRecord {
   final ClinicianSyncPacket latestPacket;
   final List<ClinicianSyncPacket> previousPackets;
   final List<ClinicianSessionNote> clinicianNotes;
+  final ClinicianClinicalRecord clinicalRecord;
   final DateTime? reviewedAt;
+
+  /// True when any shared (non-private) reflection triggered a Level 2 safety pause.
+  bool get hasSafetyPauseAlert =>
+      latestPacket.sharedCases.any((c) => !c.isPrivate && c.isPausedForSafety);
+
+  /// Active or in-remission clinician-documented diagnoses.
+  List<ClinicianDiagnosisEntry> get activeDiagnoses => clinicalRecord.diagnoses
+      .where((d) => d.status != DiagnosisStatus.resolved)
+      .toList(growable: false);
+
+  /// Active or tapering clinician-documented medications.
+  List<ClinicianMedicationEntry> get activeMedications =>
+      clinicalRecord.medications
+          .where((m) => m.status != MedicationStatus.stopped)
+          .toList(growable: false);
 
   VisitComparisonDiff? get visitDiff => previousPackets.isEmpty
       ? null
@@ -663,6 +695,7 @@ class ClinicianPatientRecord {
     ClinicianSyncPacket? latestPacket,
     List<ClinicianSyncPacket>? previousPackets,
     List<ClinicianSessionNote>? clinicianNotes,
+    ClinicianClinicalRecord? clinicalRecord,
     DateTime? reviewedAt,
   }) {
     return ClinicianPatientRecord(
@@ -674,6 +707,7 @@ class ClinicianPatientRecord {
       latestPacket: latestPacket ?? this.latestPacket,
       previousPackets: previousPackets ?? this.previousPackets,
       clinicianNotes: clinicianNotes ?? this.clinicianNotes,
+      clinicalRecord: clinicalRecord ?? this.clinicalRecord,
       reviewedAt: reviewedAt ?? this.reviewedAt,
     );
   }
@@ -691,6 +725,7 @@ class ClinicianPatientRecord {
     'clinicianNotes': clinicianNotes
         .map((n) => n.toJson())
         .toList(growable: false),
+    'clinicalRecord': clinicalRecord.toJson(),
     'reviewedAt': reviewedAt?.toIso8601String(),
   };
 
@@ -723,6 +758,11 @@ class ClinicianPatientRecord {
               )
               .toList(growable: false) ??
           const [],
+      clinicalRecord: json['clinicalRecord'] != null
+          ? ClinicianClinicalRecord.fromJson(
+              json['clinicalRecord'] as Map<String, dynamic>,
+            )
+          : const ClinicianClinicalRecord(),
       reviewedAt: json['reviewedAt'] != null
           ? DateTime.tryParse(json['reviewedAt'] as String)
           : null,

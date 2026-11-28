@@ -132,12 +132,21 @@ void main() {
           scrollable: find.byType(Scrollable).last,
         );
         expect(adminCard, findsOneWidget);
-        expect(find.text(en.accountActiveBadge), findsOneWidget);
+        // Newly created account has not signed in yet -> must honestly display Pending status
+        expect(find.text(en.awaitingFirstLoginBadge), findsWidgets);
 
         // 1. Pause access -> login must reject
-        await tester.tap(find.byKey(const ValueKey('dossier-pause-resume-btn')));
+        final pauseResumeBtn =
+            find.byKey(const ValueKey('dossier-pause-resume-btn'));
+        await tester.scrollUntilVisible(
+          pauseResumeBtn,
+          150,
+          scrollable: find.byType(Scrollable).last,
+        );
         await tester.pumpAndSettle();
-        expect(find.text(en.accountPausedBadge), findsOneWidget);
+        await tester.tap(pauseResumeBtn);
+        await tester.pumpAndSettle();
+        expect(find.text(en.accountPausedBadge), findsWidgets);
 
         await expectLater(
           authRepo.signInWithCredentials(
@@ -154,14 +163,23 @@ void main() {
         );
 
         // 2. Resume access
-        await tester.tap(find.byKey(const ValueKey('dossier-pause-resume-btn')));
+        await tester.scrollUntilVisible(
+          pauseResumeBtn,
+          150,
+          scrollable: find.byType(Scrollable).last,
+        );
         await tester.pumpAndSettle();
-        expect(find.text(en.accountActiveBadge), findsOneWidget);
+        await tester.tap(pauseResumeBtn);
+        await tester.pumpAndSettle();
+        expect(find.text(en.accountActiveBadge), findsWidgets);
 
-        // 3. Reset PIN & new QR
+        // 3. Reset PIN & new QR (now gated behind explicit confirmation dialog)
         final resetBtn = find.byKey(const ValueKey('dossier-reset-pin-qr-btn'));
         await tester.ensureVisible(resetBtn);
         await tester.tap(resetBtn);
+        await tester.pumpAndSettle();
+        expect(find.text(en.resetPinConfirmTitle), findsOneWidget);
+        await tester.tap(find.text(en.resetPinAndQrBtn).last);
         await tester.pumpAndSettle();
         expect(find.byType(MindQrCodeView), findsOneWidget);
         final handoverDone = find.text(en.doneBtn);
