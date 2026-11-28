@@ -22,6 +22,67 @@ import '../data/clinic_auth_repository.dart';
 import '../data/local_clinic_simulator_repository.dart';
 import '../domain/clinic_account_models.dart';
 
+/// Runtime backend mode selection (`--dart-define=CLINIC_BACKEND_MODE=...`).
+///
+/// Defaults strictly to [ClinicBackendMode.offlineSimulator] (Firebase Spark
+/// free tier, zero billing linked, zero real user telemetry uploaded).
+enum ClinicBackendMode {
+  offlineSimulator,
+  firebaseProduction;
+
+  static ClinicBackendMode fromEnv(String raw) {
+    return raw.trim().toLowerCase() == 'firebase_production'
+        ? ClinicBackendMode.firebaseProduction
+        : ClinicBackendMode.offlineSimulator;
+  }
+}
+
+/// Compile-time & injectable gate enforcing `AGENTS.md` Steps 10 & 14 before
+/// enabling live clinic sync or Paid AI endpoints for real patients/doctors.
+class ClinicBackendConfig {
+  const ClinicBackendConfig({
+    this.mode = ClinicBackendMode.offlineSimulator,
+    this.paidAiBillingVerified = false,
+    this.aiProxyUrl = '',
+  });
+
+  factory ClinicBackendConfig.fromEnvironment() {
+    const rawMode = String.fromEnvironment(
+      'CLINIC_BACKEND_MODE',
+      defaultValue: 'offline_simulator',
+    );
+    const billingVerified = bool.fromEnvironment(
+      'PAID_AI_BILLING_VERIFIED',
+      defaultValue: false,
+    );
+    const proxyUrl = String.fromEnvironment(
+      'AI_PROXY_URL',
+      defaultValue: '',
+    );
+    return ClinicBackendConfig(
+      mode: ClinicBackendMode.fromEnv(rawMode),
+      paidAiBillingVerified: billingVerified,
+      aiProxyUrl: proxyUrl.trim(),
+    );
+  }
+
+  final ClinicBackendMode mode;
+  final bool paidAiBillingVerified;
+  final String aiProxyUrl;
+
+  bool get isOfflineSimulator => mode == ClinicBackendMode.offlineSimulator;
+
+  /// Returns `true` only when Billing/Paid-AI data-governance AND the server-side
+  /// proxy URL are explicitly verified for real-user deployment.
+  bool get isProductionLaunchGateSatisfied =>
+      isOfflineSimulator ||
+      (paidAiBillingVerified && aiProxyUrl.trim().isNotEmpty);
+}
+
+final clinicBackendConfigProvider = Provider<ClinicBackendConfig>((ref) {
+  return ClinicBackendConfig.fromEnvironment();
+});
+
 /// Concrete simulator instance shared across Auth & Sync abstractions.
 final localClinicSimulatorProvider =
     Provider<LocalClinicSimulatorRepository>((ref) {

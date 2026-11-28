@@ -6,12 +6,17 @@
 
 ## 1. Mandatory Pre-User Billing & Data Gate (Steps 10 & 14)
 
-- [ ] **Stay on Spark Free Tier during development:** Do **not** link billing or store real patient telemetry during development. Default AI transport uses the offline mock simulator (`MockInvestigatorService`, `DEV_MOCK_GEMINI_KEY`).
-- [ ] **Never send real personal data on Gemini free tier:** The Gemini free tier permits Google to use submitted content to improve its products and allows human review. Only synthetic/fictional text may be used during free-tier testing.
-- [ ] **Switch to Paid AI Tier BEFORE any real user:** Link Cloud Billing to a paid Gemini API tier with strict data-logging opt-out / zero-training terms prior to onboarding real users.
-- [ ] **Configure Billing Budget Alerts & Spend Caps:** Set hard monthly spend caps and automated email/webhook alerts at 50%, 80%, and 100% of budget before enabling live traffic.
-- [ ] **Deploy via Server-Side Proxy (`AI_PROXY_URL`):** Supply `--dart-define=AI_PROXY_URL=https://...` in release builds so API credentials are never embedded directly inside public Android/iOS client binaries.
-- [ ] **Verify Current Official Pricing & Data Terms:** Re-verify official Google Gemini API & Firebase pricing and privacy/DPA terms immediately prior to production launch.
+> **Verified Official Pricing & Data-Governance Terms (Reviewed Nov 2026 before Phase 7 launch gate):**
+> - **Gemini API Free Tier vs. Paid Tier:** On the **Free Tier**, submitted prompts, inputs, and responses **are used by Google to improve its products and services**, and **human reviewers may read, annotate, and process API inputs/outputs**. Free tier usage is also restricted or unavailable for commercial customer-facing apps in the **EEA, Switzerland, and the UK**. On the **Paid Tier (Pay-as-you-go via linked Cloud Billing)**, Google **does not use** prompts or responses to train or improve models, limiting temporary logs strictly to abuse/safety compliance.
+> - **Firebase Spark vs. Blaze Plan:** **Spark (`$0`)** blocks Cloud Functions deployments, Phone SMS OTP, and halts traffic at quota. **Blaze (`$0` base, pay-as-you-go)** includes Cloud Firestore free daily quotas (**50,000 reads / 20,000 writes / 20,000 deletes / 1 GiB storage / 10 GiB egress/mo**), Cloud Functions (**2M invocations/mo free**), and Auth Email/Anonymous (**50,000 MAUs free**; Phone SMS OTP billed after **10 SMS/day**).
+> - **Critical Budget Alert Warning:** Google Cloud **Budgets & Alerts (`50%`, `80%`, `100%`) notify by email/PubSub but do NOT automatically shut off Blaze billing**; pair budget alerts with Google Cloud API quota limits and server-side rate-limiting in `firebase/functions/index.js` (`aiCompanionProxy`).
+
+- [ ] **Stay on Spark Free Tier during development:** Do **not** link billing or store real patient telemetry during development. Default backend stays on `ClinicBackendMode.offlineSimulator` (`LocalClinicSimulatorRepository`) and mock AI (`MockInvestigatorService`, `DEV_MOCK_GEMINI_KEY`).
+- [ ] **Never send real personal data on Gemini free tier:** Only synthetic/fictional test text may be used during free-tier developer testing.
+- [ ] **Switch to Paid AI Tier BEFORE any real user:** Link Cloud Billing to a Paid Gemini API key in Cloud Secret Manager (`firebase functions:secrets:set GEMINI_PAID_API_KEY`) with zero-training / no-human-review commercial terms prior to onboarding real users.
+- [ ] **Configure Billing Budget Alerts & Hard Quota/Spend Caps:** Set automated Google Cloud Budget alerts at **50%, 80%, and 100%** AND enforce per-UID rate limits / API quotas on `aiCompanionProxy`.
+- [ ] **Deploy via Server-Side Proxy (`AI_PROXY_URL`) + Multi-Tenant Firebase (`firebase/`):** Deploy `firebase/firestore.rules`, `firebase/firestore.indexes.json`, and `firebase/functions/index.js` on Firebase Blaze with App Check enabled, and pass `--dart-define=CLINIC_BACKEND_MODE=firebase_production --dart-define=PAID_AI_BILLING_VERIFIED=true --dart-define=AI_PROXY_URL=https://...` in release builds. Never bundle raw API keys inside APK/IPA/Windows binaries.
+- [ ] **Verify Official Terms Immediately Before Go-Live:** Re-confirm current Gemini API Paid-tier DPA & Firebase Blaze pricing tables prior to welcoming the first clinic cohort.
 
 ---
 

@@ -1,0 +1,20 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "syncedPackets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "generatedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "auditLog",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "doctorId", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

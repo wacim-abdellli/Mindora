@@ -1,0 +1,13 @@
+{
+  "name": "mindora-clinic-functions",
+  "version": "1.0.0",
+  "description": "Mindora server-verified clinic provisioning, QR invite exchange, revocation, and Paid-tier AI proxy",
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^6.1.0"
+  }
+}

@@ -1,0 +1,97 @@
+rules_version = '2';
+
+// Mindora Multi-Tenant Clinic & Patient Privacy Security Rules
+// Deploy only after upgrading Firebase to Blaze with Budget Alerts & App Check enabled.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isClinicianInClinic(clinicId) {
+      return isSignedIn() &&
+        request.auth.token.role == 'clinician' &&
+        request.auth.token.clinicId == clinicId;
+    }
+
+    function isAssignedDoctor(clinicId, doctorId) {
+      return isClinicianInClinic(clinicId) &&
+        request.auth.token.doctorId == doctorId;
+    }
+
+    function isActivePatientSelf(clinicId, patientId) {
+      return isSignedIn() &&
+        request.auth.token.role == 'patient' &&
+        request.auth.uid == patientId &&
+        request.auth.token.clinicId == clinicId &&
+        exists(/databases/$(database)/documents/clinics/$(clinicId)/patients/$(patientId)) &&
+        get(/databases/$(database)/documents/clinics/$(clinicId)/patients/$(patientId)).data.status != 'paused';
+    }
+
+    // Deny all access by default.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    match /clinics/{clinicId} {
+      allow read: if isClinicianInClinic(clinicId);
+      allow write: if false; // Managed strictly via Cloud Functions / Admin SDK.
+
+      // Append-only clinic audit log (immutable from all clients).
+      match /auditLog/{entryId} {
+        allow read: if isClinicianInClinic(clinicId);
+        allow create: if isClinicianInClinic(clinicId);
+        allow update, delete: if false;
+      }
+
+      match /patients/{patientId} {
+        allow read: if isAssignedDoctor(clinicId, resource.data.doctorId) ||
+          isActivePatientSelf(clinicId, patientId);
+
+        // Account creation and status transitions (active/paused/reset) happen via Cloud Functions.
+        allow create, delete: if false;
+
+        allow update: if isAssignedDoctor(clinicId, resource.data.doctorId) ||
+          (
+            isActivePatientSelf(clinicId, patientId) &&
+            request.resource.data.clinicId == resource.data.clinicId &&
+            request.resource.data.doctorId == resource.data.doctorId &&
+            request.resource.data.status == resource.data.status
+          );
+
+        // Non-private patient snapshots only: server rules hard-reject private vault leaks.
+        match /syncedPackets/{packetId} {
+          allow read: if isAssignedDoctor(
+              clinicId,
+              get(/databases/$(database)/documents/clinics/$(clinicId)/patients/$(patientId)).data.doctorId
+            ) ||
+            isActivePatientSelf(clinicId, patientId);
+
+          allow create, update: if isActivePatientSelf(clinicId, patientId) &&
+            (
+              !('containsPrivateEntries' in request.resource.data) ||
+              request.resource.data.containsPrivateEntries == false
+            );
+
+          allow delete: if false;
+        }
+
+        // Between-session focus plans pushed from assigned psychiatrist to patient inbox.
+        match /focusInbox/{planId} {
+          allow read: if isAssignedDoctor(
+              clinicId,
+              get(/databases/$(database)/documents/clinics/$(clinicId)/patients/$(patientId)).data.doctorId
+            ) ||
+            isActivePatientSelf(clinicId, patientId);
+
+          allow create, update: if isAssignedDoctor(
+            clinicId,
+            get(/databases/$(database)/documents/clinics/$(clinicId)/patients/$(patientId)).data.doctorId
+          );
+
+          allow delete: if false;
+        }
+      }
+    }
+  }
+}
