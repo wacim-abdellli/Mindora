@@ -37,74 +37,50 @@ class MindSegmented extends StatelessWidget {
         children: [
           for (var i = 0; i < labels.length; i++)
             Expanded(
-              child: Semantics(
-                button: true,
+              child: MindPressable(
+                onPressed: () => onChanged(i),
                 selected: index == i,
-                label: labels[i],
-                child: MindPressable(
-                  onPressed: () => onChanged(i),
-                  borderRadius: BorderRadius.circular(innerRadius),
-                  child: AnimatedContainer(
-                    duration: reduceMotion
-                        ? Duration.zero
-                        : const Duration(milliseconds: 180),
-                    curve: Curves.easeOutCubic,
-                    constraints: const BoxConstraints(minHeight: 48),
-                    padding: EdgeInsetsDirectional.symmetric(
-                      horizontal: labels.length >= 4 ? 4 : 10,
-                      vertical: 8,
-                    ),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: index == i ? tokens.surface3 : Colors.transparent,
-                      borderRadius: BorderRadius.circular(innerRadius),
-                      border: index == i
-                          ? Border.all(
-                              color: tokens.segmentedActiveBorder,
-                              width: 1.0,
-                            )
-                          : null,
-                      boxShadow: index == i
-                          ? tokens.segmentedActiveShadows
-                          : const <BoxShadow>[],
-                    ),
-                    child: labels.length >= 4
-                        ? FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.center,
-                            child: Text(
-                              labels[i],
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              softWrap: false,
-                              style: TextStyle(
-                                fontFamily: LabTheme.fontFamily,
-                                fontFamilyFallback: LabTheme.fontFallback,
-                                fontSize: 13.5,
-                                height: 1.2,
-                                fontWeight: index == i
-                                    ? FontWeight.w700
-                                    : FontWeight.w600,
-                                color: index == i ? tokens.ink : tokens.ink2,
-                              ),
-                            ),
+                semanticLabel: labels[i],
+                borderRadius: BorderRadius.circular(innerRadius),
+                child: AnimatedContainer(
+                  duration: reduceMotion
+                      ? Duration.zero
+                      : const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  constraints: const BoxConstraints(minHeight: 48),
+                  padding: EdgeInsetsDirectional.symmetric(
+                    horizontal: labels.length >= 4 ? 4 : 10,
+                    vertical: 8,
+                  ),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: index == i ? tokens.surface3 : Colors.transparent,
+                    borderRadius: BorderRadius.circular(innerRadius),
+                    border: index == i
+                        ? Border.all(
+                            color: tokens.segmentedActiveBorder,
+                            width: 1.0,
                           )
-                        : Text(
-                            labels[i],
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontFamily: LabTheme.fontFamily,
-                              fontFamilyFallback: LabTheme.fontFallback,
-                              fontSize: 13.5,
-                              height: 1.2,
-                              fontWeight: index == i
-                                  ? FontWeight.w700
-                                  : FontWeight.w600,
-                              color: index == i ? tokens.ink : tokens.ink2,
-                            ),
-                          ),
+                        : null,
+                    boxShadow: index == i
+                        ? tokens.segmentedActiveShadows
+                        : const <BoxShadow>[],
+                  ),
+                  child: Text(
+                    labels[i],
+                    textAlign: TextAlign.center,
+                    maxLines: labels.length >= 4 ? 1 : 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: LabTheme.fontFamily,
+                      fontFamilyFallback: LabTheme.fontFallback,
+                      fontSize: labels.length >= 4 ? 12.5 : 13.5,
+                      height: 1.2,
+                      fontWeight: index == i
+                          ? FontWeight.w700
+                          : FontWeight.w600,
+                      color: index == i ? tokens.ink : tokens.ink2,
+                    ),
                   ),
                 ),
               ),

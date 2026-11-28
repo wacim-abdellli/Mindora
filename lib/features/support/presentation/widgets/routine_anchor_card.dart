@@ -137,7 +137,7 @@ class _RoutineAnchorCardState extends ConsumerState<RoutineAnchorCard> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: tokens.m1,
+                    color: tokens.accentInk,
                   ),
                 ),
               ),
@@ -216,7 +216,7 @@ class _RoutineAnchorCardState extends ConsumerState<RoutineAnchorCard> {
                     color: tokens.selectedTintFor(tokens.m1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(current.icon, size: 22, color: tokens.m1),
+                  child: Icon(current.icon, size: 22, color: tokens.accentInk),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -312,7 +312,7 @@ class _RoutineAnchorCardState extends ConsumerState<RoutineAnchorCard> {
                   ),
                 ),
                 style: TextButton.styleFrom(
-                  foregroundColor: tokens.m1,
+                  foregroundColor: tokens.accentInk,
                   visualDensity: VisualDensity.compact,
                 ),
               ),

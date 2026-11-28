@@ -220,7 +220,9 @@ class EditExperiencesSheet extends ConsumerWidget {
                               },
                               borderRadius: BorderRadius.circular(context.tokens.chipRadius),
                               child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 140),
+                                duration: MediaQuery.disableAnimationsOf(context)
+                                    ? Duration.zero
+                                    : const Duration(milliseconds: 140),
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                                 decoration: BoxDecoration(
                                   color: isSelected

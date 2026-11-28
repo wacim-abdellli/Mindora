@@ -73,8 +73,8 @@ ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? showMindUndoBanner(
                 onUndo();
               },
               style: TextButton.styleFrom(
-                backgroundColor: tokens.primary,
-                foregroundColor: tokens.onPrimary,
+                backgroundColor: tokens.bg,
+                foregroundColor: tokens.ink,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 10,
@@ -90,7 +90,7 @@ ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? showMindUndoBanner(
                   fontFamilyFallback: LabTheme.fontFallback,
                   fontSize: 14.0,
                   fontWeight: FontWeight.w800,
-                  color: tokens.onPrimary,
+                  color: tokens.ink,
                 ),
               ),
             ),

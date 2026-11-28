@@ -52,12 +52,15 @@ class MindForensicsApp extends ConsumerWidget {
       }
     });
 
-    final lightTokens = MindTokens.light
-        .withMood(activeMood)
-        .withComfortBoost(comfortMode);
-    final darkTokens = MindTokens.dark
-        .withMood(activeMood)
-        .withComfortBoost(comfortMode);
+    final isClinician = AppEditionConfig.isClinicianApp;
+    final lightBase = isClinician
+        ? MindTokens.light
+        : MindTokens.light.withMood(activeMood);
+    final darkBase = isClinician
+        ? MindTokens.dark
+        : MindTokens.dark.withMood(activeMood);
+    final lightTokens = lightBase.withComfortBoost(comfortMode);
+    final darkTokens = darkBase.withComfortBoost(comfortMode);
 
     return MaterialApp.router(
       title: 'Mindora',
@@ -86,8 +89,8 @@ class MindForensicsApp extends ConsumerWidget {
         final mq = MediaQuery.of(context);
         final baseScale = mq.textScaler.scale(10.0) / 10.0;
         final targetScale = comfortMode
-            ? (baseScale * 1.15).clamp(1.12, 1.35)
-            : baseScale.clamp(0.85, 1.35);
+            ? (baseScale * 1.15).clamp(1.12, 2.0)
+            : baseScale.clamp(0.85, 2.0);
 
         return MediaQuery(
           data: mq.copyWith(textScaler: TextScaler.linear(targetScale)),
@@ -165,9 +168,11 @@ class _DynamicMindThemeHostState extends State<_DynamicMindThemeHost> {
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
-    final tokens = MindTokens.forBrightness(
-      brightness,
-    ).withMood(widget.activeMood).withComfortBoost(widget.comfortMode);
+    final baseTokens = MindTokens.forBrightness(brightness);
+    final moodTokens = AppEditionConfig.isClinicianApp
+        ? baseTokens
+        : baseTokens.withMood(widget.activeMood);
+    final tokens = moodTokens.withComfortBoost(widget.comfortMode);
     final themeData = buildMindTheme(
       brightness,
       tokensOverride: tokens,

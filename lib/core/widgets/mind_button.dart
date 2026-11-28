@@ -6,7 +6,9 @@ import 'mind_pressable.dart';
 
 enum MindButtonVariant { primary, secondary, soft, ghost, danger }
 
-/// Accessible, minimum 48×48px tap target button driven strictly by [MindTokens].
+enum MindButtonSize { sm, md, lg }
+
+/// Accessible, minimum 48×48dp tap target button driven strictly by [MindTokens].
 class MindButton extends StatelessWidget {
   const MindButton({
     super.key,
@@ -14,6 +16,7 @@ class MindButton extends StatelessWidget {
     this.subText,
     this.onPressed,
     this.variant = MindButtonVariant.primary,
+    this.size,
     this.leadingIcon,
     this.trailingIcon,
     this.isLoading = false,
@@ -24,6 +27,7 @@ class MindButton extends StatelessWidget {
   final String? subText;
   final VoidCallback? onPressed;
   final MindButtonVariant variant;
+  final MindButtonSize? size;
   final IconData? leadingIcon;
   final IconData? trailingIcon;
   final bool isLoading;
@@ -33,6 +37,10 @@ class MindButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final enabled = onPressed != null && !isLoading;
+    final resolvedSize = size ??
+        (variant == MindButtonVariant.primary
+            ? MindButtonSize.lg
+            : MindButtonSize.md);
 
     final Color bg;
     final Color fg;
@@ -67,14 +75,44 @@ class MindButton extends StatelessWidget {
         shadows = const [];
       case MindButtonVariant.danger:
         bg = tokens.safety;
-        fg = tokens.isDark ? tokens.bg : MindTokens.pureWhiteConstant;
+        fg = tokens.onSafety;
         border = Colors.transparent;
         borderWidth = 1.0;
         shadows = const [];
     }
 
-    final effectiveBg = enabled ? bg : bg.withValues(alpha: 0.45);
-    final effectiveFg = enabled ? fg : fg.withValues(alpha: 0.45);
+    final isGhost = variant == MindButtonVariant.ghost;
+    final effectiveBg = enabled
+        ? bg
+        : (isGhost ? Colors.transparent : tokens.disabledBg);
+    final effectiveFg = enabled ? fg : tokens.disabledInk;
+    final effectiveBorder = enabled ? border : tokens.line;
+
+    final double minHeight;
+    final EdgeInsetsGeometry buttonPadding;
+    final double labelSize;
+    final double iconSize;
+    switch (resolvedSize) {
+      case MindButtonSize.sm:
+        minHeight = 48;
+        buttonPadding = const EdgeInsets.symmetric(horizontal: 14, vertical: 10);
+        labelSize = 14.0;
+        iconSize = 16.0;
+      case MindButtonSize.md:
+        minHeight = 48;
+        buttonPadding = const EdgeInsets.symmetric(horizontal: 18, vertical: 12);
+        labelSize = 15.5;
+        iconSize = 17.0;
+      case MindButtonSize.lg:
+        minHeight = 56;
+        buttonPadding = const EdgeInsets.symmetric(horizontal: 20, vertical: 14);
+        labelSize = 15.5;
+        iconSize = 18.0;
+    }
+
+    final semantic = subText != null && subText!.trim().isNotEmpty
+        ? '$text. $subText'
+        : text;
 
     final content = Row(
       mainAxisSize: isFullWidth ? MainAxisSize.max : MainAxisSize.min,
@@ -91,7 +129,7 @@ class MindButton extends StatelessWidget {
           ),
           const SizedBox(width: 8),
         ] else if (leadingIcon != null) ...[
-          Icon(leadingIcon, size: 17, color: effectiveFg),
+          Icon(leadingIcon, size: iconSize, color: effectiveFg),
           const SizedBox(width: 8),
         ],
         Flexible(
@@ -108,9 +146,8 @@ class MindButton extends StatelessWidget {
                   fontFamily: LabTheme.fontFamily,
                   fontFamilyFallback: LabTheme.fontFallback,
                   color: effectiveFg,
-                  fontSize: 15.5,
+                  fontSize: labelSize,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: -0.1,
                 ),
               ),
               if (subText != null)
@@ -132,27 +169,27 @@ class MindButton extends StatelessWidget {
         ),
         if (trailingIcon != null && !isLoading) ...[
           const SizedBox(width: 8),
-          Icon(trailingIcon, size: 18, color: effectiveFg),
+          Icon(trailingIcon, size: iconSize + 1, color: effectiveFg),
         ],
       ],
     );
 
     return ConstrainedBox(
       constraints: BoxConstraints(
-        minHeight: variant == MindButtonVariant.primary ? 56 : 48,
+        minHeight: minHeight,
         minWidth: isFullWidth ? double.infinity : 48,
       ),
       child: MindPressable(
         onPressed: enabled ? onPressed : null,
         enabled: enabled,
-        semanticLabel: text,
+        semanticLabel: semantic,
         borderRadius: BorderRadius.circular(tokens.buttonRadius),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          padding: buttonPadding,
           decoration: BoxDecoration(
             color: effectiveBg,
             borderRadius: BorderRadius.circular(tokens.buttonRadius),
-            border: Border.all(color: border, width: borderWidth),
+            border: Border.all(color: effectiveBorder, width: borderWidth),
             boxShadow: shadows,
           ),
           child: content,

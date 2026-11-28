@@ -135,7 +135,7 @@ class _GroundingExerciseCardState extends ConsumerState<GroundingExerciseCard> {
                   style: TextButton.styleFrom(
                     minimumSize: const Size(48, 48),
                     visualDensity: VisualDensity.compact,
-                    foregroundColor: tokens.m1,
+                    foregroundColor: tokens.accentInk,
                     padding: EdgeInsets.zero,
                   ),
                   child: Text(
@@ -168,7 +168,7 @@ class _GroundingExerciseCardState extends ConsumerState<GroundingExerciseCard> {
                       ),
                       child: Icon(
                         Icons.check_rounded,
-                        color: tokens.m1,
+                        color: tokens.accentInk,
                         size: 26,
                       ),
                     ),

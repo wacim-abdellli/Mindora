@@ -479,7 +479,7 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                           '• ${strings.whyItFitsPrefix} ${h.whyItMightFit}',
                           style: TextStyle(
                             fontSize: 12.5,
-                            color: MindTokens.moodAnxious,
+                            color: tokens.info,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -487,7 +487,7 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                           '• ${strings.whatDoesNotFitPrefix} ${h.whatDoesNotFit}',
                           style: TextStyle(
                             fontSize: 12.5,
-                            color: MindTokens.moodRestless,
+                            color: tokens.warning,
                           ),
                         ),
                       ],
@@ -601,7 +601,7 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                         Expanded(
                           child: Row(
                             children: [
-                              Icon(Icons.anchor_rounded, size: 14, color: tokens.m1),
+                              Icon(Icons.anchor_rounded, size: 14, color: tokens.accentInk),
                               const SizedBox(width: 6),
                               Flexible(
                                 child: Text(
@@ -611,7 +611,7 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                                   style: TextStyle(
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w800,
-                                    color: tokens.m1,
+                                    color: tokens.accentInk,
                                   ),
                                 ),
                               ),
@@ -636,7 +636,7 @@ class _CaseReportScreenState extends ConsumerState<CaseReportScreen> {
                                   style: TextStyle(
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w700,
-                                    color: tokens.m1,
+                                    color: tokens.accentInk,
                                   ),
                                 ),
                               ),

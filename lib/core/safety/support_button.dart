@@ -240,6 +240,7 @@ class SupportModalSheet extends ConsumerWidget {
                   ),
                 ),
                 IconButton(
+                  tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
                   constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                   icon: Icon(Icons.close_rounded, size: 22, color: tokens.ink2),
                   onPressed: () => Navigator.of(context).pop(),

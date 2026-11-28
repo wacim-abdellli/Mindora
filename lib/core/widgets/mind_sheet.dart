@@ -52,16 +52,30 @@ class MindSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final maxHeight = MediaQuery.sizeOf(context).height * 0.90;
+    final size = MediaQuery.sizeOf(context);
+    final maxHeight = size.height * 0.90;
+    final viewInsetsBottom = MediaQuery.viewInsetsOf(context).bottom;
+    final isWide = size.width >= 840;
 
-    return Container(
-      constraints: BoxConstraints(maxHeight: maxHeight),
+    final sheet = Container(
+      constraints: BoxConstraints(
+        maxHeight: maxHeight,
+        maxWidth: isWide ? 600 : double.infinity,
+      ),
       decoration: BoxDecoration(
         color: tokens.surface,
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(tokens.sheetRadius),
         ),
-        border: Border(top: BorderSide(color: tokens.line, width: 1.0)),
+        border: Border(
+          top: BorderSide(color: tokens.line, width: 1.0),
+          left: isWide
+              ? BorderSide(color: tokens.line, width: 1.0)
+              : BorderSide.none,
+          right: isWide
+              ? BorderSide(color: tokens.line, width: 1.0)
+              : BorderSide.none,
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -115,6 +129,11 @@ class MindSheet extends StatelessWidget {
           ),
         ),
       ),
+    );
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: viewInsetsBottom),
+      child: isWide ? Center(heightFactor: 1.0, child: sheet) : sheet,
     );
   }
 }

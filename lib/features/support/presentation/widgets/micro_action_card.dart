@@ -174,7 +174,7 @@ class _MicroActionCardState extends ConsumerState<MicroActionCard> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: tokens.m1,
+                    color: tokens.accentInk,
                   ),
                 ),
               ),
@@ -251,7 +251,7 @@ class _MicroActionCardState extends ConsumerState<MicroActionCard> {
             ),
             child: Row(
               children: [
-                Icon(action.icon, size: 22, color: tokens.m1),
+                Icon(action.icon, size: 22, color: tokens.accentInk),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -270,7 +270,7 @@ class _MicroActionCardState extends ConsumerState<MicroActionCard> {
                     fontWeight: FontWeight.w800,
                     fontFamily: 'Inter',
                     fontFeatures: const [FontFeature.tabularFigures()],
-                    color: tokens.m1,
+                    color: tokens.accentInk,
                   ),
                 ),
               ],
@@ -316,8 +316,8 @@ class _MicroActionCardState extends ConsumerState<MicroActionCard> {
                 child: OutlinedButton(
                   onPressed: _completeNow,
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: tokens.m1,
-                    side: BorderSide(color: tokens.m1),
+                    foregroundColor: tokens.accentInk,
+                    side: BorderSide(color: tokens.accentInk),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -344,7 +344,7 @@ class _MicroActionCardState extends ConsumerState<MicroActionCard> {
                             : 'Well done. One tiny step breaks inertia with zero pressure.'),
                     style: TextStyle(
                       fontSize: 12.5,
-                      color: tokens.m1,
+                      color: tokens.accentInk,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -368,7 +368,7 @@ class _MicroActionCardState extends ConsumerState<MicroActionCard> {
                     style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
                   ),
                   style: TextButton.styleFrom(
-                    foregroundColor: tokens.m1,
+                    foregroundColor: tokens.accentInk,
                     visualDensity: VisualDensity.compact,
                   ),
                 ),

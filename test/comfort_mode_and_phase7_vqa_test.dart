@@ -219,7 +219,7 @@ void main() {
     });
 
     testWidgets(
-      'MindForensicsApp scales +15% in Comfort Mode while remaining inside [8.5, 13.5] bounds',
+      'MindForensicsApp scales +15% in Comfort Mode while supporting WCAG 2.0x [8.5, 20.0] bounds',
       (tester) async {
         final container = ProviderContainer();
         addTearDown(container.dispose);
@@ -232,25 +232,25 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        final ctxOff = tester.element(find.text('Today'));
+        final ctxOff = tester.element(find.byType(HomeScreen));
         expect(MediaQuery.textScalerOf(ctxOff).scale(10.0), closeTo(10.0, 0.05));
 
         await container.read(displayComfortProvider.notifier).setComfortMode(true);
         await tester.pumpAndSettle();
 
-        final ctxOn = tester.element(find.text('Today'));
+        final ctxOn = tester.element(find.byType(HomeScreen));
         final scaled = MediaQuery.textScalerOf(ctxOn).scale(10.0);
         expect(scaled, closeTo(11.5, 0.05));
-        expect(scaled, inInclusiveRange(8.5, 13.5));
+        expect(scaled, inInclusiveRange(8.5, 20.0));
 
-        // Even with extreme OS scale 3.0x, app clamp caps safely at 1.35x (13.5)
+        // Even with extreme OS scale 3.0x, app clamp caps safely at 2.0x (20.0)
         tester.platformDispatcher.textScaleFactorTestValue = 3.0;
         addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
         await tester.pumpAndSettle();
-        final ctxClamped = tester.element(find.text('Today'));
+        final ctxClamped = tester.element(find.byType(HomeScreen));
         expect(
           MediaQuery.textScalerOf(ctxClamped).scale(10.0),
-          inInclusiveRange(8.5, 13.5),
+          closeTo(20.0, 0.05),
         );
       },
     );

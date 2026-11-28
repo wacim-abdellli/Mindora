@@ -36,7 +36,7 @@ class LabelBadge extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.tokens;
     final strings = ref.watch(appStringsProvider);
-    final accentColor = tokens.labelColor(label);
+    final iconColor = tokens.labelForeground(label);
     final bgColor = tokens.labelBackground(label);
     final borderColor = tokens.labelBorder(label);
     final localizedName = strings.localizedLabelName(label);
@@ -54,7 +54,7 @@ class LabelBadge extends ConsumerWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(_iconForLabel(), size: compact ? 12 : 13.5, color: accentColor),
+          Icon(_iconForLabel(), size: compact ? 12 : 13.5, color: iconColor),
           const SizedBox(width: 4),
           Text(
             label.letter,

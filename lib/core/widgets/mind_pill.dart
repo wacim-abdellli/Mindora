@@ -39,6 +39,8 @@ class MindPill extends StatelessWidget {
         HapticFeedback.selectionClick();
         onTap();
       },
+      selected: isSelected,
+      semanticLabel: label,
       borderRadius: BorderRadius.circular(tokens.chipRadius),
       child: ConstrainedBox(
         constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
@@ -84,7 +86,6 @@ class MindPill extends StatelessWidget {
                       fontSize: fontSize,
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                       color: isSelected ? activeFg : inactiveFg,
-                      letterSpacing: -0.1,
                     ),
                   ),
                 ),

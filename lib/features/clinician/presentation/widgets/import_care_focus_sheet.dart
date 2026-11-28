@@ -174,7 +174,7 @@ class _ImportCareFocusSheetState extends ConsumerState<ImportCareFocusSheet> {
                     Icon(
                       Icons.assignment_returned_outlined,
                       size: 20,
-                      color: tokens.m1,
+                      color: tokens.accentInk,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -187,13 +187,15 @@ class _ImportCareFocusSheetState extends ConsumerState<ImportCareFocusSheet> {
                         ),
                       ),
                     ),
-                    Tooltip(
-                      message:
+                    IconButton(
+                      tooltip:
                           MaterialLocalizations.of(context).closeButtonTooltip,
-                      child: IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: Icon(Icons.close_rounded, color: tokens.ink2),
+                      constraints: const BoxConstraints(
+                        minWidth: 48,
+                        minHeight: 48,
                       ),
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: Icon(Icons.close_rounded, color: tokens.ink2),
                     ),
                   ],
                 ),

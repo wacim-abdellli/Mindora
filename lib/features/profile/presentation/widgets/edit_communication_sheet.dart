@@ -147,7 +147,9 @@ class _EditCommunicationSheetState extends ConsumerState<EditCommunicationSheet>
                           },
                           borderRadius: BorderRadius.circular(14),
                           child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 140),
+                            duration: MediaQuery.disableAnimationsOf(context)
+                                ? Duration.zero
+                                : const Duration(milliseconds: 140),
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
                             decoration: BoxDecoration(
                               color: isSelected
@@ -274,7 +276,9 @@ class _EditCommunicationSheetState extends ConsumerState<EditCommunicationSheet>
                           },
                           borderRadius: BorderRadius.circular(context.tokens.chipRadius),
                           child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 140),
+                            duration: MediaQuery.disableAnimationsOf(context)
+                                ? Duration.zero
+                                : const Duration(milliseconds: 140),
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                             decoration: BoxDecoration(
                               color: isSelected
@@ -342,7 +346,9 @@ class _EditCommunicationSheetState extends ConsumerState<EditCommunicationSheet>
                           },
                           borderRadius: BorderRadius.circular(context.tokens.chipRadius),
                           child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 140),
+                            duration: MediaQuery.disableAnimationsOf(context)
+                                ? Duration.zero
+                                : const Duration(milliseconds: 140),
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                             decoration: BoxDecoration(
                               color: isSelected

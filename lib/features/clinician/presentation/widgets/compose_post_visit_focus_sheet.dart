@@ -201,7 +201,7 @@ class _ComposePostVisitFocusSheetState
               ? null
               : SnackBarAction(
                   label: strings.patientViewChipLabel,
-                  textColor: tokens.m1,
+                  textColor: tokens.accentInk,
                   onPressed: () => router.go(AppRouter.home),
                 ),
         ),
@@ -253,7 +253,7 @@ class _ComposePostVisitFocusSheetState
                 padding: const EdgeInsets.fromLTRB(20, 14, 12, 8),
                 child: Row(
                   children: [
-                    Icon(Icons.send_outlined, size: 20, color: tokens.m1),
+                    Icon(Icons.send_outlined, size: 20, color: tokens.accentInk),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -281,13 +281,15 @@ class _ComposePostVisitFocusSheetState
                         ],
                       ),
                     ),
-                    Tooltip(
-                      message:
+                    IconButton(
+                      tooltip:
                           MaterialLocalizations.of(context).closeButtonTooltip,
-                      child: IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: Icon(Icons.close_rounded, color: tokens.ink2),
+                      constraints: const BoxConstraints(
+                        minWidth: 48,
+                        minHeight: 48,
                       ),
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: Icon(Icons.close_rounded, color: tokens.ink2),
                     ),
                   ],
                 ),

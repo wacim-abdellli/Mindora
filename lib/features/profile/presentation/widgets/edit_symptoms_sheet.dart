@@ -183,7 +183,9 @@ class _EditSymptomsSheetState extends ConsumerState<EditSymptomsSheet> {
                                   },
                                   borderRadius: BorderRadius.circular(context.tokens.chipRadius),
                                   child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 140),
+                                    duration: MediaQuery.disableAnimationsOf(context)
+                                        ? Duration.zero
+                                        : const Duration(milliseconds: 140),
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                     decoration: BoxDecoration(
                                       color: isSelected

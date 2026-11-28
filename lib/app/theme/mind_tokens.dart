@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../features/investigation/domain/label_type.dart';
 
 /// The six expressive mood states sharing identical vivid colors across
-/// Sunrise (Default Warm Light) and Twilight (Optional Deep Indigo Night) themes.
+/// Warm Alabaster Daylight (Default Light) and Vercel Obsidian Dark themes.
 ///
 /// Always paired with a drawn vector [MoodFace] or icon and plain text label —
 /// never represented by color alone and never using Unicode emojis.
@@ -35,8 +35,8 @@ enum AppMood {
   }
 }
 
-/// Unified design tokens powering Mindora across Sunrise (Warm Daylight) and
-/// Twilight (Deep Indigo Night) themes.
+/// Unified design tokens powering Mindora across Warm Alabaster Daylight and
+/// Vercel Obsidian Dark themes.
 ///
 /// Feature screens and shared widgets read colors, shapes, spacing, and dynamic
 /// mood tints exclusively from `context.tokens` (never raw `Color(0x...)` or
@@ -100,7 +100,7 @@ class MindTokens extends ThemeExtension<MindTokens> {
   final Color ink2;
   final Color ink3;
 
-  // Alive primary action palette (Violet in Sunrise / Luminous Lilac in Twilight)
+  // Primary action palette (Carbon ink in Daylight / Pure white in Obsidian Dark)
   final Color primary;
   final Color onPrimary;
   final Color primaryDeep;
@@ -211,6 +211,20 @@ class MindTokens extends ThemeExtension<MindTokens> {
   static const Color lightNavGlass = Color.fromRGBO(250, 249, 246, 0.92);
   static const Color lightScrim = Color.fromRGBO(9, 9, 11, 0.45);
   static const Color lightFocusRingDefault = Color(0xFF0D9488);
+  static const Color lightAccentInk = Color(0xFF0F766E);
+  static const Color lightOnSafety = Color(0xFFFFFFFF);
+  static const Color lightSuccess = Color(0xFF0F766E);
+  static const Color lightSuccessSoft = Color(0xFFECFDF5);
+  static const Color lightOnSuccess = Color(0xFFFFFFFF);
+  static const Color lightWarning = Color(0xFFB45309);
+  static const Color lightWarningSoft = Color(0xFFFFFBEB);
+  static const Color lightOnWarning = Color(0xFFFFFFFF);
+  static const Color lightInfo = Color(0xFF0369A1);
+  static const Color lightInfoSoft = Color(0xFFF0F9FF);
+  static const Color lightOnInfo = Color(0xFFFFFFFF);
+  static const Color lightSurfaceHover = Color.fromRGBO(17, 17, 20, 0.045);
+  static const Color lightDisabledBg = Color(0xFFE7E5DE);
+  static const Color lightDisabledInk = Color(0xFF5E5E68);
 
   // ---------------------------------------------------------------------------
   // Clean Vercel Obsidian-Zinc Dark constants — Zero Purple, Zero #000000
@@ -232,6 +246,20 @@ class MindTokens extends ThemeExtension<MindTokens> {
   static const Color darkNavGlass = Color.fromRGBO(17, 17, 20, 0.92);
   static const Color darkScrim = Color.fromRGBO(4, 4, 6, 0.70);
   static const Color darkFocusRing = Color(0xFF2DD4BF);
+  static const Color darkAccentInk = Color(0xFF2DD4BF);
+  static const Color darkOnSafety = Color(0xFF09090B);
+  static const Color darkSuccess = Color(0xFF34D399);
+  static const Color darkSuccessSoft = Color(0xFF0E2922);
+  static const Color darkOnSuccess = Color(0xFF09090B);
+  static const Color darkWarning = Color(0xFFFBBF24);
+  static const Color darkWarningSoft = Color(0xFF2B210B);
+  static const Color darkOnWarning = Color(0xFF09090B);
+  static const Color darkInfo = Color(0xFF38BDF8);
+  static const Color darkInfoSoft = Color(0xFF0C2433);
+  static const Color darkOnInfo = Color(0xFF09090B);
+  static const Color darkSurfaceHover = Color.fromRGBO(255, 255, 255, 0.055);
+  static const Color darkDisabledBg = Color(0xFF222228);
+  static const Color darkDisabledInk = Color(0xFF9494A0);
 
   /// Warm Alabaster Daylight token preset.
   static const MindTokens light = MindTokens(
@@ -377,8 +405,35 @@ class MindTokens extends ThemeExtension<MindTokens> {
   /// Computes icon blob background for an arbitrary [accent] color.
   Color blobTintFor(Color accent) => tint(accent, tintBlob);
 
-  /// Soft primary tint for violet highlights & active pill fills.
+  /// Soft primary tint for subtle highlights & active pill fills.
   Color get primarySoft => tint(primary, isDark ? 0.18 : 0.12);
+
+  /// WCAG AA-verified text/icon accent foreground on [surface] / [bg] / [surface2]
+  /// (`#0F766E` >= 5.2:1 in Daylight; `#2DD4BF` >= 10.1:1 in Obsidian Dark).
+  Color get accentInk => isDark ? darkAccentInk : lightAccentInk;
+
+  /// WCAG AA/AAA foreground text/icon color placed over [safety] fills.
+  Color get onSafety => isDark ? darkOnSafety : lightOnSafety;
+
+  /// Clinical status tokens (success / warning / info) with WCAG AA+ contrast.
+  Color get success => isDark ? darkSuccess : lightSuccess;
+  Color get successSoft => isDark ? darkSuccessSoft : lightSuccessSoft;
+  Color get onSuccess => isDark ? darkOnSuccess : lightOnSuccess;
+
+  Color get warning => isDark ? darkWarning : lightWarning;
+  Color get warningSoft => isDark ? darkWarningSoft : lightWarningSoft;
+  Color get onWarning => isDark ? darkOnWarning : lightOnWarning;
+
+  Color get info => isDark ? darkInfo : lightInfo;
+  Color get infoSoft => isDark ? darkInfoSoft : lightInfoSoft;
+  Color get onInfo => isDark ? darkOnInfo : lightOnInfo;
+
+  /// Desktop pointer hover wash overlaid on interactive surfaces.
+  Color get surfaceHover => isDark ? darkSurfaceHover : lightSurfaceHover;
+
+  /// High-contrast disabled control background and ink (>= 5.0:1 in both themes).
+  Color get disabledBg => isDark ? darkDisabledBg : lightDisabledBg;
+  Color get disabledInk => isDark ? darkDisabledInk : lightDisabledInk;
 
   /// Computes mood day calendar fill (`26% + 5%*intensity` Sunrise / `20% + 4%*intensity` Twilight).
   Color moodDayColor(Color moodColorValue, int intensity) {
@@ -410,7 +465,7 @@ class MindTokens extends ThemeExtension<MindTokens> {
         ]
       : const [];
 
-  /// Soft button surface: warm peach well in Sunrise, soft violet well in Twilight.
+  /// Soft button surface: warm alabaster well in Daylight, zinc well in Dark.
   Color get softButtonBg => surface2;
 
   /// Soft button border: subtle strong hairline for instant tappability affordance.
@@ -419,7 +474,7 @@ class MindTokens extends ThemeExtension<MindTokens> {
   /// Border color for active segments.
   Color get segmentedActiveBorder => isDark ? lineStrong : line;
 
-  /// Elevation under selected segments in Sunrise; clean border in Twilight.
+  /// Elevation under selected segments in Daylight; clean border in Obsidian Dark.
   List<BoxShadow> get segmentedActiveShadows => shadows.isEmpty
       ? const []
       : [
@@ -436,11 +491,11 @@ class MindTokens extends ThemeExtension<MindTokens> {
   /// Switch off track.
   Color get switchOffTrack => isDark ? surface3 : surface2;
 
-  /// Switch on track: active calm teal blended smoothly over `surface`.
-  Color get switchOnTrack => tint(m1, switchOnTrackTint);
+  /// Switch on track: WCAG 1.4.11 compliant teal (`#0F766E` light / `#2DD4BF` dark).
+  Color get switchOnTrack => accentInk;
 
-  /// Thumb color when switch is enabled.
-  Color get switchThumbOn => pureWhiteConstant;
+  /// Thumb color when switch is enabled (`5.47:1` light, `10.7:1` dark on [switchOnTrack]).
+  Color get switchThumbOn => isDark ? pureBlackConstant : pureWhiteConstant;
 
   /// Equalizer / slider thumb border color.
   Color get controlThumbBorder =>
@@ -473,12 +528,22 @@ class MindTokens extends ThemeExtension<MindTokens> {
   /// Active capsule fill behind the selected bottom-nav item.
   Color get navCapsuleFill => tint(primary, navActiveTint);
 
-  /// Semantic foreground color for Fact / Guess / Story badges.
+  /// Semantic accent color for Fact / Guess / Story badges.
   Color labelColor(LabelType label) {
     return switch (label) {
       LabelType.fact => moodAnxious,
       LabelType.assumption => moodRestless,
       LabelType.interpretation => moodHeavy,
+    };
+  }
+
+  /// WCAG AA+ icon/text foreground over [labelBackground] in both themes.
+  Color labelForeground(LabelType label) {
+    if (isDark) return labelColor(label);
+    return switch (label) {
+      LabelType.fact => lightInfo,
+      LabelType.assumption => const Color(0xFF92400E),
+      LabelType.interpretation => const Color(0xFF334155),
     };
   }
 

@@ -665,41 +665,38 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
           ),
         ),
         const SizedBox(width: 10),
-        Semantics(
-          button: true,
-          label: strings.navObservatory,
-          child: MindPressable(
-            onPressed: () => context.push('/observatory'),
-            borderRadius: BorderRadius.circular(tokens.buttonRadius),
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 48),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: tokens.cardTint,
-                borderRadius: BorderRadius.circular(tokens.buttonRadius),
-                border: Border.all(
-                  color: tokens.ink.withValues(alpha: 0.35),
-                ),
+        MindPressable(
+          semanticLabel: strings.navObservatory,
+          onPressed: () => context.push('/observatory'),
+          borderRadius: BorderRadius.circular(tokens.buttonRadius),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 48),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: tokens.cardTint,
+              borderRadius: BorderRadius.circular(tokens.buttonRadius),
+              border: Border.all(
+                color: tokens.ink.withValues(alpha: 0.35),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.spa_outlined,
-                    size: 16,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.spa_outlined,
+                  size: 16,
+                  color: tokens.ink,
+                ),
+                const SizedBox(width: 7),
+                Text(
+                  strings.navObservatory,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
                     color: tokens.ink,
                   ),
-                  const SizedBox(width: 7),
-                  Text(
-                    strings.navObservatory,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: tokens.ink,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -1251,35 +1248,32 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
               ),
             ),
             const SizedBox(width: 8),
-            Semantics(
-              button: true,
-              label: strings.viewAllArrowLabel,
-              child: MindPressable(
-                onPressed: () => context.go('${AppRouter.track}?tab=1'),
-                borderRadius: BorderRadius.circular(tokens.chipRadius),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 48),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          strings.viewAllArrowLabel,
-                          style: TextStyle(
-                            color: tokens.ink,
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 15,
+            MindPressable(
+              semanticLabel: strings.viewAllArrowLabel,
+              onPressed: () => context.go('${AppRouter.track}?tab=1'),
+              borderRadius: BorderRadius.circular(tokens.chipRadius),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 48),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        strings.viewAllArrowLabel,
+                        style: TextStyle(
                           color: tokens.ink,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 15,
+                        color: tokens.ink,
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -1821,7 +1815,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              MindBadge(label: report.weekRange),
+              Flexible(child: MindBadge(label: report.weekRange)),
             ],
           ),
           const SizedBox(height: 12),

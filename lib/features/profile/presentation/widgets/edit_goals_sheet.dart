@@ -154,7 +154,9 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
                           },
                           borderRadius: BorderRadius.circular(8),
                           child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 140),
+                            duration: MediaQuery.disableAnimationsOf(context)
+                                ? Duration.zero
+                                : const Duration(milliseconds: 140),
                             padding: const EdgeInsets.symmetric(
                               horizontal: 14,
                               vertical: 10,

@@ -136,6 +136,12 @@ class _ClinicalConditionSearchSheetState
               prefixIcon: Icon(Icons.search_rounded, color: tokens.ink2),
               suffixIcon: _query.isNotEmpty
                   ? IconButton(
+                      tooltip:
+                          MaterialLocalizations.of(context).closeButtonTooltip,
+                      constraints: const BoxConstraints(
+                        minWidth: 48,
+                        minHeight: 48,
+                      ),
                       onPressed: () {
                         _searchCtrl.clear();
                         setState(() => _query = '');

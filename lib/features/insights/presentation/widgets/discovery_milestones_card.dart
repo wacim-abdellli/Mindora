@@ -35,7 +35,7 @@ class DiscoveryMilestonesCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.auto_awesome_outlined, size: 16, color: tokens.m1),
+              Icon(Icons.auto_awesome_outlined, size: 16, color: tokens.accentInk),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -96,7 +96,7 @@ class DiscoveryMilestonesCard extends StatelessWidget {
                             ? Icons.check_circle_rounded
                             : item.icon,
                         size: 15,
-                        color: item.isUnlocked ? tokens.m1 : tokens.ink3,
+                        color: item.isUnlocked ? tokens.accentInk : tokens.ink3,
                       ),
                       const SizedBox(width: 6),
                       Flexible(

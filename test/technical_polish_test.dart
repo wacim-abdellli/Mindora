@@ -36,8 +36,8 @@ void main() {
 
       final BuildContext context = tester.element(find.text('Today'));
       final scaler = MediaQuery.textScalerOf(context);
-      // Clamped scale factor should never exceed 1.35 even with large OS requests
-      expect(scaler.scale(10.0), inInclusiveRange(8.5, 13.5));
+      // Clamped scale factor supports WCAG 1.4.4 up to 2.0x safely
+      expect(scaler.scale(10.0), inInclusiveRange(8.5, 20.0));
     });
 
     testWidgets('Arabic locale activates RTL text directionality properly', (tester) async {

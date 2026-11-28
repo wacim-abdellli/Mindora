@@ -176,7 +176,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             style: FilledButton.styleFrom(
               minimumSize: const Size(48, 48),
               backgroundColor: tokens.safety,
-              foregroundColor: Colors.white,
+              foregroundColor: tokens.onSafety,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(tokens.buttonRadius),
               ),
@@ -236,7 +236,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             style: FilledButton.styleFrom(
               minimumSize: const Size(48, 48),
               backgroundColor: tokens.safety,
-              foregroundColor: Colors.white,
+              foregroundColor: tokens.onSafety,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(tokens.buttonRadius),
               ),
@@ -1015,47 +1015,44 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }) {
       final selected = themeIndex == idx;
       return Expanded(
-        child: Semantics(
-          button: true,
+        child: MindPressable(
+          semanticLabel: semanticLabel,
           selected: selected,
-          label: semanticLabel,
-          child: MindPressable(
-            onPressed: () {
-              HapticFeedback.selectionClick();
-              ref.read(themeControllerProvider.notifier).setTheme(targetMode);
-            },
-            borderRadius: BorderRadius.circular(tokens.iconButtonRadius),
-            child: Container(
-              height: 54,
-              foregroundDecoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(tokens.iconButtonRadius),
-                border: Border.all(
-                  color: selected ? tokens.ink : tokens.line,
-                  width: selected ? 1.8 : 1.0,
-                ),
+          onPressed: () {
+            HapticFeedback.selectionClick();
+            ref.read(themeControllerProvider.notifier).setTheme(targetMode);
+          },
+          borderRadius: BorderRadius.circular(tokens.iconButtonRadius),
+          child: Container(
+            height: 54,
+            foregroundDecoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(tokens.iconButtonRadius),
+              border: Border.all(
+                color: selected ? tokens.ink : tokens.line,
+                width: selected ? 1.8 : 1.0,
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(tokens.iconButtonRadius),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    preview,
-                    if (selected)
-                      PositionedDirectional(
-                        top: 7,
-                        end: 7,
-                        child: Container(
-                          width: 9,
-                          height: 9,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: tokens.ink,
-                            border: Border.all(color: tokens.bg, width: 1.5),
-                          ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(tokens.iconButtonRadius),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  preview,
+                  if (selected)
+                    PositionedDirectional(
+                      top: 7,
+                      end: 7,
+                      child: Container(
+                        width: 9,
+                        height: 9,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: tokens.ink,
+                          border: Border.all(color: tokens.bg, width: 1.5),
                         ),
                       ),
-                  ],
-                ),
+                    ),
+                ],
               ),
             ),
           ),
@@ -1270,45 +1267,42 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     MindTokens tokens,
   ) {
     final isSelected = _notificationFrequency == freq;
-    return Semantics(
-      button: true,
+    return MindPressable(
+      semanticLabel: label,
       selected: isSelected,
-      label: label,
-      child: MindPressable(
-        onPressed: () => _setNotificationFrequency(freq),
-        borderRadius: BorderRadius.circular(tokens.chipRadius),
-        child: Container(
-          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? tokens.cardTint : tokens.surface2,
-            borderRadius: BorderRadius.circular(tokens.chipRadius),
-            border: Border.all(
-              color: isSelected ? tokens.ink : tokens.line,
-              width: isSelected ? 1.5 : 1.0,
-            ),
+      onPressed: () => _setNotificationFrequency(freq),
+      borderRadius: BorderRadius.circular(tokens.chipRadius),
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? tokens.cardTint : tokens.surface2,
+          borderRadius: BorderRadius.circular(tokens.chipRadius),
+          border: Border.all(
+            color: isSelected ? tokens.ink : tokens.line,
+            width: isSelected ? 1.5 : 1.0,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isSelected) ...[
-                Icon(Icons.check_rounded, size: 15, color: tokens.ink),
-                const SizedBox(width: 6),
-              ],
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected ? tokens.ink : tokens.ink2,
-                  ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isSelected) ...[
+              Icon(Icons.check_rounded, size: 15, color: tokens.ink),
+              const SizedBox(width: 6),
+            ],
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? tokens.ink : tokens.ink2,
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

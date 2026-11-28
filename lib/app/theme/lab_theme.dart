@@ -23,7 +23,7 @@ ThemeData buildMindTheme(
     secondary: tokens.m1,
     onSecondary: tokens.onMood,
     error: tokens.safety,
-    onError: tokens.surface,
+    onError: tokens.onSafety,
     surface: tokens.surface,
     onSurface: tokens.ink,
     surfaceContainerLowest: tokens.bg,
@@ -42,13 +42,14 @@ ThemeData buildMindTheme(
     useMaterial3: true,
     brightness: brightness,
     fontFamily: LabTheme.fontFamily,
+    fontFamilyFallback: LabTheme.fontFallback,
     scaffoldBackgroundColor: tokens.bg,
     canvasColor: tokens.bg,
     dividerColor: tokens.line,
     splashFactory: NoSplash.splashFactory,
     highlightColor: Colors.transparent,
     splashColor: Colors.transparent,
-    hoverColor: tokens.surface3,
+    hoverColor: tokens.surfaceHover,
     focusColor: tokens.focusRing,
     colorScheme: colorScheme,
     textTheme: textTheme,
@@ -85,22 +86,19 @@ ThemeData buildMindTheme(
     switchTheme: SwitchThemeData(
       thumbColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return MindTokens.pureWhiteConstant;
+          return tokens.switchThumbOn;
         }
         return tokens.ink3;
       }),
       trackColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return Color.alphaBlend(
-            tokens.m1.withValues(alpha: tokens.switchOnTrackTint),
-            tokens.surface,
-          );
+          return tokens.switchOnTrack;
         }
-        return isDark ? tokens.surface3 : tokens.surface2;
+        return tokens.switchOffTrack;
       }),
       trackOutlineColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return tokens.m1;
+          return tokens.accentInk;
         }
         return tokens.line;
       }),
@@ -332,6 +330,9 @@ abstract final class LabTheme {
   static const List<String> fontFallback = ['Noto Sans Arabic'];
 
   /// Returns an Inter text style with Noto Sans Arabic fallback for RTL safety.
+  ///
+  /// When [isArabic] is true, [letterSpacing] is forced to `0.0` so Arabic
+  /// cursive ligatures never break.
   static TextStyle textStyle({
     double? fontSize,
     FontWeight? fontWeight,
@@ -339,6 +340,7 @@ abstract final class LabTheme {
     double? height,
     double? letterSpacing,
     Color? color,
+    bool isArabic = false,
   }) {
     return TextStyle(
       fontFamily: fontFamily,
@@ -347,7 +349,7 @@ abstract final class LabTheme {
       fontWeight: fontWeight,
       fontStyle: fontStyle,
       height: height,
-      letterSpacing: letterSpacing,
+      letterSpacing: isArabic ? 0.0 : letterSpacing,
       color: color,
     );
   }

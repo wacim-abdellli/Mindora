@@ -207,17 +207,15 @@ class _ClinicalBriefPreviewSheetState
                       ],
                     ),
                   ),
-                  Tooltip(
-                    message:
+                  IconButton(
+                    tooltip:
                         MaterialLocalizations.of(context).closeButtonTooltip,
-                    child: IconButton(
-                      constraints: const BoxConstraints(
-                        minWidth: 48,
-                        minHeight: 48,
-                      ),
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: Icon(Icons.close_rounded, color: tokens.ink2),
+                    constraints: const BoxConstraints(
+                      minWidth: 48,
+                      minHeight: 48,
                     ),
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: Icon(Icons.close_rounded, color: tokens.ink2),
                   ),
                 ],
               ),
