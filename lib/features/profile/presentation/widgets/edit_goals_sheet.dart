@@ -116,7 +116,9 @@ class _EditGoalsSheetState extends ConsumerState<EditGoalsSheet> {
               Text(
                 strings.isArabic
                     ? 'ما الذي ترغب في استيعابه أو تطويره من خلال Mindora؟'
-                    : 'What would you like to understand or improve through Mindora?',
+                    : (strings.isFrench
+                          ? 'Que souhaitez-vous mieux comprendre ou améliorer avec Mindora ?'
+                          : 'What would you like to understand or improve through Mindora?'),
                 style: TextStyle(fontSize: 12.5, color: textSecondary),
               ),
 

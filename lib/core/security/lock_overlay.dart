@@ -3,9 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/localization/app_strings.dart';
+import '../../app/localization/locale_controller.dart';
 import '../../app/theme/lab_theme.dart';
 import '../../app/theme/mind_tokens.dart';
 import '../safety/support_button.dart';
+import '../widgets/mind_badge.dart';
 import '../widgets/mind_button.dart';
 import '../widgets/mind_toast.dart';
 import 'app_lock_provider.dart';
@@ -66,16 +68,40 @@ class _LockOverlayState extends ConsumerState<LockOverlay>
         body: SafeArea(
           child: Column(
             children: [
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 0),
+                child: Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: MindBadge(
+                    key: const ValueKey<String>('lock-overlay-lang-btn'),
+                    icon: Icons.language_rounded,
+                    label: AppLanguage.fromCode(strings.languageCode).shortCode,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      final next = switch (strings.languageCode) {
+                        'en' => AppLanguage.french,
+                        'fr' => AppLanguage.arabic,
+                        _ => AppLanguage.english,
+                      };
+                      ref
+                          .read(localeControllerProvider.notifier)
+                          .setLanguage(next);
+                    },
+                  ),
+                ),
+              ),
               Expanded(
                 child: Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 28,
-                      vertical: 24,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 440),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 28,
+                        vertical: 24,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
                   Container(
                     width: 80,
                     height: 80,
@@ -122,7 +148,7 @@ class _LockOverlayState extends ConsumerState<LockOverlay>
                       HapticFeedback.mediumImpact();
                       final success = await ref
                           .read(appLockProvider.notifier)
-                          .unlock();
+                          .unlock(reason: strings.biometricUnlockReason);
                       if (!success && context.mounted) {
                         showMindToast(context, strings.biometricFailedSnackbar);
                       }
@@ -132,9 +158,10 @@ class _LockOverlayState extends ConsumerState<LockOverlay>
                   const EmergencyHelpLink(),
                 ],
               ),
-            ),
-          ),
-        ),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

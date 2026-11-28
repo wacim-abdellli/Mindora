@@ -1,3 +1,5 @@
+import '../../../app/localization/app_strings.dart';
+
 /// The six dedicated conversational modes for the AI Psychological Companion.
 ///
 /// Designed to offer clinically informed, paced, and supportive interaction
@@ -110,6 +112,50 @@ enum ConversationMode {
       case ConversationMode.grounding:
         return 'Ancrage somatique doux et respiration pour apaiser le débordement.';
     }
+  }
+
+  /// Returns the localized title for [strings].
+  String localizedTitle(AppStrings strings) {
+    if (strings.isArabic) return localizedArabicName;
+    if (strings.isFrench) return localizedFrenchName;
+    return displayName;
+  }
+
+  /// Returns a warm, non-diagnostic opening prompt in EN / FR / Tunisian AR.
+  String localizedOpeningQuestion(AppStrings strings) {
+    if (strings.isArabic) {
+      switch (this) {
+        case ConversationMode.exploreThought:
+          return 'فمّا فكرة قاعدة تشغل بالك مؤخراً وتحبّ نرتّبوها مع بعضنا؟';
+        case ConversationMode.understandEmotion:
+          return 'شنوّة تحسّ توّا، وكيفاش قاعد يحضر الإحساس هذا في بدنك؟';
+        case ConversationMode.psychologicalAnalysis:
+          return 'فمّا نمط أو ردّة فعل تتكرّر معاك وتحبّ نفهموها بهدوء مع بعضنا؟';
+        case ConversationMode.guidedReflection:
+          return 'خلّينا ناخذو خطوة للخلف مع بعضنا. شنوّة صار مؤخراً وتحبّ تتأمّل فيه؟';
+        case ConversationMode.justTalk:
+          return 'أنا هوني معاك. على شنوّة تحبّ تحكي اليوم؟';
+        case ConversationMode.grounding:
+          return 'خلّينا ناخذو لحظة هدوء مع بعضنا. تحبّ نجرّبو تمرين تثبيت بسيط؟';
+      }
+    }
+    if (strings.isFrench) {
+      switch (this) {
+        case ConversationMode.exploreThought:
+          return 'Y a-t-il une pensée qui occupe particulièrement votre esprit en ce moment ?';
+        case ConversationMode.understandEmotion:
+          return 'Que ressentez-vous maintenant, et comment cela se manifeste-t-il dans votre corps ?';
+        case ConversationMode.psychologicalAnalysis:
+          return 'Quels schémas ou réactions récurrents souhaiteriez-vous explorer ensemble ?';
+        case ConversationMode.guidedReflection:
+          return 'Prenons un peu de recul ensemble. Que s’est-il passé récemment ?';
+        case ConversationMode.justTalk:
+          return 'Je suis là avec vous. De quoi aimeriez-vous parler aujourd’hui ?';
+        case ConversationMode.grounding:
+          return 'Prenons une pause calme ensemble. Souhaitez-vous essayer un exercice d’ancrage simple ?';
+      }
+    }
+    return openingQuestion;
   }
 
   String get openingQuestion {

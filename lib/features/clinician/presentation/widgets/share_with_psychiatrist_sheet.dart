@@ -20,6 +20,7 @@ import '../../../mind_trace/controllers/mind_trace_controller.dart';
 import '../../../observatory/controllers/observatory_controllers.dart';
 import '../../../profile/controllers/profile_controller.dart';
 import '../../controllers/clinician_providers.dart';
+import '../../data/clinician_sync_service.dart';
 import '../../domain/clinician_models.dart';
 import 'clinical_brief_preview_sheet.dart';
 import 'pre_visit_brief_sheet.dart';
@@ -204,10 +205,15 @@ class _ShareWithPsychiatristSheetState
       setState(() {
         _generatedCode = code;
       });
-    } catch (e) {
+    } on ClinicianSyncException catch (e) {
       if (!mounted) return;
       setState(() {
-        _errorText = e.toString();
+        _errorText = strings.localizedClinicianSyncError(e.code);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _errorText = strings.genericActionError;
       });
     } finally {
       if (mounted) {
@@ -272,10 +278,15 @@ class _ShareWithPsychiatristSheetState
                 ),
         ),
       );
-    } catch (e) {
+    } on ClinicianSyncException catch (e) {
       if (!mounted) return;
       setState(() {
-        _errorText = e.toString();
+        _errorText = strings.localizedClinicianSyncError(e.code);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _errorText = strings.genericActionError;
       });
     } finally {
       if (mounted) {
@@ -325,7 +336,7 @@ class _ShareWithPsychiatristSheetState
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 14, 12, 8),
+                padding: const EdgeInsetsDirectional.fromSTEB(20, 14, 12, 8),
                 child: Row(
                   children: [
                     Icon(

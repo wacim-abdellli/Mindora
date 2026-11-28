@@ -658,7 +658,9 @@ class _DailyMindTraceStepperState extends ConsumerState<DailyMindTraceStepper> {
                   final isCurrent = val == intensityVal;
                   return Expanded(
                     child: Padding(
-                      padding: EdgeInsets.only(right: colIdx < 4 ? 8 : 0),
+                      padding: EdgeInsetsDirectional.only(
+                        end: colIdx < 4 ? 8 : 0,
+                      ),
                       child: InkWell(
                         onTap: () {
                           HapticFeedback.selectionClick();
@@ -666,7 +668,9 @@ class _DailyMindTraceStepperState extends ConsumerState<DailyMindTraceStepper> {
                         },
                         borderRadius: BorderRadius.circular(10),
                         child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 140),
+                          duration: MediaQuery.disableAnimationsOf(context)
+                              ? Duration.zero
+                              : const Duration(milliseconds: 140),
                           height: 48,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(

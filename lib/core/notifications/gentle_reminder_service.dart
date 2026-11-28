@@ -28,9 +28,6 @@ class GentleReminderService {
 
   static const int _reminderNotificationId = 1001;
   static const String _channelId = 'gentle_reminders';
-  static const String _channelName = 'Gentle Check-In Reminders';
-  static const String _channelDescription =
-      'Optional, gentle prompts to pause and record a daily check-in.';
 
   static bool get _isTestOrUnsupported {
     if (kIsWeb) return true;
@@ -176,15 +173,15 @@ class GentleReminderService {
       final bodies = strings.gentleReminderBodies;
       final body = bodies[DateTime.now().day % bodies.length];
 
-      const androidDetails = AndroidNotificationDetails(
+      final androidDetails = AndroidNotificationDetails(
         _channelId,
-        _channelName,
-        channelDescription: _channelDescription,
+        strings.reminderChannelName,
+        channelDescription: strings.reminderChannelDescription,
         importance: Importance.defaultImportance,
         priority: Priority.defaultPriority,
       );
       const darwinDetails = DarwinNotificationDetails();
-      const details = NotificationDetails(
+      final details = NotificationDetails(
         android: androidDetails,
         iOS: darwinDetails,
         macOS: darwinDetails,

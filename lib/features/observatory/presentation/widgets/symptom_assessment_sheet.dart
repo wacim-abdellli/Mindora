@@ -522,12 +522,19 @@ class _SymptomAssessmentSheetState extends ConsumerState<SymptomAssessmentSheet>
             'إرهاق جسدي فقط، الأفكار هادية',
             'واحل في التفاصيل ومش قادر نبدى',
           ]
-        : [
-            'Yes, feels both physically slow and mentally hurried',
-            'Mostly focused on anticipating future hurdles',
-            'Purely physical fatigue; thoughts are quiet',
-            'Overwhelmed by small details, unable to initiate',
-          ];
+        : (strings.isFrench
+              ? [
+                  'Oui, à la fois lent physiquement et pressé mentalement',
+                  'Surtout tourné vers l’anticipation d’obstacles futurs',
+                  'Fatigue physique uniquement, les pensées sont calmes',
+                  'Submergé par les détails, difficile de démarrer',
+                ]
+              : [
+                  'Yes, feels both physically slow and mentally hurried',
+                  'Mostly focused on anticipating future hurdles',
+                  'Purely physical fatigue; thoughts are quiet',
+                  'Overwhelmed by small details, unable to initiate',
+                ]);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

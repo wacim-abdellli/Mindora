@@ -117,7 +117,7 @@ class _PreVisitBriefSheetState extends ConsumerState<PreVisitBriefSheet> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 14, 12, 8),
+                padding: const EdgeInsetsDirectional.fromSTEB(20, 14, 12, 8),
                 child: Row(
                   children: [
                     Icon(

@@ -9,15 +9,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../app/config/app_edition.dart';
 import '../../../app/localization/app_strings.dart';
+import '../../../app/localization/locale_controller.dart';
 import '../../../app/router/app_router.dart';
+import '../../../app/theme/display_comfort_controller.dart';
 import '../../../app/theme/lab_theme.dart';
 import '../../../app/theme/mind_tokens.dart';
+import '../../../app/theme/theme_controller.dart';
 import '../../../core/security/app_lock_provider.dart';
 import '../../../core/widgets/mind_badge.dart';
 import '../../../core/widgets/mind_button.dart';
 import '../../../core/widgets/mind_card.dart';
 import '../../../core/widgets/mind_pill.dart';
 import '../../../core/widgets/mind_pressable.dart';
+import '../../../core/widgets/mind_segmented.dart';
 import '../../../core/widgets/mind_switch.dart';
 import '../../mind_trace/domain/affect_taxonomy.dart';
 import '../../track/presentation/widgets/track_mood_utils.dart';
@@ -392,6 +396,25 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
               reduceMotion: reduceMotion,
             ),
             const Spacer(),
+            Tooltip(
+              message: strings.switchLanguageTooltip,
+              child: MindBadge(
+                key: const ValueKey<String>('clinician-rail-lang-btn'),
+                label: AppLanguage.fromCode(strings.languageCode).shortCode,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  final next = switch (strings.languageCode) {
+                    'en' => AppLanguage.french,
+                    'fr' => AppLanguage.arabic,
+                    _ => AppLanguage.english,
+                  };
+                  ref
+                      .read(localeControllerProvider.notifier)
+                      .setLanguage(next);
+                },
+              ),
+            ),
+            const SizedBox(height: 6),
             if (AppEditionConfig.isClinicianApp)
               IconButton(
                 key: const ValueKey<String>('clinician-rail-lock-btn'),
@@ -427,47 +450,45 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
     required bool reduceMotion,
   }) {
     final isSelected = _tabIndex == index;
-    return Semantics(
-      button: true,
+    return MindPressable(
+      semanticLabel: label,
       selected: isSelected,
-      label: label,
-      child: MindPressable(
-        onPressed: () {
-          HapticFeedback.selectionClick();
-          setState(() => _tabIndex = index);
-        },
-        borderRadius: BorderRadius.circular(14),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 48, minHeight: 56),
-          child: SizedBox(
-            width: 72,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedContainer(
-                  duration: reduceMotion
-                      ? Duration.zero
-                      : const Duration(milliseconds: 180),
-                  curve: Curves.easeOutCubic,
-                  width: 52,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color:
-                        isSelected ? tokens.navCapsuleFill : Colors.transparent,
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  alignment: Alignment.center,
-                  child: Icon(
-                    isSelected ? activeIcon : icon,
-                    size: 20,
-                    color: isSelected ? tokens.ink : tokens.ink3,
-                  ),
+      onPressed: () {
+        HapticFeedback.selectionClick();
+        setState(() => _tabIndex = index);
+      },
+      borderRadius: BorderRadius.circular(14),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 56),
+        child: SizedBox(
+          width: 72,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                duration: reduceMotion
+                    ? Duration.zero
+                    : const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                width: 52,
+                height: 30,
+                decoration: BoxDecoration(
+                  color:
+                      isSelected ? tokens.navCapsuleFill : Colors.transparent,
+                  borderRadius: BorderRadius.circular(15),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                alignment: Alignment.center,
+                child: Icon(
+                  isSelected ? activeIcon : icon,
+                  size: 20,
+                  color: isSelected ? tokens.ink : tokens.ink3,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: LabTheme.fontFamily,
@@ -475,11 +496,10 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                     fontSize: 12.0,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     color: isSelected ? tokens.ink : tokens.ink3,
-                    letterSpacing: strings.isArabic ? 0 : -0.1,
-                  ),
+                  letterSpacing: strings.isArabic ? 0 : -0.1,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -1493,7 +1513,129 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
           ),
         ),
 
-        const SizedBox(height: 18),
+        const SizedBox(height: 16),
+        Builder(
+          builder: (ctx) {
+            final currentLocale = ref.watch(localeControllerProvider);
+            final currentTheme = ref.watch(themeControllerProvider);
+            final comfortMode = ref.watch(displayComfortProvider);
+            final langIndex = switch (currentLocale.languageCode) {
+              'fr' => 1,
+              'ar' => 2,
+              _ => 0,
+            };
+            final themeIndex = currentTheme == ThemeMode.light
+                ? 0
+                : (currentTheme == ThemeMode.dark ? 1 : 2);
+            return MindCard(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    strings.workspacePreferencesSection,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      color: tokens.ink2,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    strings.languageTitle,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: tokens.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  MindSegmented(
+                    key: const ValueKey<String>('clinician-language-segmented'),
+                    index: langIndex,
+                    labels: const ['English', 'Français', 'العربية'],
+                    onChanged: (idx) {
+                      HapticFeedback.selectionClick();
+                      final lang = switch (idx) {
+                        1 => AppLanguage.french,
+                        2 => AppLanguage.arabic,
+                        _ => AppLanguage.english,
+                      };
+                      ref
+                          .read(localeControllerProvider.notifier)
+                          .setLanguage(lang);
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    strings.themeModeTitle,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: tokens.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  MindSegmented(
+                    key: const ValueKey<String>('clinician-theme-segmented'),
+                    index: themeIndex,
+                    labels: [
+                      strings.themeSunriseLabel,
+                      strings.themeNightLabel,
+                      strings.themeAutoLabel,
+                    ],
+                    onChanged: (idx) {
+                      HapticFeedback.selectionClick();
+                      final mode = idx == 0
+                          ? ThemeMode.light
+                          : (idx == 1 ? ThemeMode.dark : ThemeMode.system);
+                      ref.read(themeControllerProvider.notifier).setTheme(mode);
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              strings.comfortModeTitle,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: tokens.ink,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              strings.comfortModeSub,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color: tokens.ink2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      MindSwitch(
+                        key: const ValueKey<String>('clinician-comfort-switch'),
+                        value: comfortMode,
+                        semanticLabel: strings.comfortModeTitle,
+                        onChanged: (val) => ref
+                            .read(displayComfortProvider.notifier)
+                            .setComfortMode(val),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+
+        const SizedBox(height: 14),
         MindCard(
           padding: EdgeInsets.zero,
           child: Column(
@@ -1524,6 +1666,7 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
                     ),
                     const SizedBox(width: 8),
                     MindSwitch(
+                      key: const ValueKey<String>('clinician-demo-cohort-switch'),
                       value: demoEnabled,
                       semanticLabel: strings.demoCohortToggleTitle,
                       onChanged: (v) {
@@ -1674,31 +1817,28 @@ class _ClinicianShellScreenState extends ConsumerState<ClinicianShellScreen> {
     required String title,
     required VoidCallback onTap,
   }) {
-    return Semantics(
-      button: true,
-      label: title,
-      child: MindPressable(
-        onPressed: onTap,
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 54),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Icon(icon, size: 20, color: tokens.ink),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: tokens.ink,
-                  ),
+    return MindPressable(
+      semanticLabel: title,
+      onPressed: onTap,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 54),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: tokens.ink),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: tokens.ink,
                 ),
               ),
-              Icon(Icons.arrow_forward_ios_rounded, size: 15, color: tokens.ink3),
-            ],
-          ),
+            ),
+            Icon(Icons.arrow_forward_ios_rounded, size: 15, color: tokens.ink3),
+          ],
         ),
       ),
     );
@@ -1939,39 +2079,42 @@ class _SevenDaySleepMoodStrip extends StatelessWidget {
         children: [
           Expanded(
             flex: 3,
-            child: SizedBox(
-              height: 22,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: List.generate(7, (idx) {
-                  final day = today.subtract(Duration(days: 6 - idx));
-                  final key =
-                      '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
-                  final item = byDay[key];
-                  final barColor = item != null
-                      ? MindTokens.moodColorByKey(item.mood)
-                      : tokens.lineStrong;
-                  final barHeight = item == null
-                      ? 4.0
-                      : (item.sleep != null
-                            ? (item.sleep! * 2.1).clamp(7.0, 20.0)
-                            : 10.0);
-                  return Expanded(
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Container(
-                        width: 6,
-                        height: barHeight,
-                        decoration: BoxDecoration(
-                          color: item != null
-                              ? barColor
-                              : tokens.line.withValues(alpha: 0.7),
-                          borderRadius: BorderRadius.circular(3),
+            child: Directionality(
+              textDirection: TextDirection.ltr,
+              child: SizedBox(
+                height: 22,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: List.generate(7, (idx) {
+                    final day = today.subtract(Duration(days: 6 - idx));
+                    final key =
+                        '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+                    final item = byDay[key];
+                    final barColor = item != null
+                        ? MindTokens.moodColorByKey(item.mood)
+                        : tokens.lineStrong;
+                    final barHeight = item == null
+                        ? 4.0
+                        : (item.sleep != null
+                              ? (item.sleep! * 2.1).clamp(7.0, 20.0)
+                              : 10.0);
+                    return Expanded(
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Container(
+                          width: 6,
+                          height: barHeight,
+                          decoration: BoxDecoration(
+                            color: item != null
+                                ? barColor
+                                : tokens.line.withValues(alpha: 0.7),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                }),
+                    );
+                  }),
+                ),
               ),
             ),
           ),

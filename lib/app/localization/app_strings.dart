@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../features/clinic_sync/domain/clinic_account_models.dart';
+import '../../features/clinician/data/clinician_sync_service.dart';
 import '../../features/investigation/domain/label_type.dart';
 import '../../features/journey/domain/journey_phase.dart';
 import '../../features/profile/domain/condition_type.dart';
@@ -7066,6 +7068,152 @@ class AppStrings {
   String buildingBaselineBadge(int days) => isArabic
       ? 'تجميع المرجع ($days/7 أيام)'
       : (isFrench ? 'Repère en cours ($days/7 j)' : 'Building baseline ($days/7d)');
+
+  // Phase 2: Exhaustive Localized Errors, Biometrics, Reminders & Doctor Preferences
+  String localizedClinicAuthError(ClinicAuthErrorCode code) {
+    switch (code) {
+      case ClinicAuthErrorCode.invalidCredentials:
+        return isArabic
+            ? 'رقم الهاتف أو الرمز السري غير صحيح. ثبّت وعاود المحاولة.'
+            : (isFrench
+                  ? 'Identifiant ou code PIN incorrect. Vérifiez et réessayez.'
+                  : 'Incorrect login ID or PIN. Please check and try again.');
+      case ClinicAuthErrorCode.accountPaused:
+        return isArabic
+            ? 'حسابك موقوف مؤقتاً من العيادة. اتصل بطبيبك.'
+            : (isFrench
+                  ? 'Ce compte est mis en pause par votre cabinet. Contactez votre médecin.'
+                  : 'This account is paused. Please contact your clinic.');
+      case ClinicAuthErrorCode.inviteExpired:
+        return isArabic
+            ? 'رمز الدعوة هذا فات وقته. اطلب رمز جديد من طبيبك.'
+            : (isFrench
+                  ? 'Ce code d’invitation a expiré. Demandez un nouveau code à votre médecin.'
+                  : 'This invitation code has expired. Ask your doctor for a new one.');
+      case ClinicAuthErrorCode.inviteAlreadyUsed:
+        return isArabic
+            ? 'رمز الدعوة هذا استُعمل قبل. ادخل برقمك والرمز السري ولا اطلب رمز جديد.'
+            : (isFrench
+                  ? 'Ce code d’invitation a déjà été utilisé. Connectez-vous avec votre code PIN ou demandez un nouveau code.'
+                  : 'This invitation code has already been used. Log in with your PIN or ask your doctor for a new code.');
+      case ClinicAuthErrorCode.inviteRevoked:
+        return isArabic
+            ? 'طبيبك بدّل رمز الدعوة هذا. استعمل الرمز الجديد.'
+            : (isFrench
+                  ? 'Cette invitation a été remplacée par votre médecin. Utilisez le nouveau code.'
+                  : 'This invitation was replaced by your doctor. Use the newer code.');
+      case ClinicAuthErrorCode.invalidQrFormat:
+        return isArabic
+            ? 'رمز QR أو كود الدخول هذا غير صالح. ثبّت إنه من عيادتك.'
+            : (isFrench
+                  ? 'Code QR ou code d’accès non reconnu. Vérifiez qu’il provient de votre cabinet.'
+                  : 'Unrecognized clinic QR or access code. Check that it came from your doctor.');
+      case ClinicAuthErrorCode.duplicateIdentifier:
+        return isArabic
+            ? 'يوجد حساب مريض آخر مسجّل بنفس رقم الهاتف أو اسم الدخول.'
+            : (isFrench
+                  ? 'Un compte patient utilise déjà ce numéro ou cet identifiant.'
+                  : 'A patient account already uses this phone number or username.');
+      case ClinicAuthErrorCode.weakPin:
+        return isArabic
+            ? 'الرمز السري لازم يكون فيه على الأقل 4 أرقام.'
+            : (isFrench
+                  ? 'Le code PIN doit contenir au moins 4 caractères.'
+                  : 'PIN must be at least 4 characters.');
+      case ClinicAuthErrorCode.accountNotFound:
+        return isArabic
+            ? 'ما لقيناش حساب مريض بهذا المعرّف.'
+            : (isFrench
+                  ? 'Aucun compte patient trouvé pour cet identifiant.'
+                  : 'Patient account not found.');
+    }
+  }
+
+  String localizedClinicianSyncError(ClinicianSyncErrorCode code) {
+    switch (code) {
+      case ClinicianSyncErrorCode.invalidFormat:
+        return isArabic
+            ? 'رمز المزامنة غير مكتمل أو بصيغة غير صالحة.'
+            : (isFrench
+                  ? 'Format du code de synchronisation invalide ou incomplet.'
+                  : 'Invalid or malformed sync code format.');
+      case ClinicianSyncErrorCode.unsupportedVersion:
+        return isArabic
+            ? 'نسخة ملف المزامنة غير مدعومة في هذا الإصدار.'
+            : (isFrench
+                  ? 'Version du paquet de synchronisation non prise en charge.'
+                  : 'Unsupported sync packet version.');
+      case ClinicianSyncErrorCode.decryptionFailed:
+        return isArabic
+            ? 'تعذّر فك التشفير. ثبّت في كلمة المرور وعاود المحاولة.'
+            : (isFrench
+                  ? 'Déchiffrement impossible. Vérifiez la phrase secrète et réessayez.'
+                  : 'Unable to decrypt sync code. Check the passphrase and try again.');
+      case ClinicianSyncErrorCode.integrityMismatch:
+        return isArabic
+            ? 'فشل التحقق من سلامة الملف (أو وجود محتوى خاص محظور).'
+            : (isFrench
+                  ? 'Échec de vérification d’intégrité du paquet (ou contenu privé rejeté).'
+                  : 'Packet integrity check failed (or private content was rejected).');
+    }
+  }
+
+  String get genericActionError => isArabic
+      ? 'صار مشكل صغير، عاود حاول بعد لحظة.'
+      : (isFrench
+            ? 'Une erreur s’est produite. Veuillez réessayer.'
+            : 'Something went wrong. Please try again.');
+
+  String get biometricUnlockReason => isArabic
+      ? 'أكّد هويتك باش تحل خزينة Mindora'
+      : (isFrench
+            ? 'Authentifiez-vous pour déverrouiller Mindora'
+            : 'Authenticate to unlock your Mindora vault');
+
+  String get biometricEnableReason => isArabic
+      ? 'أكّد البصمة لتفعيل قفل التطبيق'
+      : (isFrench
+            ? 'Confirmez la biométrie pour activer le verrouillage'
+            : 'Confirm biometrics to enable app lock');
+
+  String get clinicianBiometricReason => isArabic
+      ? 'أكّد هويتك باش تحل فضاء الطبيب'
+      : (isFrench
+            ? 'Authentifiez-vous pour ouvrir l’espace médecin'
+            : 'Unlock Mindora Doctor Workspace');
+
+  String get reminderChannelName => isArabic
+      ? 'تذكيرات يومية لطيفة'
+      : (isFrench ? 'Rappels quotidiens doux' : 'Gentle Check-In Reminders');
+
+  String get reminderChannelDescription => isArabic
+      ? 'تذكير اختياري وبسيط باش تسجّل كيفاش تحس اليوم.'
+      : (isFrench
+            ? 'Rappels optionnels et bienveillants pour votre bilan quotidien.'
+            : 'Optional, gentle prompts to pause and record a daily check-in.');
+
+  String get workspacePreferencesSection => isArabic
+      ? 'اللغة والمظهر'
+      : (isFrench ? 'Langue et affichage' : 'Language & display');
+
+  String get switchLanguageTooltip => isArabic
+      ? 'تغيير اللغة'
+      : (isFrench ? 'Changer de langue' : 'Switch language');
+
+  String credentialsCopyText({
+    required String patientName,
+    required String loginId,
+    required String pin,
+    required String doctorName,
+  }) {
+    if (isArabic) {
+      return 'Mindora — $patientName\nالمعرّف: $loginId\nالرمز السري المؤقت: $pin\nالطبيب: $doctorName';
+    }
+    if (isFrench) {
+      return 'Mindora — $patientName\nIdentifiant : $loginId\nCode PIN temporaire : $pin\nMédecin : $doctorName';
+    }
+    return 'Mindora — $patientName\nLogin: $loginId\nTemporary PIN: $pin\nDoctor: $doctorName';
+  }
 
   // Helper factory
   static AppStrings of(BuildContext context) {

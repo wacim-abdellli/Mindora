@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/localization/app_strings.dart';
+import '../../../app/localization/mind_formatters.dart';
 import '../../../app/router/app_router.dart';
 import '../../../app/theme/mind_tokens.dart';
 import '../../../core/widgets/mind_badge.dart';
@@ -905,13 +906,15 @@ class _ClinicianPatientDetailScreenState
     required PersonalBaseline baseline,
     required bool includeSomatic,
   }) {
-    String fmt(double? v, [String suffix = '']) =>
-        v == null ? '--' : '${v.toStringAsFixed(1)}$suffix';
+    String fmt(double? v, [String suffix = '']) {
+      if (v == null) return '--';
+      if (suffix == 'h') return MindFormatters.hours(v, strings);
+      return '${MindFormatters.decimal(v, strings)}$suffix';
+    }
+
     String delta(double? r, double? b, [String suffix = '']) {
       if (r == null || b == null) return '--';
-      final diff = r - b;
-      final sign = diff >= 0 ? '+' : '';
-      return '$sign${diff.toStringAsFixed(1)}$suffix';
+      return MindFormatters.signedDelta(r - b, strings, unit: suffix);
     }
 
     Widget row(
@@ -995,10 +998,8 @@ class _ClinicianPatientDetailScreenState
     VisitComparisonDiff diff,
     ClinicalConsentScope scope,
   ) {
-    String signed(double v, [String suffix = '']) {
-      final sign = v >= 0 ? '+' : '';
-      return '$sign${v.toStringAsFixed(1)}$suffix';
-    }
+    String signed(double v, [String suffix = '']) =>
+        MindFormatters.signedDelta(v, strings, unit: suffix);
 
     final chips = <String>[
       if (diff.moodDelta != null)
@@ -1020,7 +1021,11 @@ class _ClinicianPatientDetailScreenState
         children: [
           Row(
             children: [
-              Icon(Icons.compare_arrows_rounded, size: 16, color: tokens.m1),
+              Icon(
+                Icons.compare_arrows_rounded,
+                size: 16,
+                color: tokens.accentInk,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -1037,7 +1042,7 @@ class _ClinicianPatientDetailScreenState
           ),
           const SizedBox(height: 6),
           Text(
-            '${strings.formatHumanDate(diff.previousGeneratedAt)} -> ${strings.formatHumanDate(diff.currentGeneratedAt)}',
+            '${strings.formatHumanDate(diff.previousGeneratedAt)} ${MindFormatters.rangeArrow(strings)} ${strings.formatHumanDate(diff.currentGeneratedAt)}',
             style: TextStyle(
               fontSize: 12.5,
               color: tokens.ink3,

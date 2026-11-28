@@ -37,7 +37,6 @@ class TrackMonthCalendar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final isRtl = Directionality.of(context) == TextDirection.rtl;
     final daysInMonth = DateUtils.getDaysInMonth(month.year, month.month);
     final firstDayOffset = DateTime(month.year, month.month, 1).weekday - 1;
     final totalCells = ((daysInMonth + firstDayOffset + 6) ~/ 7) * 7;
@@ -70,7 +69,6 @@ class TrackMonthCalendar extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontFamily: 'Inter',
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: tokens.ink,
@@ -80,9 +78,7 @@ class TrackMonthCalendar extends StatelessWidget {
               IconButton(
                 onPressed: onPreviousMonth,
                 icon: Icon(
-                  isRtl
-                      ? Icons.chevron_right_rounded
-                      : Icons.chevron_left_rounded,
+                  Icons.chevron_left_rounded,
                   size: 22,
                   color: tokens.ink2,
                 ),
@@ -91,9 +87,7 @@ class TrackMonthCalendar extends StatelessWidget {
               IconButton(
                 onPressed: canGoNextMonth ? onNextMonth : null,
                 icon: Icon(
-                  isRtl
-                      ? Icons.chevron_left_rounded
-                      : Icons.chevron_right_rounded,
+                  Icons.chevron_right_rounded,
                   size: 22,
                   color: canGoNextMonth
                       ? tokens.ink2
@@ -107,7 +101,6 @@ class TrackMonthCalendar extends StatelessWidget {
           Text(
             strings.calendarNoBreaksNote,
             style: TextStyle(
-              fontFamily: 'Inter',
               fontSize: 12.5,
               color: tokens.ink2,
             ),
@@ -123,7 +116,6 @@ class TrackMonthCalendar extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontFamily: 'Inter',
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
                         color: tokens.ink2,
@@ -235,7 +227,6 @@ class TrackMonthCalendar extends StatelessWidget {
                             Text(
                               '$day',
                               style: TextStyle(
-                                fontFamily: 'Inter',
                                 fontSize: 13,
                                 fontWeight: (isLogged || isToday || isSelected)
                                     ? FontWeight.w700
@@ -371,7 +362,6 @@ class _SelectedDayBanner extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontFamily: 'Inter',
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
                   color: tokens.ink,
@@ -401,7 +391,6 @@ class _SelectedDayBanner extends StatelessWidget {
                     strings.showAllEntriesBtn,
                     maxLines: 1,
                     style: TextStyle(
-                      fontFamily: 'Inter',
                       fontSize: 12.0,
                       fontWeight: FontWeight.w700,
                       color: tokens.ink,

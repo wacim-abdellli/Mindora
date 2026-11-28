@@ -61,8 +61,12 @@ enum ProgressTimeWindow {
                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
               ]);
 
-    final startStr = '${months[startDate.month - 1]} ${startDate.day}';
-    final endStr = '${months[now.month - 1]} ${now.day}, ${now.year}';
+    final startStr = (strings.isFrench || strings.isArabic)
+        ? '${startDate.day} ${months[startDate.month - 1]}'
+        : '${months[startDate.month - 1]} ${startDate.day}';
+    final endStr = (strings.isFrench || strings.isArabic)
+        ? '${now.day} ${months[now.month - 1]} ${now.year}'
+        : '${months[now.month - 1]} ${now.day}, ${now.year}';
     return '$startStr — $endStr';
   }
 }

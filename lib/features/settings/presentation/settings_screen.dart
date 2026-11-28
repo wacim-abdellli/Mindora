@@ -646,7 +646,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         const SizedBox(height: 10),
                         MindSegmented(
                           index: langIndex,
-                          labels: const ['EN', 'FR', 'AR'],
+                          labels: const ['EN', 'FR', 'عربي'],
                           onChanged: (idx) {
                             HapticFeedback.selectionClick();
                             final lang = idx == 2

@@ -159,7 +159,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   builder: (context, constraints) {
                     final langControl = MindSegmented(
                       index: langIndex,
-                      labels: const ['EN', 'FR', 'AR'],
+                      labels: const ['EN', 'FR', 'عربي'],
                       onChanged: (idx) {
                         HapticFeedback.selectionClick();
                         final lang = switch (idx) {
@@ -416,6 +416,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       TextFormField(
                         key: const ValueKey<String>('auth-identifier-field'),
                         controller: _identifierController,
+                        textDirection: TextDirection.ltr,
                         style: LabTheme.textStyle(
                           color: tokens.ink,
                           fontSize: 15.5,
@@ -442,6 +443,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       TextFormField(
                         key: const ValueKey<String>('auth-pin-field'),
                         controller: _pinController,
+                        textDirection: TextDirection.ltr,
                         obscureText: _obscurePin,
                         style: LabTheme.textStyle(
                           color: tokens.ink,

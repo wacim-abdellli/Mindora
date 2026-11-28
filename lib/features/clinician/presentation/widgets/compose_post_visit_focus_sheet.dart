@@ -12,6 +12,7 @@ import '../../../../core/widgets/mind_pill.dart';
 import '../../../../core/widgets/mind_qr_code.dart';
 import '../../../clinic_sync/controllers/clinic_sync_providers.dart';
 import '../../controllers/clinician_providers.dart';
+import '../../data/clinician_sync_service.dart';
 import '../../domain/post_visit_focus_model.dart';
 
 /// Modal sheet inside the Psychiatrist Workspace allowing the clinician to compose
@@ -137,9 +138,12 @@ class _ComposePostVisitFocusSheetState
       setState(() {
         _generatedCode = code;
       });
-    } catch (e) {
+    } on ClinicianSyncException catch (e) {
       if (!mounted) return;
-      setState(() => _errorText = e.toString());
+      setState(() => _errorText = strings.localizedClinicianSyncError(e.code));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _errorText = strings.genericActionError);
     } finally {
       if (mounted) setState(() => _isGenerating = false);
     }
@@ -206,9 +210,12 @@ class _ComposePostVisitFocusSheetState
                 ),
         ),
       );
-    } catch (e) {
+    } on ClinicianSyncException catch (e) {
       if (!mounted) return;
-      setState(() => _errorText = e.toString());
+      setState(() => _errorText = strings.localizedClinicianSyncError(e.code));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _errorText = strings.genericActionError);
     } finally {
       if (mounted) setState(() => _isDeliveringLocal = false);
     }
@@ -250,7 +257,7 @@ class _ComposePostVisitFocusSheetState
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 14, 12, 8),
+                padding: const EdgeInsetsDirectional.fromSTEB(20, 14, 12, 8),
                 child: Row(
                   children: [
                     Icon(Icons.send_outlined, size: 20, color: tokens.accentInk),

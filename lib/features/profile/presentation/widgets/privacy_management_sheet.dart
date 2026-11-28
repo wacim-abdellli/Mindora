@@ -238,7 +238,9 @@ class _PrivacyManagementSheetState extends ConsumerState<PrivacyManagementSheet>
                             child: Text(
                               strings.isArabic
                                   ? 'السماح بتخصيص ردود المساعد الذكي'
-                                  : 'Allow my profile to personalize AI responses',
+                                  : (strings.isFrench
+                                        ? 'Autoriser mon profil à personnaliser les réponses IA'
+                                        : 'Allow my profile to personalize AI responses'),
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
@@ -257,10 +259,14 @@ class _PrivacyManagementSheetState extends ConsumerState<PrivacyManagementSheet>
                         _allowAi
                             ? (strings.isArabic
                                 ? 'مفعل: يستخدم المساعد أهدافك ونبرتك المفضلة لتخصيص الحوار بدقة، وتبقى بياناتك محفوظة محلياً على جهازك فقط.'
-                                : 'Enabled: Companion references your goals and preferred communication style. Data strictly stays on your local device.')
+                                : (strings.isFrench
+                                      ? 'Activé : le compagnon adapte ses échanges à vos objectifs et à votre ton préféré. Vos données restent localement sur votre appareil.'
+                                      : 'Enabled: Companion references your goals and preferred communication style. Data strictly stays on your local device.'))
                             : (strings.isArabic
                                 ? 'معطل: لن يتم تزويد المساعد الذكي بأي تفاصيل من ملفك النفسي. التطبيق يظل يعمل بكامل وظائفه.'
-                                : 'Disabled: Profile context is strictly excluded from AI inquiries. All app features remain fully functional.'),
+                                : (strings.isFrench
+                                      ? 'Désactivé : les détails de votre profil sont exclus des échanges IA. Toutes les fonctionnalités restent disponibles.'
+                                      : 'Disabled: Profile context is strictly excluded from AI inquiries. All app features remain fully functional.')),
                         style: TextStyle(fontSize: 12.5, height: 1.4, color: textSecondary),
                       ),
                     ],
@@ -285,7 +291,9 @@ class _PrivacyManagementSheetState extends ConsumerState<PrivacyManagementSheet>
                         child: Text(
                           strings.isArabic
                               ? 'بياناتك مشفرة ومحفوظة محلياً فقط في خزينة جهازك (Offline-First). لا توجد مزامنة سحابية غير مصرح بها.'
-                              : 'Your profile is encrypted and stored locally on this device (Offline-First). Zero unauthorized cloud exposure.',
+                              : (strings.isFrench
+                                    ? 'Votre profil est chiffré et stocké localement sur cet appareil. Aucune transmission non autorisée.'
+                                    : 'Your profile is encrypted and stored locally on this device (Offline-First). Zero unauthorized cloud exposure.'),
                           style: TextStyle(fontSize: 12.5, height: 1.4, color: textSecondary),
                         ),
                       ),

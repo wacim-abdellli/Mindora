@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/config/app_edition.dart';
+import 'app/localization/app_strings.dart';
 import 'app/localization/locale_controller.dart';
 import 'app/router/app_router.dart';
 import 'app/theme/display_comfort_controller.dart';
 import 'app/theme/lab_theme.dart';
 import 'app/theme/mind_tokens.dart';
 import 'app/theme/theme_controller.dart';
+import 'core/notifications/gentle_reminder_service.dart';
 import 'core/security/lock_overlay.dart';
 import 'features/mind_trace/controllers/mind_trace_controller.dart';
 import 'features/mind_trace/domain/mind_trace_model.dart';
@@ -24,11 +27,13 @@ Future<void> bootstrapMindoraApp({MindoraEdition? edition}) async {
   }
   final initialThemeMode = await ThemeController.loadInitialThemeMode();
   final initialComfortMode = await DisplayComfortController.loadInitial();
+  final initialLocale = await LocaleController.loadInitialLocale();
   runApp(
     ProviderScope(
       overrides: [
         initialThemeModeProvider.overrideWithValue(initialThemeMode),
         initialComfortModeProvider.overrideWithValue(initialComfortMode),
+        initialLocaleProvider.overrideWithValue(initialLocale),
       ],
       child: const MindForensicsApp(),
     ),
@@ -49,6 +54,12 @@ class MindForensicsApp extends ConsumerWidget {
     ref.listen<MindTraceModel?>(todayTraceProvider, (_, next) {
       if (next != null && next.hasExplicitMood) {
         ref.read(activeMoodProvider.notifier).setMoodByKey(next.overallMood);
+      }
+    });
+
+    ref.listen<Locale>(localeControllerProvider, (prev, next) {
+      if (prev != null && prev.languageCode != next.languageCode) {
+        _resyncGentleRemindersForLocale(ref, next.languageCode);
       }
     });
 
@@ -107,6 +118,20 @@ class MindForensicsApp extends ConsumerWidget {
         );
       },
     );
+  }
+  Future<void> _resyncGentleRemindersForLocale(
+    WidgetRef ref,
+    String languageCode,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final enabled = prefs.getBool('mf_gentle_notifications') ?? false;
+    if (!enabled) return;
+    final frequency = prefs.getString('mf_notification_freq') ?? 'daily';
+    await ref.read(gentleReminderServiceProvider).syncSchedule(
+          enabled: true,
+          frequency: frequency,
+          strings: AppStrings(languageCode),
+        );
   }
 }
 

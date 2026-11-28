@@ -136,9 +136,7 @@ class _ContextualSupportSheetState
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
-                                  isAr
-                                      ? Icons.arrow_forward_ios_rounded
-                                      : Icons.arrow_back_ios_rounded,
+                                  Icons.arrow_back_ios_rounded,
                                   size: 14,
                                   color: textSecondary,
                                 ),
@@ -261,7 +259,7 @@ class _ContextualSupportSheetState
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            letterSpacing: -0.4,
+            letterSpacing: strings.isArabic ? 0.0 : -0.4,
             color: textPrimary,
           ),
         ),
@@ -416,9 +414,7 @@ class _ContextualSupportSheetState
                           ),
                         ),
                         Icon(
-                          strings.isArabic
-                              ? Icons.arrow_back_ios_rounded
-                              : Icons.arrow_forward_ios_rounded,
+                          Icons.arrow_forward_ios_rounded,
                           size: 13,
                           color: sheetTokens.safety,
                         ),

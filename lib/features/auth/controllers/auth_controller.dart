@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/localization/app_strings.dart';
 import '../../clinic_sync/controllers/clinic_sync_providers.dart';
 import '../../clinic_sync/domain/clinic_account_models.dart';
 import '../data/auth_service.dart';
@@ -157,15 +158,17 @@ class AuthController extends Notifier<AuthState> {
       await _completeClinicSignIn(account);
       return true;
     } on ClinicAuthException catch (e) {
+      final strings = ref.read(appStringsProvider);
       state = state.copyWith(
         status: AuthStatus.error,
-        errorMessage: e.message,
+        errorMessage: strings.localizedClinicAuthError(e.code),
       );
       return false;
-    } catch (e) {
+    } catch (_) {
+      final strings = ref.read(appStringsProvider);
       state = state.copyWith(
         status: AuthStatus.error,
-        errorMessage: e.toString(),
+        errorMessage: strings.genericActionError,
       );
       return false;
     }
@@ -181,15 +184,17 @@ class AuthController extends Notifier<AuthState> {
       await _completeClinicSignIn(account);
       return true;
     } on ClinicAuthException catch (e) {
+      final strings = ref.read(appStringsProvider);
       state = state.copyWith(
         status: AuthStatus.error,
-        errorMessage: e.message,
+        errorMessage: strings.localizedClinicAuthError(e.code),
       );
       return false;
-    } catch (e) {
+    } catch (_) {
+      final strings = ref.read(appStringsProvider);
       state = state.copyWith(
         status: AuthStatus.error,
-        errorMessage: e.toString(),
+        errorMessage: strings.genericActionError,
       );
       return false;
     }

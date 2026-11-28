@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../app/localization/app_strings.dart';
+import '../../../app/localization/mind_formatters.dart';
 import '../../../core/security/local_data_cipher.dart';
 import '../../auth/data/auth_service.dart';
 import '../../insights/domain/forensic_loop_model.dart';
@@ -514,34 +515,77 @@ class ClinicianSyncService {
                 ? 'Mindora — SYNTHÈSE CLINIQUE DE CONSULTATION (EHR)'
                 : 'Mindora — CLINICAL CONSULTATION SUMMARY (EHR)'),
     );
+    final demoTag = record.isDemoCase
+        ? (isAr ? ' [نموذج تجريبي]' : (isFr ? ' [DÉMO]' : ' [DEMO]'))
+        : '';
     buf.writeln(
-      'Patient: ${record.displayName}${record.isDemoCase ? ' [DEMO]' : ''}',
+      isAr
+          ? 'المريض: ${record.displayName}$demoTag'
+          : (isFr
+                ? 'Patient : ${record.displayName}$demoTag'
+                : 'Patient: ${record.displayName}$demoTag'),
     );
     buf.writeln(
-      'Sync Window: ${scope.windowDays}d | Traces: ${packet.traces.length} | Shared Cases: ${packet.sharedCases.length}',
+      isAr
+          ? 'فترة المتابعة: ${MindFormatters.daysShort(scope.windowDays, strings)} | التسجيلات: ${packet.traces.length} | الجلسات المشتركة: ${packet.sharedCases.length}'
+          : (isFr
+                ? 'Période : ${MindFormatters.daysShort(scope.windowDays, strings)} | Suivis : ${packet.traces.length} | Explorations partagées : ${packet.sharedCases.length}'
+                : 'Sync Window: ${scope.windowDays}d | Traces: ${packet.traces.length} | Shared Cases: ${packet.sharedCases.length}'),
     );
-    buf.writeln('Packet ID: ${packet.packetId}');
+    buf.writeln(
+      isAr
+          ? 'معرّف الملف: ${MindFormatters.ltrIsolate(packet.packetId)}'
+          : (isFr
+                ? 'Réf. dossier : ${packet.packetId}'
+                : 'Packet ID: ${packet.packetId}'),
+    );
     buf.writeln('============================================================');
     buf.writeln();
 
     // 1. Pre-visit Agenda
     final agenda = packet.preVisitAgenda;
     if (scope.includePreVisitAgenda && agenda != null && !agenda.isEmpty) {
-      buf.writeln('[1] PRE-VISIT CONSULTATION AGENDA');
+      buf.writeln(
+        isAr
+            ? '[1] نقاط ما قبل الاستشارة'
+            : (isFr
+                  ? '[1] ORDRE DU JOUR PRÉ-CONSULTATION'
+                  : '[1] PRE-VISIT CONSULTATION AGENDA'),
+      );
       if (agenda.selectedTopics.isNotEmpty) {
-        buf.writeln('Topics: ${agenda.selectedTopics.join(', ')}');
+        buf.writeln(
+          isAr
+              ? 'المواضيع المختارة: ${agenda.selectedTopics.join('، ')}'
+              : (isFr
+                    ? 'Sujets : ${agenda.selectedTopics.join(', ')}'
+                    : 'Topics: ${agenda.selectedTopics.join(', ')}'),
+        );
       }
       if (agenda.patientQuestion.trim().isNotEmpty) {
-        buf.writeln('Patient question: ${agenda.patientQuestion.trim()}');
+        buf.writeln(
+          isAr
+              ? 'سؤال المريض: ${agenda.patientQuestion.trim()}'
+              : (isFr
+                    ? 'Question du patient : ${agenda.patientQuestion.trim()}'
+                    : 'Patient question: ${agenda.patientQuestion.trim()}'),
+        );
       }
       if (agenda.whatHelpedRecently.trim().isNotEmpty) {
         buf.writeln(
-          'What helped recently: ${agenda.whatHelpedRecently.trim()}',
+          isAr
+              ? 'ما ساعد مؤخراً: ${agenda.whatHelpedRecently.trim()}'
+              : (isFr
+                    ? 'Ce qui a aidé récemment : ${agenda.whatHelpedRecently.trim()}'
+                    : 'What helped recently: ${agenda.whatHelpedRecently.trim()}'),
         );
       }
       if (agenda.focusPlanFeedback.trim().isNotEmpty) {
         buf.writeln(
-          'Between-session focus feedback: ${agenda.focusPlanFeedback.trim()}',
+          isAr
+              ? 'ملاحظات المريض حول خطة التركيز: ${agenda.focusPlanFeedback.trim()}'
+              : (isFr
+                    ? 'Retour sur le plan de suivi : ${agenda.focusPlanFeedback.trim()}'
+                    : 'Between-session focus feedback: ${agenda.focusPlanFeedback.trim()}'),
         );
       }
       buf.writeln();
@@ -549,31 +593,63 @@ class ClinicianSyncService {
 
     // 2. Baseline Metrics & 7-Day Comparison
     if (baseline.totalRecordedDays > 0) {
-      buf.writeln('[2] 7-DAY RECENT VS PERSONAL BASELINE');
-      String fmt(double? v, [String suffix = '']) =>
-          v == null ? 'N/A' : '${v.toStringAsFixed(1)}$suffix';
-      String delta(double? r, double? b, [String suffix = '']) {
-        if (r == null || b == null) return '--';
-        final d = r - b;
-        final sign = d >= 0 ? '+' : '';
-        return '$sign${d.toStringAsFixed(1)}$suffix';
+      buf.writeln(
+        isAr
+            ? '[2] مقارنة آخر 7 أيام بالمرجع الشخصي'
+            : (isFr
+                  ? '[2] 7 DERNIERS JOURS VS REPÈRE PERSONNEL'
+                  : '[2] 7-DAY RECENT VS PERSONAL BASELINE'),
+      );
+      final naLabel = isAr ? 'غ/م' : (isFr ? 'N/D' : 'N/A');
+      String fmt(double? v, [String suffix = '']) {
+        if (v == null) return naLabel;
+        if (suffix == 'h') return MindFormatters.hours(v, strings);
+        return '${MindFormatters.decimal(v, strings)}$suffix';
       }
 
+      String delta(double? r, double? b, [String suffix = '']) {
+        if (r == null || b == null) return '--';
+        return MindFormatters.signedDelta(r - b, strings, unit: suffix);
+      }
+
+      final vsWord = isAr ? 'مقابل' : 'vs';
       buf.writeln(
-        '- Mood Intensity: ${fmt(recent.averageMoodIntensity, '/10')} vs ${fmt(baseline.averageMoodIntensity, '/10')} (${delta(recent.averageMoodIntensity, baseline.averageMoodIntensity)})',
+        isAr
+            ? '- شدّة المزاج: ${fmt(recent.averageMoodIntensity, '/10')} $vsWord ${fmt(baseline.averageMoodIntensity, '/10')} (${delta(recent.averageMoodIntensity, baseline.averageMoodIntensity)})'
+            : (isFr
+                  ? '- Intensité de l’humeur : ${fmt(recent.averageMoodIntensity, '/10')} $vsWord ${fmt(baseline.averageMoodIntensity, '/10')} (${delta(recent.averageMoodIntensity, baseline.averageMoodIntensity)})'
+                  : '- Mood Intensity: ${fmt(recent.averageMoodIntensity, '/10')} vs ${fmt(baseline.averageMoodIntensity, '/10')} (${delta(recent.averageMoodIntensity, baseline.averageMoodIntensity)})'),
       );
       if (scope.includeSleepEnergyAnxiety) {
         buf.writeln(
-          '- Sleep Duration: ${fmt(recent.averageSleepHours, 'h')} vs ${fmt(baseline.averageSleepHours, 'h')} (${delta(recent.averageSleepHours, baseline.averageSleepHours, 'h')})',
+          isAr
+              ? '- مدّة النوم: ${fmt(recent.averageSleepHours, 'h')} $vsWord ${fmt(baseline.averageSleepHours, 'h')} (${delta(recent.averageSleepHours, baseline.averageSleepHours, 'h')})'
+              : (isFr
+                    ? '- Durée du sommeil : ${fmt(recent.averageSleepHours, 'h')} $vsWord ${fmt(baseline.averageSleepHours, 'h')} (${delta(recent.averageSleepHours, baseline.averageSleepHours, 'h')})'
+                    : '- Sleep Duration: ${fmt(recent.averageSleepHours, 'h')} vs ${fmt(baseline.averageSleepHours, 'h')} (${delta(recent.averageSleepHours, baseline.averageSleepHours, 'h')})'),
         );
         buf.writeln(
-          '- Energy Level: ${fmt(recent.averageEnergyLevel, '/10')} vs ${fmt(baseline.averageEnergyLevel, '/10')} (${delta(recent.averageEnergyLevel, baseline.averageEnergyLevel)})',
+          isAr
+              ? '- مستوى الطاقة: ${fmt(recent.averageEnergyLevel, '/10')} $vsWord ${fmt(baseline.averageEnergyLevel, '/10')} (${delta(recent.averageEnergyLevel, baseline.averageEnergyLevel)})'
+              : (isFr
+                    ? '- Niveau d’énergie : ${fmt(recent.averageEnergyLevel, '/10')} $vsWord ${fmt(baseline.averageEnergyLevel, '/10')} (${delta(recent.averageEnergyLevel, baseline.averageEnergyLevel)})'
+                    : '- Energy Level: ${fmt(recent.averageEnergyLevel, '/10')} vs ${fmt(baseline.averageEnergyLevel, '/10')} (${delta(recent.averageEnergyLevel, baseline.averageEnergyLevel)})'),
         );
         buf.writeln(
-          '- Anxiety Tension: ${fmt(recent.averageAnxietyLevel, '/10')} vs ${fmt(baseline.averageAnxietyLevel, '/10')} (${delta(recent.averageAnxietyLevel, baseline.averageAnxietyLevel)})',
+          isAr
+              ? '- توتّر القلق: ${fmt(recent.averageAnxietyLevel, '/10')} $vsWord ${fmt(baseline.averageAnxietyLevel, '/10')} (${delta(recent.averageAnxietyLevel, baseline.averageAnxietyLevel)})'
+              : (isFr
+                    ? '- Tension anxieuse : ${fmt(recent.averageAnxietyLevel, '/10')} $vsWord ${fmt(baseline.averageAnxietyLevel, '/10')} (${delta(recent.averageAnxietyLevel, baseline.averageAnxietyLevel)})'
+                    : '- Anxiety Tension: ${fmt(recent.averageAnxietyLevel, '/10')} vs ${fmt(baseline.averageAnxietyLevel, '/10')} (${delta(recent.averageAnxietyLevel, baseline.averageAnxietyLevel)})'),
         );
       } else {
-        buf.writeln('- Sleep / Energy / Anxiety: Excluded by patient consent.');
+        buf.writeln(
+          isAr
+              ? '- النوم / الطاقة / القلق: مستثناة بموافقة المريض.'
+              : (isFr
+                    ? '- Sommeil / Énergie / Anxiété : exclus par consentement du patient.'
+                    : '- Sleep / Energy / Anxiety: Excluded by patient consent.'),
+        );
       }
       buf.writeln();
     }
@@ -583,43 +659,69 @@ class ClinicianSyncService {
     if (visitDiff != null &&
         (visitDiff.hasMetricDelta || visitDiff.focusPlanFeedback.isNotEmpty)) {
       buf.writeln(
-        '[2b] SINCE LAST VISIT COMPARISON (${visitDiff.daysBetween}d apart)',
+        isAr
+            ? '[2b] المقارنة منذ آخر زيارة (${MindFormatters.daysShort(visitDiff.daysBetween, strings)})'
+            : (isFr
+                  ? '[2b] ÉVOLUTION DEPUIS LA DERNIÈRE VISITE (${MindFormatters.daysShort(visitDiff.daysBetween, strings)})'
+                  : '[2b] SINCE LAST VISIT COMPARISON (${visitDiff.daysBetween}d apart)'),
       );
-      String signed(double v, [String suffix = '']) {
-        final s = v >= 0 ? '+' : '';
-        return '$s${v.toStringAsFixed(1)}$suffix';
-      }
+      String signed(double v, [String suffix = '']) =>
+          MindFormatters.signedDelta(v, strings, unit: suffix);
 
       if (visitDiff.moodDelta != null) {
         buf.writeln(
-          '- Mood delta vs last visit: ${signed(visitDiff.moodDelta!, '/10')}',
+          isAr
+              ? '- تغيّر المزاج منذ آخر زيارة: ${signed(visitDiff.moodDelta!, '/10')}'
+              : (isFr
+                    ? '- Écart d’humeur depuis la dernière visite : ${signed(visitDiff.moodDelta!, '/10')}'
+                    : '- Mood delta vs last visit: ${signed(visitDiff.moodDelta!, '/10')}'),
         );
       }
       if (scope.includeSleepEnergyAnxiety) {
         if (visitDiff.sleepDelta != null) {
           buf.writeln(
-            '- Sleep delta vs last visit: ${signed(visitDiff.sleepDelta!, 'h')}',
+            isAr
+                ? '- تغيّر النوم منذ آخر زيارة: ${signed(visitDiff.sleepDelta!, 'h')}'
+                : (isFr
+                      ? '- Écart de sommeil depuis la dernière visite : ${signed(visitDiff.sleepDelta!, 'h')}'
+                      : '- Sleep delta vs last visit: ${signed(visitDiff.sleepDelta!, 'h')}'),
           );
         }
         if (visitDiff.energyDelta != null) {
           buf.writeln(
-            '- Energy delta vs last visit: ${signed(visitDiff.energyDelta!, '/10')}',
+            isAr
+                ? '- تغيّر الطاقة منذ آخر زيارة: ${signed(visitDiff.energyDelta!, '/10')}'
+                : (isFr
+                      ? '- Écart d’énergie depuis la dernière visite : ${signed(visitDiff.energyDelta!, '/10')}'
+                      : '- Energy delta vs last visit: ${signed(visitDiff.energyDelta!, '/10')}'),
           );
         }
         if (visitDiff.anxietyDelta != null) {
           buf.writeln(
-            '- Anxiety delta vs last visit: ${signed(visitDiff.anxietyDelta!, '/10')}',
+            isAr
+                ? '- تغيّر القلق منذ آخر زيارة: ${signed(visitDiff.anxietyDelta!, '/10')}'
+                : (isFr
+                      ? '- Écart d’anxiété depuis la dernière visite : ${signed(visitDiff.anxietyDelta!, '/10')}'
+                      : '- Anxiety delta vs last visit: ${signed(visitDiff.anxietyDelta!, '/10')}'),
           );
         }
       }
       if (visitDiff.eveningIntensityDelta != null) {
         buf.writeln(
-          '- Evening intensity delta vs last visit: ${signed(visitDiff.eveningIntensityDelta!, '/10')}',
+          isAr
+              ? '- تغيّر شدّة المساء منذ آخر زيارة: ${signed(visitDiff.eveningIntensityDelta!, '/10')}'
+              : (isFr
+                    ? '- Écart d’intensité en soirée : ${signed(visitDiff.eveningIntensityDelta!, '/10')}'
+                    : '- Evening intensity delta vs last visit: ${signed(visitDiff.eveningIntensityDelta!, '/10')}'),
         );
       }
       if (visitDiff.focusPlanFeedback.isNotEmpty) {
         buf.writeln(
-          '- Patient focus plan feedback: ${visitDiff.focusPlanFeedback}',
+          isAr
+              ? '- تعليق المريض على خطة التركيز: ${visitDiff.focusPlanFeedback}'
+              : (isFr
+                    ? '- Retour patient sur le plan de suivi : ${visitDiff.focusPlanFeedback}'
+                    : '- Patient focus plan feedback: ${visitDiff.focusPlanFeedback}'),
         );
       }
       buf.writeln();
@@ -629,59 +731,112 @@ class ClinicianSyncService {
     if (baseline.emotionFrequencyMap.isNotEmpty ||
         baseline.diurnalIntensityAverages.isNotEmpty ||
         baseline.recoveryLedger.hasEvidence) {
-      buf.writeln('[3] AFFECT SPECTRUM & DIURNAL RHYTHM');
+      buf.writeln(
+        isAr
+            ? '[3] طيف المشاعر والإيقاع اليومي'
+            : (isFr
+                  ? '[3] SPECTRE AFFECTIF ET RYTHME DIURNE'
+                  : '[3] AFFECT SPECTRUM & DIURNAL RHYTHM'),
+      );
       if (baseline.emotionFrequencyMap.isNotEmpty) {
         final topAffects = baseline.emotionFrequencyMap.entries
             .take(5)
             .map(
               (e) =>
-                  '${AffectTaxonomy.localizedLabel(e.key, strings)} (${e.value}x)',
+                  '${AffectTaxonomy.localizedLabel(e.key, strings)} (${MindFormatters.times(e.value, strings)})',
             );
-        buf.writeln('Co-occurring feelings: ${topAffects.join(', ')}');
+        buf.writeln(
+          isAr
+              ? 'المشاعر المتكررة: ${topAffects.join('، ')}'
+              : (isFr
+                    ? 'Émotions co-occurrentes : ${topAffects.join(', ')}'
+                    : 'Co-occurring feelings: ${topAffects.join(', ')}'),
+        );
       }
       final swingAvg = baseline.averageIntraDaySwing;
       if (swingAvg != null && swingAvg > 0) {
+        final swingFormatted = MindFormatters.decimal(swingAvg, strings);
         buf.writeln(
-          'Intra-day intensity swing avg: +/-${swingAvg.toStringAsFixed(1)} pts (${baseline.multiEntryDaysCount} multi-moment days)',
+          isAr
+              ? 'متوسط التذبذب اليومي: +/-$swingFormatted نقطة (${baseline.multiEntryDaysCount} أيام متعددة التسجيل)'
+              : (isFr
+                    ? 'Amplitude intra-journalière moyenne : +/-$swingFormatted pts (${baseline.multiEntryDaysCount} jours multi-entrées)'
+                    : 'Intra-day intensity swing avg: +/-$swingFormatted pts (${baseline.multiEntryDaysCount} multi-moment days)'),
         );
       }
       if (baseline.diurnalIntensityAverages.isNotEmpty) {
+        String bucketLabel(DayTimeBucket b) => switch (b) {
+          DayTimeBucket.morning => strings.morningBucketLabel,
+          DayTimeBucket.afternoon => strings.afternoonBucketLabel,
+          DayTimeBucket.evening => strings.eveningBucketLabel,
+          DayTimeBucket.night => strings.nightBucketLabel,
+        };
         final parts = DayTimeBucket.values
             .where((b) => baseline.diurnalIntensityAverages.containsKey(b))
             .map(
               (b) =>
-                  '${b.name}: ${baseline.diurnalIntensityAverages[b]!.toStringAsFixed(1)}/10',
+                  '${isAr || isFr ? bucketLabel(b) : b.name}: ${MindFormatters.decimal(baseline.diurnalIntensityAverages[b]!, strings)}/10',
             );
-        buf.writeln('Time-of-day rhythm: ${parts.join(' | ')}');
+        buf.writeln(
+          isAr
+              ? 'إيقاع أوقات اليوم: ${parts.join(' | ')}'
+              : (isFr
+                    ? 'Rythme selon le moment de la journée : ${parts.join(' | ')}'
+                    : 'Time-of-day rhythm: ${parts.join(' | ')}'),
+        );
       }
       if (scope.includeSleepEnergyAnxiety &&
           baseline.contextTagCorrelations.isNotEmpty) {
         final tagSummaries = baseline.contextTagCorrelations.take(4).map((c) {
           final label = DailyContextTags.localizedLabel(c.tagKey, strings);
           final sleepPart = c.avgSleepHours != null
-              ? ', sleep ${c.avgSleepHours!.toStringAsFixed(1)}h'
+              ? (isAr
+                    ? '، نوم ${MindFormatters.hours(c.avgSleepHours!, strings)}'
+                    : (isFr
+                          ? ', sommeil ${MindFormatters.hours(c.avgSleepHours!, strings)}'
+                          : ', sleep ${c.avgSleepHours!.toStringAsFixed(1)}h'))
               : '';
           final moodPart = c.avgMoodIntensity != null
-              ? ', mood ${c.avgMoodIntensity!.toStringAsFixed(1)}/10'
+              ? (isAr
+                    ? '، مزاج ${MindFormatters.decimal(c.avgMoodIntensity!, strings)}/10'
+                    : (isFr
+                          ? ', humeur ${MindFormatters.decimal(c.avgMoodIntensity!, strings)}/10'
+                          : ', mood ${c.avgMoodIntensity!.toStringAsFixed(1)}/10'))
               : '';
-          return '$label (${c.occurrences}x$moodPart$sleepPart)';
+          return '$label (${MindFormatters.times(c.occurrences, strings)}$moodPart$sleepPart)';
         });
         buf.writeln(
-          'Daily context & routine links: ${tagSummaries.join(' | ')}',
+          isAr
+              ? 'روابط السياق اليومي والروتين: ${tagSummaries.join(' | ')}'
+              : (isFr
+                    ? 'Liens contexte quotidien & routine : ${tagSummaries.join(' | ')}'
+                    : 'Daily context & routine links: ${tagSummaries.join(' | ')}'),
         );
       }
       if (scope.includeMoodMetrics && baseline.recoveryLedger.hasEvidence) {
         final stabParts = baseline.recoveryLedger.stabilizers.take(4).map((s) {
           final label = s.localizedLabel(strings);
           final shiftStr = s.avgSameDayShift != null && s.avgSameDayShift! < 0
-              ? ', ${s.avgSameDayShift!.toStringAsFixed(1)}/10 shift'
+              ? (isAr
+                    ? '، تغيّر ${MindFormatters.signedDelta(s.avgSameDayShift!, strings, unit: '/10')}'
+                    : (isFr
+                          ? ', variation ${MindFormatters.signedDelta(s.avgSameDayShift!, strings, unit: '/10')}'
+                          : ', ${s.avgSameDayShift!.toStringAsFixed(1)}/10 shift'))
               : (s.avgCoOccurringIntensity != null
-                    ? ', avg ${s.avgCoOccurringIntensity!.toStringAsFixed(1)}/10'
+                    ? (isAr
+                          ? '، متوسط ${MindFormatters.decimal(s.avgCoOccurringIntensity!, strings)}/10'
+                          : (isFr
+                                ? ', moy. ${MindFormatters.decimal(s.avgCoOccurringIntensity!, strings)}/10'
+                                : ', avg ${s.avgCoOccurringIntensity!.toStringAsFixed(1)}/10'))
                     : '');
-          return '$label (${s.totalOccurrences}x$shiftStr)';
+          return '$label (${MindFormatters.times(s.totalOccurrences, strings)}$shiftStr)';
         });
         buf.writeln(
-          'Observed stabilizers (self-reported): ${stabParts.join(' | ')}',
+          isAr
+              ? 'عوامل الاستقرار الملاحظة (ذاتية التبليغ): ${stabParts.join(' | ')}'
+              : (isFr
+                    ? 'Facteurs stabilisants observés (auto-déclarés) : ${stabParts.join(' | ')}'
+                    : 'Observed stabilizers (self-reported): ${stabParts.join(' | ')}'),
         );
       }
       final conditionTracks = ClinicalConditionCatalog.resolveTracks(
@@ -694,8 +849,11 @@ class ClinicianSyncService {
       );
       if (scope.includeMoodMetrics && conditionMarkers.isNotEmpty) {
         buf.writeln(
-          'Condition-specific markers (${conditionTracks.map((t) => t.localizedTitle(strings)).join(', ')}): '
-          '${conditionMarkers.join(' | ')}',
+          isAr
+              ? 'مؤشرات مسارات المتابعة (${conditionTracks.map((t) => t.localizedTitle(strings)).join('، ')}): ${conditionMarkers.join(' | ')}'
+              : (isFr
+                    ? 'Indicateurs de suivi spécifiques (${conditionTracks.map((t) => t.localizedTitle(strings)).join(', ')}) : ${conditionMarkers.join(' | ')}'
+                    : 'Condition-specific markers (${conditionTracks.map((t) => t.localizedTitle(strings)).join(', ')}): ${conditionMarkers.join(' | ')}'),
         );
       }
       buf.writeln();
@@ -711,17 +869,33 @@ class ClinicianSyncService {
         includeSomatic: scope.includeSleepEnergyAnxiety,
       );
       if (loop.hasSufficientSignal) {
-        buf.writeln('[3b] OBSERVED FORENSIC LOOP');
+        buf.writeln(
+          isAr
+              ? '[3b] الحلقة السلوكية والفكرية الملاحظة'
+              : (isFr
+                    ? '[3b] BOUCLE D’OBSERVATION COGNITIVE'
+                    : '[3b] OBSERVED FORENSIC LOOP'),
+        );
         buf.writeln(loop.compactSummary(strings));
         buf.writeln();
       }
     }
 
     // 4. Objective Pattern Observations
-    buf.writeln('[4] OBJECTIVE BASELINE SHIFTS');
+    buf.writeln(
+      isAr
+          ? '[4] التغيّرات الموضوعية مقارنة بالمرجع'
+          : (isFr
+                ? '[4] ÉCARTS OBJECTIFS PAR RAPPORT AU REPÈRE'
+                : '[4] OBJECTIVE BASELINE SHIFTS'),
+    );
     if (divergences.isEmpty) {
       buf.writeln(
-        'No notable metric divergence detected vs personal baseline.',
+        isAr
+            ? 'لا توجد فوارق ملحوظة مقارنة بالمرجع الشخصي.'
+            : (isFr
+                  ? 'Aucun écart notable détecté par rapport au repère personnel.'
+                  : 'No notable metric divergence detected vs personal baseline.'),
       );
     } else {
       for (final d in divergences) {
@@ -735,27 +909,65 @@ class ClinicianSyncService {
     final shareableCases = packet.sharedCases
         .where((c) => !c.isPrivate)
         .toList(growable: false);
-    buf.writeln('[5] SHARED COGNITIVE EXPLORATIONS (INSPIRED BY CBT)');
+    buf.writeln(
+      isAr
+          ? '[5] التأملات الفكرية المشتركة (مستوحاة من العلاج المعرفي السلوكي)'
+          : (isFr
+                ? '[5] EXPLORATIONS COGNITIVES PARTAGÉES (INSPIRÉES DES TCC)'
+                : '[5] SHARED COGNITIVE EXPLORATIONS (INSPIRED BY CBT)'),
+    );
     if (!scope.includeSharedCases) {
-      buf.writeln('Excluded by patient consent.');
+      buf.writeln(
+        isAr
+            ? 'مستثناة بموافقة المريض.'
+            : (isFr
+                  ? 'Exclues par consentement du patient.'
+                  : 'Excluded by patient consent.'),
+      );
     } else if (shareableCases.isEmpty) {
-      buf.writeln('None shared within this window.');
+      buf.writeln(
+        isAr
+            ? 'لم تتم مشاركة أي جلسة خلال هذه الفترة.'
+            : (isFr
+                  ? 'Aucune exploration partagée sur cette période.'
+                  : 'None shared within this window.'),
+      );
     } else {
+      final arrow = MindFormatters.rangeArrow(strings);
       for (final c in shareableCases) {
         buf.writeln('- ${c.caseNumber}: ${c.title}');
         if (c.chain != null) {
+          final thoughtLabel = strings.localizedLabelName(c.chain!.thoughtLabel);
           buf.writeln(
-            '  Trigger -> Thought (${c.chain!.thoughtLabel.displayName}) -> Emotion -> Response: '
-            '${c.chain!.trigger} | ${c.chain!.thought} | ${c.chain!.emotion} (${c.chain!.emotionIntensity}/10) | ${c.chain!.behavior}',
+            isAr
+                ? '  المحفّز $arrow الفكرة ($thoughtLabel) $arrow الشعور $arrow الاستجابة: '
+                  '${c.chain!.trigger} | ${c.chain!.thought} | ${c.chain!.emotion} (${c.chain!.emotionIntensity}/10) | ${c.chain!.behavior}'
+                : (isFr
+                      ? '  Déclencheur $arrow Pensée ($thoughtLabel) $arrow Émotion $arrow Réponse : '
+                        '${c.chain!.trigger} | ${c.chain!.thought} | ${c.chain!.emotion} (${c.chain!.emotionIntensity}/10) | ${c.chain!.behavior}'
+                      : '  Trigger -> Thought (${c.chain!.thoughtLabel.displayName}) -> Emotion -> Response: '
+                        '${c.chain!.trigger} | ${c.chain!.thought} | ${c.chain!.emotion} (${c.chain!.emotionIntensity}/10) | ${c.chain!.behavior}'),
           );
         }
         if (c.findingsSummary != null &&
             c.findingsSummary!.trim().isNotEmpty &&
             c.findingsSummary!.trim() != (c.userConclusion ?? '').trim()) {
-          buf.writeln('  Clinical intake note: ${c.findingsSummary!.trim()}');
+          buf.writeln(
+            isAr
+                ? '  ملخص مساعد Mindora الذكي: ${c.findingsSummary!.trim()}'
+                : (isFr
+                      ? '  Synthèse IA (assistant) : ${c.findingsSummary!.trim()}'
+                      : '  Clinical intake note: ${c.findingsSummary!.trim()}'),
+          );
         }
         if (c.userConclusion != null && c.userConclusion!.trim().isNotEmpty) {
-          buf.writeln('  Patient takeaway: ${c.userConclusion!.trim()}');
+          buf.writeln(
+            isAr
+                ? '  خلاصة المريض بنفسه: ${c.userConclusion!.trim()}'
+                : (isFr
+                      ? '  Conclusion rédigée par le patient : ${c.userConclusion!.trim()}'
+                      : '  Patient takeaway: ${c.userConclusion!.trim()}'),
+          );
         }
       }
     }
@@ -763,7 +975,13 @@ class ClinicianSyncService {
 
     // 6. Clinician Private Consultation Notes
     if (record.clinicianNotes.isNotEmpty) {
-      buf.writeln('[6] CLINICIAN CONSULTATION NOTES (WORKSPACE LOCAL)');
+      buf.writeln(
+        isAr
+            ? '[6] ملاحظات الطبيب الخاصة بالاستشارة (محلية)'
+            : (isFr
+                  ? '[6] NOTES CLINIQUES DU MÉDECIN (ESPACE LOCAL)'
+                  : '[6] CLINICIAN CONSULTATION NOTES (WORKSPACE LOCAL)'),
+      );
       for (final note in record.clinicianNotes) {
         final dateStr =
             '${note.createdAt.year}-${note.createdAt.month.toString().padLeft(2, '0')}-${note.createdAt.day.toString().padLeft(2, '0')}';
@@ -775,7 +993,11 @@ class ClinicianSyncService {
     }
 
     buf.writeln(
-      'NOTE: Mindora clinical observation summary — non-diagnostic record; excludes private cases.',
+      isAr
+          ? 'ملاحظة: ملخص ملاحظة سريرية من Mindora — وثيقة غير تشخيصية وتستثني تلقائياً الملفات الخاصة.'
+          : (isFr
+                ? 'NOTE : Synthèse d’observation clinique Mindora — document non diagnostique excluant strictement les dossiers privés.'
+                : 'NOTE: Mindora clinical observation summary — non-diagnostic record; excludes private cases.'),
     );
     return buf.toString().trimRight();
   }

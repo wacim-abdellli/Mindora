@@ -113,7 +113,7 @@ class _ClinicianAuthScreenState extends ConsumerState<ClinicianAuthScreen> {
   Future<void> _tryBiometricUnlock(AppStrings strings) async {
     final ok = await ref.read(clinicianAuthServiceProvider).unlockWithBiometrics(
           BiometricSecurityService(),
-          localizedReason: strings.clinicianAuthSubtitle,
+          localizedReason: strings.clinicianBiometricReason,
         );
     if (!mounted) return;
     if (ok) {

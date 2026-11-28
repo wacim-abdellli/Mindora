@@ -65,7 +65,7 @@ class JournalMemorySheet extends ConsumerWidget {
 
           // Header
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 16, 12),
+            padding: const EdgeInsetsDirectional.fromSTEB(20, 4, 16, 12),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

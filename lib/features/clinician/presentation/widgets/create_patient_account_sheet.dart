@@ -141,15 +141,17 @@ class _CreatePatientAccountSheetState
       }
     } on ClinicAuthException catch (e) {
       if (mounted) {
+        final strings = ref.read(appStringsProvider);
         setState(() {
-          _errorMsg = e.message;
+          _errorMsg = strings.localizedClinicAuthError(e.code);
           _isSubmitting = false;
         });
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
+        final strings = ref.read(appStringsProvider);
         setState(() {
-          _errorMsg = e.toString();
+          _errorMsg = strings.genericActionError;
           _isSubmitting = false;
         });
       }
@@ -160,8 +162,12 @@ class _CreatePatientAccountSheetState
     ClinicProvisionResult result,
     AppStrings strings,
   ) async {
-    final text =
-        'Mindora — ${result.account.displayName}\nLogin: ${result.account.loginIdentifier}\nPIN: ${result.temporaryPin}\nDoctor: ${result.account.doctorName}';
+    final text = strings.credentialsCopyText(
+      patientName: result.account.displayName,
+      loginId: result.account.loginIdentifier,
+      pin: result.temporaryPin,
+      doctorName: result.account.doctorName,
+    );
     await Clipboard.setData(ClipboardData(text: text));
     HapticFeedback.lightImpact();
     if (mounted) {
@@ -206,7 +212,7 @@ class _CreatePatientAccountSheetState
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 14, 12, 8),
+                padding: const EdgeInsetsDirectional.fromSTEB(20, 14, 12, 8),
                 child: Row(
                   children: [
                     Icon(
@@ -214,7 +220,7 @@ class _CreatePatientAccountSheetState
                           ? Icons.qr_code_2_rounded
                           : Icons.person_add_alt_1_outlined,
                       size: 22,
-                      color: tokens.m1,
+                      color: tokens.accentInk,
                     ),
                     const SizedBox(width: 10),
                     Expanded(

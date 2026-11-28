@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/localization/app_strings.dart';
+import '../../../app/localization/locale_controller.dart';
 import '../../../app/router/app_router.dart';
 import '../../../app/theme/lab_theme.dart';
 import '../../../app/theme/mind_tokens.dart';
@@ -77,7 +78,7 @@ class _ClinicWelcomeScreenState extends ConsumerState<ClinicWelcomeScreen> {
     } on ClinicAuthException catch (e) {
       if (mounted) {
         setState(() {
-          _pinError = e.message;
+          _pinError = strings.localizedClinicAuthError(e.code);
           _isSavingPin = false;
         });
       }
@@ -118,6 +119,25 @@ class _ClinicWelcomeScreenState extends ConsumerState<ClinicWelcomeScreen> {
             color: tokens.ink,
           ),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsetsDirectional.only(end: 12),
+            child: MindBadge(
+              key: const ValueKey<String>('clinic-welcome-lang-btn'),
+              icon: Icons.language_rounded,
+              label: AppLanguage.fromCode(strings.languageCode).shortCode,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                final next = switch (strings.languageCode) {
+                  'en' => AppLanguage.french,
+                  'fr' => AppLanguage.arabic,
+                  _ => AppLanguage.english,
+                };
+                ref.read(localeControllerProvider.notifier).setLanguage(next);
+              },
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(

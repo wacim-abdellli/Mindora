@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../app/localization/app_strings.dart';
 import 'biometric_service.dart';
 
 /// State of the biometric app lock.
@@ -65,8 +66,9 @@ class AppLockNotifier extends Notifier<AppLockState> {
 
     state = state.copyWith(isAuthenticating: true);
     try {
+      final strings = ref.read(appStringsProvider);
       final success = await _securityService.authenticate(
-        reason: reason ?? 'Authenticate to unlock your Mindora vault',
+        reason: reason ?? strings.biometricUnlockReason,
       );
       if (success) {
         state = state.copyWith(
@@ -104,8 +106,9 @@ class AppLockNotifier extends Notifier<AppLockState> {
 
       state = state.copyWith(isAuthenticating: true);
       try {
+        final strings = ref.read(appStringsProvider);
         final success = await _securityService.authenticate(
-          reason: 'Confirm biometrics to enable session vault lock',
+          reason: strings.biometricEnableReason,
         );
         if (success) {
           await BiometricSecurityService.setBiometricEnabled(true);

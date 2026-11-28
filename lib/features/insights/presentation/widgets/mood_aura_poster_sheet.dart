@@ -399,10 +399,14 @@ class _MoodAuraPosterSheetState extends ConsumerState<MoodAuraPosterSheet> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 12, 8),
+              padding: const EdgeInsetsDirectional.fromSTEB(20, 14, 12, 8),
               child: Row(
                 children: [
-                  Icon(Icons.blur_circular_rounded, size: 20, color: tokens.m1),
+                  Icon(
+                    Icons.blur_circular_rounded,
+                    size: 20,
+                    color: tokens.accentInk,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(

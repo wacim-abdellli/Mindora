@@ -375,7 +375,9 @@ class _InnerObservatoryScreenState extends ConsumerState<InnerObservatoryScreen>
           Text(
             strings.isArabic
                 ? 'استراتيجيات عملية وخطوات واقعية لكسر الجمود واستعادة التوازن اليومي بدون أي ضغط أو شعور بالذنب.'
-                : 'Manageable behavioral steps and low-pressure experiments to break inertia and restore equilibrium.',
+                : (strings.isFrench
+                      ? 'Des étapes concrètes et douces pour relancer votre élan et retrouver l’équilibre au quotidien, sans pression.'
+                      : 'Manageable behavioral steps and low-pressure experiments to break inertia and restore equilibrium.'),
             style: TextStyle(fontSize: 12.5, color: textSecondary, height: 1.4),
           ),
           const SizedBox(height: 16),

@@ -528,7 +528,9 @@ class _SymptomLibraryViewState extends ConsumerState<SymptomLibraryView> {
                         Text(
                           isAr
                               ? '${selectedIds.length} تجارب محددة'
-                              : '${selectedIds.length} symptoms selected',
+                              : (strings.isFrench
+                                    ? '${selectedIds.length} signes sélectionnés'
+                                    : '${selectedIds.length} symptoms selected'),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,

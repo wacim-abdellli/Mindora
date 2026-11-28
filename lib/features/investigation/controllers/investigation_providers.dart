@@ -439,12 +439,13 @@ class ActiveCaseController extends Notifier<AsyncValue<CaseModel?>> {
           initialIncident == 'Unopened Session' ||
           initialIncident == 'Active Deconstruction';
 
+      final strings = ref.read(appStringsProvider);
       final initialStatements = <Statement>[];
       if (isBlankSession) {
         initialStatements.add(
           Statement(
             id: const Uuid().v4(),
-            text: activeMode.openingQuestion,
+            text: activeMode.localizedOpeningQuestion(strings),
             speaker: StatementSpeaker.investigator,
             timestamp: now,
           ),
@@ -466,7 +467,7 @@ class ActiveCaseController extends Notifier<AsyncValue<CaseModel?>> {
         userId: authState.user?.id ?? 'local_user',
         caseNumber: caseNumber,
         title: isBlankSession
-            ? activeMode.displayName
+            ? activeMode.localizedTitle(strings)
             : (initialIncident.length > 30
                 ? '${initialIncident.substring(0, 30)}...'
                 : initialIncident),

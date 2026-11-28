@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/localization/app_strings.dart';
+import '../../../../app/localization/locale_controller.dart';
 import '../../../../app/theme/lab_theme.dart';
 import '../../../../app/theme/mind_tokens.dart';
 import '../../../../core/widgets/bouncing_widget.dart';
@@ -105,6 +106,9 @@ class _EditAboutMeSheetState extends ConsumerState<EditAboutMeSheet> {
           personalIntroduction: _introController.text.trim(),
           additionalContext: _additionalController.text.trim(),
         );
+    await ref
+        .read(localeControllerProvider.notifier)
+        .setLanguage(AppLanguage.fromCode(_selectedLanguage));
 
     if (mounted) {
       Navigator.pop(context);

@@ -91,7 +91,6 @@ class HomeWeeklyRhythmCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontFamily: 'Inter',
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                     color: observedCount > 0 ? tokens.ink : tokens.ink2,
@@ -102,37 +101,37 @@ class HomeWeeklyRhythmCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          Row(
-            children: List.generate(trailingDays.length, (i) {
-              final day = trailingDays[i];
-              final isToday = i == 6;
-              final trace = byDateKey[_dateKeyFor(day)];
-              final weekdayChar = strings.weekdayInitial(day.weekday);
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: Row(
+              children: List.generate(trailingDays.length, (i) {
+                final day = trailingDays[i];
+                final isToday = i == 6;
+                final trace = byDateKey[_dateKeyFor(day)];
+                final weekdayChar = strings.weekdayInitial(day.weekday);
 
-              final Color nodeBg;
-              final Color nodeBorder;
-              final double nodeBorderWidth;
-              if (trace != null) {
-                final mood = AppMood.fromKey(trace.overallMood);
-                final moodColor = MindTokens.moodColor(mood);
-                nodeBg = tokens.moodDayColor(moodColor, trace.moodIntensity);
-                nodeBorder = isToday ? tokens.ink : moodColor;
-                nodeBorderWidth = isToday ? 2.0 : 1.3;
-              } else {
-                nodeBg = tokens.surface2;
-                nodeBorder = isToday ? tokens.m1 : tokens.line;
-                nodeBorderWidth = isToday ? 1.8 : 1.0;
-              }
+                final Color nodeBg;
+                final Color nodeBorder;
+                final double nodeBorderWidth;
+                if (trace != null) {
+                  final mood = AppMood.fromKey(trace.overallMood);
+                  final moodColor = MindTokens.moodColor(mood);
+                  nodeBg = tokens.moodDayColor(moodColor, trace.moodIntensity);
+                  nodeBorder = isToday ? tokens.ink : moodColor;
+                  nodeBorderWidth = isToday ? 2.0 : 1.3;
+                } else {
+                  nodeBg = tokens.surface2;
+                  nodeBorder = isToday ? tokens.m1 : tokens.line;
+                  nodeBorderWidth = isToday ? 1.8 : 1.0;
+                }
 
-              final semanticLabel = trace != null
-                  ? '${strings.weekdayName(day.weekday)}: ${getMoodLabel(trace.overallMood, strings)} (${trace.moodIntensity}/10)'
-                  : strings.weekdayName(day.weekday);
+                final semanticLabel = trace != null
+                    ? '${strings.weekdayName(day.weekday)}: ${getMoodLabel(trace.overallMood, strings)} (${trace.moodIntensity}/10)'
+                    : strings.weekdayName(day.weekday);
 
-              return Expanded(
-                child: Semantics(
-                  button: onDayTap != null,
-                  label: semanticLabel,
+                return Expanded(
                   child: MindPressable(
+                    semanticLabel: semanticLabel,
                     enabled: onDayTap != null,
                     borderRadius: BorderRadius.circular(14),
                     onPressed: onDayTap != null
@@ -180,7 +179,6 @@ class HomeWeeklyRhythmCard extends StatelessWidget {
                             weekdayChar,
                             maxLines: 1,
                             style: TextStyle(
-                              fontFamily: 'Inter',
                               fontSize: 12.5,
                               fontWeight:
                                   isToday ? FontWeight.w700 : FontWeight.w600,
@@ -191,15 +189,14 @@ class HomeWeeklyRhythmCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                ),
-              );
-            }),
+                );
+              }),
+            ),
           ),
           const SizedBox(height: 10),
           Text(
             strings.thisWeekSupportiveCaption,
             style: TextStyle(
-              fontFamily: 'Inter',
               fontSize: 12,
               height: 1.35,
               color: tokens.ink2,
