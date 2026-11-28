@@ -2,9 +2,14 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 import '../../../app/localization/app_strings.dart';
+import '../../../app/localization/mind_formatters.dart';
 import '../../../app/theme/lab_theme.dart';
 import '../../../core/widgets/mind_qr_code.dart';
 import '../../insights/domain/forensic_loop_model.dart';
@@ -12,7 +17,9 @@ import '../../mind_trace/domain/affect_taxonomy.dart';
 import '../../mind_trace/domain/daily_context_tags.dart';
 import '../../mind_trace/domain/mind_trace_model.dart';
 import '../domain/clinician_models.dart';
+import '../domain/post_visit_focus_model.dart';
 import 'clinician_sync_service.dart';
+import 'pdf_font_loader.dart';
 
 @immutable
 class ClinicalBriefRenderResult {
@@ -21,544 +28,1091 @@ class ClinicalBriefRenderResult {
     required this.previewPngBytes,
     required this.plainSummary,
     required this.hasEmbeddedQr,
+    this.pageCount = 1,
+    this.isVectorPdf = true,
   });
 
   final Uint8List pdfBytes;
   final Uint8List previewPngBytes;
   final String plainSummary;
   final bool hasEmbeddedQr;
+  final int pageCount;
+  final bool isVectorPdf;
 }
 
-/// Pure-Dart 1-page A4 Consultation Brief renderer outputting both crisp
-/// PNG previews (rendered with Inter & Noto Sans Arabic) and compliant
-/// monochrome PDF 1.4 (`%PDF-1.4`) bytes without external native plugins.
+/// Multi-page searchable vector A4 Consultation Brief renderer powered by
+/// `package:pdf`, embedding bundled `Inter` and `Noto Sans Arabic` TrueType
+/// fonts with automatic RTL layout, running headers/footers, native vector QR
+/// codes, and zero silent truncation.
 class ClinicalBriefPdfService {
   const ClinicalBriefPdfService();
 
-  static const double _pageW = 1240.0;
-  static const double _pageH = 1754.0;
+  static const PdfPageFormat _a4Format = PdfPageFormat(
+    595,
+    842,
+    marginAll: 36,
+  );
+
+  static const PdfColor _pdfInk = PdfColor.fromInt(0xFF111114);
+  static const PdfColor _pdfInk2 = PdfColor.fromInt(0xFF52525B);
+  static const PdfColor _pdfLine = PdfColor.fromInt(0xFFD4D4D8);
+  static const PdfColor _pdfWell = PdfColor.fromInt(0xFFF4F3EF);
+  static const PdfColor _pdfAccent = PdfColor.fromInt(0xFF0F766E);
+  static const PdfColor _pdfSafety = PdfColor.fromInt(0xFFBE123C);
+  static const PdfColor _pdfSafetySoft = PdfColor.fromInt(0xFFFFF1F2);
+
+  static bool get _isTestEnv {
+    if (kIsWeb) return false;
+    try {
+      return Platform.environment.containsKey('FLUTTER_TEST');
+    } catch (_) {
+      return false;
+    }
+  }
 
   Future<ClinicalBriefRenderResult> renderConsultationBrief({
     required ClinicianPatientRecord record,
     required AppStrings strings,
     String? encryptedCode,
+    ClinicianProfile? clinicianProfile,
+    bool includeClinicianNotes = true,
+    PostVisitFocusPlan? activeFocusPlan,
   }) async {
     const syncService = ClinicianSyncService();
     final plainSummary = syncService.generateEhrClinicalNote(record, strings);
+    final fonts = await MindPdfFontLoader.load();
 
-    final qrMatrix = (encryptedCode != null && encryptedCode.trim().isNotEmpty)
-        ? MindQrCodeEncoder.encode(encryptedCode.trim())
+    final isRtl = strings.isArabic;
+    final dir = isRtl ? pw.TextDirection.rtl : pw.TextDirection.ltr;
+    final clean = MindPdfFontLoader.cleanForPdf;
+    final trimmedCode = encryptedCode?.trim();
+    final hasQr = trimmedCode != null && trimmedCode.isNotEmpty;
+
+    final packet = record.latestPacket;
+    final scope = packet.consentScope;
+    final baseline = record.baseline;
+    final recent = record.recentBaseline;
+    final divergences = record.divergences(strings);
+    final visitDiff = record.visitDiff;
+    final agenda = packet.preVisitAgenda;
+    final generatedAt = DateTime.now();
+
+    final doc = pw.Document(
+      version: PdfVersion.pdf_1_4,
+      title: clean('${strings.clinicalBriefTitle} — ${record.displayName}'),
+      author: clean(clinicianProfile?.displayName ?? 'Mindora'),
+      creator: 'Mindora Clinical Workspace',
+      theme: fonts.themeFor(isArabic: isRtl),
+    );
+
+    final shareableCases = packet.sharedCases
+        .where((c) => !c.isPrivate)
+        .toList(growable: false);
+
+    final loop = scope.includeMoodMetrics
+        ? ForensicLoopLink.synthesize(
+            baseline: baseline,
+            cases: scope.includeSharedCases ? shareableCases : const [],
+            strings: strings,
+            excludePrivateCases: true,
+            includeSomatic: scope.includeSleepEnergyAnxiety,
+          )
         : null;
 
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder, const Rect.fromLTWH(0, 0, _pageW, _pageH));
+    String fmtVal(double? v, {String unit = ''}) {
+      if (v == null) return '--';
+      if (unit == 'h') return clean(MindFormatters.hours(v, strings));
+      return '${MindFormatters.decimal(v, strings)}$unit';
+    }
 
-    // Print-ready pure white page ground
+    String fmtDelta(double? r, double? b, {String unit = ''}) {
+      if (r == null || b == null) return '--';
+      return clean(MindFormatters.signedDelta(r - b, strings, unit: unit));
+    }
+
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: _a4Format,
+        textDirection: dir,
+        header: (ctx) => _buildHeader(
+          strings: strings,
+          profile: clinicianProfile,
+          generatedAt: generatedAt,
+          isRtl: isRtl,
+        ),
+        footer: (ctx) => _buildFooter(
+          strings: strings,
+          pageNumber: ctx.pageNumber,
+          pagesCount: ctx.pagesCount,
+        ),
+        build: (ctx) {
+          final widgets = <pw.Widget>[];
+
+          // Block 1: Patient Identity & Consent Scope
+          widgets.add(
+            _buildPatientIdentityBox(
+              record: record,
+              strings: strings,
+              isRtl: isRtl,
+            ),
+          );
+          widgets.add(pw.SizedBox(height: 12));
+
+          // Block 2: Pre-Visit Agenda & Active Focus Plan
+          if (scope.includePreVisitAgenda && agenda != null && !agenda.isEmpty) {
+            widgets.add(_sectionTitle(strings.preVisitAgendaHeader));
+            widgets.add(
+              _cardBox(
+                children: [
+                  if (agenda.selectedTopics.isNotEmpty)
+                    _labeledLine(
+                      strings.isArabic
+                          ? 'المواضيع:'
+                          : (strings.isFrench ? 'Sujets :' : 'Topics:'),
+                      agenda.selectedTopics.join(isRtl ? '، ' : ', '),
+                    ),
+                  if (agenda.patientQuestion.trim().isNotEmpty)
+                    _labeledLine(
+                      strings.isArabic
+                          ? 'سؤال المريض:'
+                          : (strings.isFrench ? 'Question :' : 'Question:'),
+                      agenda.patientQuestion.trim(),
+                    ),
+                  if (agenda.whatHelpedRecently.trim().isNotEmpty)
+                    _labeledLine(
+                      strings.isArabic
+                          ? 'ما ساعد مؤخراً:'
+                          : (strings.isFrench
+                                ? 'Ce qui a aidé :'
+                                : 'Helpful recently:'),
+                      agenda.whatHelpedRecently.trim(),
+                    ),
+                  if (agenda.focusPlanFeedback.trim().isNotEmpty)
+                    _labeledLine(
+                      strings.isArabic
+                          ? 'تعليق على خطة التركيز:'
+                          : (strings.isFrench
+                                ? 'Retour plan de suivi :'
+                                : 'Focus plan feedback:'),
+                      agenda.focusPlanFeedback.trim(),
+                    ),
+                ],
+              ),
+            );
+            widgets.add(pw.SizedBox(height: 12));
+          }
+
+          if (activeFocusPlan != null && activeFocusPlan.focusItems.isNotEmpty) {
+            widgets.add(_sectionTitle(strings.postVisitFocusTitle));
+            widgets.add(
+              _cardBox(
+                children: [
+                  for (final item in activeFocusPlan.focusItems)
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.only(bottom: 3),
+                      child: pw.Text(
+                        clean(
+                          '${item.isCompleted ? '[x]' : '[ ]'} ${item.title}',
+                        ),
+                        style: const pw.TextStyle(fontSize: 9.5, color: _pdfInk),
+                      ),
+                    ),
+                  if (activeFocusPlan.observationCue.trim().isNotEmpty) ...[
+                    pw.SizedBox(height: 4),
+                    pw.Text(
+                      clean(activeFocusPlan.observationCue.trim()),
+                      style: const pw.TextStyle(fontSize: 9, color: _pdfInk2),
+                    ),
+                  ],
+                ],
+              ),
+            );
+            widgets.add(pw.SizedBox(height: 12));
+          }
+
+          // Block 3: Objective Longitudinal Metrics Table
+          widgets.add(_sectionTitle(strings.baselineTableHeader));
+          widgets.add(
+            pw.Table(
+              border: pw.TableBorder.all(color: _pdfLine, width: 0.6),
+              columnWidths: const {
+                0: pw.FlexColumnWidth(2.6),
+                1: pw.FlexColumnWidth(1.5),
+                2: pw.FlexColumnWidth(1.5),
+                3: pw.FlexColumnWidth(1.4),
+              },
+              children: [
+                _metricRow(
+                  [
+                    strings.metricColumnLabel,
+                    strings.recent7dColumnLabel,
+                    strings.baselineColumnLabel,
+                    strings.deltaColumnLabel,
+                  ],
+                  isHeader: true,
+                ),
+                _metricRow([
+                  strings.metricMoodLabel,
+                  fmtVal(recent.averageMoodIntensity, unit: '/10'),
+                  fmtVal(baseline.averageMoodIntensity, unit: '/10'),
+                  fmtDelta(
+                    recent.averageMoodIntensity,
+                    baseline.averageMoodIntensity,
+                  ),
+                ]),
+                if (scope.includeSleepEnergyAnxiety) ...[
+                  _metricRow([
+                    strings.metricSleepLabel,
+                    fmtVal(recent.averageSleepHours, unit: 'h'),
+                    fmtVal(baseline.averageSleepHours, unit: 'h'),
+                    fmtDelta(
+                      recent.averageSleepHours,
+                      baseline.averageSleepHours,
+                      unit: 'h',
+                    ),
+                  ]),
+                  _metricRow([
+                    strings.metricEnergyLabel,
+                    fmtVal(recent.averageEnergyLevel, unit: '/10'),
+                    fmtVal(baseline.averageEnergyLevel, unit: '/10'),
+                    fmtDelta(
+                      recent.averageEnergyLevel,
+                      baseline.averageEnergyLevel,
+                    ),
+                  ]),
+                  _metricRow([
+                    strings.metricAnxietyLabel,
+                    fmtVal(recent.averageAnxietyLevel, unit: '/10'),
+                    fmtVal(baseline.averageAnxietyLevel, unit: '/10'),
+                    fmtDelta(
+                      recent.averageAnxietyLevel,
+                      baseline.averageAnxietyLevel,
+                    ),
+                  ]),
+                ],
+              ],
+            ),
+          );
+          widgets.add(pw.SizedBox(height: 10));
+
+          // Visit-to-Visit Comparison
+          if (visitDiff != null &&
+              (visitDiff.hasMetricDelta ||
+                  visitDiff.focusPlanFeedback.isNotEmpty ||
+                  visitDiff.addedContextTags.isNotEmpty ||
+                  visitDiff.reducedContextTags.isNotEmpty)) {
+            final diffParts = <String>[
+              if (visitDiff.moodDelta != null)
+                '${strings.metricMoodLabel}: ${clean(MindFormatters.signedDelta(visitDiff.moodDelta!, strings))}',
+              if (scope.includeSleepEnergyAnxiety && visitDiff.sleepDelta != null)
+                '${strings.metricSleepLabel}: ${clean(MindFormatters.signedDelta(visitDiff.sleepDelta!, strings, unit: 'h'))}',
+              if (scope.includeSleepEnergyAnxiety && visitDiff.energyDelta != null)
+                '${strings.metricEnergyLabel}: ${clean(MindFormatters.signedDelta(visitDiff.energyDelta!, strings))}',
+              if (scope.includeSleepEnergyAnxiety &&
+                  visitDiff.anxietyDelta != null)
+                '${strings.metricAnxietyLabel}: ${clean(MindFormatters.signedDelta(visitDiff.anxietyDelta!, strings))}',
+            ];
+            widgets.add(
+              _cardBox(
+                children: [
+                  pw.Text(
+                    clean(
+                      '${strings.sinceLastVisitTitle} (${MindFormatters.daysShort(visitDiff.daysBetween, strings)})',
+                    ),
+                    style: pw.TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: pw.FontWeight.bold,
+                      color: _pdfAccent,
+                    ),
+                  ),
+                  if (diffParts.isNotEmpty) ...[
+                    pw.SizedBox(height: 3),
+                    pw.Text(
+                      clean(diffParts.join('  |  ')),
+                      style: const pw.TextStyle(fontSize: 9, color: _pdfInk),
+                    ),
+                  ],
+                  if (visitDiff.addedContextTags.isNotEmpty) ...[
+                    pw.SizedBox(height: 3),
+                    _labeledLine(
+                      '${strings.addedContextsLabel}:',
+                      visitDiff.addedContextTags
+                          .map((k) => DailyContextTags.localizedLabel(k, strings))
+                          .join(isRtl ? '، ' : ', '),
+                    ),
+                  ],
+                  if (visitDiff.reducedContextTags.isNotEmpty) ...[
+                    pw.SizedBox(height: 2),
+                    _labeledLine(
+                      strings.isArabic
+                          ? 'سياقات أقل تكراراً:'
+                          : (strings.isFrench
+                                ? 'Contextes moins fréquents :'
+                                : 'Reduced contexts:'),
+                      visitDiff.reducedContextTags
+                          .map((k) => DailyContextTags.localizedLabel(k, strings))
+                          .join(isRtl ? '، ' : ', '),
+                    ),
+                  ],
+                ],
+              ),
+            );
+            widgets.add(pw.SizedBox(height: 10));
+          }
+
+          // Affect Spectrum, Context Links & Stabilizers
+          if (baseline.emotionFrequencyMap.isNotEmpty ||
+              baseline.contextTagCorrelations.isNotEmpty ||
+              baseline.recoveryLedger.hasEvidence) {
+            widgets.add(_sectionTitle(strings.affectSpectrumSectionTitle));
+            widgets.add(
+              _cardBox(
+                children: [
+                  if (baseline.emotionFrequencyMap.isNotEmpty)
+                    _labeledLine(
+                      '${strings.recurringFeelingsLabel}:',
+                      baseline.emotionFrequencyMap.entries
+                          .take(6)
+                          .map(
+                            (e) =>
+                                '${AffectTaxonomy.localizedLabel(e.key, strings)} (${MindFormatters.times(e.value, strings)})',
+                          )
+                          .join(isRtl ? '، ' : ', '),
+                    ),
+                  if (baseline.diurnalIntensityAverages.isNotEmpty) ...[
+                    pw.SizedBox(height: 3),
+                    _labeledLine(
+                      '${strings.diurnalRhythmLabel}:',
+                      DayTimeBucket.values
+                          .where(
+                            (b) => baseline.diurnalIntensityAverages.containsKey(b),
+                          )
+                          .map((b) {
+                            final label = switch (b) {
+                              DayTimeBucket.morning => strings.morningBucketLabel,
+                              DayTimeBucket.afternoon =>
+                                strings.afternoonBucketLabel,
+                              DayTimeBucket.evening => strings.eveningBucketLabel,
+                              DayTimeBucket.night => strings.nightBucketLabel,
+                            };
+                            return '$label ${MindFormatters.decimal(baseline.diurnalIntensityAverages[b]!, strings)}/10';
+                          })
+                          .join('  |  '),
+                    ),
+                  ],
+                  if (scope.includeSleepEnergyAnxiety &&
+                      baseline.contextTagCorrelations.isNotEmpty) ...[
+                    pw.SizedBox(height: 3),
+                    _labeledLine(
+                      '${strings.dailyContextSectionTitle}:',
+                      baseline.contextTagCorrelations
+                          .take(5)
+                          .map(
+                            (c) =>
+                                '${DailyContextTags.localizedLabel(c.tagKey, strings)} (${MindFormatters.times(c.occurrences, strings)})',
+                          )
+                          .join('  |  '),
+                    ),
+                  ],
+                  if (baseline.recoveryLedger.hasEvidence) ...[
+                    pw.SizedBox(height: 3),
+                    _labeledLine(
+                      '${strings.observedStabilizersTitle}:',
+                      baseline.recoveryLedger.stabilizers
+                          .take(5)
+                          .map(
+                            (s) =>
+                                '${s.localizedLabel(strings)} (${MindFormatters.times(s.totalOccurrences, strings)})',
+                          )
+                          .join('  |  '),
+                    ),
+                  ],
+                ],
+              ),
+            );
+            widgets.add(pw.SizedBox(height: 10));
+          }
+
+          if (loop != null && loop.hasSufficientSignal) {
+            widgets.add(_sectionTitle(strings.forensicLoopMapTitle));
+            widgets.add(
+              _cardBox(
+                children: [
+                  pw.Text(
+                    clean(loop.compactSummary(strings)),
+                    style: const pw.TextStyle(
+                      fontSize: 9.2,
+                      color: _pdfInk,
+                      lineSpacing: 2,
+                    ),
+                  ),
+                ],
+              ),
+            );
+            widgets.add(pw.SizedBox(height: 10));
+          }
+
+          // Block 4: ALL Objective Baseline Shifts (zero truncation)
+          widgets.add(_sectionTitle(strings.baselineShiftsHeader));
+          if (divergences.isEmpty) {
+            widgets.add(
+              pw.Text(
+                clean(strings.noShiftsDetectedLabel),
+                style: const pw.TextStyle(fontSize: 9.5, color: _pdfInk2),
+              ),
+            );
+          } else {
+            for (final d in divergences) {
+              widgets.add(
+                pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 5),
+                  child: _cardBox(
+                    children: [
+                      pw.Text(
+                        clean('${d.title} (${d.timeWindow})'),
+                        style: pw.TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: pw.FontWeight.bold,
+                          color: _pdfInk,
+                        ),
+                      ),
+                      pw.SizedBox(height: 2),
+                      pw.Text(
+                        clean(d.baselineComparison),
+                        style: const pw.TextStyle(
+                          fontSize: 9,
+                          color: _pdfInk2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+          }
+          widgets.add(pw.SizedBox(height: 10));
+
+          // Block 5: Patient-Reported & AI-Assisted Reflections (strict provenance split)
+          widgets.add(_sectionTitle(strings.sharedReflectionsTab));
+          if (!scope.includeSharedCases) {
+            widgets.add(
+              pw.Text(
+                clean(
+                  strings.isArabic
+                      ? 'مستثناة بموافقة المريض.'
+                      : (strings.isFrench
+                            ? 'Exclues par consentement du patient.'
+                            : 'Excluded by patient consent.'),
+                ),
+                style: const pw.TextStyle(fontSize: 9.5, color: _pdfInk2),
+              ),
+            );
+          } else if (shareableCases.isEmpty) {
+            widgets.add(
+              pw.Text(
+                clean(strings.noSharedReflectionsLabel),
+                style: const pw.TextStyle(fontSize: 9.5, color: _pdfInk2),
+              ),
+            );
+          } else {
+            for (final c in shareableCases) {
+              final hasAiSummary = c.findingsSummary != null &&
+                  c.findingsSummary!.trim().isNotEmpty;
+              final hasPatientTakeaway = c.userConclusion != null &&
+                  c.userConclusion!.trim().isNotEmpty;
+              widgets.add(
+                pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 6),
+                  child: _cardBox(
+                    borderColor: c.isPausedForSafety ? _pdfSafety : _pdfLine,
+                    bgColor: c.isPausedForSafety ? _pdfSafetySoft : _pdfWell,
+                    children: [
+                      pw.Text(
+                        clean('${c.caseNumber} — ${c.title}'),
+                        style: pw.TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: pw.FontWeight.bold,
+                          color: _pdfInk,
+                        ),
+                      ),
+                      if (c.chain != null) ...[
+                        pw.SizedBox(height: 3),
+                        pw.Text(
+                          clean(
+                            '${c.chain!.trigger} ${MindFormatters.rangeArrow(strings)} ${c.chain!.thought} (${strings.localizedLabelName(c.chain!.thoughtLabel)}) ${MindFormatters.rangeArrow(strings)} ${c.chain!.emotion} (${c.chain!.emotionIntensity}/10)',
+                          ),
+                          style: const pw.TextStyle(
+                            fontSize: 8.8,
+                            color: _pdfInk2,
+                          ),
+                        ),
+                      ],
+                      if (hasAiSummary) ...[
+                        pw.SizedBox(height: 3),
+                        _labeledLine(
+                          strings.isArabic
+                              ? 'ملخص مساعد Mindora الذكي (غير تشخيصي):'
+                              : (strings.isFrench
+                                    ? 'Synthèse IA Mindora (non diagnostique) :'
+                                    : 'AI-Generated Summary (non-diagnostic):'),
+                          c.findingsSummary!.trim(),
+                        ),
+                      ],
+                      if (hasPatientTakeaway) ...[
+                        pw.SizedBox(height: 3),
+                        _labeledLine(
+                          strings.isArabic
+                              ? 'خلاصة المريض بنفسه:'
+                              : (strings.isFrench
+                                    ? 'Conclusion rédigée par le patient :'
+                                    : 'Patient’s Own Takeaway:'),
+                          c.userConclusion!.trim(),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            }
+          }
+
+          // Self-logged Symptom Observations
+          if (scope.includeSymptomReports && packet.symptomReports.isNotEmpty) {
+            widgets.add(pw.SizedBox(height: 8));
+            widgets.add(_sectionTitle(strings.sectionSymptoms));
+            for (final rep in packet.symptomReports) {
+              final dateStr = MindFormatters.shortDate(rep.createdAt, strings);
+              final items = rep.symptomIds.join(', ');
+              final noteText = (rep.userAdaptiveAnswer ?? '').trim();
+              widgets.add(
+                pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 4),
+                  child: pw.Text(
+                    clean(
+                      '• $dateStr — $items (${rep.intensity}/10)${noteText.isNotEmpty ? ' · $noteText' : ''}',
+                    ),
+                    style: const pw.TextStyle(fontSize: 9, color: _pdfInk),
+                  ),
+                ),
+              );
+            }
+          }
+
+          // Block 6: Clinician Consultation Notes (toggled ON for archive, OFF for patient handout)
+          if (includeClinicianNotes && record.clinicianNotes.isNotEmpty) {
+            widgets.add(pw.SizedBox(height: 10));
+            widgets.add(_sectionTitle(strings.clinicianNotesTab));
+            for (final note in record.clinicianNotes) {
+              final dateStr = MindFormatters.shortDate(note.createdAt, strings);
+              widgets.add(
+                pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 5),
+                  child: _cardBox(
+                    children: [
+                      pw.Text(
+                        clean('$dateStr · ${note.category.shortCode}'),
+                        style: pw.TextStyle(
+                          fontSize: 8.5,
+                          fontWeight: pw.FontWeight.bold,
+                          color: _pdfInk2,
+                        ),
+                      ),
+                      pw.SizedBox(height: 2),
+                      pw.Text(
+                        clean(note.content.trim()),
+                        style: const pw.TextStyle(
+                          fontSize: 9.2,
+                          color: _pdfInk,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+          }
+
+          // Native Vector QR Block (if encrypted code provided)
+          if (hasQr) {
+            pw.Widget? qrWidget;
+            try {
+              qrWidget = pw.BarcodeWidget(
+                barcode: pw.Barcode.qrCode(),
+                data: trimmedCode,
+                width: 108,
+                height: 108,
+                drawText: false,
+              );
+            } catch (_) {
+              qrWidget = null;
+            }
+            if (qrWidget != null) {
+              widgets.add(pw.SizedBox(height: 12));
+              widgets.add(
+                pw.Container(
+                  padding: const pw.EdgeInsets.all(10),
+                  decoration: pw.BoxDecoration(
+                    color: _pdfWell,
+                    borderRadius: pw.BorderRadius.circular(8),
+                    border: pw.Border.all(color: _pdfLine, width: 0.7),
+                  ),
+                  child: pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                    children: [
+                      pw.Container(
+                        padding: const pw.EdgeInsets.all(6),
+                        color: PdfColors.white,
+                        child: qrWidget,
+                      ),
+                      pw.SizedBox(width: 12),
+                      pw.Expanded(
+                        child: pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Text(
+                              clean(strings.encryptedQrHeader),
+                              style: pw.TextStyle(
+                                fontSize: 10,
+                                fontWeight: pw.FontWeight.bold,
+                                color: _pdfInk,
+                              ),
+                            ),
+                            pw.SizedBox(height: 4),
+                            pw.Text(
+                              clean(strings.qrOfflineTransferHint),
+                              style: const pw.TextStyle(
+                                fontSize: 8.8,
+                                color: _pdfInk2,
+                                lineSpacing: 1.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+          }
+
+          return widgets;
+        },
+      ),
+    );
+
+    final pdfBytes = await doc.save();
+    final pageCount = doc.document.pdfPageList.pages.length;
+
+    // Generate crisp Page-1 PNG preview thumbnail (live rasterizer on devices,
+    // reliable pure-Flutter canvas cover preview in headless test environments).
+    Uint8List? previewPng;
+    if (!_isTestEnv) {
+      try {
+        await for (final page in Printing.raster(pdfBytes, pages: const [0], dpi: 110)) {
+          previewPng = await page.toPng();
+          break;
+        }
+      } catch (_) {
+        previewPng = null;
+      }
+    }
+    previewPng ??= await _renderFallbackCoverPng(
+      record: record,
+      strings: strings,
+      clinicianProfile: clinicianProfile,
+      encryptedCode: hasQr ? trimmedCode : null,
+      pageCount: pageCount,
+    );
+
+    return ClinicalBriefRenderResult(
+      pdfBytes: pdfBytes,
+      previewPngBytes: previewPng,
+      plainSummary: plainSummary,
+      hasEmbeddedQr: hasQr,
+      pageCount: pageCount,
+      isVectorPdf: true,
+    );
+  }
+
+  pw.Widget _buildHeader({
+    required AppStrings strings,
+    required ClinicianProfile? profile,
+    required DateTime generatedAt,
+    required bool isRtl,
+  }) {
+    final clean = MindPdfFontLoader.cleanForPdf;
+    final doctorLine = profile != null
+        ? [
+            profile.displayName,
+            if (profile.specialty.trim().isNotEmpty) profile.specialty.trim(),
+            if (profile.clinicName.trim().isNotEmpty) profile.clinicName.trim(),
+            if (profile.licenseRef.trim().isNotEmpty)
+              profile.licenseRef.trim(),
+          ].join(' · ')
+        : 'Mindora Clinical Workspace';
+
+    return pw.Container(
+      padding: const pw.EdgeInsets.only(bottom: 8),
+      margin: const pw.EdgeInsets.only(bottom: 10),
+      decoration: const pw.BoxDecoration(
+        border: pw.Border(bottom: pw.BorderSide(color: _pdfLine, width: 0.8)),
+      ),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Expanded(
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  clean('Mindora — ${strings.clinicalBriefTitle}'),
+                  style: pw.TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _pdfInk,
+                  ),
+                ),
+                pw.SizedBox(height: 2),
+                pw.Text(
+                  clean(doctorLine),
+                  style: const pw.TextStyle(fontSize: 8.5, color: _pdfInk2),
+                ),
+              ],
+            ),
+          ),
+          pw.SizedBox(width: 10),
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: [
+              pw.Container(
+                padding: const pw.EdgeInsets.symmetric(
+                  horizontal: 7,
+                  vertical: 3,
+                ),
+                decoration: pw.BoxDecoration(
+                  color: _pdfWell,
+                  borderRadius: pw.BorderRadius.circular(4),
+                  border: pw.Border.all(color: _pdfLine, width: 0.5),
+                ),
+                child: pw.Text(
+                  clean(strings.confidentialRecordBadge),
+                  style: pw.TextStyle(
+                    fontSize: 7.5,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _pdfInk,
+                  ),
+                ),
+              ),
+              pw.SizedBox(height: 3),
+              pw.Text(
+                clean(MindFormatters.shortDate(generatedAt, strings)),
+                style: const pw.TextStyle(fontSize: 8, color: _pdfInk2),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildFooter({
+    required AppStrings strings,
+    required int pageNumber,
+    required int pagesCount,
+  }) {
+    final clean = MindPdfFontLoader.cleanForPdf;
+    return pw.Container(
+      padding: const pw.EdgeInsets.only(top: 6),
+      margin: const pw.EdgeInsets.only(top: 10),
+      decoration: const pw.BoxDecoration(
+        border: pw.Border(top: pw.BorderSide(color: _pdfLine, width: 0.6)),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Expanded(
+            child: pw.Text(
+              clean(strings.clinicalBoundaryNote),
+              style: const pw.TextStyle(fontSize: 7.5, color: _pdfInk2),
+            ),
+          ),
+          pw.SizedBox(width: 12),
+          pw.Text(
+            clean(strings.pageOfPagesLabel(pageNumber, pagesCount)),
+            style: pw.TextStyle(
+              fontSize: 8,
+              fontWeight: pw.FontWeight.bold,
+              color: _pdfInk,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildPatientIdentityBox({
+    required ClinicianPatientRecord record,
+    required AppStrings strings,
+    required bool isRtl,
+  }) {
+    final clean = MindPdfFontLoader.cleanForPdf;
+    final packet = record.latestPacket;
+    final scope = packet.consentScope;
+    final demoTag = record.isDemoCase
+        ? (strings.isArabic
+              ? ' [نموذج تجريبي]'
+              : (strings.isFrench ? ' [DÉMO]' : ' [DEMO]'))
+        : '';
+
+    final consentParts = <String>[
+      if (scope.includeMoodMetrics) strings.metricMoodLabel,
+      if (scope.includeSleepEnergyAnxiety) strings.metricSleepLabel,
+      if (scope.includeSymptomReports) strings.sectionSymptoms,
+      if (scope.includeSharedCases) strings.sharedReflectionsTab,
+    ];
+
+    return _cardBox(
+      children: [
+        pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            pw.Expanded(
+              child: pw.Text(
+                clean('${record.displayName}$demoTag'),
+                style: pw.TextStyle(
+                  fontSize: 12,
+                  fontWeight: pw.FontWeight.bold,
+                  color: _pdfInk,
+                ),
+              ),
+            ),
+            pw.Directionality(
+              textDirection: pw.TextDirection.ltr,
+              child: pw.Text(
+                packet.packetId,
+                style: const pw.TextStyle(fontSize: 8.5, color: _pdfInk2),
+              ),
+            ),
+          ],
+        ),
+        pw.SizedBox(height: 4),
+        pw.Text(
+          clean(
+            '${MindFormatters.daysShort(scope.windowDays, strings)} · ${strings.daysTrackedBadge(packet.traces.length)} · ${consentParts.join(isRtl ? '، ' : ', ')}',
+          ),
+          style: const pw.TextStyle(fontSize: 8.8, color: _pdfInk2),
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _sectionTitle(String title) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 5),
+      child: pw.Text(
+        MindPdfFontLoader.cleanForPdf(title),
+        style: pw.TextStyle(
+          fontSize: 10.5,
+          fontWeight: pw.FontWeight.bold,
+          color: _pdfInk,
+        ),
+      ),
+    );
+  }
+
+  pw.Widget _cardBox({
+    required List<pw.Widget> children,
+    PdfColor borderColor = _pdfLine,
+    PdfColor bgColor = _pdfWell,
+  }) {
+    return pw.Container(
+      width: double.infinity,
+      padding: const pw.EdgeInsets.all(9),
+      decoration: pw.BoxDecoration(
+        color: bgColor,
+        borderRadius: pw.BorderRadius.circular(6),
+        border: pw.Border.all(color: borderColor, width: 0.6),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: children,
+      ),
+    );
+  }
+
+  pw.Widget _labeledLine(String label, String value) {
+    final clean = MindPdfFontLoader.cleanForPdf;
+    return pw.RichText(
+      text: pw.TextSpan(
+        children: [
+          pw.TextSpan(
+            text: '${clean(label)} ',
+            style: pw.TextStyle(
+              fontSize: 9,
+              fontWeight: pw.FontWeight.bold,
+              color: _pdfInk,
+            ),
+          ),
+          pw.TextSpan(
+            text: clean(value),
+            style: const pw.TextStyle(fontSize: 9, color: _pdfInk2),
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.TableRow _metricRow(List<String> cells, {bool isHeader = false}) {
+    final clean = MindPdfFontLoader.cleanForPdf;
+    return pw.TableRow(
+      decoration: isHeader ? const pw.BoxDecoration(color: _pdfWell) : null,
+      children: [
+        for (var i = 0; i < cells.length; i++)
+          pw.Padding(
+            padding: const pw.EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+            child: i > 0 && !isHeader
+                ? pw.Directionality(
+                    textDirection: pw.TextDirection.ltr,
+                    child: pw.Text(
+                      clean(cells[i]),
+                      textAlign: pw.TextAlign.right,
+                      style: const pw.TextStyle(fontSize: 9, color: _pdfInk),
+                    ),
+                  )
+                : pw.Text(
+                    clean(cells[i]),
+                    textAlign: i == 0 ? pw.TextAlign.left : pw.TextAlign.right,
+                    style: pw.TextStyle(
+                      fontSize: isHeader ? 8.5 : 9,
+                      fontWeight: isHeader
+                          ? pw.FontWeight.bold
+                          : pw.FontWeight.normal,
+                      color: isHeader ? _pdfInk2 : _pdfInk,
+                    ),
+                  ),
+          ),
+      ],
+    );
+  }
+
+  /// Headless-safe Page-1 cover PNG thumbnail used when platform PDF rasterizer
+  /// is unavailable (e.g. unit/widget tests).
+  Future<Uint8List> _renderFallbackCoverPng({
+    required ClinicianPatientRecord record,
+    required AppStrings strings,
+    required ClinicianProfile? clinicianProfile,
+    required String? encryptedCode,
+    required int pageCount,
+  }) async {
+    const w = 620.0;
+    const h = 877.0;
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder, const Rect.fromLTWH(0, 0, w, h));
     canvas.drawRect(
-      const Rect.fromLTWH(0, 0, _pageW, _pageH),
+      const Rect.fromLTWH(0, 0, w, h),
       Paint()..color = const Color(0xFFFFFFFF),
     );
 
     final isRtl = strings.isArabic;
     final textDir = isRtl ? TextDirection.rtl : TextDirection.ltr;
     final align = isRtl ? TextAlign.right : TextAlign.left;
-    final font = isRtl ? 'Noto Sans Arabic' : LabTheme.fontFamily;
-    final fallback = LabTheme.fontFallback;
-
-    const margin = 72.0;
-    const contentW = _pageW - margin * 2;
+    const margin = 38.0;
+    const contentW = w - margin * 2;
     var y = margin;
 
-    const ink = Color(0xFF0A0A0A);
-    const ink2 = Color(0xFF4A5058);
-    const lineColor = Color(0xFFD0D5DD);
-    const boxBg = Color(0xFFF6F7F9);
-
-    double drawText(
+    double paintText(
       String text, {
-      required double x,
-      required double top,
-      required double maxWidth,
-      required double fontSize,
+      required double size,
       FontWeight weight = FontWeight.w400,
-      Color color = ink,
-      double lineHeight = 1.38,
+      Color color = const Color(0xFF111114),
     }) {
       final tp = TextPainter(
         text: TextSpan(
           text: text,
           style: TextStyle(
-            fontFamily: font,
-            fontFamilyFallback: fallback,
-            fontSize: fontSize,
+            fontFamily: LabTheme.fontFamily,
+            fontFamilyFallback: LabTheme.fontFallback,
+            fontSize: size,
             fontWeight: weight,
             color: color,
-            height: lineHeight,
+            height: 1.35,
           ),
         ),
         textAlign: align,
         textDirection: textDir,
-      )..layout(maxWidth: maxWidth);
-      final drawX = isRtl ? (x + maxWidth - tp.width) : x;
-      tp.paint(canvas, Offset(drawX, top));
+      )..layout(maxWidth: contentW);
+      final drawX = isRtl ? (margin + contentW - tp.width) : margin;
+      tp.paint(canvas, Offset(drawX, y));
       return tp.height;
     }
 
-    // Header
-    final title = strings.isArabic
-        ? 'Mindora — ملخص استشارة سريري'
-        : (strings.isFrench
-              ? 'Mindora — SYNTHÈSE DE CONSULTATION'
-              : 'Mindora — CLINICAL CONSULTATION BRIEF');
-    y += drawText(
-      title,
-      x: margin,
-      top: y,
-      maxWidth: contentW,
-      fontSize: 28,
+    y += paintText(
+      'Mindora — ${strings.clinicalBriefTitle}',
+      size: 16,
+      weight: FontWeight.w700,
+    );
+    y += 4;
+    if (clinicianProfile != null) {
+      y += paintText(
+        '${clinicianProfile.displayName} · ${clinicianProfile.clinicName}',
+        size: 10.5,
+        color: const Color(0xFF52525B),
+      );
+      y += 6;
+    }
+    canvas.drawLine(
+      Offset(margin, y),
+      Offset(w - margin, y),
+      Paint()
+        ..color = const Color(0xFFD4D4D8)
+        ..strokeWidth = 1.2,
+    );
+    y += 12;
+    y += paintText(
+      '${record.displayName} · ${strings.pdfPagesBadge(pageCount)}',
+      size: 13,
       weight: FontWeight.w700,
     );
     y += 8;
-    y += drawText(
-      strings.clinicalBriefSubtitle,
-      x: margin,
-      top: y,
-      maxWidth: contentW,
-      fontSize: 18,
-      color: ink2,
-    );
-    y += 18;
-    canvas.drawLine(
-      Offset(margin, y),
-      Offset(_pageW - margin, y),
-      Paint()
-        ..color = ink
-        ..strokeWidth = 2.0,
-    );
-    y += 20;
 
-    // Patient metadata strip
-    final packet = record.latestPacket;
-    final scope = packet.consentScope;
-    final metaLine =
-        '${record.displayName}${record.isDemoCase ? ' [DEMO]' : ''} · '
-        '${strings.daysWindowLabel(scope.windowDays)} · '
-        '${strings.momentsLoggedLabel(packet.traces.length)} · '
-        'ID: ${packet.packetId}';
-    y += drawText(
-      metaLine,
-      x: margin,
-      top: y,
-      maxWidth: contentW,
-      fontSize: 18,
-      weight: FontWeight.w600,
-    );
-    y += 24;
-
-    void drawSectionHeader(String heading) {
-      y += drawText(
-        heading,
-        x: margin,
-        top: y,
-        maxWidth: contentW,
-        fontSize: 17,
-        weight: FontWeight.w700,
-        color: ink2,
-      );
-      y += 6;
-      canvas.drawLine(
-        Offset(margin, y),
-        Offset(_pageW - margin, y),
-        Paint()
-          ..color = lineColor
-          ..strokeWidth = 1.2,
-      );
-      y += 12;
-    }
-
-    // 1. Pre-visit Agenda & Focus Feedback
-    final agenda = packet.preVisitAgenda;
-    if (scope.includePreVisitAgenda && agenda != null && !agenda.isEmpty) {
-      drawSectionHeader(strings.preVisitAgendaSectionTitle);
-      final lines = <String>[
-        if (agenda.selectedTopics.isNotEmpty)
-          '${strings.preVisitTopicsLabel}: ${agenda.selectedTopics.join(', ')}',
-        if (agenda.patientQuestion.trim().isNotEmpty)
-          'Question: ${agenda.patientQuestion.trim()}',
-        if (agenda.whatHelpedRecently.trim().isNotEmpty)
-          'Helpful recently: ${agenda.whatHelpedRecently.trim()}',
-        if (agenda.focusPlanFeedback.trim().isNotEmpty)
-          '${strings.focusFeedbackClinicianLabel}: ${agenda.focusPlanFeedback.trim()}',
-      ];
-      for (final line in lines) {
-        y += drawText(
-          line,
-          x: margin,
-          top: y,
-          maxWidth: contentW,
-          fontSize: 17,
-        );
-        y += 6;
-      }
-      y += 16;
-    }
-
-    // 2. Baseline & Visit Diff
-    final baseline = record.baseline;
     final recent = record.recentBaseline;
-    drawSectionHeader(strings.recentVsBaselineTitle);
-    String fmt(double? v, [String suffix = '']) =>
-        v == null ? '--' : '${v.toStringAsFixed(1)}$suffix';
-    String delta(double? r, double? b, [String suffix = '']) {
-      if (r == null || b == null) return '--';
-      final d = r - b;
-      return '${d >= 0 ? '+' : ''}${d.toStringAsFixed(1)}$suffix';
-    }
-
-    final metricLines = <String>[
-      '${strings.metricMoodLabel}: 7d ${fmt(recent.averageMoodIntensity, '/10')} '
-          '| Baseline ${fmt(baseline.averageMoodIntensity, '/10')} '
-          '(${delta(recent.averageMoodIntensity, baseline.averageMoodIntensity)})',
-      if (scope.includeSleepEnergyAnxiety) ...[
-        '${strings.metricSleepLabel}: 7d ${fmt(recent.averageSleepHours, 'h')} '
-            '| Baseline ${fmt(baseline.averageSleepHours, 'h')} '
-            '(${delta(recent.averageSleepHours, baseline.averageSleepHours, 'h')})',
-        '${strings.metricEnergyLabel}: 7d ${fmt(recent.averageEnergyLevel, '/10')} '
-            '| Baseline ${fmt(baseline.averageEnergyLevel, '/10')} '
-            '(${delta(recent.averageEnergyLevel, baseline.averageEnergyLevel)})',
-        '${strings.metricAnxietyLabel}: 7d ${fmt(recent.averageAnxietyLevel, '/10')} '
-            '| Baseline ${fmt(baseline.averageAnxietyLevel, '/10')} '
-            '(${delta(recent.averageAnxietyLevel, baseline.averageAnxietyLevel)})',
-      ],
-    ];
-    for (final line in metricLines) {
-      y += drawText(line, x: margin, top: y, maxWidth: contentW, fontSize: 17);
-      y += 6;
-    }
-
-    final visitDiff = record.visitDiff;
-    if (visitDiff != null && visitDiff.hasMetricDelta) {
-      y += 8;
-      final diffParts = <String>[
-        if (visitDiff.moodDelta != null)
-          '${strings.metricMoodLabel}: ${visitDiff.moodDelta! >= 0 ? '+' : ''}${visitDiff.moodDelta!.toStringAsFixed(1)}',
-        if (scope.includeSleepEnergyAnxiety && visitDiff.sleepDelta != null)
-          '${strings.metricSleepLabel}: ${visitDiff.sleepDelta! >= 0 ? '+' : ''}${visitDiff.sleepDelta!.toStringAsFixed(1)}h',
-        if (visitDiff.eveningIntensityDelta != null)
-          '${strings.eveningBucketLabel}: ${visitDiff.eveningIntensityDelta! >= 0 ? '+' : ''}${visitDiff.eveningIntensityDelta!.toStringAsFixed(1)}',
-      ];
-      y += drawText(
-        '${strings.sinceLastVisitTitle} (${strings.visitIntervalBadge(visitDiff.daysBetween)}): ${diffParts.join(' · ')}',
-        x: margin,
-        top: y,
-        maxWidth: contentW,
-        fontSize: 16,
-        weight: FontWeight.w600,
-      );
-    }
-    y += 20;
-
-    // 3. Affect Spectrum, Context Links & Observed Stabilizers
-    final footerHeight = qrMatrix != null ? 240.0 : 90.0;
-    final bodyMaxY = _pageH - margin - footerHeight;
-
-    if (y < bodyMaxY - 80 &&
-        (baseline.emotionFrequencyMap.isNotEmpty ||
-            baseline.diurnalIntensityAverages.isNotEmpty ||
-            baseline.contextTagCorrelations.isNotEmpty ||
-            baseline.recoveryLedger.hasEvidence)) {
-      drawSectionHeader(strings.affectSpectrumSectionTitle);
-
-      if (baseline.emotionFrequencyMap.isNotEmpty && y < bodyMaxY - 40) {
-        final emotionsText = baseline.emotionFrequencyMap.entries
-            .take(5)
-            .map(
-              (e) =>
-                  '${AffectTaxonomy.localizedLabel(e.key, strings)} (${e.value}x)',
-            )
-            .join(', ');
-        y += drawText(
-          emotionsText,
-          x: margin,
-          top: y,
-          maxWidth: contentW,
-          fontSize: 17,
-        );
-        y += 8;
-      }
-
-      if (baseline.diurnalIntensityAverages.isNotEmpty && y < bodyMaxY - 40) {
-        final diurnalParts = DayTimeBucket.values
-            .where((b) => baseline.diurnalIntensityAverages.containsKey(b))
-            .map((b) {
-              final lbl = switch (b) {
-                DayTimeBucket.morning => strings.morningBucketLabel,
-                DayTimeBucket.afternoon => strings.afternoonBucketLabel,
-                DayTimeBucket.evening => strings.eveningBucketLabel,
-                DayTimeBucket.night => strings.nightBucketLabel,
-              };
-              return '$lbl: ${baseline.diurnalIntensityAverages[b]!.toStringAsFixed(1)}/10';
-            })
-            .join(' · ');
-        y += drawText(
-          diurnalParts,
-          x: margin,
-          top: y,
-          maxWidth: contentW,
-          fontSize: 17,
-        );
-        y += 10;
-      }
-
-      if (scope.includeSleepEnergyAnxiety &&
-          baseline.contextTagCorrelations.isNotEmpty &&
-          y < bodyMaxY - 50) {
-        final tagLines = baseline.contextTagCorrelations
-            .take(4)
-            .map((c) {
-              final label = DailyContextTags.localizedLabel(c.tagKey, strings);
-              final mood = c.avgMoodIntensity != null
-                  ? ', ${c.avgMoodIntensity!.toStringAsFixed(1)}/10'
-                  : '';
-              final sleep = c.avgSleepHours != null
-                  ? ', ${c.avgSleepHours!.toStringAsFixed(1)}h'
-                  : '';
-              return '$label (${c.occurrences}x$mood$sleep)';
-            })
-            .join(' | ');
-        y += drawText(
-          '${strings.dailyContextSectionTitle}: $tagLines',
-          x: margin,
-          top: y,
-          maxWidth: contentW,
-          fontSize: 16,
-        );
-        y += 10;
-      }
-
-      if (scope.includeMoodMetrics &&
-          baseline.recoveryLedger.hasEvidence &&
-          y < bodyMaxY - 50) {
-        final stabs = baseline.recoveryLedger.stabilizers
-            .take(4)
-            .map((s) {
-              final label = s.localizedLabel(strings);
-              final shift = s.avgSameDayShift != null && s.avgSameDayShift! < 0
-                  ? ' (${s.avgSameDayShift!.toStringAsFixed(1)}/10)'
-                  : '';
-              return '$label (${s.totalOccurrences}x)$shift';
-            })
-            .join(' | ');
-        y += drawText(
-          '${strings.observedStabilizersTitle}: $stabs',
-          x: margin,
-          top: y,
-          maxWidth: contentW,
-          fontSize: 16,
-          weight: FontWeight.w600,
-        );
-        y += 14;
-      }
-
-      if (scope.includeMoodMetrics && y < bodyMaxY - 55) {
-        final loop = ForensicLoopLink.synthesize(
-          baseline: baseline,
-          cases: scope.includeSharedCases ? packet.sharedCases : const [],
-          strings: strings,
-          excludePrivateCases: true,
-          includeSomatic: scope.includeSleepEnergyAnxiety,
-        );
-        if (loop.hasSufficientSignal) {
-          y += drawText(
-            '${strings.forensicLoopMapTitle}: ${loop.compactSummary(strings)}',
-            x: margin,
-            top: y,
-            maxWidth: contentW,
-            fontSize: 15,
-            color: ink2,
-          );
-          y += 12;
-        }
-      }
-    }
-
-    // 4. Objective Baseline Divergences
-    final divergences = record.divergences(strings);
-    if (divergences.isNotEmpty && y < bodyMaxY - 60) {
-      drawSectionHeader(strings.cohortObservationsTitle);
-      for (final d in divergences.take(3)) {
-        if (y >= bodyMaxY - 40) break;
-        y += drawText(
-          '• ${d.title}: ${d.baselineComparison}',
-          x: margin,
-          top: y,
-          maxWidth: contentW,
-          fontSize: 16,
-        );
-        y += 6;
-      }
-    }
-
-    // Footer + optional embedded encrypted handoff QR
-    final footerTop = _pageH - margin - footerHeight + 16;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(margin, footerTop, contentW, footerHeight - 24),
-        const Radius.circular(12),
-      ),
-      Paint()..color = boxBg,
+    final base = record.baseline;
+    y += paintText(
+      '${strings.metricMoodLabel}: ${recent.averageMoodIntensity?.toStringAsFixed(1) ?? '--'}/10  |  ${strings.metricSleepLabel}: ${recent.averageSleepHours != null ? MindFormatters.hours(recent.averageSleepHours!, strings) : '--'}  (${strings.baselineColumnLabel}: ${base.averageSleepHours != null ? MindFormatters.hours(base.averageSleepHours!, strings) : '--'})',
+      size: 10.5,
+      color: const Color(0xFF52525B),
     );
+    y += 12;
 
-    if (qrMatrix != null) {
-      const qrBoxSize = 168.0;
-      final qrX = isRtl ? margin + 20 : _pageW - margin - qrBoxSize - 20;
-      final qrY = footerTop + 20;
-      canvas.drawRect(
-        Rect.fromLTWH(qrX, qrY, qrBoxSize, qrBoxSize),
-        Paint()..color = const Color(0xFFFFFFFF),
-      );
-      const qQuiet = 2;
-      final cell = qrBoxSize / (qrMatrix.size + qQuiet * 2);
-      final dark = Paint()..color = const Color(0xFF000000);
-      for (var r = 0; r < qrMatrix.size; r++) {
-        for (var c = 0; c < qrMatrix.size; c++) {
-          if (qrMatrix.isDark(r, c)) {
-            canvas.drawRect(
-              Rect.fromLTWH(
-                qrX + (c + qQuiet) * cell,
-                qrY + (r + qQuiet) * cell,
-                cell + 0.15,
-                cell + 0.15,
-              ),
-              dark,
-            );
+    if (encryptedCode != null) {
+      final matrix = MindQrCodeEncoder.encode(encryptedCode);
+      if (matrix != null) {
+        const qrSize = 112.0;
+        final cell = qrSize / matrix.size;
+        final qrX = isRtl ? margin : (w - margin - qrSize);
+        final darkPaint = Paint()..color = const Color(0xFF000000);
+        for (var r = 0; r < matrix.size; r++) {
+          for (var c = 0; c < matrix.size; c++) {
+            if (matrix.isDark(r, c)) {
+              canvas.drawRect(
+                Rect.fromLTWH(qrX + c * cell, y + r * cell, cell, cell),
+                darkPaint,
+              );
+            }
           }
         }
       }
-      final noteX = isRtl ? (margin + qrBoxSize + 40) : (margin + 20);
-      drawText(
-        '${strings.inRoomQrPinReminder}\n${strings.stabilizerDisclaimer}',
-        x: noteX,
-        top: footerTop + 28,
-        maxWidth: contentW - qrBoxSize - 64,
-        fontSize: 16,
-        color: ink2,
-      );
-    } else {
-      drawText(
-        strings.stabilizerDisclaimer,
-        x: margin + 20,
-        top: footerTop + 20,
-        maxWidth: contentW - 40,
-        fontSize: 16,
-        color: ink2,
-      );
     }
 
     final picture = recorder.endRecording();
-    final image = await picture.toImage(_pageW.toInt(), _pageH.toInt());
-    try {
-      final pngData = await image.toByteData(format: ui.ImageByteFormat.png);
-      final rgbaData = await image.toByteData(
-        format: ui.ImageByteFormat.rawRgba,
-      );
-      if (pngData == null || rgbaData == null) {
-        throw StateError('Failed to rasterize consultation brief page.');
-      }
-
-      final previewPngBytes = pngData.buffer.asUint8List();
-      final pdfBytes = _buildPdf14FromRgba(
-        rgba: rgbaData.buffer.asUint8List(),
-        width: _pageW.toInt(),
-        height: _pageH.toInt(),
-      );
-
-      return ClinicalBriefRenderResult(
-        pdfBytes: pdfBytes,
-        previewPngBytes: previewPngBytes,
-        plainSummary: plainSummary,
-        hasEmbeddedQr: qrMatrix != null,
-      );
-    } finally {
-      image.dispose();
-    }
+    final image = await picture.toImage(w.toInt(), h.toInt());
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    return byteData!.buffer.asUint8List();
   }
 
-  /// Writes valid binary PDF 1.4 wrapping a zlib-compressed 24-bit RGB image
-  /// inside a standard A4 `595x842` pt page with exact byte offsets in `xref`.
-  Uint8List _buildPdf14FromRgba({
-    required Uint8List rgba,
-    required int width,
-    required int height,
-  }) {
-    final rgb = Uint8List(width * height * 3);
-    var src = 0;
-    var dst = 0;
-    while (src < rgba.length) {
-      rgb[dst++] = rgba[src];
-      rgb[dst++] = rgba[src + 1];
-      rgb[dst++] = rgba[src + 2];
-      src += 4;
-    }
-
-    final compressedRgb = Uint8List.fromList(zlib.encode(rgb));
-    final contentCmd = 'q\n595 0 0 842 0 0 cm\n/Im0 Do\nQ\n';
-    final contentBytes = contentCmd.codeUnits;
-
-    final out = BytesBuilder(copy: false);
-    void writeAscii(String s) => out.add(s.codeUnits);
-
-    final offsets = <int>[];
-
-    writeAscii('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
-
-    // 1: Catalog
-    offsets.add(out.length);
-    writeAscii('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
-
-    // 2: Pages
-    offsets.add(out.length);
-    writeAscii('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n');
-
-    // 3: Page
-    offsets.add(out.length);
-    writeAscii(
-      '3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] '
-      '/Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\nendobj\n',
-    );
-
-    // 4: Image XObject
-    offsets.add(out.length);
-    writeAscii(
-      '4 0 obj\n<< /Type /XObject /Subtype /Image /Width $width /Height $height '
-      '/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode '
-      '/Length ${compressedRgb.length} >>\nstream\n',
-    );
-    out.add(compressedRgb);
-    writeAscii('\nendstream\nendobj\n');
-
-    // 5: Content stream
-    offsets.add(out.length);
-    writeAscii('5 0 obj\n<< /Length ${contentBytes.length} >>\nstream\n');
-    out.add(contentBytes);
-    writeAscii('endstream\nendobj\n');
-
-    // Cross-reference table
-    final xrefStart = out.length;
-    writeAscii('xref\n0 ${offsets.length + 1}\n');
-    writeAscii('0000000000 65535 f \n');
-    for (final offset in offsets) {
-      final padded = offset.toString().padLeft(10, '0');
-      writeAscii('$padded 00000 n \n');
-    }
-    writeAscii(
-      'trailer\n<< /Size ${offsets.length + 1} /Root 1 0 R >>\n'
-      'startxref\n$xrefStart\n%%EOF\n',
-    );
-
-    return out.toBytes();
-  }
-
+  /// Writes PDF bytes to [directory] (or system temp for legacy direct callers).
   Future<String> savePdfToLocalFile(
     Uint8List pdfBytes, {
     required String fileName,

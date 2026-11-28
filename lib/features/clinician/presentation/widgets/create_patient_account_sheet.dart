@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/localization/app_strings.dart';
 import '../../../../app/theme/mind_tokens.dart';
+import '../../../../core/export/document_exporter.dart';
 import '../../../../core/widgets/mind_badge.dart';
 import '../../../../core/widgets/mind_button.dart';
 import '../../../../core/widgets/mind_card.dart';
@@ -14,6 +15,7 @@ import '../../../clinic_sync/controllers/clinic_sync_providers.dart';
 import '../../../clinic_sync/domain/clinic_account_models.dart';
 import '../../../profile/domain/clinical_condition_catalog.dart';
 import '../../controllers/clinician_providers.dart';
+import '../../data/patient_welcome_card_pdf_service.dart';
 
 /// Doctor Admin modal sheet for provisioning a clinic patient account and
 /// generating a single-use scannable invite QR + 6-digit temporary PIN.
@@ -155,6 +157,38 @@ class _CreatePatientAccountSheetState
           _isSubmitting = false;
         });
       }
+    }
+  }
+
+  Future<void> _exportWelcomeCardPdf(
+    ClinicProvisionResult result,
+    AppStrings strings,
+  ) async {
+    try {
+      const pdfService = PatientWelcomeCardPdfService();
+      final bytes = await pdfService.generateWelcomeCardPdf(provision: result);
+      final slug = DocumentExporter.sanitizeFileName(
+        result.account.displayName,
+      );
+      final fileName = 'mindora_welcome_$slug.pdf';
+      final exported = await ref.read(documentExporterProvider).savePdf(
+            bytes: bytes,
+            fileName: fileName,
+          );
+      if (!mounted || exported.isCancelled) return;
+      HapticFeedback.mediumImpact();
+      showMindToast(
+        context,
+        strings.pdfSavedSnackbar(exported.fileName),
+        variant: MindToastVariant.success,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      showMindToast(
+        context,
+        strings.pdfExportFailedError,
+        variant: MindToastVariant.error,
+      );
     }
   }
 
@@ -439,25 +473,31 @@ class _CreatePatientAccountSheetState
                 ),
               ),
               const SizedBox(height: 6),
-              Text(
-                result.temporaryPin,
-                key: const ValueKey('admin-handover-pin-text'),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 4,
-                  color: tokens.ink,
-                  fontFeatures: const [FontFeature.tabularFigures()],
+              Directionality(
+                textDirection: TextDirection.ltr,
+                child: Text(
+                  result.temporaryPin,
+                  key: const ValueKey('admin-handover-pin-text'),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 4,
+                    color: tokens.ink,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                result.account.loginIdentifier,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: tokens.ink2,
+              Directionality(
+                textDirection: TextDirection.ltr,
+                child: Text(
+                  result.account.loginIdentifier,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: tokens.ink2,
+                  ),
                 ),
               ),
             ],
@@ -465,8 +505,17 @@ class _CreatePatientAccountSheetState
         ),
         const SizedBox(height: 16),
         MindButton(
-          text: strings.copyPinAndIdBtn,
+          key: const ValueKey<String>('admin-print-welcome-card-btn'),
+          text: strings.printWelcomeCardBtn,
           variant: MindButtonVariant.secondary,
+          leadingIcon: Icons.picture_as_pdf_outlined,
+          isFullWidth: true,
+          onPressed: () => _exportWelcomeCardPdf(result, strings),
+        ),
+        const SizedBox(height: 10),
+        MindButton(
+          text: strings.copyPinAndIdBtn,
+          variant: MindButtonVariant.soft,
           leadingIcon: Icons.copy_rounded,
           isFullWidth: true,
           onPressed: () => _copyCredentials(result, strings),
@@ -487,48 +536,45 @@ class _CreatePatientAccountSheetState
     required bool selected,
     required VoidCallback onTap,
   }) {
-    return Semantics(
-      button: true,
+    return MindPressable(
+      semanticLabel: label,
       selected: selected,
-      label: label,
-      child: MindPressable(
-        onPressed: () {
-          HapticFeedback.selectionClick();
-          onTap();
-        },
-        borderRadius: BorderRadius.circular(tokens.chipRadius),
-        child: Container(
-          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: selected ? tokens.cardTint : tokens.surface2,
-            borderRadius: BorderRadius.circular(tokens.chipRadius),
-            border: Border.all(
-              color: selected ? tokens.primary : tokens.line,
-              width: selected ? 1.5 : 1.0,
-            ),
+      onPressed: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      borderRadius: BorderRadius.circular(tokens.chipRadius),
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? tokens.cardTint : tokens.surface2,
+          borderRadius: BorderRadius.circular(tokens.chipRadius),
+          border: Border.all(
+            color: selected ? tokens.primary : tokens.line,
+            width: selected ? 1.5 : 1.0,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (selected) ...[
-                Icon(Icons.check_rounded, size: 15, color: tokens.ink),
-                const SizedBox(width: 6),
-              ],
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                    color: selected ? tokens.ink : tokens.ink2,
-                  ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (selected) ...[
+              Icon(Icons.check_rounded, size: 15, color: tokens.ink),
+              const SizedBox(width: 6),
+            ],
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: selected ? tokens.ink : tokens.ink2,
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

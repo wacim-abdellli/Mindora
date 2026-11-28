@@ -7215,6 +7215,163 @@ class AppStrings {
     return 'Mindora — $patientName\nLogin: $loginId\nTemporary PIN: $pin\nDoctor: $doctorName';
   }
 
+  // Phase 3: Vector Multi-Page PDF & Patient Welcome Card Export
+  String get printPdfBtn => isArabic
+      ? 'طباعة ملف PDF'
+      : (isFrench ? 'Imprimer le PDF' : 'Print PDF');
+
+  String get includeClinicianNotesToggle => isArabic
+      ? 'تضمين ملاحظات الطبيب الخاصة'
+      : (isFrench
+            ? 'Inclure mes notes cliniques'
+            : 'Include doctor consultation notes');
+
+  String get includeClinicianNotesSub => isArabic
+      ? 'فعّلها لأرشيف الملف الطبي، وأغلقها قبل تسليم النسخة للمريض.'
+      : (isFrench
+            ? 'Activez pour le dossier médical, désactivez avant de remettre au patient.'
+            : 'Keep on for EHR/referral archive; turn off before handing a copy to the patient.');
+
+  String pdfPagesBadge(int pages) {
+    if (isArabic) {
+      if (pages == 1) return 'PDF متجه · صفحة واحدة';
+      if (pages == 2) return 'PDF متجه · صفحتان';
+      return 'PDF متجه · $pages صفحات';
+    }
+    if (isFrench) {
+      return pages == 1 ? 'PDF vectoriel · 1 page' : 'PDF vectoriel · $pages pages';
+    }
+    return pages == 1 ? 'Vector PDF · 1 page' : 'Vector PDF · $pages pages';
+  }
+
+  String pageOfPagesLabel(int page, int total) => isArabic
+      ? 'صفحة $page من $total'
+      : (isFrench ? 'Page $page sur $total' : 'Page $page of $total');
+
+  String get confidentialRecordBadge => isArabic
+      ? 'وثيقة سريرية سرّية'
+      : (isFrench ? 'Document clinique confidentiel' : 'Confidential clinical record');
+
+  String get pdfExportFailedError => isArabic
+      ? 'تعذّر حفظ أو مشاركة ملف PDF. عاود المحاولة.'
+      : (isFrench
+            ? 'Impossible d’exporter ou de partager le PDF. Veuillez réessayer.'
+            : 'Could not export or share the PDF. Please try again.');
+
+  String get pdfPrintedToast => isArabic
+      ? 'تفتح نافذة الطباعة الآن.'
+      : (isFrench ? 'Impression prête.' : 'Print dialog opened.');
+
+  String get printWelcomeCardBtn => isArabic
+      ? 'طباعة / حفظ بطاقة الدخول (PDF)'
+      : (isFrench
+            ? 'Imprimer / Enregistrer la carte d’accès (PDF)'
+            : 'Print / Save Welcome Card (PDF)');
+
+  String get welcomeCardTitle => isArabic
+      ? 'بطاقة الدخول الشخصية إلى Mindora'
+      : (isFrench
+            ? 'Votre carte d’accès personnelle Mindora'
+            : 'Your Personal Mindora Access Card');
+
+  String get welcomeCardStepsTitle => isArabic
+      ? 'كيفاش تدخل في 3 خطوات بسيطة'
+      : (isFrench
+            ? 'Comment vous connecter en 3 étapes simples'
+            : 'How to sign in — 3 simple steps');
+
+  String get welcomeCardStep1 => isArabic
+      ? '1. افتح تطبيق Mindora على هاتفك.'
+      : (isFrench
+            ? '1. Ouvrez l’application Mindora sur votre téléphone.'
+            : '1. Open the Mindora app on your phone.');
+
+  String get welcomeCardStep2 => isArabic
+      ? '2. اضغط على «امسح رمز QR متاع طبيبك»، ولا أدخل المعرّف والرمز السري أسفله.'
+      : (isFrench
+            ? '2. Touchez « Scanner le QR du médecin » ou saisissez votre identifiant et votre code PIN.'
+            : '2. Tap “Scan doctor’s QR”, or type your Login ID and Temporary PIN below.');
+
+  String get welcomeCardStep3 => isArabic
+      ? '3. سجّل حالتك كل يوم بهدوء. تقدر تقفل أي ملاحظة خاصة باش تبقى ليك وحدك.'
+      : (isFrench
+            ? '3. Notez votre journée en douceur. Tout élément marqué « Privé » reste uniquement sur votre téléphone.'
+            : '3. Check in gently each day. Any entry you mark “Keep just for me” stays strictly on your phone.');
+
+  String get welcomeCardHelplinesFooter => isArabic
+      ? 'في حالة طوارئ نفسية أو صحية عاجلة (تونس): الخط الأخضر 80 10 50 50 · الاستعجالي 190 · الحماية المدنية 198'
+      : (isFrench
+            ? 'Urgence médicale ou détresse aiguë (Tunisie) : Ligne Verte 80 10 50 50 · SAMU 190 · Protection Civile 198'
+            : 'For urgent medical or mental health emergencies (Tunisia): Ligne Verte 80 10 50 50 · SAMU 190 · Civil Protection 198');
+
+  String get tryAgainBtn => isArabic
+      ? 'إعادة المحاولة'
+      : (isFrench ? 'Réessayer' : 'Try again');
+
+  String get preVisitAgendaHeader => isArabic
+      ? 'نقاط التحضير للزيارة'
+      : (isFrench ? 'Ordre du jour pré-visite' : 'Pre-visit agenda');
+
+  String get postVisitFocusTitle => isArabic
+      ? 'خطة التركيز بين الزيارات'
+      : (isFrench ? 'Plan de suivi inter-séances' : 'Between-visit focus plan');
+
+  String get baselineTableHeader => isArabic
+      ? 'مقارنة آخر 7 أيام بالمرجع الشخصي'
+      : (isFrench
+            ? 'Métriques sur 7 jours vs repère personnel'
+            : '7-day metrics vs personal baseline');
+
+  String get baselineShiftsHeader => isArabic
+      ? 'التغيّرات الملاحظة عن المرجع الشخصي'
+      : (isFrench
+            ? 'Écarts observés par rapport au repère'
+            : 'Observed shifts from personal baseline');
+
+  String get noShiftsDetectedLabel => isArabic
+      ? 'لا توجد تغيّرات ملحوظة مقارنة بالمرجع الشخصي.'
+      : (isFrench
+            ? 'Aucun écart notable par rapport au repère personnel.'
+            : 'No notable shifts detected relative to personal baseline.');
+
+  String get sharedReflectionsTab => isArabic
+      ? 'التأملات والحوارات المشتركة'
+      : (isFrench ? 'Réflexions partagées' : 'Shared reflections');
+
+  String get noSharedReflectionsLabel => isArabic
+      ? 'لم تتم مشاركة أي جلسات تأمل في هذه الحزمة.'
+      : (isFrench
+            ? 'Aucune réflexion partagée dans ce paquet.'
+            : 'No shared reflection sessions in this packet.');
+
+  String get clinicianNotesTab => isArabic
+      ? 'ملاحظات الطبيب السريرية'
+      : (isFrench ? 'Notes cliniques du médecin' : 'Clinician consultation notes');
+
+  String get encryptedQrHeader => isArabic
+      ? 'رمز QR المشفّر لنقل البيانات داخل العيادة'
+      : (isFrench
+            ? 'QR chiffré pour transfert hors ligne en cabinet'
+            : 'Encrypted in-room handoff QR');
+
+  String get qrOfflineTransferHint => isArabic
+      ? 'يمسح الطبيب هذا الرمز لاستيراد الحزمة محلياً دون رفعها للسحابة، باستخدام رمز المرور الشفهي.'
+      : (isFrench
+            ? 'Scannez ce QR pour importer le dossier localement hors ligne avec la phrase secrète convenue.'
+            : 'Scan this QR in Mindora Doctor to import offline with the patient’s verbal room PIN.');
+
+  String daysTrackedBadge(int count) {
+    if (isArabic) {
+      if (count == 1) return 'يوم واحد مسجّل';
+      if (count == 2) return 'يومان مسجّلان';
+      return '$count أيام مسجّلة';
+    }
+    if (isFrench) {
+      return count == 1 ? '1 jour suivi' : '$count jours suivis';
+    }
+    return count == 1 ? '1 day tracked' : '$count days tracked';
+  }
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);

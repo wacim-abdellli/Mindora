@@ -142,8 +142,7 @@ void main() {
       for (final entity in libDir.listSync(recursive: true)) {
         if (entity is! File || !entity.path.endsWith('.dart')) continue;
         final normalizedPath = entity.path.replaceAll('\\', '/');
-        final isPdfService =
-            normalizedPath.endsWith('clinical_brief_pdf_service.dart');
+        final isPdfService = normalizedPath.endsWith('_pdf_service.dart');
         final isPresentation = normalizedPath.contains('/presentation/');
         final lines = entity.readAsLinesSync();
 

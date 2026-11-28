@@ -193,7 +193,7 @@ void main() {
         final pdfText = ascii.decode(enResult.pdfBytes, allowInvalid: true);
         expect(pdfText.startsWith('%PDF-1.4'), isTrue);
         expect(pdfText.trimRight().endsWith('%%EOF'), isTrue);
-        expect(pdfText, contains('/MediaBox [0 0 595 842]'));
+        expect(pdfText, matches(RegExp(r'/MediaBox\s*\[0 0 595 842\]')));
         expect(pdfText, contains('xref'));
         expect(pdfText, contains('startxref'));
         expect(enResult.hasEmbeddedQr, isTrue);

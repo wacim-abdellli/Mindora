@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/localization/app_strings.dart';
 import '../../../../app/theme/mind_tokens.dart';
+import '../../../../core/export/document_exporter.dart';
 import '../../../../core/widgets/mind_button.dart';
 import '../../../../core/widgets/mind_segmented.dart';
 import '../../../../core/widgets/mind_toast.dart';
@@ -331,7 +332,7 @@ class _MoodAuraPosterSheetState extends ConsumerState<MoodAuraPosterSheet> {
 
   Future<void> _sharePoster(AppStrings strings) async {
     final bytes = _pngBytes;
-    if (bytes == null) return;
+    if (bytes == null || _isSharing) return;
     setState(() => _isSharing = true);
     try {
       final ts = DateTime.now().millisecondsSinceEpoch;
@@ -345,6 +346,14 @@ class _MoodAuraPosterSheetState extends ConsumerState<MoodAuraPosterSheet> {
             text: strings.moodAuraShareText,
           );
       if (mounted) HapticFeedback.mediumImpact();
+    } catch (_) {
+      if (mounted) {
+        showMindToast(
+          context,
+          strings.genericActionError,
+          variant: MindToastVariant.error,
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSharing = false);
     }
@@ -352,15 +361,30 @@ class _MoodAuraPosterSheetState extends ConsumerState<MoodAuraPosterSheet> {
 
   Future<void> _savePoster(AppStrings strings, MindTokens tokens) async {
     final bytes = _pngBytes;
-    if (bytes == null) return;
+    if (bytes == null || _isSaving) return;
     setState(() => _isSaving = true);
     try {
       final ts = DateTime.now().millisecondsSinceEpoch;
       final fileName = 'mindora_mood_aura_$ts.png';
-      await MoodAuraPosterRenderer.savePngToLocalFile(bytes, fileName: fileName);
-      if (!mounted) return;
+      final exported = await ref.read(documentExporterProvider).savePng(
+            bytes: bytes,
+            fileName: fileName,
+          );
+      if (!mounted || exported.isCancelled) return;
       HapticFeedback.mediumImpact();
-      showMindToast(context, strings.moodAuraSavedSnackbar(fileName));
+      showMindToast(
+        context,
+        strings.moodAuraSavedSnackbar(exported.fileName),
+        variant: MindToastVariant.success,
+      );
+    } catch (_) {
+      if (mounted) {
+        showMindToast(
+          context,
+          strings.genericActionError,
+          variant: MindToastVariant.error,
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
