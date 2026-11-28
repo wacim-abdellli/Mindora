@@ -6,6 +6,7 @@ import '../../../app/localization/app_strings.dart';
 import '../../../app/theme/lab_theme.dart';
 import '../../../app/theme/mind_tokens.dart';
 import '../../../core/widgets/fingerprint_thread_signature.dart';
+import '../../../core/widgets/mind_page_container.dart';
 import '../../../core/widgets/mind_switch.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../auth/domain/auth_user.dart';
@@ -64,8 +65,11 @@ class PsychologicalProfileView extends ConsumerWidget {
       data: (profile) {
         return SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: MindPageContainer(
+            maxWidth: 680,
+            padding: EdgeInsets.zero,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Poetic Intro Banner
               _buildIntroBanner(
@@ -267,6 +271,7 @@ class PsychologicalProfileView extends ConsumerWidget {
 
               const SizedBox(height: 32),
             ],
+          ),
           ),
         );
       },

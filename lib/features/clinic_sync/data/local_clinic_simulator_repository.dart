@@ -738,6 +738,7 @@ class LocalClinicSimulatorRepository
     required String patientId,
     required String currentPin,
     required String newPin,
+    bool skipCurrentPinCheck = false,
   }) async {
     final cleanNew = newPin.trim();
     if (cleanNew.length < 4) {
@@ -762,15 +763,21 @@ class LocalClinicSimulatorRepository
       );
     }
 
-    final verified = AuthService.verifyPasswordWithMigration(
-      currentPin.trim(),
-      account.credentialHash,
-    );
-    if (!verified.isValid) {
-      throw const ClinicAuthException(
-        ClinicAuthErrorCode.invalidCredentials,
-        'Current PIN is incorrect.',
+    final allowFirstLoginDirectPin =
+        skipCurrentPinCheck &&
+        (account.requiresPinChange || !account.hasAcceptedSafetyNotice);
+
+    if (!allowFirstLoginDirectPin) {
+      final verified = AuthService.verifyPasswordWithMigration(
+        currentPin.trim(),
+        account.credentialHash,
       );
+      if (!verified.isValid) {
+        throw const ClinicAuthException(
+          ClinicAuthErrorCode.invalidCredentials,
+          'Current PIN is incorrect.',
+        );
+      }
     }
 
     final timestamp = DateTime.now();

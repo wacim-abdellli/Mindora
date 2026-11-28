@@ -459,26 +459,29 @@ class _FlashCaseScreenState extends ConsumerState<FlashCaseScreen> {
           const SizedBox(width: 4),
         ],
       ),
-      body: _showHubView
-          ? SafeArea(
-              child: AiCompanionHubView(
-                onSessionSelected: () {
-                  if (mounted && _showHubView) {
-                    setState(() => _showHubView = false);
-                  }
-                },
-              ),
-            )
-          : (caseModel != null
-                ? SafeArea(child: LiveDialogueView(caseModel: caseModel))
-                : SafeArea(
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        color: tokens.primary,
-                        strokeWidth: 2.5,
-                      ),
-                    ),
-                  )),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 780),
+            child: _showHubView
+                ? AiCompanionHubView(
+                    onSessionSelected: () {
+                      if (mounted && _showHubView) {
+                        setState(() => _showHubView = false);
+                      }
+                    },
+                  )
+                : (caseModel != null
+                      ? LiveDialogueView(caseModel: caseModel)
+                      : Center(
+                          child: CircularProgressIndicator(
+                            color: tokens.primary,
+                            strokeWidth: 2.5,
+                          ),
+                        )),
+          ),
+        ),
+      ),
     );
   }
 }

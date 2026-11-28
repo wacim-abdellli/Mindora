@@ -40,7 +40,7 @@ class EditExperiencesSheet extends ConsumerWidget {
     final textSecondary = tokens.ink2;
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      height: MediaQuery.sizeOf(context).height * 0.85,
       decoration: BoxDecoration(
         color: bg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),

@@ -42,7 +42,7 @@ class JournalMemorySheet extends ConsumerWidget {
     final memories = memoriesAsync.value ?? [];
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.82,
+      height: MediaQuery.sizeOf(context).height * 0.82,
       decoration: BoxDecoration(
         color: bg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),

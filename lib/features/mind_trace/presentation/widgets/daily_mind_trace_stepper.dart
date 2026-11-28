@@ -1738,7 +1738,7 @@ class _CustomEmotionSheetState extends State<_CustomEmotionSheet> {
     final textPrimary = tokens.ink;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: Container(
         decoration: BoxDecoration(
           color: bg,

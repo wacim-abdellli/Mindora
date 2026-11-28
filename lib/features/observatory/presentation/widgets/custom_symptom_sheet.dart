@@ -72,7 +72,7 @@ class _CustomSymptomSheetState extends ConsumerState<CustomSymptomSheet> {
 
     return Container(
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
         top: 16,
         left: 20,
         right: 20,

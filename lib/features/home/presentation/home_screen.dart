@@ -19,6 +19,7 @@ import '../../../core/security/encrypted_storage_helper.dart';
 import '../../../core/security/secure_key_manager.dart';
 import '../../../core/widgets/ambient_scaffold.dart';
 import '../../../core/widgets/mind_card.dart';
+import '../../../core/widgets/mind_page_container.dart';
 import '../../../core/widgets/mind_pressable.dart';
 import '../../../core/widgets/mind_toast.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -347,8 +348,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: MindPageContainer(
+              maxWidth: 720,
+              padding: EdgeInsets.zero,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Clean Single Header Row
                 Row(
@@ -551,6 +555,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 16),
                 const Center(child: EmergencyHelpLink()),
               ],
+            ),
             ),
           ),
         ),

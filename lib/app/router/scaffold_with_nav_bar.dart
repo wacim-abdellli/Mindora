@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../localization/app_strings.dart';
 import '../theme/lab_theme.dart';
 import '../theme/mind_tokens.dart';
+import '../../core/widgets/mind_page_container.dart';
 
 /// Floating 5-tab single-job navigation dock (`Today`, `My days`, `Talk`,
 /// `Patterns`, `Me`) built for both older adults (`>= 56dp` tall hits,
@@ -32,6 +33,8 @@ class ScaffoldWithNavBar extends ConsumerWidget {
     final strings = ref.watch(appStringsProvider);
     final currentIndex = navigationShell.currentIndex;
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final width = MediaQuery.sizeOf(context).width;
+    final isExpanded = MindBreakpoints.isExpanded(width);
 
     final tabs = [
       (
@@ -60,6 +63,85 @@ class ScaffoldWithNavBar extends ConsumerWidget {
         label: strings.navMe,
       ),
     ];
+
+    if (isExpanded) {
+      return Scaffold(
+        backgroundColor: tokens.bg,
+        body: SafeArea(
+          child: Row(
+            children: [
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                      ),
+                      child: IntrinsicHeight(
+                        child: NavigationRail(
+                          key: const ValueKey<String>('patient-nav-rail'),
+                          selectedIndex: currentIndex,
+                          onDestinationSelected: _onTap,
+                          extended: width >= 1140,
+                          backgroundColor: tokens.surface,
+                          indicatorColor: tokens.navCapsuleFill,
+                          selectedIconTheme: IconThemeData(
+                            color: tokens.primary,
+                            size: 22,
+                          ),
+                          unselectedIconTheme: IconThemeData(
+                            color: tokens.ink2,
+                            size: 21,
+                          ),
+                          selectedLabelTextStyle: TextStyle(
+                            fontFamily: LabTheme.fontFamily,
+                            fontFamilyFallback: LabTheme.fontFallback,
+                            fontSize: 13.0,
+                            fontWeight: FontWeight.w700,
+                            color: tokens.primary,
+                          ),
+                          unselectedLabelTextStyle: TextStyle(
+                            fontFamily: LabTheme.fontFamily,
+                            fontFamilyFallback: LabTheme.fontFallback,
+                            fontSize: 13.0,
+                            fontWeight: FontWeight.w600,
+                            color: tokens.ink2,
+                          ),
+                          leading: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 14,
+                              horizontal: 12,
+                            ),
+                            child: Text(
+                              'Mindora',
+                              style: LabTheme.textStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: tokens.primary,
+                              ),
+                            ),
+                          ),
+                          destinations: [
+                            for (final tab in tabs)
+                              NavigationRailDestination(
+                                icon: Icon(tab.icon),
+                                selectedIcon: Icon(tab.activeIcon),
+                                label: Text(tab.label),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              VerticalDivider(width: 1, thickness: 1, color: tokens.line),
+              Expanded(child: navigationShell),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: tokens.bg,

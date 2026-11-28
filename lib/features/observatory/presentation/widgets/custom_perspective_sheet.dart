@@ -128,7 +128,7 @@ class _CustomPerspectiveSheetState extends ConsumerState<CustomPerspectiveSheet>
         20,
         14,
         20,
-        MediaQuery.of(context).viewInsets.bottom + 20,
+        MediaQuery.viewInsetsOf(context).bottom + 20,
       ),
       child: SingleChildScrollView(
         child: Column(

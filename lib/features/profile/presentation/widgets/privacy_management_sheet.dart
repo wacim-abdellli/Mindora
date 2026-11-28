@@ -173,7 +173,7 @@ class _PrivacyManagementSheetState extends ConsumerState<PrivacyManagementSheet>
     final textSecondary = tokens.ink2;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: Container(
         decoration: BoxDecoration(
           color: bg,

@@ -13,6 +13,7 @@ import '../../../core/widgets/ambient_scaffold.dart';
 import '../../../core/widgets/mind_badge.dart';
 import '../../../core/widgets/mind_button.dart';
 import '../../../core/widgets/mind_card.dart';
+import '../../../core/widgets/mind_page_container.dart';
 import '../../../core/widgets/mind_toast.dart';
 import '../../../core/widgets/mood_face.dart';
 import '../../clinic_sync/controllers/clinic_sync_providers.dart';
@@ -38,22 +39,29 @@ class _ClinicWelcomeScreenState extends ConsumerState<ClinicWelcomeScreen> {
 
   final TextEditingController _currentPinCtrl = TextEditingController();
   final TextEditingController _newPinCtrl = TextEditingController();
+  final TextEditingController _confirmPinCtrl = TextEditingController();
 
   @override
   void dispose() {
     _currentPinCtrl.dispose();
     _newPinCtrl.dispose();
+    _confirmPinCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _updatePin(AppStrings strings) async {
+  Future<void> _updatePin(AppStrings strings, {required bool isQrSession}) async {
     final user = ref.read(authControllerProvider).user;
     if (user == null) return;
 
     final cur = _currentPinCtrl.text.trim();
     final next = _newPinCtrl.text.trim();
+    final confirm = _confirmPinCtrl.text.trim();
     if (next.length < 4) {
-      setState(() => _pinError = strings.pinFieldHint);
+      setState(() => _pinError = strings.authPinTooShortError);
+      return;
+    }
+    if (confirm != next) {
+      setState(() => _pinError = strings.pinsDoNotMatchError);
       return;
     }
 
@@ -64,8 +72,9 @@ class _ClinicWelcomeScreenState extends ConsumerState<ClinicWelcomeScreen> {
     try {
       await ref.read(clinicAuthRepositoryProvider).changePatientPin(
             patientId: user.id,
-            currentPin: cur,
+            currentPin: isQrSession ? '' : cur,
             newPin: next,
+            skipCurrentPinCheck: isQrSession,
           );
       if (mounted) {
         setState(() {
@@ -99,7 +108,9 @@ class _ClinicWelcomeScreenState extends ConsumerState<ClinicWelcomeScreen> {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final strings = ref.watch(appStringsProvider);
-    final user = ref.watch(authControllerProvider).user;
+    final authState = ref.watch(authControllerProvider);
+    final user = authState.user;
+    final isQrSession = authState.signedInViaQr;
     final patientName = user?.codename ?? '';
     final doctorName = user?.doctorName ??
         (strings.isArabic
@@ -142,9 +153,12 @@ class _ClinicWelcomeScreenState extends ConsumerState<ClinicWelcomeScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+          child: MindPageContainer(
+            maxWidth: 500,
+            padding: EdgeInsets.zero,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
               const Center(
                 child: MoodFace(
                   mood: AppMood.good,
@@ -274,19 +288,44 @@ class _ClinicWelcomeScreenState extends ConsumerState<ClinicWelcomeScreen> {
                       ),
                       if (_showChangePin) ...[
                         const SizedBox(height: 14),
+                        if (!isQrSession) ...[
+                          TextFormField(
+                            key: const ValueKey<String>(
+                              'welcome-current-pin-field',
+                            ),
+                            controller: _currentPinCtrl,
+                            obscureText: true,
+                            textDirection: TextDirection.ltr,
+                            textInputAction: TextInputAction.next,
+                            decoration: InputDecoration(
+                              labelText: strings.currentPinLabel,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
                         TextFormField(
-                          controller: _currentPinCtrl,
+                          key: const ValueKey<String>('welcome-new-pin-field'),
+                          controller: _newPinCtrl,
                           obscureText: true,
+                          textDirection: TextDirection.ltr,
+                          textInputAction: TextInputAction.next,
                           decoration: InputDecoration(
-                            labelText: strings.currentPinLabel,
+                            labelText: strings.newPinLabel,
                           ),
                         ),
                         const SizedBox(height: 10),
                         TextFormField(
-                          controller: _newPinCtrl,
+                          key: const ValueKey<String>(
+                            'welcome-confirm-pin-field',
+                          ),
+                          controller: _confirmPinCtrl,
                           obscureText: true,
+                          textDirection: TextDirection.ltr,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) =>
+                              _updatePin(strings, isQrSession: isQrSession),
                           decoration: InputDecoration(
-                            labelText: strings.newPinLabel,
+                            labelText: strings.confirmNewPinLabel,
                           ),
                         ),
                         if (_pinError != null) ...[
@@ -302,11 +341,13 @@ class _ClinicWelcomeScreenState extends ConsumerState<ClinicWelcomeScreen> {
                         ],
                         const SizedBox(height: 12),
                         MindButton(
+                          key: const ValueKey<String>('welcome-save-pin-btn'),
                           text: strings.saveNewPinBtn,
                           variant: MindButtonVariant.secondary,
                           isFullWidth: true,
                           isLoading: _isSavingPin,
-                          onPressed: () => _updatePin(strings),
+                          onPressed: () =>
+                              _updatePin(strings, isQrSession: isQrSession),
                         ),
                       ],
                     ],
@@ -325,6 +366,7 @@ class _ClinicWelcomeScreenState extends ConsumerState<ClinicWelcomeScreen> {
               const SizedBox(height: 16),
               const Center(child: EmergencyHelpLink()),
             ],
+          ),
           ),
         ),
       ),

@@ -14,6 +14,7 @@ import '../../../core/safety/support_button.dart';
 import '../../../core/widgets/ambient_scaffold.dart';
 import '../../../core/widgets/mind_button.dart';
 import '../../../core/widgets/mind_card.dart';
+import '../../../core/widgets/mind_page_container.dart';
 import '../../../core/widgets/mind_pressable.dart';
 import '../../../core/widgets/mind_segmented.dart';
 import '../../../core/widgets/mood_face.dart';
@@ -149,35 +150,36 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
           physics: const BouncingScrollPhysics(),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Accessible Language + Larger Text strip before anything else
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final langControl = MindSegmented(
-                      index: langIndex,
-                      labels: const ['EN', 'FR', 'عربي'],
-                      onChanged: (idx) {
-                        HapticFeedback.selectionClick();
-                        final lang = switch (idx) {
-                          1 => AppLanguage.french,
-                          2 => AppLanguage.arabic,
-                          _ => AppLanguage.english,
-                        };
-                        ref
-                            .read(localeControllerProvider.notifier)
-                            .setLanguage(lang);
-                      },
-                    );
-                    final comfortChip = Semantics(
-                      button: true,
-                      toggled: comfortMode,
-                      label: strings.largerTextToggleLabel,
-                      child: MindPressable(
+          child: MindPageContainer(
+            maxWidth: 460,
+            padding: EdgeInsets.zero,
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Accessible Language + Larger Text strip before anything else
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final langControl = MindSegmented(
+                        index: langIndex,
+                        labels: const ['EN', 'FR', 'عربي'],
+                        onChanged: (idx) {
+                          HapticFeedback.selectionClick();
+                          final lang = switch (idx) {
+                            1 => AppLanguage.french,
+                            2 => AppLanguage.arabic,
+                            _ => AppLanguage.english,
+                          };
+                          ref
+                              .read(localeControllerProvider.notifier)
+                              .setLanguage(lang);
+                        },
+                      );
+                      final comfortChip = MindPressable(
                         key: const ValueKey<String>('auth-larger-text-toggle'),
+                        semanticLabel: strings.largerTextToggleLabel,
+                        selected: comfortMode,
                         onPressed: () {
                           HapticFeedback.selectionClick();
                           ref
@@ -234,8 +236,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             ],
                           ),
                         ),
-                      ),
-                    );
+                      );
 
                     final stackVertically = constraints.maxWidth < 330 ||
                         MediaQuery.textScalerOf(context).scale(14) > 16.5;
@@ -398,106 +399,126 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 // Card 2: Phone / Username + PIN Form
                 MindCard(
                   padding: const EdgeInsets.all(18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        strings.orLogInWithIdLabel,
-                        style: LabTheme.textStyle(
-                          fontSize: 15.5,
-                          fontWeight: FontWeight.w800,
-                          color: tokens.ink,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-
-                      _fieldLabel(strings.loginIdentifierLabel, tokens),
-                      const SizedBox(height: 6),
-                      TextFormField(
-                        key: const ValueKey<String>('auth-identifier-field'),
-                        controller: _identifierController,
-                        textDirection: TextDirection.ltr,
-                        style: LabTheme.textStyle(
-                          color: tokens.ink,
-                          fontSize: 15.5,
-                        ),
-                        validator: (v) {
-                          if (v == null || v.trim().length < 3) {
-                            return strings.loginIdentifierHint;
-                          }
-                          return null;
-                        },
-                        decoration: InputDecoration(
-                          hintText: strings.loginIdentifierHint,
-                          prefixIcon: Icon(
-                            Icons.person_outline_rounded,
-                            size: 20,
-                            color: tokens.ink2,
+                  child: AutofillGroup(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          strings.orLogInWithIdLabel,
+                          style: LabTheme.textStyle(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w800,
+                            color: tokens.ink,
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 14),
+                        const SizedBox(height: 14),
 
-                      _fieldLabel(strings.pinFieldLabel, tokens),
-                      const SizedBox(height: 6),
-                      TextFormField(
-                        key: const ValueKey<String>('auth-pin-field'),
-                        controller: _pinController,
-                        textDirection: TextDirection.ltr,
-                        obscureText: _obscurePin,
-                        style: LabTheme.textStyle(
-                          color: tokens.ink,
-                          fontSize: 15.5,
-                        ),
-                        validator: (v) {
-                          if (v == null || v.trim().length < 4) {
-                            return strings.pinFieldHint;
-                          }
-                          return null;
-                        },
-                        decoration: InputDecoration(
-                          hintText: strings.pinFieldHint,
-                          prefixIcon: Icon(
-                            Icons.lock_outline_rounded,
-                            size: 20,
-                            color: tokens.ink2,
+                        _fieldLabel(strings.loginIdentifierLabel, tokens),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          key: const ValueKey<String>('auth-identifier-field'),
+                          controller: _identifierController,
+                          textDirection: TextDirection.ltr,
+                          textInputAction: TextInputAction.next,
+                          autofillHints: const [AutofillHints.username],
+                          style: LabTheme.textStyle(
+                            color: tokens.ink,
+                            fontSize: 15.5,
                           ),
-                          suffixIcon: IconButton(
-                            tooltip: strings.toggleVisibilityTooltip,
-                            constraints: const BoxConstraints(
-                              minWidth: 48,
-                              minHeight: 48,
-                            ),
-                            icon: Icon(
-                              _obscurePin
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
+                          validator: (v) {
+                            if (v == null || v.trim().length < 3) {
+                              return strings.authIdentifierRequiredError;
+                            }
+                            return null;
+                          },
+                          decoration: InputDecoration(
+                            hintText: strings.loginIdentifierHint,
+                            prefixIcon: Icon(
+                              Icons.person_outline_rounded,
                               size: 20,
                               color: tokens.ink2,
                             ),
-                            onPressed: () {
-                              setState(() => _obscurePin = !_obscurePin);
-                            },
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 18),
+                        const SizedBox(height: 14),
 
-                      MindButton(
-                        key: const ValueKey<String>('auth-login-submit-btn'),
-                        text: strings.logInBtn,
-                        variant: MindButtonVariant.secondary,
-                        isFullWidth: true,
-                        isLoading: authState.status == AuthStatus.loading,
-                        onPressed: _submitCredentials,
-                      ),
-                    ],
+                        _fieldLabel(strings.pinFieldLabel, tokens),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          key: const ValueKey<String>('auth-pin-field'),
+                          controller: _pinController,
+                          textDirection: TextDirection.ltr,
+                          obscureText: _obscurePin,
+                          textInputAction: TextInputAction.done,
+                          autofillHints: const [AutofillHints.password],
+                          onFieldSubmitted: (_) => _submitCredentials(),
+                          style: LabTheme.textStyle(
+                            color: tokens.ink,
+                            fontSize: 15.5,
+                          ),
+                          validator: (v) {
+                            if (v == null || v.trim().length < 4) {
+                              return strings.authPinTooShortError;
+                            }
+                            return null;
+                          },
+                          decoration: InputDecoration(
+                            hintText: strings.pinFieldHint,
+                            prefixIcon: Icon(
+                              Icons.lock_outline_rounded,
+                              size: 20,
+                              color: tokens.ink2,
+                            ),
+                            suffixIcon: IconButton(
+                              tooltip: strings.toggleVisibilityTooltip,
+                              constraints: const BoxConstraints(
+                                minWidth: 48,
+                                minHeight: 48,
+                              ),
+                              icon: Icon(
+                                _obscurePin
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                                size: 20,
+                                color: tokens.ink2,
+                              ),
+                              onPressed: () {
+                                setState(() => _obscurePin = !_obscurePin);
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+
+                        MindButton(
+                          key: const ValueKey<String>('auth-login-submit-btn'),
+                          text: strings.logInBtn,
+                          variant: MindButtonVariant.secondary,
+                          isFullWidth: true,
+                          isLoading: authState.status == AuthStatus.loading,
+                          onPressed:
+                              authState.isLockedOut ? null : _submitCredentials,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          strings.forgotPinClinicHelp,
+                          key: const ValueKey<String>('auth-forgot-pin-help'),
+                          textAlign: TextAlign.center,
+                          style: LabTheme.textStyle(
+                            fontSize: 12.5,
+                            height: 1.4,
+                            color: tokens.ink2,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 18),
                 const Center(child: EmergencyHelpLink()),
               ],
             ),
+          ),
           ),
         ),
       ),

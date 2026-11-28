@@ -136,11 +136,10 @@ class _TraceInvestigationSheetState
   @override
   Widget build(BuildContext context) {
     final strings = ref.watch(appStringsProvider);
-    final media = MediaQuery.of(context);
     final tokens = context.tokens;
 
     return Container(
-      height: media.size.height * 0.90,
+      height: MediaQuery.sizeOf(context).height * 0.90,
       decoration: BoxDecoration(
         color: tokens.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(tokens.cardRadius)),
@@ -294,7 +293,7 @@ class _TraceInvestigationSheetState
               20,
               12,
               20,
-              12 + media.padding.bottom,
+              12 + MediaQuery.paddingOf(context).bottom,
             ),
             decoration: BoxDecoration(
               color: tokens.surface,

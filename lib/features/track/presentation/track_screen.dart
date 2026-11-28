@@ -15,6 +15,7 @@ import '../../../core/widgets/ambient_scaffold.dart';
 import '../../../core/widgets/mind_button.dart';
 import '../../../core/widgets/mind_card.dart';
 import '../../../core/widgets/mind_chip.dart';
+import '../../../core/widgets/mind_page_container.dart';
 import '../../../core/widgets/mind_sheet.dart';
 import '../../../core/widgets/mind_strength_picker.dart';
 import '../../../core/widgets/mind_toast.dart';
@@ -264,151 +265,172 @@ class _TrackScreenState extends ConsumerState<TrackScreen> {
     final hasMoreAllEntries =
         _selectedDateKey == null && sortedAll.length > _showAllLimit;
 
-    return AmbientScaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Clean Single-Job Header (Wraps gracefully at 320px 2.0x textScale)
+    final isExpanded = MindBreakpoints.isExpanded(MediaQuery.sizeOf(context).width);
+    final calendarCard = TrackMonthCalendar(
+      month: _calendarMonth,
+      traces: traces,
+      selectedDateKey: _selectedDateKey,
+      strings: strings,
+      canGoNextMonth: canGoNextMonth,
+      onPreviousMonth: () {
+        setState(() {
+          _calendarMonth = DateTime(
+            _calendarMonth.year,
+            _calendarMonth.month - 1,
+          );
+        });
+      },
+      onNextMonth: () {
+        if (!canGoNextMonth) return;
+        setState(() {
+          _calendarMonth = DateTime(
+            _calendarMonth.year,
+            _calendarMonth.month + 1,
+          );
+        });
+      },
+      onSelectDateKey: (key) => setState(() {
+        _selectedDateKey = key;
+        if (key == null) _showAllLimit = 15;
+      }),
+      onInspectTrace: (trace) => _inspectTrace(trace, strings),
+    );
+    final timelineChildren = <Widget>[
+      if (_selectedDateKey == null || hasPrivateEntries) ...[
+        Wrap(
+          spacing: 10,
+          runSpacing: 8,
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            if (_selectedDateKey == null)
               Text(
-                strings.navMyDays,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                strings.allRecentEntriesTitle,
                 style: LabTheme.textStyle(
-                  fontSize: 22,
+                  fontSize: 16,
                   fontWeight: FontWeight.w800,
                   color: tokens.ink,
                 ),
               ),
-              const SizedBox(height: 10),
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: MindButton(
-                  text: strings.logNewMomentLink,
-                  variant: MindButtonVariant.soft,
-                  onPressed: () => _openQuickLogSheet(
-                    forDate: _selectedDateKey != null
-                        ? _parseDateKey(_selectedDateKey!)
-                        : DateTime.now(),
+            if (hasPrivateEntries)
+              MindChip(
+                key: const ValueKey('track-private-filter-chip'),
+                label: strings.privateOnlyFilterLabel,
+                leadingIcon: Icons.lock_outline_rounded,
+                selected: _privateOnlyFilter,
+                onTap: () => setState(
+                  () => _privateOnlyFilter = !_privateOnlyFilter,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 10),
+      ],
+      if (dayEntries.isEmpty)
+        MindCard(
+          variant: MindCardVariant.flat,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              const MoodFace(mood: AppMood.calm, size: 52),
+              const SizedBox(height: 12),
+              Text(
+                strings.thoughtTraceQuote,
+                textAlign: TextAlign.center,
+                style: LabTheme.textStyle(
+                  fontSize: 15,
+                  height: 1.45,
+                  color: tokens.ink2,
+                ),
+              ),
+              const SizedBox(height: 14),
+              MindButton(
+                text: strings.addCheckInForDayBtn,
+                isFullWidth: true,
+                onPressed: () => _openQuickLogSheet(
+                  forDate: _selectedDateKey != null
+                      ? _parseDateKey(_selectedDateKey!)
+                      : DateTime.now(),
+                ),
+              ),
+            ],
+          ),
+        )
+      else ...[
+        for (final entry in dayEntries) ...[
+          _buildTimelineEntryCard(entry, tokens, strings),
+          const SizedBox(height: 10),
+        ],
+        if (hasMoreAllEntries) ...[
+          const SizedBox(height: 4),
+          MindButton(
+            key: const ValueKey('track-load-older-btn'),
+            text: strings.loadOlderEntriesBtn,
+            variant: MindButtonVariant.secondary,
+            isFullWidth: true,
+            onPressed: () => setState(() => _showAllLimit += 20),
+          ),
+        ],
+      ],
+    ];
+
+    return AmbientScaffold(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+          child: MindPageContainer(
+            maxWidth: isExpanded ? 960 : 720,
+            padding: EdgeInsets.zero,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Clean Single-Job Header (Wraps gracefully at 320px 2.0x textScale)
+                Text(
+                  strings.navMyDays,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: LabTheme.textStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: tokens.ink,
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-
-              // 1. Vivid Month Calendar (Opens Immediately!)
-              TrackMonthCalendar(
-                month: _calendarMonth,
-                traces: traces,
-                selectedDateKey: _selectedDateKey,
-                strings: strings,
-                canGoNextMonth: canGoNextMonth,
-                onPreviousMonth: () {
-                  setState(() {
-                    _calendarMonth = DateTime(
-                      _calendarMonth.year,
-                      _calendarMonth.month - 1,
-                    );
-                  });
-                },
-                onNextMonth: () {
-                  if (!canGoNextMonth) return;
-                  setState(() {
-                    _calendarMonth = DateTime(
-                      _calendarMonth.year,
-                      _calendarMonth.month + 1,
-                    );
-                  });
-                },
-                onSelectDateKey: (key) => setState(() {
-                  _selectedDateKey = key;
-                  if (key == null) _showAllLimit = 15;
-                }),
-                onInspectTrace: (trace) => _inspectTrace(trace, strings),
-              ),
-
-              const SizedBox(height: 18),
-
-              // 2. Selected Day Timeline (when Show-all is active, anchor with clear title + optional private filter)
-              if (_selectedDateKey == null || hasPrivateEntries) ...[
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 8,
-                  alignment: WrapAlignment.spaceBetween,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    if (_selectedDateKey == null)
-                      Text(
-                        strings.allRecentEntriesTitle,
-                        style: LabTheme.textStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: tokens.ink,
-                        ),
-                      ),
-                    if (hasPrivateEntries)
-                      MindChip(
-                        key: const ValueKey('track-private-filter-chip'),
-                        label: strings.privateOnlyFilterLabel,
-                        leadingIcon: Icons.lock_outline_rounded,
-                        selected: _privateOnlyFilter,
-                        onTap: () => setState(
-                          () => _privateOnlyFilter = !_privateOnlyFilter,
-                        ),
-                      ),
-                  ],
-                ),
                 const SizedBox(height: 10),
-              ],
-
-              if (dayEntries.isEmpty)
-                MindCard(
-                  variant: MindCardVariant.flat,
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: MindButton(
+                    text: strings.logNewMomentLink,
+                    variant: MindButtonVariant.soft,
+                    onPressed: () => _openQuickLogSheet(
+                      forDate: _selectedDateKey != null
+                          ? _parseDateKey(_selectedDateKey!)
+                          : DateTime.now(),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (isExpanded)
+                  Row(
+                    key: const ValueKey<String>('track-desktop-split-layout'),
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const MoodFace(mood: AppMood.calm, size: 52),
-                      const SizedBox(height: 12),
-                      Text(
-                        strings.thoughtTraceQuote,
-                        textAlign: TextAlign.center,
-                        style: LabTheme.textStyle(
-                          fontSize: 15,
-                          height: 1.45,
-                          color: tokens.ink2,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      MindButton(
-                        text: strings.addCheckInForDayBtn,
-                        isFullWidth: true,
-                        onPressed: () => _openQuickLogSheet(
-                          forDate: _selectedDateKey != null
-                              ? _parseDateKey(_selectedDateKey!)
-                              : DateTime.now(),
+                      SizedBox(width: 380, child: calendarCard),
+                      const SizedBox(width: 24),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: timelineChildren,
                         ),
                       ),
                     ],
-                  ),
-                )
-              else ...[
-                for (final entry in dayEntries) ...[
-                  _buildTimelineEntryCard(entry, tokens, strings),
-                  const SizedBox(height: 10),
-                ],
-                if (hasMoreAllEntries) ...[
-                  const SizedBox(height: 4),
-                  MindButton(
-                    key: const ValueKey('track-load-older-btn'),
-                    text: strings.loadOlderEntriesBtn,
-                    variant: MindButtonVariant.secondary,
-                    isFullWidth: true,
-                    onPressed: () => setState(() => _showAllLimit += 20),
-                  ),
+                  )
+                else ...[
+                  calendarCard,
+                  const SizedBox(height: 18),
+                  ...timelineChildren,
                 ],
               ],
-            ],
+            ),
           ),
         ),
       ),

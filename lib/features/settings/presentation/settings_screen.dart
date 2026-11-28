@@ -21,6 +21,7 @@ import '../../../core/widgets/botanical_emblem.dart';
 import '../../../core/widgets/mind_badge.dart';
 import '../../../core/widgets/mind_button.dart';
 import '../../../core/widgets/mind_card.dart';
+import '../../../core/widgets/mind_page_container.dart';
 import '../../../core/widgets/mind_pressable.dart';
 import '../../../core/widgets/mind_segmented.dart';
 import '../../../core/widgets/mind_switch.dart';
@@ -473,8 +474,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 48),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: MindPageContainer(
+          maxWidth: 680,
+          padding: EdgeInsets.zero,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Warm Personal Header Card
             MindCard(
@@ -867,6 +871,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
           ],
+          ),
         ),
       ),
     );

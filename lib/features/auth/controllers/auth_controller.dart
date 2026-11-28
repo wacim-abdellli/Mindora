@@ -142,11 +142,28 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
+  /// Maximum consecutive failed credential attempts before temporary cooldown.
+  static const int maxFailedAttemptsBeforeLockout = 5;
+
+  /// Cooldown duration after [maxFailedAttemptsBeforeLockout] failed attempts.
+  static const Duration lockoutCooldown = Duration(seconds: 30);
+
   /// Signs in to a doctor-provisioned patient account with Phone/Username + PIN.
   Future<bool> signInWithClinicCredentials(
     String identifier,
     String pinOrPassword,
   ) async {
+    final strings = ref.read(appStringsProvider);
+    if (state.isLockedOut) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: strings.authLockoutNotice(
+          state.lockoutRemainingSeconds.clamp(1, 30),
+        ),
+      );
+      return false;
+    }
+
     state = state.copyWith(status: AuthStatus.loading, clearError: true);
     try {
       final account = await ref
@@ -155,17 +172,30 @@ class AuthController extends Notifier<AuthState> {
             identifier: identifier,
             pinOrPassword: pinOrPassword,
           );
-      await _completeClinicSignIn(account);
+      await _completeClinicSignIn(account, signedInViaQr: false);
       return true;
     } on ClinicAuthException catch (e) {
-      final strings = ref.read(appStringsProvider);
-      state = state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: strings.localizedClinicAuthError(e.code),
-      );
+      final nextAttempts = state.failedAttempts + 1;
+      if (e.code == ClinicAuthErrorCode.invalidCredentials &&
+          nextAttempts >= maxFailedAttemptsBeforeLockout) {
+        final until = DateTime.now().add(lockoutCooldown);
+        state = state.copyWith(
+          status: AuthStatus.error,
+          failedAttempts: nextAttempts,
+          lockoutUntil: until,
+          errorMessage: strings.authLockoutNotice(lockoutCooldown.inSeconds),
+        );
+      } else {
+        state = state.copyWith(
+          status: AuthStatus.error,
+          failedAttempts: e.code == ClinicAuthErrorCode.invalidCredentials
+              ? nextAttempts
+              : state.failedAttempts,
+          errorMessage: strings.localizedClinicAuthError(e.code),
+        );
+      }
       return false;
     } catch (_) {
-      final strings = ref.read(appStringsProvider);
       state = state.copyWith(
         status: AuthStatus.error,
         errorMessage: strings.genericActionError,
@@ -181,7 +211,7 @@ class AuthController extends Notifier<AuthState> {
       final account = await ref
           .read(clinicAuthRepositoryProvider)
           .signInWithInviteQr(qrPayload: qrPayload);
-      await _completeClinicSignIn(account);
+      await _completeClinicSignIn(account, signedInViaQr: true);
       return true;
     } on ClinicAuthException catch (e) {
       final strings = ref.read(appStringsProvider);
@@ -200,7 +230,10 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
-  Future<void> _completeClinicSignIn(ClinicPatientAccount account) async {
+  Future<void> _completeClinicSignIn(
+    ClinicPatientAccount account, {
+    required bool signedInViaQr,
+  }) async {
     final now = DateTime.now();
     final user = AuthUser(
       id: account.patientId,
@@ -224,6 +257,9 @@ class AuthController extends Notifier<AuthState> {
       status: AuthStatus.authenticated,
       user: user,
       hasCompletedOnboarding: account.hasAcceptedSafetyNotice,
+      signedInViaQr: signedInViaQr,
+      failedAttempts: 0,
+      lockoutUntil: null,
     );
   }
 
@@ -249,8 +285,11 @@ class AuthController extends Notifier<AuthState> {
     await _service.signOut();
     state = state.copyWith(
       status: AuthStatus.unauthenticated,
+      signedInViaQr: false,
+      failedAttempts: 0,
       clearUser: true,
       clearError: true,
+      clearLockout: true,
     );
   }
 

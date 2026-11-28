@@ -730,7 +730,7 @@ class _EditPastTraceSheetState extends ConsumerState<EditPastTraceSheet> {
 
     return Padding(
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
+        bottom: MediaQuery.viewInsetsOf(context).bottom,
       ),
       child: Container(
         decoration: BoxDecoration(

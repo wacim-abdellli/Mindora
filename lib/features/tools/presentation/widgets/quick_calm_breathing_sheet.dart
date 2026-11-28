@@ -106,7 +106,7 @@ class _QuickCalmBreathingSheetState extends State<QuickCalmBreathingSheet> {
 
     return Container(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.90,
+        maxHeight: MediaQuery.sizeOf(context).height * 0.90,
       ),
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
       decoration: BoxDecoration(

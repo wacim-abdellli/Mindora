@@ -61,6 +61,7 @@ abstract class ClinicAuthRepository {
     required String patientId,
     required String currentPin,
     required String newPin,
+    bool skipCurrentPinCheck = false,
   });
 
   Future<ClinicPatientAccount> markSafetyNoticeAccepted({

@@ -130,7 +130,7 @@ class _SymptomAssessmentSheetState extends ConsumerState<SymptomAssessmentSheet>
 
     return Container(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.90,
+        maxHeight: MediaQuery.sizeOf(context).height * 0.90,
       ),
       decoration: BoxDecoration(
         color: bg,

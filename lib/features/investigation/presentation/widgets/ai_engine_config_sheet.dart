@@ -186,7 +186,7 @@ class _AiEngineConfigSheetState extends ConsumerState<AiEngineConfigSheet> {
         left: 20,
         right: 20,
         top: 14,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        bottom: MediaQuery.viewInsetsOf(context).bottom + 24,
       ),
       child: SingleChildScrollView(
         child: Column(

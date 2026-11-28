@@ -8067,6 +8067,61 @@ class AppStrings {
     }
   }
 
+  // Phase 6: Auth Polish & Responsive Adaptive Layouts
+  String get authIdentifierRequiredError => isArabic
+      ? 'من فضلك أدخل رقم الهاتف أو اسم المستخدم.'
+      : (isFrench
+            ? 'Veuillez saisir votre téléphone ou identifiant.'
+            : 'Please enter your phone number or username.');
+
+  String get authPinTooShortError => isArabic
+      ? 'الرمز السري لازم يكون 4 أحرف أو أرقام على الأقل.'
+      : (isFrench
+            ? 'Le code PIN doit contenir au moins 4 caractères.'
+            : 'PIN must be at least 4 characters.');
+
+  String authLockoutNotice(int seconds) {
+    if (isArabic) {
+      return 'محاولات كثيرة. انتظر $seconds ثانية قبل المحاولة من جديد.';
+    }
+    if (isFrench) {
+      return 'Trop de tentatives. Patientez ${seconds}s avant de réessayer.';
+    }
+    return 'Too many tries. Please wait ${seconds}s before trying again.';
+  }
+
+  String get forgotPinClinicHelp => isArabic
+      ? 'نسيت الرمز السري؟ اطلب من طبيبك إعادة تعيينه.'
+      : (isFrench
+            ? 'Code PIN oublié ? Demandez à votre médecin de le réinitialiser.'
+            : 'Forgot your PIN? Ask your doctor to reset it.');
+
+  String get confirmNewPinLabel => isArabic
+      ? 'تأكيد الرمز السري الجديد'
+      : (isFrench ? 'Confirmer le nouveau code PIN' : 'Confirm new PIN');
+
+  String get pinsDoNotMatchError => isArabic
+      ? 'الرمزان غير متطابقين. تأكّد وأعد المحاولة.'
+      : (isFrench
+            ? 'Les codes PIN ne correspondent pas.'
+            : 'PINs do not match. Please check and try again.');
+
+  String get cameraPermissionDeniedTitle => isArabic
+      ? 'صلاحية الكاميرا مغلقة'
+      : (isFrench
+            ? 'L’accès à la caméra est désactivé'
+            : 'Camera access is turned off');
+
+  String get cameraPermissionDeniedBody => isArabic
+      ? 'فعّل الكاميرا من إعدادات الهاتف لمسح رمز الطبيب، أو الصق رمز الدعوة بالأسفل.'
+      : (isFrench
+            ? 'Autorisez la caméra dans les réglages de l’appareil pour scanner le QR, ou collez le code ci-dessous.'
+            : 'Allow camera access in your device settings to scan your doctor’s QR, or paste the invite code below.');
+
+  String get retryCameraBtn => isArabic
+      ? 'إعادة محاولة الكاميرا'
+      : (isFrench ? 'Réessayer la caméra' : 'Try camera again');
+
   // Helper factory
   static AppStrings of(BuildContext context) {
     final locale = Localizations.localeOf(context);

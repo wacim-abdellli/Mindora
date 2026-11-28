@@ -74,9 +74,9 @@ class _EditCommunicationSheetState extends ConsumerState<EditCommunicationSheet>
     final textSecondary = tokens.ink2;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: Container(
-        height: MediaQuery.of(context).size.height * 0.85,
+        height: MediaQuery.sizeOf(context).height * 0.85,
         decoration: BoxDecoration(
           color: bg,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),

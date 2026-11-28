@@ -10,6 +10,7 @@ import '../../../app/theme/mind_tokens.dart';
 import '../../../core/widgets/mind_badge.dart';
 import '../../../core/widgets/mind_button.dart';
 import '../../../core/widgets/mind_card.dart';
+import '../../../core/widgets/mind_page_container.dart';
 import '../../../core/widgets/mind_pressable.dart';
 import '../../../core/widgets/mind_segmented.dart';
 import '../../../core/widgets/mood_face.dart';
@@ -309,8 +310,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: MindPageContainer(
+          maxWidth: 780,
+          padding: EdgeInsets.zero,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // === TOP FOLD (3 Plain Human Cards, <= 38 words) ===
             // Card 1: Your week in one glance + MoodFaces (or gentle empty prompt)
@@ -712,6 +716,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
             ),
           const SizedBox(height: 32),
         ],
+        ),
       ),
     ),
   );

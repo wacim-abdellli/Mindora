@@ -135,23 +135,33 @@ class _MindQrScannerSheetState extends ConsumerState<MindQrScannerSheet> {
     }
   }
 
+  void _retryCamera() {
+    _controller?.dispose();
+    _controller = null;
+    _startCamera();
+  }
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final strings = ref.watch(appStringsProvider);
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * 0.88,
-      ),
-      decoration: BoxDecoration(
-        color: tokens.surface,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(tokens.sheetRadius),
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 520,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.88,
         ),
-        border: Border(top: BorderSide(color: tokens.line)),
-      ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: tokens.surface,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(tokens.sheetRadius),
+            ),
+            border: Border(top: BorderSide(color: tokens.line)),
+          ),
       child: SafeArea(
         top: false,
         child: Padding(
@@ -458,19 +468,63 @@ class _MindQrScannerSheetState extends ConsumerState<MindQrScannerSheet> {
                           MobileScanner(
                             controller: _controller!,
                             onDetect: (cap) => _onBarcodeDetect(cap, strings),
-                            errorBuilder: (context, error) => Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(20),
-                                child: Text(
-                                  strings.qrScannerUnsupportedNote,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: tokens.ink2,
+                            errorBuilder: (context, error) {
+                              final isDenied =
+                                  error.errorCode ==
+                                  MobileScannerErrorCode.permissionDenied;
+                              return Center(
+                                child: SingleChildScrollView(
+                                  padding: const EdgeInsets.all(20),
+                                  child: Column(
+                                    key: const ValueKey<String>(
+                                      'qr-permission-denied-card',
+                                    ),
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        isDenied
+                                            ? Icons.no_photography_outlined
+                                            : Icons.videocam_off_outlined,
+                                        size: 36,
+                                        color: tokens.safety,
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Text(
+                                        isDenied
+                                            ? strings
+                                                .cameraPermissionDeniedTitle
+                                            : strings.cameraPermissionTitle,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: 15.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: tokens.ink,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        isDenied
+                                            ? strings.cameraPermissionDeniedBody
+                                            : strings.qrScannerUnsupportedNote,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          height: 1.4,
+                                          color: tokens.ink2,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      MindButton(
+                                        text: strings.retryCameraBtn,
+                                        variant: MindButtonVariant.secondary,
+                                        size: MindButtonSize.md,
+                                        onPressed: _retryCamera,
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ),
-                            ),
+                              );
+                            },
                           ),
                           IgnorePointer(
                             child: Center(
@@ -518,6 +572,8 @@ class _MindQrScannerSheetState extends ConsumerState<MindQrScannerSheet> {
               ],
             ),
           ),
+        ),
+      ),
         ),
       ),
     );
